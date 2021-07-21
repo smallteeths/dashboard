@@ -24,7 +24,10 @@ export default {
     // For clicking from manager -> explorer -> back, nuxt tries to load /g/clusters and doesn't
     // have a route for that.
     if ( !this.$route.path.startsWith(this.$router.options.base) && !this.$route.query.redir ) {
-      window.location.href = addParam(this.$route.fullPath, 'redir', 1);
+      // window.location.href = addParam(this.$route.fullPath, 'redir', 1);
+      const base = this.$router.options.base;
+
+      window.location.href = addParam(`${ base.slice(0, base.lastIndexOf('/', base.length - 2)) }${ this.$route.fullPath }`, 'redir', 1);
     }
   },
 
