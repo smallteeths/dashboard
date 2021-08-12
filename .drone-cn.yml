@@ -24,38 +24,6 @@ node:
 
 ---
 kind: pipeline
-name: docker-tag
-
-depends_on:
-- test
-
-trigger:
-  event:
-  - tag
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-- name: docker-image
-  image: plugins/docker
-  settings:
-    build_args:
-    - BRANCH=${DRONE_BRANCH}
-    - TAG=${DRONE_TAG}
-    dockerfile: image-scripts/Dockerfile
-    tag: ${DRONE_TAG}
-    repo: cnrancher/dashboard
-    username:
-      from_secret: docker_username
-    password:
-      from_secret: docker_password
-node:
-  instance: agent-amd64
-
----
-kind: pipeline
 name: embedded-tag
 
 depends_on:
