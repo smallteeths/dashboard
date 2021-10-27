@@ -2,7 +2,7 @@ import { GITHUB_NONCE, GITHUB_REDIRECT, GITHUB_SCOPE } from '@/config/query-para
 import { NORMAN } from '@/config/types';
 import { _MULTI } from '@/plugins/steve/actions';
 import { addObjects, findBy } from '@/utils/array';
-import { openAuthPopup, returnTo } from '@/utils/auth';
+import { openAuthPopup, returnTo, thirdAuthLogout } from '@/utils/auth';
 import { base64Encode } from '@/utils/crypto';
 import { removeEmberPage } from '@/utils/ember-page';
 import { randomStr } from '@/utils/string';
@@ -314,7 +314,12 @@ export const actions = {
     }
   },
 
-  async logout({ dispatch, commit }) {
+  async logout({ dispatch, commit }, { provider }) {
+    const driver = await dispatch('getAuthProvider', provider);
+
+    if (driver && driver.logoutUrl) {
+      await thirdAuthLogout(driver.logoutUrl);
+    }
     try {
       await dispatch('rancher/request', {
         url:                  '/v3/tokens?action=logout',
