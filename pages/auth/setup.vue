@@ -17,6 +17,7 @@ import Password from '@/components/form/Password';
 import PasswordStrength from '@/components/PasswordStrength';
 import AESEncrypt from '@/utils/aes-encrypt';
 import { mapGetters } from 'vuex';
+import { applyProducts } from '@/store/type-map';
 
 const calcIsFirstLogin = (store) => {
   const firstLoginSetting = store.getters['management/byId'](MANAGEMENT.SETTING, SETTING.FIRST_LOGIN);
@@ -221,6 +222,7 @@ export default {
       const promises = [];
 
       try {
+        await applyProducts(this.$store);
         await this.$store.dispatch('loadManagement');
 
         if ( this.mustChangePassword ) {

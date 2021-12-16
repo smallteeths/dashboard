@@ -3,10 +3,11 @@ import { MANAGEMENT, NAMESPACE, NORMAN } from '@/config/types';
 import { insertAt } from '@/utils/array';
 import { PROJECT_ID } from '@/config/query-params';
 import { SETTING } from '@/config/settings';
+import HybridModel from '@/plugins/steve/hybrid-class';
 
-export default {
-  _availableActions() {
-    const out = this._standardActions;
+export default class Project extends HybridModel {
+  get _availableActions() {
+    const out = super._availableActions;
 
     const auditLog = {
       action:     'auditLog',
@@ -35,16 +36,17 @@ export default {
     insertAt(out, 0, f5Ingresses);
 
     return out;
-  },
-  isSystem() {
+  }
+
+  get isSystem() {
     return this.metadata?.labels?.[SYSTEM_PROJECT] === 'true';
-  },
+  }
 
-  isDefault() {
+  get isDefault() {
     return this.metadata?.labels?.[DEFAULT_PROJECT] === 'true';
-  },
+  }
 
-  namespaces() {
+  get namespaces() {
     // I don't know how you'd end up with a project outside of rancher, but just in case...
     if ( !this.$rootGetters['isRancher'] ) {
       return [];
@@ -57,82 +59,82 @@ export default {
     return all.filter((ns) => {
       return ns.projectId === this.metadata.name;
     });
-  },
+  }
 
-  listLocation() {
+  get listLocation() {
     return { name: 'c-cluster-product-projectsnamespaces' };
-  },
+  }
 
-  parentLocationOverride() {
+  get parentLocationOverride() {
     return this.listLocation;
-  },
+  }
 
-  save() {
-    return async() => {
-      const norman = await this.norman;
+  async save() {
+    const norman = await this.norman;
 
-      const newValue = await norman.save();
+    const newValue = await norman.save();
 
-      newValue.doAction('setpodsecuritypolicytemplate', { podSecurityPolicyTemplateId: this.spec.podSecurityPolicyTemplateId || null });
+    newValue.doAction('setpodsecuritypolicytemplate', { podSecurityPolicyTemplateId: this.spec.podSecurityPolicyTemplateId || null });
 
-      await this.$dispatch('management/findAll', { type: MANAGEMENT.PROJECT, opt: { force: true } }, { root: true });
+    await this.$dispatch('management/findAll', { type: MANAGEMENT.PROJECT, opt: { force: true } }, { root: true });
 
-      return newValue;
-    };
-  },
+    return newValue;
+  }
 
-  remove() {
-    return async() => {
-      const norman = await this.norman;
+  async remove() {
+    const norman = await this.norman;
 
-      await norman.remove(...arguments);
-      this.$commit('management/remove', this, { root: true });
-    };
-  },
+    await norman.remove(...arguments);
+    this.$dispatch('management/remove', this, { root: true });
+  }
 
-  norman() {
+  get norman() {
     return this.id ? this.normanEditProject : this.normanNewProject;
-  },
+  }
 
-  async normanNewProject() {
-    const normanProject = await this.$dispatch('rancher/create', {
-      type:                          NORMAN.PROJECT,
-      name:                          this.spec.displayName,
-      description:                   this.spec.description,
-      annotations:                   this.metadata.annotations,
-      labels:                        this.metadata.labels,
-      clusterId:                     this.$rootGetters['currentCluster'].id,
-      creatorId:                     this.$rootGetters['auth/principalId'],
-      containerDefaultResourceLimit: this.spec.containerDefaultResourceLimit,
-      namespaceDefaultResourceQuota: this.spec.namespaceDefaultResourceQuota,
-      resourceQuota:                 this.spec.resourceQuota,
-    }, { root: true });
+  get normanNewProject() {
+    return (async() => {
+      const normanProject = await this.$dispatch('rancher/create', {
+        type:                          NORMAN.PROJECT,
+        name:                          this.spec.displayName,
+        description:                   this.spec.description,
+        annotations:                   this.metadata.annotations,
+        labels:                        this.metadata.labels,
+        clusterId:                     this.$rootGetters['currentCluster'].id,
+        creatorId:                     this.$rootGetters['auth/principalId'],
+        containerDefaultResourceLimit: this.spec.containerDefaultResourceLimit,
+        namespaceDefaultResourceQuota: this.spec.namespaceDefaultResourceQuota,
+        resourceQuota:                 this.spec.resourceQuota,
+      }, { root: true });
 
-    // The backend seemingly required both labels/annotation and metadata.labels/annotations or it doesn't save the labels and annotations
-    normanProject.setAnnotations(this.metadata.annotations);
-    normanProject.setLabels(this.metadata.labels);
+      // The backend seemingly required both labels/annotation and metadata.labels/annotations or it doesn't save the labels and annotations
+      normanProject.setAnnotations(this.metadata.annotations);
+      normanProject.setLabels(this.metadata.labels);
 
-    return normanProject;
-  },
+      return normanProject;
+    })();
+  }
 
-  async normanEditProject() {
-    const normanProject = await this.$dispatch('rancher/find', {
-      type:       NORMAN.PROJECT,
-      id:         this.id.replace('/', ':'),
-    }, { root: true });
+  get normanEditProject() {
+    return (async() => {
+      const normanProject = await this.$dispatch('rancher/find', {
+        type:       NORMAN.PROJECT,
+        id:         this.id.replace('/', ':'),
+      }, { root: true });
 
-    normanProject.setAnnotations(this.metadata.annotations);
-    normanProject.setLabels(this.metadata.labels);
-    normanProject.description = this.spec.description;
-    normanProject.containerDefaultResourceLimit = this.spec.containerDefaultResourceLimit;
-    normanProject.namespaceDefaultResourceQuota = this.spec.namespaceDefaultResourceQuota;
-    normanProject.resourceQuota = this.spec.resourceQuota;
+      normanProject.setAnnotations(this.metadata.annotations);
+      normanProject.setLabels(this.metadata.labels);
+      normanProject.description = this.spec.description;
+      normanProject.containerDefaultResourceLimit = this.spec.containerDefaultResourceLimit;
+      normanProject.namespaceDefaultResourceQuota = this.spec.namespaceDefaultResourceQuota;
+      normanProject.resourceQuota = this.spec.resourceQuota;
 
-    return normanProject;
-  },
+      return normanProject;
+    })();
+  }
 
-  auditLog() {
-    return () => {
+  get auditLog() {
+    return (() => {
       this.currentRouter().push({
         name:   'c-cluster-product-auditlog',
         params: {
@@ -141,10 +143,11 @@ export default {
         },
         query: { [PROJECT_ID]: this.id.replace('/', ':') }
       });
-    };
-  },
-  resourceQuota() {
-    return () => {
+    })();
+  }
+
+  get resourceQuota() {
+    return (() => {
       this.currentRouter().push({
         name:   'c-cluster-product-resourcequota',
         params: {
@@ -153,10 +156,11 @@ export default {
         },
         query: { [PROJECT_ID]: this.id.replace('/', ':') }
       });
-    };
-  },
-  f5Ingresses() {
-    return () => {
+    })();
+  }
+
+  get f5Ingresses() {
+    return (() => {
       this.currentRouter().push({
         name:   'c-cluster-product-f5Ingresses',
         params: {
@@ -165,6 +169,6 @@ export default {
         },
         query: { [PROJECT_ID]: this.id.replace('/', ':') }
       });
-    };
+    })();
   }
-};
+}

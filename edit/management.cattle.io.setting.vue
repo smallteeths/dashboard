@@ -36,7 +36,7 @@ export default {
       }));
     }
 
-    const canReset = !!this.value.default;
+    const canReset = setting.canReset || !!this.value.default;
 
     this.value.value = this.value.value || this.value.default;
     const originValue = this.value.value;

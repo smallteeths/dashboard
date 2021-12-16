@@ -1,5 +1,4 @@
 <script>
-import { LOGGED_OUT } from '@/config/query-params';
 import { findBy } from '@/utils/array';
 import { NORMAN } from '@/config/types';
 
@@ -14,7 +13,6 @@ export default {
     const principal = findBy(principals, 'me', true);
 
     await store.dispatch('auth/logout', { provider: principal ? principal.provider : '' }, { root: true });
-    redirect(302, `/auth/login?${ LOGGED_OUT }`);
   }
 };
 </script>

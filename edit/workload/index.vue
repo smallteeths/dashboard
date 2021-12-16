@@ -2,7 +2,7 @@
 import omitBy from 'lodash/omitBy';
 import { cleanUp } from '@/utils/object';
 import {
-  CONFIG_MAP, SECRET, WORKLOAD_TYPES, NODE, SERVICE, PVC
+  CONFIG_MAP, SECRET, WORKLOAD_TYPES, NODE, SERVICE, SERVICE_ACCOUNT, PVC
   , MANAGEMENT
 } from '@/config/types';
 import Tab from '@/components/Tabbed/Tab';
@@ -12,6 +12,7 @@ import NameNsDescription from '@/components/form/NameNsDescription';
 import LabeledSelect from '@/components/form/LabeledSelect';
 import LabeledInputSugget from '@/components/form/LabeledInputSugget';
 import LabeledInput from '@/components/form/LabeledInput';
+import ServiceNameSelect from '@/components/form/ServiceNameSelect';
 import HealthCheck from '@/components/form/HealthCheck';
 import Security from '@/components/form/Security';
 import Upgrading from '@/edit/workload/Upgrading';
@@ -38,6 +39,7 @@ import RadioGroup from '@/components/form/RadioGroup';
 import { UI_MANAGED } from '@/config/labels-annotations';
 import { removeObject } from '@/utils/array';
 import { SETTING } from '@/config/settings';
+import { BEFORE_SAVE_HOOKS } from '@/mixins/child-hook';
 
 const GPU_KEY = 'nvidia.com/gpu';
 const GPU_SHARED_KEY = 'rancher.io/gpu-mem';
@@ -53,6 +55,20 @@ const MACVLAN_ANNOTATION_MAP = {
   subnet:   'macvlan.pandaria.cattle.io/subnet'
 };
 
+const TAB_WEIGHT_MAP = {
+  general:              99,
+  healthCheck:          98,
+  labels:               97,
+  networking:           96,
+  nodeScheduling:       95,
+  podScheduling:        94,
+  resources:            93,
+  upgrading:            92,
+  securityContext:      91,
+  storage:              90,
+  volumeClaimTemplates: 89,
+};
+
 export default {
   name:       'CruWorkload',
   components: {
@@ -61,6 +77,7 @@ export default {
     LabeledSelect,
     LabeledInputSugget,
     LabeledInput,
+    ServiceNameSelect,
     KeyValue,
     Tabbed,
     Tab,
@@ -104,8 +121,9 @@ export default {
       nodes:      this.$store.dispatch('cluster/findAll', { type: NODE }),
       services:   this.$store.dispatch('cluster/findAll', { type: SERVICE }),
       pvcs:       this.$store.dispatch('cluster/findAll', { type: PVC }),
+      sas:        this.$store.dispatch('cluster/findAll', { type: SERVICE_ACCOUNT }),
 
-      systemGpuManagementSchedulerName: this.$store.getters['management/byId'](MANAGEMENT.SETTING, SETTING.SYSTEM_GPU_MANAGEMENT_SCHEDULER_NAME)
+      systemGpuManagementSchedulerName: this.$store.getters['management/byId'](MANAGEMENT.SETTING, SETTING.SYSTEM_GPU_MANAGEMENT_SCHEDULER_NAME),
     };
 
     if ( this.$store.getters['cluster/schemaFor'](SECRET) ) {
@@ -124,6 +142,7 @@ export default {
     this.systemGpuManagementSchedulerName = hash.systemGpuManagementSchedulerName?.value ?? '';
     this.$store.dispatch('harbor/fetchHarborVersion');
     this.$store.dispatch('harbor/loadHarborServerUrl');
+    this.sas = hash.sas;
   },
 
   data() {
@@ -173,6 +192,7 @@ export default {
       allServices:       [],
       name:              this.value?.metadata?.name || null,
       pvcs:              [],
+      sas:               [],
       showTabs:          false,
       pullPolicyOptions: ['Always', 'IfNotPresent', 'Never'],
       spec,
@@ -186,10 +206,13 @@ export default {
       podFsGroup:        podTemplateSpec.securityContext?.fsGroup,
 
       systemGpuManagementSchedulerName: '',
+      savePvcHookName:                  'savePvcHook',
+      tabWeightMap:                     TAB_WEIGHT_MAP,
     };
   },
 
   computed: {
+
     isEdit() {
       return this.mode === _EDIT;
     },
@@ -428,6 +451,18 @@ export default {
       }
     },
 
+    namespacedServiceNames() {
+      const { namespace } = this.value?.metadata;
+
+      if (namespace) {
+        return this.sas.filter(
+          serviceName => serviceName.metadata.namespace === namespace
+        );
+      } else {
+        return this.sas;
+      }
+    },
+
     headlessServices() {
       return this.allServices.filter(service => service.spec.clusterIP === 'None' && service.metadata.namespace === this.value.metadata.namespace);
     },
@@ -477,7 +512,7 @@ export default {
       const out = [...this.allContainers];
 
       if (!this.isView) {
-        out.push({ name: 'Add Container', _add: true });
+        out.push({ name: 'Add Container', __add: true });
       }
 
       return out;
@@ -542,7 +577,7 @@ export default {
 
     container(neu) {
       const containers = this.isInitContainer ? this.podTemplateSpec.initContainers : this.podTemplateSpec.containers;
-      const existing = containers.filter(container => container._active)[0];
+      const existing = containers.filter(container => container.__active)[0];
 
       Object.assign(existing, neu);
     },
@@ -627,6 +662,7 @@ export default {
     saveWorkload() {
       if (this.type !== WORKLOAD_TYPES.JOB && this.type !== WORKLOAD_TYPES.CRON_JOB && this.mode === _CREATE) {
         this.spec.selector = { matchLabels: this.value.workloadSelector };
+        Object.assign(this.value.metadata.labels, this.value.workloadSelector);
       }
 
       let template;
@@ -757,17 +793,17 @@ export default {
     },
 
     selectContainer(container) {
-      if (container._add) {
+      if (container.__add) {
         this.addContainer();
 
         return;
       }
       (this.allContainers || []).forEach((container) => {
-        if (container._active) {
-          delete container._active;
+        if (container.__active) {
+          delete container.__active;
         }
       });
-      container._active = true;
+      container.__active = true;
       this.container = container;
       this.isInitContainer = !!container._init;
       this.containerChange++;
@@ -910,6 +946,27 @@ export default {
     onSearchImages(str) {
       this.$store.dispatch('harbor/loadImagesInHarbor', str);
     },
+
+    clearPvcFormState(hookName) {
+      // On the `closePvcForm` event, remove the
+      // before save hook to prevent the PVC from
+      // being created. Use the PVC's unique ID to distinguish
+      // between hooks for different PVCs.
+      if (this[BEFORE_SAVE_HOOKS]) {
+        this.unregisterBeforeSaveHook(hookName);
+      }
+    },
+
+    updateServiceAccount(neu) {
+      if (neu) {
+        this.podTemplateSpec.serviceAccount = neu;
+        this.podTemplateSpec.serviceAccountName = neu;
+      } else {
+        // Note - both have to be removed in order for removal to work
+        delete this.podTemplateSpec.serviceAccount;
+        delete this.podTemplateSpec.serviceAccountName;
+      }
+    }
   }
 };
 </script>
@@ -978,7 +1035,7 @@ export default {
         </div>
       </div>
       <Tabbed :key="containerChange" :side-tabs="true">
-        <Tab :label="t('workload.container.titles.general')" name="general">
+        <Tab :label="t('workload.container.titles.general')" name="general" :weight="tabWeightMap['general']">
           <div>
             <div :style="{'align-items':'center'}" class="row mb-20">
               <div class="col span-6">
@@ -1058,6 +1115,15 @@ export default {
             <h3>{{ t('workload.container.titles.command') }}</h3>
             <Command v-model="container" :secrets="namespacedSecrets" :config-maps="namespacedConfigMaps" :mode="mode" />
           </div>
+          <ServiceNameSelect
+            :value="podTemplateSpec.serviceAccountName"
+            :mode="mode"
+            :select-label="t('workload.serviceAccountName.label')"
+            :select-placeholder="t('workload.serviceAccountName.label')"
+            :options="namespacedServiceNames"
+            option-label="metadata.name"
+            @input="updateServiceAccount"
+          />
 
           <div class="spacer"></div>
           <div>
@@ -1065,7 +1131,7 @@ export default {
             <LifecycleHooks v-model="container.lifecycle" :mode="mode" />
           </div>
         </Tab>
-        <Tab :label="t('workload.storage.title')" name="storage">
+        <Tab :label="t('workload.storage.title')" name="storage" :weight="tabWeightMap['storage']">
           <Storage
             v-model="podTemplateSpec"
             :namespace="value.metadata.namespace"
@@ -1074,9 +1140,11 @@ export default {
             :secrets="namespacedSecrets"
             :config-maps="namespacedConfigMaps"
             :container="container"
+            :save-pvc-hook-name="savePvcHookName"
+            @removePvcForm="clearPvcFormState"
           />
         </Tab>
-        <Tab :label="t('workload.container.titles.resources')" name="resources">
+        <Tab :label="t('workload.container.titles.resources')" name="resources" :weight="tabWeightMap['resources']">
           <h3 class="mb-10">
             <t k="workload.scheduling.titles.limits" />
           </h3>
@@ -1109,20 +1177,20 @@ export default {
             </div>
           </template>
         </Tab>
-        <Tab :label="t('workload.container.titles.podScheduling')" name="podScheduling">
+        <Tab :label="t('workload.container.titles.podScheduling')" name="podScheduling" :weight="tabWeightMap['podScheduling']">
           <PodAffinity :mode="mode" :value="podTemplateSpec" />
         </Tab>
-        <Tab :label="t('workload.container.titles.nodeScheduling')" name="nodeScheduling">
+        <Tab :label="t('workload.container.titles.nodeScheduling')" name="nodeScheduling" :weight="tabWeightMap['nodeScheduling']">
           <NodeScheduling :mode="mode" :value="podTemplateSpec" :nodes="allNodes" />
         </Tab>
-        <Tab :label="t('workload.container.titles.upgrading')" name="upgrading">
+        <Tab :label="t('workload.container.titles.upgrading')" name="upgrading" :weight="tabWeightMap['upgrading']">
           <Job v-if="isJob || isCronJob" v-model="spec" :mode="mode" :type="type" />
           <Upgrading v-else v-model="spec" :mode="mode" :type="type" />
         </Tab>
-        <Tab v-if="!isInitContainer" :label="t('workload.container.titles.healthCheck')" name="healthCheck">
+        <Tab v-if="!isInitContainer" :label="t('workload.container.titles.healthCheck')" name="healthCheck" :weight="tabWeightMap['healthCheck']">
           <HealthCheck v-model="healthCheck" :mode="mode" />
         </Tab>
-        <Tab :label="t('workload.container.titles.securityContext')" name="securityContext">
+        <Tab :label="t('workload.container.titles.securityContext')" name="securityContext" :weight="tabWeightMap['securityContext']">
           <Security v-model="container.securityContext" :mode="mode" />
           <div class="spacer"></div>
           <div>
@@ -1134,13 +1202,13 @@ export default {
             </div>
           </div>
         </Tab>
-        <Tab :label="t('workload.container.titles.networking')" name="networking">
+        <Tab :label="t('workload.container.titles.networking')" name="networking" :weight="tabWeightMap['networking']">
           <Networking v-model="podTemplateSpec" :mode="mode" />
         </Tab>
-        <Tab v-if="isStatefulSet" :label="t('workload.container.titles.volumeClaimTemplates')" name="volumeClaimTemplates">
+        <Tab v-if="isStatefulSet" :label="t('workload.container.titles.volumeClaimTemplates')" name="volumeClaimTemplates" :weight="tabWeightMap['volumeClaimTemplates']">
           <VolumeClaimTemplate v-model="spec" :mode="mode" />
         </Tab>
-        <Tab name="labels" label-key="generic.labelsAndAnnotations">
+        <Tab name="labels" label-key="generic.labelsAndAnnotations" :weight="tabWeightMap['labels']">
           <Labels v-model="value" :mode="mode" />
           <div class="spacer"></div>
 
