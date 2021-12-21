@@ -853,7 +853,11 @@ export default class Resource {
     return this;
   }
 
-  async remove(opt = {}) {
+  remove() {
+    return this._remove(...arguments);
+  }
+
+  async _remove(opt = {}) {
     if ( !opt.url ) {
       opt.url = this.linkFor('self');
     }

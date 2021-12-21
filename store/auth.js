@@ -194,7 +194,7 @@ export const actions = {
 
     this.$cookies.set(KEY, strung, {
       path:     '/',
-      sameSite: false,
+      sameSite: true,
       secure:   true,
     });
 
