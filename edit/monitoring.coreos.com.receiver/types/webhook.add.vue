@@ -32,6 +32,10 @@ export default {
         {
           label: this.t('monitoringReceiver.webhook.add.alibabaCloudSms'),
           value: 'alibaba-cloud-sms'
+        },
+        {
+          label: this.t('monitoringReceiver.pandariaWebhook.add.serviceNow'),
+          value: 'service-now'
         }
       ],
       webhookType: RECEIVERS_TYPES.find(type => type.name === 'webhook'),
@@ -42,6 +46,7 @@ export default {
     add({ value }) {
       switch (value) {
       case 'generic':
+      case 'service-now':
         return this.model.push({});
       case 'ms-teams':
         return this.model.push({ url: MS_TEAMS_URL });

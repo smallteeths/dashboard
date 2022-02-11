@@ -2741,6 +2741,28 @@ monitoringReceiver:
       generic: Generic
       msTeams: MS Teams
       alibabaCloudSms: SMS
+  pandariaWebhook:
+    label: Pandaria Webhook
+    add:
+      dingTalk: Ding Talk
+      msTeams: MS Teams
+      aliyunSMS: Aliyun SMS
+      serviceNow: Service Now
+    aliyunSMS:
+      accessKeyIdLabel: Access Key
+      accessKeyIdPlaceholder: Aliyun Access Key
+      accessKeySecretLabel: Access Key Secret
+      accessKeySecretPlaceholder: Aliyun Access Key Secret
+      templateCodeLabel: Template Code
+      templateCodePlaceholder: e.g. mytemplate
+      signatureNameLabel: Signature Name
+      signatureNamePlaceholder: e.g. mysign
+      phoneNumberLabel: Phone Number
+      phoneNumberPlaceholder: e.g. 112314
+      phoenNumberButton: Add Phone Number
+    dingTalk:
+      secretLabel: Secret
+      secretPlaceholder: Only for webhook with sign enabled
   auth:
     label: Auth
     authType: Auth Type

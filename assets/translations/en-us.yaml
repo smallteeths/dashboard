@@ -2744,6 +2744,13 @@ monitoringReceiver:
       generic: Generic
       msTeams: MS Teams
       alibabaCloudSms: SMS
+  pandariaWebhook:
+    label: Pandaria Webhook
+    add:
+      dingTalk: Ding Talk
+      msTeams: MS Teams
+      aliyunSMS: Aliyun SMS
+      serviceNow: Service Now
   auth:
     label: Auth
     authType: Auth Type

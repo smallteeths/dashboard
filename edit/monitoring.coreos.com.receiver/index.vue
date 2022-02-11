@@ -1,4 +1,5 @@
 <script>
+import isEmpty from 'lodash/isEmpty';
 import { MONITORING } from '@/config/types';
 import ArrayListGrouped from '@/components/form/ArrayListGrouped';
 import Loading from '@/components/Loading';
@@ -9,9 +10,13 @@ import Tabbed from '@/components/Tabbed';
 import Tab from '@/components/Tabbed/Tab';
 import YamlEditor, { EDITOR_MODES } from '@/components/YamlEditor';
 import CreateEditView from '@/mixins/create-edit-view';
+import { loadAlertingConfig } from '@/utils/alertmanagerconfig';
 import jsyaml from 'js-yaml';
-import { RECEIVERS_TYPES } from '@/models/monitoring.coreos.com.receiver';
+import {
+  RECEIVERS_TYPES, EXTRAWEBHOOKTYPE, PANDARIAWEBHOOKKEY, WEBHOOKKEY, PANDARIAWEBHOOKURL, ALERTINGDRIVERNEEDUPDATE
+} from '@/models/monitoring.coreos.com.receiver';
 import ButtonDropdown from '@/components/ButtonDropdown';
+import { allHash } from '@/utils/promise';
 
 export default {
   components: {
@@ -29,7 +34,50 @@ export default {
   mixins: [CreateEditView],
 
   async fetch() {
-    await this.$store.dispatch('cluster/findAll', { type: MONITORING.SPOOFED.ROUTE });
+    const { $store } = this;
+
+    const hash = await allHash({
+      rotes:           $store.dispatch('cluster/findAll', { type: MONITORING.SPOOFED.ROUTE }),
+      alertingDrivers: loadAlertingConfig($store.dispatch)
+    });
+
+    if (!isEmpty(hash.alertingDrivers?.config)) {
+      this.alertingDrivers = hash.alertingDrivers?.config;
+    }
+
+    // Pandaria Convert to pandaria webhook config
+    if (this.alertingDrivers) {
+      const providers = this.alertingDrivers.providers;
+      const receivers = this.alertingDrivers.receivers;
+      const pandariaWebhookConfigs = this.value.spec[PANDARIAWEBHOOKKEY];
+
+      if (pandariaWebhookConfigs?.length > 0) {
+        pandariaWebhookConfigs.forEach((item) => {
+          if (item.url.startsWith(PANDARIAWEBHOOKURL)) {
+            const key = item.url.replace(PANDARIAWEBHOOKURL, '');
+            const providerName = receivers[key]?.provider;
+
+            if (providerName) {
+              const receiver = providers[providerName];
+
+              // Pandaria alerting providers convert to webhook config
+              item.http_config = {};
+              Object.assign(item.http_config, receiver);
+              item.type = receiver.type;
+              item.webhook_url = receiver.webhook_url;
+              delete item.http_config?.type;
+              delete item.http_config?.webhook_url;
+
+              // Pandaria AliCloud SMS alerts have an array of phone numbers that are special.
+              // It needs to be retrieved from alerting-drivers secret receivers.to
+              if (receivers[key]?.to?.length > 0) {
+                item.http_config.phone = receivers[key].to;
+              }
+            }
+          }
+        });
+      }
+    }
   },
 
   data() {
@@ -46,6 +94,22 @@ export default {
     Object.keys(this.value.spec).forEach((key) => {
       if (!expectedFields.includes(key)) {
         suffix[key] = this.value.spec[key];
+      }
+    });
+
+    // Pandaria extra webhook
+    Object.keys(this.value.spec).forEach((key) => {
+      if (key === WEBHOOKKEY && this.value.spec[key]?.length > 0) {
+        const newData = [];
+
+        this.value.spec[key].forEach((item) => {
+          if (item?.url?.startsWith(PANDARIAWEBHOOKURL)) {
+            suffix[PANDARIAWEBHOOKKEY].push(item);
+          } else {
+            newData.push(item);
+          }
+        });
+        this.value.spec[key] = newData;
       }
     });
 
