@@ -1980,6 +1980,8 @@ monitoringReceiver:
       generic: 通用
       #msTeams: Microsoft Teams
       alibabaCloudSms: 阿里巴巴云短信
+  pandariaWebhook:
+    label: Pandaria Webhook
   auth:
     label: 认证
     authType: 认证类型
