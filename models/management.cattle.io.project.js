@@ -71,8 +71,8 @@ export default class Project extends HybridModel {
 
   async save() {
     const norman = await this.norman;
-
-    const newValue = await norman.save();
+    const opt = this.id ? { params: { _replace: 'true' } } : {};
+    const newValue = await norman.save(opt);
 
     newValue.doAction('setpodsecuritypolicytemplate', { podSecurityPolicyTemplateId: this.spec.podSecurityPolicyTemplateId || null });
 
