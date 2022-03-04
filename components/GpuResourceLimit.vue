@@ -86,12 +86,17 @@ export default {
     const {
       limitsGpuShared, limitsGpu, limitsVgpu, requestsGpuShared, requestsGpu
     } = this.value;
-    let gpuReservationMode = null;
+
+    let gpuReservationMode = 'set';
+    let gpuShared = null;
+    let gpuSet = null;
 
     if (limitsGpuShared && requestsGpuShared) {
       gpuReservationMode = 'shared';
+      gpuShared = requestsGpuShared;
     } else if (limitsGpu && requestsGpu) {
       gpuReservationMode = 'set';
+      gpuSet = requestsGpu;
     }
 
     return {
@@ -106,9 +111,9 @@ export default {
           value: 'set',
         }
       ],
-      gpuShared: null,
-      gpuSet:    null,
-      vGpus:     limitsVgpu,
+      gpuShared,
+      gpuSet,
+      vGpus: limitsVgpu,
     };
   },
   computed: {
