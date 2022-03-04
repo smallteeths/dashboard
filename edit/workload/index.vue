@@ -354,11 +354,13 @@ export default {
     flatGpuResources: {
       get() {
         const { limits = {}, requests = {} } = this.container.resources || {};
-        const { GPU_SHARED_KEY: limitsGpuShared, GPU_KEY: limitsGpu, VGPU_KEY: limitsVgpu } = limits;
-        const { GPU_SHARED_KEY: requestsGpuShared, GPU_KEY: requestsGpu } = requests;
 
         return {
-          limitsGpuShared, limitsGpu, limitsVgpu, requestsGpuShared, requestsGpu
+          limitsGpuShared:   limits[GPU_SHARED_KEY],
+          limitsGpu:         limits[GPU_KEY],
+          limitsVgpu:        limits[VGPU_KEY],
+          requestsGpuShared: requests[GPU_SHARED_KEY],
+          requestsGpu:       requests[GPU_KEY],
         };
       },
       set(neu) {
