@@ -1713,6 +1713,10 @@ containerResourceLimit:
   memPlaceholder: e.g. 128
   requestsCpu: CPU Reservation
   requestsMemory: Memory Reservation
+  minCpu: Min CPU
+  maxCpu: Max CPU
+  minMemory: Min Memory
+  maxMemory: Max Memory
 gpuReservation:
   label: NVIDIA GPU Reservation
   memUnit: GiB
