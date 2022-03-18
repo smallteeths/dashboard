@@ -23,6 +23,23 @@ const INTERCEPTS = {
       resource: CAPI.RANCHER_CLUSTER,
     }
   },
+  // Pandaria
+  'global-admin.clusters.index.list': {
+    name:   'c-cluster-product-resource',
+    params: {
+      cluster:  '',
+      product:  MANAGER,
+      resource: CAPI.RANCHER_CLUSTER,
+    }
+  },
+  'global-admin.clusters.index.metrics': {
+    name:   'c-cluster-product-resource',
+    params: {
+      cluster:  '',
+      product:  MANAGER,
+      resource: CAPI.RANCHER_CLUSTER,
+    }
+  },
   'authenticated.cluster.index': {
     name:   'c-cluster-product-resource',
     params: {
@@ -432,10 +449,6 @@ export default {
         this.iframeEl.remove();
         this.initFrame();
         this.$store.dispatch('auth/logout');
-      } else if ( msg.action === 'need-redirect-to-cluster-index') {
-        this.iframeEl.remove();
-        this.initFrame();
-        this.$router.replace(this.fillRoute(INTERCEPTS['authenticated.cluster.index']));
       }
     },
 
