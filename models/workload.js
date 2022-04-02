@@ -1,6 +1,6 @@
 import { findBy, insertAt } from '@/utils/array';
-import { TARGET_WORKLOADS, TIMESTAMP, UI_MANAGED } from '@/config/labels-annotations';
-import { POD, WORKLOAD_TYPES, SERVICE } from '@/config/types';
+import { TARGET_WORKLOADS, TIMESTAMP, UI_MANAGED, HCI as HCI_LABELS_ANNOTATIONS } from '@/config/labels-annotations';
+import { WORKLOAD_TYPES, SERVICE, POD } from '@/config/types';
 import { clone, get, set } from '@/utils/object';
 import day from 'dayjs';
 import SteveModel from '@/plugins/steve/steve-class';
@@ -18,7 +18,7 @@ export default class Workload extends SteveModel {
 
     insertAt(out, index, {
       action:  'addSidecar',
-      label:   'Add Sidecar',
+      label:   this.t('action.addSidecar'),
       icon:    'icon icon-plus',
       enabled: !!this.links.update,
     });
@@ -26,14 +26,14 @@ export default class Workload extends SteveModel {
     if (type !== WORKLOAD_TYPES.JOB && type !== WORKLOAD_TYPES.CRON_JOB) {
       insertAt(out, 0, {
         action:  'toggleRollbackModal',
-        label:   'Rollback',
+        label:   this.t('action.rollback'),
         icon:    'icon icon-history',
         enabled: !!this.links.update,
       });
 
       insertAt(out, 0, {
         action:     'redeploy',
-        label:      'Redeploy',
+        label:      this.t('action.redeploy'),
         icon:       'icon icon-refresh',
         enabled:    !!this.links.update,
         bulkable:   true,
@@ -60,7 +60,7 @@ export default class Workload extends SteveModel {
       action:     'openShell',
       enabled:    !!this.links.view,
       icon:       'icon icon-fw icon-chevron-right',
-      label:      'Execute Shell',
+      label:      this.t('action.openShell'),
       total:      1,
     });
 
@@ -116,7 +116,7 @@ export default class Workload extends SteveModel {
     });
   }
 
-  async rollBackWorkload( workload, rollbackRequestData ) {
+  async rollBackWorkload( cluster, workload, rollbackRequestData ) {
     const rollbackRequestBody = JSON.stringify(rollbackRequestData);
 
     if ( Array.isArray( workload ) ) {
@@ -125,7 +125,8 @@ export default class Workload extends SteveModel {
     const namespace = workload.metadata.namespace;
     const workloadName = workload.metadata.name;
 
-    await this.patch(rollbackRequestBody, { url: `/apis/apps/v1/namespaces/${ namespace }/deployments/${ workloadName }` });
+    // Ensure we go out to the correct cluster
+    await this.patch(rollbackRequestBody, { url: `/k8s/clusters/${ cluster.id }/apis/apps/v1/namespaces/${ namespace }/deployments/${ workloadName }` });
   }
 
   pause() {
@@ -410,7 +411,9 @@ export default class Workload extends SteveModel {
     this.containers.forEach(container => ports.push(...(container.ports || [])));
     (this.initContainers || []).forEach(container => ports.push(...(container.ports || [])));
 
-    const services = await this.getServicesOwned();
+    // Only get services owned if we can access the service resource
+    const canAccessServices = this.$getters['schemaFor'](SERVICE);
+    const services = canAccessServices ? await this.getServicesOwned() : [];
     const clusterIPServicePorts = [];
     const loadBalancerServicePorts = [];
     const nodePortServicePorts = [];
@@ -617,6 +620,14 @@ export default class Workload extends SteveModel {
       if (loadBalancer.id) {
         loadBalancerProxy = loadBalancer;
       } else {
+        loadBalancer = clone(loadBalancer);
+
+        const portsWithIpam = ports.filter(p => p._ipam) || [];
+
+        if (portsWithIpam.length > 0) {
+          loadBalancer.metadata.annotations[HCI_LABELS_ANNOTATIONS.CLOUD_PROVIDER_IPAM] = portsWithIpam[0]._ipam;
+        }
+
         loadBalancerProxy = await this.$dispatch(`cluster/create`, loadBalancer, { root: true });
       }
       toSave.push(loadBalancerProxy);

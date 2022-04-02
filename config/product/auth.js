@@ -40,7 +40,7 @@ export function init(store) {
     showMenuFun(state, getters, rootState, rootGetters) {
       return !rootGetters['auth/isReadOnlyAdmin'];
     },
-    label:       'Auth Provider',
+    labelKey:    'auth.config.label',
     icon:        'lock',
     namespaced:  false,
     name:        'config',

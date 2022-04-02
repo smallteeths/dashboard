@@ -34,7 +34,7 @@ export function init(store) {
 
   virtualType({
     name:        'cloud-credentials',
-    label:       'Cloud Credentials',
+    labelKey:    'manager.cloudCredentials.label',
     group:      'Root',
     namespaced:  false,
     icon:       'globe',
@@ -74,7 +74,7 @@ export function init(store) {
   });
 
   virtualType({
-    label:      'Drivers',
+    labelKey:   'manager.drivers.label',
     name:       'drivers',
     group:      'Root',
     namespaced: false,
@@ -84,7 +84,7 @@ export function init(store) {
   });
 
   virtualType({
-    label:      'RKE Templates',
+    labelKey:   'manager.rkeTemplates.label',
     name:       'rke-templates',
     group:      'Root',
     namespaced: false,
@@ -94,7 +94,7 @@ export function init(store) {
   });
 
   virtualType({
-    label:      'Node Templates',
+    labelKey:   'manager.nodeTemplates.label',
     name:       'rke-node-templates',
     group:      'Root',
     namespaced: false,
@@ -106,7 +106,7 @@ export function init(store) {
   basicType([
     'rke-templates',
     'rke-node-templates'
-  ], 'RKE1 Configuration');
+  ], 'RKE1Configuration');
 
   // image repo start
   virtualType({
@@ -229,9 +229,9 @@ export function init(store) {
     CAPI.MACHINE_SET,
     CAPI.MACHINE,
     CATALOG.CLUSTER_REPO,
-  ], 'Advanced');
+  ], 'advanced');
 
-  weightGroup('Advanced', -1, true);
+  weightGroup('advanced', -1, true);
 
   const MACHINE_SUMMARY = {
     name:      'summary',

@@ -3,7 +3,7 @@ import omitBy from 'lodash/omitBy';
 import { cleanUp } from '@/utils/object';
 import {
   CONFIG_MAP, SECRET, WORKLOAD_TYPES, NODE, SERVICE, SERVICE_ACCOUNT, PVC
-  , MANAGEMENT, POD
+  , MANAGEMENT, POD, CAPI
 } from '@/config/types';
 import Tab from '@/components/Tabbed/Tab';
 import CreateEditView from '@/mixins/create-edit-view';
@@ -118,23 +118,31 @@ export default {
 
   async fetch() {
     const requests = {
-      configMaps: this.$store.dispatch('cluster/findAll', { type: CONFIG_MAP }),
-      nodes:      this.$store.dispatch('cluster/findAll', { type: NODE }),
-      services:   this.$store.dispatch('cluster/findAll', { type: SERVICE }),
-      pvcs:       this.$store.dispatch('cluster/findAll', { type: PVC }),
-      sas:        this.$store.dispatch('cluster/findAll', { type: SERVICE_ACCOUNT }),
-      pods:       this.$store.dispatch('cluster/findAll', { type: POD }),
-
+      rancherClusters:                  this.$store.dispatch('management/findAll', { type: CAPI.RANCHER_CLUSTER }),
       systemGpuManagementSchedulerName: this.$store.getters['management/byId'](MANAGEMENT.SETTING, SETTING.SYSTEM_GPU_MANAGEMENT_SCHEDULER_NAME),
     };
+    const needed = {
+      configMaps: CONFIG_MAP,
+      nodes:      NODE,
+      services:   SERVICE,
+      pvcs:       PVC,
+      sas:        SERVICE_ACCOUNT,
+      secrets:    SECRET,
+      pods:       POD,
+    };
 
-    if ( this.$store.getters['cluster/schemaFor'](SECRET) ) {
-      requests.secrets = this.$store.dispatch('cluster/findAll', { type: SECRET });
-    }
+    // Only fetch types if the user can see them
+    Object.keys(needed).forEach((key) => {
+      const type = needed[key];
+
+      if (this.$store.getters['cluster/schemaFor'](type)) {
+        requests[key] = this.$store.dispatch('cluster/findAll', { type });
+      }
+    });
 
     const hash = await allHash(requests);
 
-    this.servicesOwned = await this.value.getServicesOwned();
+    this.servicesOwned = hash.services ? await this.value.getServicesOwned() : [];
 
     this.allSecrets = hash.secrets || [];
     this.allConfigMaps = hash.configMaps;
@@ -320,30 +328,26 @@ export default {
     flatResources: {
       get() {
         const { limits = {}, requests = {} } = this.container.resources || {};
-        const { cpu:limitsCpu, memory:limitsMemory } = limits;
-        const { cpu:requestsCpu, memory:requestsMemory } = requests;
+        const { cpu: limitsCpu, memory: limitsMemory, [GPU_KEY]: limitsGpu } = limits;
+        const { cpu: requestsCpu, memory: requestsMemory } = requests;
 
         return {
-          limitsCpu, limitsMemory, requestsCpu, requestsMemory
+          limitsCpu, limitsMemory, requestsCpu, requestsMemory, limitsGpu
         };
       },
       set(neu) {
         const {
-          limitsCpu, limitsMemory, requestsCpu, requestsMemory
+          limitsCpu, limitsMemory, requestsCpu, requestsMemory, limitsGpu
         } = neu;
-
-        const { limits = {}, requests = {} } = this.container.resources || {};
-
         const out = {
           requests: {
-            ...requests,
-            cpu:              requestsCpu,
-            memory:           requestsMemory,
+            cpu:    requestsCpu,
+            memory: requestsMemory
           },
           limits: {
-            ...limits,
-            cpu:              limitsCpu,
-            memory:           limitsMemory,
+            cpu:       limitsCpu,
+            memory:    limitsMemory,
+            [GPU_KEY]: limitsGpu
           }
         };
 
@@ -673,6 +677,11 @@ export default {
     },
 
     async saveService() {
+      // If we can't access services then just return - the UI should only allow ports without service creation
+      if (!this.$store.getters['cluster/schemaFor'](SERVICE)) {
+        return;
+      }
+
       const { toSave = [], toRemove = [] } = await this.value.servicesFromContainerPorts(this.mode, this.portsForServices) || {};
 
       this.servicesOwned = toSave;
@@ -713,6 +722,34 @@ export default {
             template.metadata.labels = {};
           }
           Object.assign(template.metadata.labels, this.value.workloadSelector);
+        }
+      }
+
+      if (template.spec.containers && template.spec.containers[0]) {
+        const containerResources = template.spec.containers[0].resources;
+        const nvidiaGpuLimit = template.spec.containers[0].resources?.limits?.[GPU_KEY];
+
+        // Though not required, requests are also set to mirror the ember ui
+        if (nvidiaGpuLimit > 0) {
+          containerResources.requests = containerResources.requests || {};
+          containerResources.requests[GPU_KEY] = nvidiaGpuLimit;
+        }
+
+        if (!this.nvidiaIsValid(nvidiaGpuLimit) ) {
+          try {
+            delete containerResources.requests[GPU_KEY];
+            delete containerResources.limits[GPU_KEY];
+
+            if (Object.keys(containerResources.limits).length === 0) {
+              delete containerResources.limits;
+            }
+            if (Object.keys(containerResources.requests).length === 0) {
+              delete containerResources.requests;
+            }
+            if (Object.keys(containerResources).length === 0) {
+              delete template.spec.containers[0].resources;
+            }
+          } catch {}
         }
       }
 
@@ -998,6 +1035,21 @@ export default {
         delete this.podTemplateSpec.serviceAccount;
         delete this.podTemplateSpec.serviceAccountName;
       }
+    },
+    nvidiaIsValid(nvidiaGpuLimit) {
+      if (!Number.isInteger(nvidiaGpuLimit)) {
+        return false;
+      }
+      if (nvidiaGpuLimit === undefined) {
+        return false;
+      }
+      if (nvidiaGpuLimit < 1) {
+        return false;
+      } else {
+        return true;
+      }
+
+      //
     }
   }
 };
@@ -1051,6 +1103,7 @@ export default {
                 :mode="mode"
                 :label="t('workload.serviceName')"
                 :options="headlessServices"
+                required
               />
             </template>
           </NameNsDescription>
@@ -1088,8 +1141,8 @@ export default {
             <div class="row mb-20">
               <div class="col span-6">
                 <LabeledInputSugget
-                  v-model="container.image"
-                  placeholder="e.g. nginx:latest"
+                  v-model.trim="container.image"
+                  :placeholder="t('generic.placeholder', {text: 'nginx:latest'}, true)"
                   required
                   :mode="mode"
                   :text-label="t('workload.container.image')"

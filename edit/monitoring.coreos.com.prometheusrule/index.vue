@@ -94,9 +94,11 @@ export default {
 
       return true;
     },
+
     updateGroupInterval(group, interval) {
       this.$set(group, 'interval', [null, undefined].includes(interval) ? undefined : `${ interval }s`);
     },
+
     getGroupInterval(interval) {
       if (![null, undefined].includes(interval)) {
         return Math.floor(toMilliseconds(interval) / 1000);
