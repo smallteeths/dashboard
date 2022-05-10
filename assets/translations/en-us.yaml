@@ -163,15 +163,9 @@ nav:
   failWhale:
     reload: Reload
     separator: or
-  imageRepo:
-    config: Configuration
-    #registries: Registries
-    projects: Image Management
-    logs: Logs
-  auditLog: Audit Log
 
 product:
-  apps: Apps & Marketplace
+  apps: Apps
   auth: Users & Authentication
   backup: Rancher Backups
   cis: CIS Benchmark
@@ -282,6 +276,10 @@ accountAndKeys:
 
 addClusterMemberDialog:
   title: Add Cluster Member
+
+addonConfigConfirmation:
+  title: Add-On Config Reset
+  body: Changing the Kubernetes Version can reset the Add-On Config values. You should check that the values are as expected before continuing.
 
 addProjectMemberDialog:
   title: Add Project Member
@@ -463,34 +461,6 @@ authConfig:
     key:
       label: Private Key
       placeholder: Paste in the private key, typically starting with -----BEGIN RSA PRIVATE KEY-----
-  cas:
-    cas: Configure Rancher to use CAS to authentication
-    enableTLS: Use a secure connection
-    hostUrl:
-      label: CAS Host
-      placeholder: e.g. cas-server.com
-    port:
-      label: Port
-      placeholder: e.g. 6379
-    callbackURL:
-      label: Service Callback URL
-      placeholder: Your CAS Service Callback URL
-    connectionTimeout:
-      label: Server Connection Timeout
-      placeholder: e.g. 5000
-    loginEndpoint:
-      label: Login Endpoint
-      placeholder: e.g. /cas/login
-    logoutEndpoint:
-      label: Logout Endpoint
-      placeholder: e.g. /cas/logout
-    usernameField:
-      label: User Name Field
-      placeholder: e.g. username
-    passwordField:
-      label: Password Field
-      placeholder: e.g. password
-
   stateBanner:
     disabled: 'The {provider} authentication provider is currently disabled.'
     enabled: 'The {provider} authentication provider is currently enabled.'
@@ -1201,11 +1171,6 @@ cluster:
     commandInstructionsInsecure: 'If you get a &quot;certificate signed by unknown authority&quot; error, your {vendor} installation has a self-signed or untrusted SSL certificate.  Run the command below instead to bypass the certificate verification:'
     clusterRoleBindingInstructions: 'If you get permission errors creating some of the resources, your user may not have the <code>cluster-admin</code> role.  Use this command to apply it:'
     clusterRoleBindingCommand: 'kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user <your username from your kubeconfig>'
-    privateRegistry:
-      label: Private Registry
-      placeholder: e.g. index.docker.io
-      title: Private Registry
-      description: "Configure a default private registry for this cluster. When enabled, all images required for cluster provisioning and system add-ons startup will be pulled from this registry(Notice: This config will override system-default-registry in global config)."
   importAction: Import Existing
   kubernetesVersion:
     label: Kubernetes Version
@@ -1437,6 +1402,7 @@ cluster:
       httpTokens: Use tokens for metadata
       tagTitle: EC2 Tags
   addOns:
+    dependencyBanner: Add-On Configurations can vary between Kubernetes versions. Changing the Kubernetes version may reset the values below.
     additionalManifest:
       title: Additional Manifest
       tooltip: 'Additional Kubernetes Manifest YAML to be applied to the cluster on startup.'
@@ -1618,13 +1584,14 @@ cluster:
       label: Worker Nodes
     controlPlaneConcurrency:
       label: Control Plane Concurrency
-      toolTip: "This can be either a fixed number of nodes (e.g. 1) at a time of a percentage (e.g. 10%)"
+      toolTip: "This can be either a fixed number of nodes (e.g. 1) at a time or a percentage (e.g. 10%)"
     workerConcurrency:
       label: Worker Concurrency
-      toolTip: "This can be either a fixed number of nodes (e.g. 1) at a time of a percentage (e.g. 10%)"
+      toolTip: "This can be either a fixed number of nodes (e.g. 1) at a time or a percentage (e.g. 10%)"
     drain:
       label: Drain Nodes
       toolTip: Draining preemptively removes the pods on each node so there are no running workloads on the nodes being upgraded.  Upgrading without draining is faster and causes less shuffling around, but pods may still be restarted depending on the upgrade being performed.
+    deleteEmptyDir: "By default, pods using emptyDir volumes will be deleted on upgrade. Operations reliant on emptyDir volumes persisting through the pod's lifecycle may be impacted."
     address:
       tooltip: Cluster networking values cannot be changed after the cluster is created.
       header: Addressing
@@ -1679,6 +1646,8 @@ cluster:
         =1 { A snapshot has been requested for 1 cluster }
         other {A snapshot has been requested for {count} clusters}
       }
+    groupLabel: Location
+    failed: "Snapshot from {time} failed"
   tabs:
     ace: Authorized Endpoint
     addons: Add-On Config
@@ -1704,6 +1673,8 @@ cluster:
   toggle:
     v1: RKE1
     v2: RKE2/K3s
+  validation:
+    iamInstanceProfileName: If the Amazon cloud provider is selected the "IAM Instance Profile Name" must be defined for each Machine Pool
 
 clusterIndexPage:
   hardwareResourceGauge:
@@ -1766,6 +1737,7 @@ containerResourceLimit:
   memPlaceholder: e.g. 128
   requestsCpu: CPU Reservation
   requestsMemory: Memory Reservation
+
 
 cruResource:
   backToForm: Back to Form
@@ -2053,7 +2025,7 @@ hpa:
       targetName: Target Name
       value: Value
     source: Source
-  objectReferance:
+  objectReference:
     api:
       label: Referent API Version
       placeholder: e.g. apps/v1beta1
@@ -2358,6 +2330,7 @@ landing:
   gettingStarted:
     title: Getting Started
     body: Take a look at the the quick getting started guide. For Cluster Manager users, learn more about where you can find your favorite features in the Dashboard UI.
+  support: Support
   community:
     title: Community Support
     docs: Docs
@@ -2366,8 +2339,9 @@ landing:
     title: Commercial Support
     body: Learn about commercial support
   landingPrefs:
-    title: What do you want to see when you log in?
-    body: "You can change where you land when you login:"
+    title: You can change what you see when you login via preferences
+    userPrefs: Preferences
+    body: "You can change where you land when you login"
     options:
       homePage: Take me to the home page
       lastVisited: Take me to the area I last visited
@@ -2757,7 +2731,7 @@ monitoring:
         label: Prometheus Graph
       prometheusRules:
         description: Configured Rules
-        label: Prometheus Rules
+        label: PrometheusRules
       prometheusTargets:
         description: Configured Targets
         label: Prometheus Targets
@@ -2797,6 +2771,7 @@ monitoring:
       Warning: Prometheus Operators are currently deployed. Deploying multiple Prometheus Operators onto one cluster is not currently supported. Please remove all other Prometheus Operator deployments from this cluster before trying to install this chart.
       If you are migrating from an older version of {vendor} with Monitoring enabled, please disable Monitoring on this cluster completely before attempting to install this chart.
   receiver:
+    addReceiver: Add Receiver
     fields:
       name: Name
     tls:
@@ -2811,16 +2786,57 @@ monitoring:
         label: Key File Path
         placeholder: e.g. ./key-file.pfx
       secretsBanner: The file paths below must be referenced in <pre class="inline-block m-0 p-0 vertical-middle">alertmanager.alertmanagerSpec.secrets</pre> when deploying the Monitoring chart. For more information see our <a href="{docsBase}/monitoring-alerting/" target="_blank" rel="noopener noreferrer nofollow">documentation</a>.
-
+  projectMonitoring:
+    detail:
+      error: "Unable to fetch Dashboard values with status: "
+    list:
+      banner: Project Monitoring Configuration is stored in ProjectHelmChart resources
+      empty:
+        message: Project Monitoring has not been configured for any projects
+        canCreate: Get started by clicking Create to add monitoring to a project
+        cannotCreate: Contact the admin to add project monitoring
   route:
+    label: Route
     fields:
       groupBy: Group By
       groupInterval: Group Interval
       groupWait: Group Wait
       receiver: Receiver
       repeatInterval: Repeat Interval
-  routesAndReceivers: Routes and Receivers
+  routesAndReceivers: Routes and Receivers (Deprecated)
   monitors: Monitors
+  projectMonitors: Project Monitoring
+  alertmanagerConfig:
+    description: Routes and receivers for project alerting and cluster alerting are configured within AlertmanagerConfig resources.
+    empty: Alerts have not been configured for any accessible namespaces.
+    getStarted: Get started by clicking Create to configure an alert.
+    receiverTooltip: This route will direct alerts to the selected receiver, which must be defined in the same AlertmanagerConfig.
+    deprecationWarning: The Route and Receiver resources are deprecated. Going forward, routes and receivers should not be managed as separate Kubernetes resources on this page. They should be configured as YAML fields in an AlertmanagerConfig resource.
+    routeInfo: This form supports configuring one route that directs traffic to a receiver. Alerts can be directed to more receiver(s) by configuring child routes in YAML.
+    receiverFormNames:
+      create: Create Receiver in AlertmanagerConfig
+      edit: Edit Receiver in AlertmanagerConfig
+      editYaml: Edit AlertmanagerConfig
+      detail: Receiver in AlertmanagerConfig
+    disabledReceiverButton: The receiver form is available after the AlertmanagerConfig is created
+    email:
+      username: Auth Username
+      password: Secret with Auth Password
+    slack:
+      apiUrl: Secret with Slack Webhook URL
+    pagerDuty:
+      routingKey: Secret with Routing Key
+      serviceKey: Secret with Service Key
+    opsgenie:
+      apiKey: Secret with API Key
+    webhook:
+      url: URL
+      urlSecret: URL Secret
+      urlSecretTooltip: 'urlSecret takes precedence over url. One of urlSecret and url should be defined.'
+    auth:
+      bearerTokenSecret: Bearer Token Secret
+      basicAuthUsername: Secret with Basic Auth Username
+      basicAuthPassword: Secret with Basic Auth Password
   installSteps:
     uninstallV1:
       stepTitle: Uninstall V1
@@ -2835,6 +2851,7 @@ monitoring:
     general: General
     grafana: Grafana
     prometheus: Prometheus
+    projectMetrics: Project Metrics
   v1Warning: 'Monitoring is currently deployed from Cluster Manager. If you are migrating from an older version of {vendor} with monitoring enabled, please disable monitoring in Cluster Manager before attempting to install the new {vendor} Monitoring chart in Cluster Explorer.'
   volume:
     modes:
@@ -2866,18 +2883,12 @@ monitoringReceiver:
     title: Webhook Config
     urlTooltip: For some webhooks this a url that points to the service DNS
     modifyNamespace: If <pre class="inline-block m-0 p-0 vertical-middle">rancher-alerting-drivers</pre> default values were changed, please update the url below in the format http://&lt;new_service_name&gt;.&lt;new_namespace&gt.svc.&lt;port&gt/&lt;path&gt
-    banner: To use MS Teams or SMS you will need to have <pre class="inline-block m-0 p-0 vertical-middle">rancher-alerting-drivers</pre> installed first.
+    banner: To use MS Teams or SMS you will need to have at least one instance of <pre class="inline-block m-0 p-0 vertical-middle">rancher-alerting-drivers</pre> installed first.
     add:
+      selectWebhookType: Select Webhook Type
       generic: Generic
       msTeams: MS Teams
       alibabaCloudSms: SMS
-  pandariaWebhook:
-    label: Pandaria Webhook
-    add:
-      dingTalk: Ding Talk
-      msTeams: MS Teams
-      aliyunSMS: Aliyun SMS
-      serviceNow: Service Now
   auth:
     label: Auth
     authType: Auth Type
@@ -2893,6 +2904,12 @@ monitoringReceiver:
     bearerTokenFile:
       label: Bearer Token File
       placeholder: e.g. ./user_token
+  tls:
+    ca: Secret with CA
+    cert: Secret with Client Cert
+    key: Secret with Client Key
+    serverName: Server Name
+    serverNameTooltip: Used to verify the hostname for the targets.
   shared:
     proxyUrl:
       label: Proxy URL
@@ -2900,17 +2917,38 @@ monitoringReceiver:
     sendResolved:
       label: Enable send resolved alerts
 
+alertmanagerConfigReceiver:
+  secretKeyId: Key Id from Secret
+  name: Receiver Name
+  addButton: Add Receiver
+  receivers: Receivers
+  namespaceWarning: Could not render the secret selector because no namespace was found to get secrets from.
+  receiverTypes: "The following receiver types can be edited in forms: Email, Slack, PagerDuty, Opsgenie and Webhook. For other receiver types, edit the AlertmanagerConfig YAML."
+  slack:
+    webhookUrl: Webhook URL
+    apiUrlTooltip: The secret's key that contains the Slack webhook URL. The secret needs to be in the same namespace as the AlertmanagerConfig object and accessible by the Prometheus Operator.
 monitoringRoute:
   groups:
     label: Group By
+    addGroupByLabel: Labels to Group Alerts By
   info: This is the top-level Route used by Alertmanager as the default destination for any Alerts that do not match any other Routes. This Route must exist and cannot be deleted.
   interval:
     label: Group Interval
   matching:
     info: The root route has to match everything so matching cannot be configured.
     label: Match
+    addMatcher: Add Matcher
+    matchType: Match Type
+    name: Name
+    nameTooltip: Label to match
+    value: Value
+    valueTooltip: Label value to match
   receiver:
+    type: Receiver Type
+    add: Add Receiver
     label: Receiver
+    oneOrMoreLabel: One or More Receivers
+    addMatch: Add match
   regex:
     label: Match Regex
   repeatInterval:
@@ -3546,6 +3584,7 @@ probe:
     placeholder: Select a check type
 
 project:
+  membersEditOnly: Only permissions equal to or below those of the current user can be applied
   members:
     label: Members
   containerDefaultResourceLimit: Container Default Resource Limit
@@ -3604,6 +3643,7 @@ projectNamespaces:
   createProject: Create Project
   label: Projects/Namespaces
   noNamespaces: There are no namespaces defined.
+  noProjectNoNamespaces: All namespaces are in a project
 
 prometheusRule:
   alertingRules:
@@ -3873,7 +3913,9 @@ resourceDetail:
     created: Created
     deleted: Deleted
     description: Description
+    endpoints: Endpoints
     labels: Labels
+    namespaces: Namespaces
     ownerReferences: |-
       {count, plural,
       =1 {Owner}
@@ -3898,6 +3940,7 @@ resourceDetail:
     view: "{subtype} {name}"
   masthead:
     age: Age
+    restartCount: Pod Restarts
     defaultBannerMessage:
       error: This resource is currently in an error state, but there isn't a detailed message available.
       transitioning: This resource is currently in a transitioning state, but there isn't a detailed message available.
@@ -4060,6 +4103,13 @@ selectOrCreateAuthSecret:
   createSsh: Create a SSH Key Secret
   createBasic: Create a HTTP Basic Auth Secret
   createS3: Create a S3-Compatible Auth Secret
+
+serviceAccount:
+  automount: Automount Service Account Token
+  imagePullSecrets: Image Pull Secrets
+  tabs:
+    serviceAccount:
+      label: Service Account
 
 servicePorts:
   header:
@@ -4565,8 +4615,10 @@ tableHeaders:
   persistentVolumeClaim: Persistent Volume Claim
   persistentVolumeSource: Source
   podImages: Image
+  podRestarts: Restarts
   pods: Pods
   port: Port
+  project: Project
   protocol: Protocol
   provider: Provider
   publicPorts: Public Ports
@@ -4581,7 +4633,10 @@ tableHeaders:
     watch: Watch
   ready: Ready
   reason: Reason
+  receivers: Receivers
+  receiverTypes: Receiver Types
   reclaimPolicy: Reclaim Policy
+  registrationNamespace: Registration Namespace
   repo: Repo
   repositories: Repositories
   repoName: Repository Name
@@ -4594,6 +4649,7 @@ tableHeaders:
   restarts: Restarts
   role: Role
   roles: Roles
+  routes: Routes
   scale: Scale
   scope: Scope
   selector: Selector
@@ -5013,7 +5069,7 @@ workload:
       supplementalGroups: Additional Group IDs
       sysctls: Sysctls
       sysctlsKey: Name
-    standard: Standard Containter
+    standard: Standard Container
     titles:
       container: Container
       command: Command
@@ -5122,21 +5178,6 @@ workload:
     subdomain:
       label: Subdomain
       placeholder: e.g. web
-    vlansubnet: 
-      label: Flat Network
-      tip: "The upgrade strategy has been changed to: stop the old Pod and start the new Pod"
-      network:
-        label: Interface
-        placeholder: Select a Inetwork...
-      ip:
-        label: IP
-        placeholder: "e.g. 192.168.1.100,Multiple ips are connected by commas"
-      mac:
-        label: MAC
-        placeholder: "e.g. 0a:00:27:00:00:00, Multiple MACs are connected by commas"
-      subnet:
-        label: Subnet
-        placeholder: "Please choose a MacvlanSubnet"
   normanWarning: It looks like this workload was created in the legacy Rancher UI. You may need to manually delete any services that were automatically created for it.
   validation:
     containers: Containers
@@ -5455,7 +5496,7 @@ harvester:
     PhysicalNic: Physical NIC
     cpu: Cpu
     memory: Memory
-    virtaulName: Virtual machine name
+    virtualName: Virtual machine name
     promiscuous: Promiscuous
     ipv4Address: IPv4 Address
   generic:
@@ -5510,6 +5551,7 @@ harvester:
     version: Version
   host:
     label: Hosts
+    inconsistentIP: "Host IP is inconsistent, current IP: { currentIP }, initial IP: { initIP }"
     promote:
       none: ' '
       running: promoting
@@ -5617,7 +5659,7 @@ harvester:
       detachVolume:
         Detach Volume
     restartTip: Restart the virtual machine now to take effect of the configuration changes.
-    createRunning: Start virtual machine on creation
+    runStrategy: Run Strategy
     restartNow: Restart Now
     createSSHKey: Create a New...
     installAgent: Install guest agent
@@ -5626,6 +5668,7 @@ harvester:
     sshTitle: Add Public SSH Key
     imageTip: An external URL to the .iso, .img, .qcow2 or .raw that the virtual machine should be created from.
     efiEnabled: Booting in EFI mode
+    secureBoot: Secure Boot
     volume:
       dragTip: Drag and drop volumes, or use the volume's arrows, to change the boot order.
       volumeTip: The VM only contains a cd-rom volume. You may want to add additional disk volumes.
@@ -5834,15 +5877,15 @@ harvester:
       noSetting:
         prefix: You must configure the backup target in
         middle: 'setting'
-        suffic: before creating a new backup.
+        suffix: before creating a new backup.
       errorTip:
         prefix: Backup Target value in
         middle: Setting
-        suffic: "is invalid, error: "
+        suffix: "is invalid, error: "
       viewSetting:
         prefix: Click
         middle: here
-        suffic: to view the backup config.
+        suffix: to view the backup config.
     restore:
       backup: Backup
       deletePreviousVolumes: Delete Previous Volumes
@@ -5861,15 +5904,15 @@ harvester:
       premise:
         prefix: 'You must configure a network in'
         middle: 'Settings'
-        suffic: 'before creating a new network.'
+        suffix: 'before creating a new network.'
       viewSetting:
         prefix: Click
         middle: here
-        suffic: to view default cluster network config.
+        suffix: to view default cluster network config.
       errorTip:
         prefix: Physical NIC value in
         middle: Setting
-        suffic: "is invalid, error: "
+        suffix: "is invalid, error: "
     layer3Network:
       mode:
         label: Mode
@@ -5904,7 +5947,7 @@ harvester:
       ca:
         prefix: 'Click'
         middle: 'here'
-        suffic: 'to add a custom certificate.'
+        suffix: 'to add a custom certificate.'
     sslCertificates:
       publicCertificate: Public Certificate
       privateKey: Private Key
@@ -5923,6 +5966,9 @@ harvester:
       checksum: Checksum
     harvesterMonitoring:
       label: Harvester Monitoring
+      section:
+        prometheus: Prometheus Configuration
+        prometheusNodeExporter: Prometheus Node Exporter Configuration
       tips:
         scrape: Interval between consecutive scrapes
         evaluation: Interval between consecutive evaluations
@@ -6008,7 +6054,6 @@ model:
       saml: SAML
       oauth: OAuth
       oidc: OIDC
-      cas: CAS
     name:
       keycloak: Keycloak (SAML)
       keycloakoidc: Keycloak (OIDC)
@@ -6030,7 +6075,6 @@ model:
       googleoauth: Google
       oidc: OIDC
       keycloakoidc: Keycloak
-      cas: CAS
 
   cluster:
     name: Cluster Name
@@ -6086,7 +6130,7 @@ typeDescription:
   monitoring.coreos.com.prometheusrule: A Prometheus Rule resource defines both recording and/or alert rules. A recording rule can pre-compute values and save the results. Alerting rules allow you to define conditions on when to send notifications to AlertManager.
   monitoring.coreos.com.prometheus: A Prometheus server is a Prometheus deployment whose scrape configuration and rules are determined by selected ServiceMonitors, PodMonitors, and PrometheusRules and whose alerts will be sent to all selected Alertmanagers with the custom resource's configuration.
   monitoring.coreos.com.alertmanager: An alert manager is deployment whose configuration will be specified by a secret in the same namespace, which determines which alerts should go to which receiver.
-  node: The base Kubernetes Node resource represents a virtual or physical machine which hosts deployments. To manage the machine lifecyle, if available, go to Cluster Management.
+  node: The base Kubernetes Node resource represents a virtual or physical machine which hosts deployments. To manage the machine lifecycle, if available, go to Cluster Management.
   catalog.cattle.io.clusterrepo: 'A chart repository is a Helm repository or {vendor} git based application catalog. It provides the list of available charts in the cluster.'
   catalog.cattle.io.clusterrepo.local: ' A chart repository is a Helm repository or {vendor} git based application catalog. It provides the list of available charts in the cluster. Cluster Templates are deployed via Helm charts.'
   catalog.cattle.io.operation: An operation is the list of recent Helm operations that have been applied to the cluster.
@@ -6190,8 +6234,8 @@ typeLabel:
     }
   management.cattle.io.setting: |-
     {count, plural,
-      one { Advanced Setting }
-      other { Advanced Settings }
+      one { Setting }
+      other { Settings }
     }
   management.cattle.io.fleetworkspace: |-
     {count, plural,
@@ -6204,6 +6248,11 @@ typeLabel:
       one { Prometheus }
       other { Prometheis }
     }
+  helm.cattle.io.projecthelmchart: |-
+    {count, plural,
+      one { Project Monitor }
+      other { Project Monitors }
+    }
   monitoring.coreos.com.servicemonitor: |-
     {count, plural,
       one { Service Monitor }
@@ -6211,8 +6260,13 @@ typeLabel:
     }
   monitoring.coreos.com.alertmanager: |-
     {count, plural,
-      one { Alert Manager }
-      other { Alert Managers }
+      one { Alertmanager }
+      other { Alertmanagers }
+    }
+  monitoring.coreos.com.alertmanagerconfig: |-
+    {count, plural,
+      one { AlertmanagerConfigs }
+      other { AlertmanagerConfigs }
     }
   monitoring.coreos.com.podmonitor: |-
     {count, plural,
@@ -6221,8 +6275,8 @@ typeLabel:
     }
   monitoring.coreos.com.prometheusrule: |-
     {count, plural,
-      one { Prometheus Rule }
-      other { Prometheus Rules }
+      one { PrometheusRule }
+      other { PrometheusRules }
     }
   monitoring.coreos.com.thanosruler: |-
     {count, plural,
@@ -6305,6 +6359,11 @@ typeLabel:
       other { Hosts }
     }
   k8s.cni.cncf.io.networkattachmentdefinition: |-
+    {count, plural,
+      one { Network Attachment Definition }
+      other { Network Attachment Definitions }
+    }
+  harvesterhci.io.networkattachmentdefinition: |-
     {count, plural,
       one { Network }
       other { Networks }
@@ -6424,7 +6483,7 @@ registryConfig:
 ##############################
 
 advancedSettings:
-  label: Advanced Settings
+  label: Settings
   subtext: Typical users will not need to change these. Proceed with caution, incorrect values can break your {appName} installation. Settings which have been customized from default settings are tagged 'Modified'.
   show: Show
   hide: Hide
@@ -6462,6 +6521,7 @@ advancedSettings:
     'kubeconfig-token-ttl-minutes': 'Custom max TTL (in minutes) on a kubeconfig token.'
     'rke-metadata-config': 'Configure RKE metadata refresh parameters.'
     'ui-banners': 'Classification banner is used to display a custom fixed banner in the header, footer, or both.'
+    'custom-notifications': Edit custom notifications
     'ui-consent-banner': 'Banner is used to display a custom consent banner presented to users during login.'
     'ui-default-landing': 'The default page users land on after login.'
     'brand': Folder name for an alternative theme defined in '/assets/brand'
@@ -6484,7 +6544,9 @@ advancedSettings:
     'harv-support-bundle-namespaces': Specify resources in other namespaces to be collected by the support package.
     'harv-auto-disk-provision-paths': Specify the disks(using glob pattern) that Harvester will automatically add as VM storage.
     'harv-support-bundle-image': Support bundle image configuration. Find different versions in <a href="https://hub.docker.com/r/rancher/support-bundle-kit/tags" target="_blank">rancher/support-bundle-kit</a>.
+    'harv-release-download-url': This setting allows you to configure the <code>upgrade release download</code> URL address. Harvester will get the ISO URL and checksum value from the (<code>$URL</code>/<code>$VERSION</code>/version.yaml) file hosted by the configured URL.
     'harvester-monitoring': Specifies the monitoring configuration that the Harvester's built-in Prometheus will use.
+    'hide-local-cluster': Hide the local cluster
   editHelp:
     'ui-banners': This setting takes a JSON object containing 3 root parameters; <code>banner</code>, <code>showHeader</code>, <code>showFooter</code>. <code>banner</code> is an object containing; <code>textColor</code>, <code>background</code>, and <code>text</code>, where <code>textColor</code> and <code>background</code> are any valid CSS color value.
   enum:
@@ -6552,6 +6614,7 @@ banner:
   bannerFontSize:
     label: 'Font Size'
   consent: Consent Banner
+  consentFootnote: "Tip: Use \\n character for line break"
 
 branding:
   label: Branding
@@ -6569,7 +6632,7 @@ branding:
     suse: SUSE Theme
     custom: Define a Custom Theme
   uiPL:
-    label: Private Label Company Name
+    label: Private Label
   uiIssues:
     label: Support Links
     issuesUrl: Issue Reporting URL
@@ -6584,7 +6647,13 @@ branding:
     tip: You can override the link color used throughout the UI with a custom color of your choice.
     useCustom: Use a Custom Link Color
     example: Link Example
-
+notifications:
+  header: Custom notifications
+  menuLabel: 'Custom Notifications'
+  loginError:
+    header: Login Failed Banner
+    showCheckboxLabel: Show custom login error 
+    messageLabel: Text to display
 resourceQuota:
   label: Resource Quotas
   headers:

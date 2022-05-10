@@ -1,13 +1,17 @@
-import { DSL } from '@/store/type-map';
+import { DSL, IF_HAVE } from '@/store/type-map';
 
-export const NAME = 'NeuVector';
-export const CHART_NAME = 'NeuVector';
+// These should match the name used in routes (either for loading a product or on chart install page)
+export const NAME = 'neuvector';
+export const CHART_NAME = 'neuvector';
+
+export const NEU_VECTOR_NAMESPACE = 'cattle-neuvector-system';
 
 export function init(store) {
   const { product, basicType, virtualType } = DSL(store, NAME);
 
   product({
     ifHaveGroup: 'neuvector.com',
+    ifHave:      IF_HAVE.NEUVECTOR_NAMESPACE,
     icon:        'neuvector'
   });
 

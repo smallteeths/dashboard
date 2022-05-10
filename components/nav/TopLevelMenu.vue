@@ -11,7 +11,7 @@ import { KEY } from '@/utils/platform';
 import { getVersionInfo } from '@/utils/version';
 import { LEGACY, EXPLORER_HARVESTER_CLUSTER } from '@/store/features';
 import { SETTING } from '@/config/settings';
-import { filterOnlyKubernetesClusters } from '@/utils/cluster';
+import { filterOnlyKubernetesClusters, filterHiddenLocalCluster } from '@/utils/cluster';
 
 const UNKNOWN = 'unknown';
 const UI_VERSION = process.env.VERSION || UNKNOWN;
@@ -61,7 +61,7 @@ export default {
 
     clusters() {
       const all = this.$store.getters['management/all'](MANAGEMENT.CLUSTER);
-      const kubeClusters = this.explorerHarvesterClusterEnabled ? all : filterOnlyKubernetesClusters(all);
+      const kubeClusters = filterHiddenLocalCluster(this.explorerHarvesterClusterEnabled ? all : filterOnlyKubernetesClusters(all), this.$store);
 
       return kubeClusters.map((x) => {
         return {

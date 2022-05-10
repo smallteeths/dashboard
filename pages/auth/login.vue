@@ -134,9 +134,9 @@ export default {
 
       providers:          [],
       providerComponents: [],
-
-      cooldownTime:  0,
-      cooldownTimer: null,
+      cooldownTime:       0,
+      cooldownTimer:      null,
+      customLoginError:   {}
     };
   },
 
@@ -163,9 +163,22 @@ export default {
       return this.err;
     },
 
+    errorToDisplay() {
+      if (this.customLoginError?.showMessage === 'true' && this.customLoginError?.message && this.errorMessage) {
+        return `${ this.customLoginError.message } \n ${ this.errorMessage }`;
+      }
+
+      if (this.errorMessage) {
+        return this.errorMessage;
+      }
+
+      return '';
+    },
+
     kubectlCmd() {
       return "kubectl get secret --namespace cattle-system bootstrap-secret -o go-template='{{.data.bootstrapPassword|base64decode}}{{\"\\n\"}}'";
     }
+
   },
 
   watch: {
@@ -195,6 +208,12 @@ export default {
     this.providerComponents = this.providers.map((name) => {
       return importLogin(configType[name]);
     });
+  },
+
+  async fetch() {
+    const { value } = await this.$store.dispatch('management/find', { type: MANAGEMENT.SETTING, id: SETTING.BANNERS });
+
+    this.customLoginError = JSON.parse(value).loginError;
   },
 
   mounted() {
@@ -315,7 +334,7 @@ export default {
           {{ t('login.welcome', {vendor}) }}
         </h1>
         <div class="login-messages">
-          <Banner v-if="errorMessage" :label="errorMessage" color="error" />
+          <Banner v-if="errorToDisplay" :label="errorToDisplay" color="error" />
           <h4 v-else-if="loggedOut" class="text-success text-center">
             {{ t('login.loggedOut') }}
           </h4>

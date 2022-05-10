@@ -1,6 +1,5 @@
 <script>
 import Tip from '@/components/Tip';
-import { HCI } from '@/config/types';
 import { HCI_SETTING } from '@/config/settings';
 import Password from '@/components/form/Password';
 import MessageLink from '@/components/MessageLink';
@@ -66,7 +65,7 @@ export default {
     },
 
     toCA() {
-      return `${ HCI.SETTING }/${ HCI_SETTING.ADDITIONAL_CA }?mode=edit`;
+      return `${ HCI_SETTING.ADDITIONAL_CA }?mode=edit`;
     }
   },
 
@@ -156,7 +155,7 @@ export default {
               target="_blank"
               prefix-label="harvester.setting.message.ca.prefix"
               middle-label="harvester.setting.message.ca.middle"
-              suffic-label="harvester.setting.message.ca.suffic"
+              suffix-label="harvester.setting.message.ca.suffix"
             />
           </Tip>
         </div>

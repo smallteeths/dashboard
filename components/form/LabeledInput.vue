@@ -1,14 +1,16 @@
 <script>
+import CompactInput from '@/mixins/compact-input';
 import LabeledFormElement from '@/mixins/labeled-form-element';
 import TextAreaAutoGrow from '@/components/form/TextAreaAutoGrow';
 import LabeledTooltip from '@/components/form/LabeledTooltip';
 import { escapeHtml } from '@/utils/string';
 import cronstrue from 'cronstrue';
 import { isValidCron } from 'cron-validator';
+import { debounce } from 'lodash';
 
 export default {
   components: { LabeledTooltip, TextAreaAutoGrow },
-  mixins:     [LabeledFormElement],
+  mixins:     [LabeledFormElement, CompactInput],
 
   props: {
     type: {
@@ -49,12 +51,28 @@ export default {
     hideArrows: {
       type:    Boolean,
       default: false
+    },
+
+    /**
+     * Optionally delay on input while typing
+     */
+    delay: {
+      type:    Number,
+      default: 0
     }
   },
 
   computed: {
+    onInput() {
+      return this.delay ? debounce(this.delayInput, this.delay) : this.delayInput;
+    },
+
     hasLabel() {
-      return !!this.label || !!this.labelKey || !!this.$slots.label;
+      return this.isCompact ? false : !!this.label || !!this.labelKey || !!this.$slots.label;
+    },
+
+    hasTooltip() {
+      return !!this.tooltip || !!this.tooltipKey;
     },
 
     hasSuffix() {
@@ -114,6 +132,14 @@ export default {
       }
     },
 
+    /**
+     * Emit on input with delay
+     * Note: Arrow function is avoided due context binding
+     */
+    delayInput(value) {
+      this.$emit('input', value);
+    },
+
     onFocus() {
       this.onFocusLabeled();
     },
@@ -137,11 +163,13 @@ export default {
       disabled: isDisabled,
       [status]: status,
       suffix: hasSuffix,
+      'has-tooltip': hasTooltip,
+      'compact-input': isCompact,
       hideArrows
     }"
   >
     <slot name="label">
-      <label>
+      <label v-if="hasLabel">
         <t v-if="labelKey" :k="labelKey" />
         <template v-else-if="label">{{ label }}</template>
 
@@ -162,7 +190,7 @@ export default {
         :placeholder="_placeholder"
         autocapitalize="off"
         :class="{ conceal: type === 'multiline-password' }"
-        @input="$emit('input', $event)"
+        @input="onInput($event)"
         @focus="onFocus"
         @blur="onBlur"
       />
@@ -179,7 +207,7 @@ export default {
         autocomplete="off"
         autocapitalize="off"
         :data-lpignore="ignorePasswordManagers"
-        @input="$emit('input', $event.target.value)"
+        @input="onInput($event.target.value)"
         @focus="onFocus"
         @blur="onBlur"
       />
@@ -201,13 +229,15 @@ export default {
     <label v-if="subLabel" class="sub-label">{{ subLabel }}</label>
   </div>
 </template>
-
-<style lang="scss" scoped>
+<style scoped lang="scss">
+  .labeled-input.view {
+    input {
+      text-overflow: ellipsis;
+    }
+  }
 
 .hideArrows {
-  /* Hide arrows on number input
-when it overlaps with the unit */
-
+  /* Hide arrows on number input when it overlaps with the unit */
   /* Chrome, Safari, Edge, Opera */
   input::-webkit-outer-spin-button,
   input::-webkit-inner-spin-button {

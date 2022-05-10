@@ -47,7 +47,9 @@ export default {
       switch (value) {
       case 'generic':
       case 'service-now':
-        return this.model.push({});
+        this.model.push({});
+
+        return;
       case 'ms-teams':
         return this.model.push({ url: MS_TEAMS_URL });
       case 'alibaba-cloud-sms':
