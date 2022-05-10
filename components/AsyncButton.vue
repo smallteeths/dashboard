@@ -201,11 +201,15 @@ export default Vue.extend({
       this.$emit('click', cb);
     },
 
-    done(success: boolean) {
-      this.phase = (success ? SUCCESS : ERROR );
-      this.timer = setTimeout(() => {
-        this.timerDone();
-      }, this.delay );
+    done(success: boolean | 'cancelled') {
+      if (success === 'cancelled') {
+        this.phase = ACTION;
+      } else {
+        this.phase = (success ? SUCCESS : ERROR );
+        this.timer = setTimeout(() => {
+          this.timerDone();
+        }, this.delay );
+      }
     },
 
     timerDone() {
@@ -234,7 +238,7 @@ export default Vue.extend({
     <i
       v-if="displayIcon"
       v-tooltip="tooltip"
-      :class="{icon: true, 'icon-lg': true, [displayIcon]: true, 'pr-5': true}"
+      :class="{icon: true, 'icon-lg': true, [displayIcon]: true}"
     />
     <span
       v-if="labelAs === 'text' && displayLabel"

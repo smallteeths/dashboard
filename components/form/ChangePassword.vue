@@ -47,11 +47,11 @@ export default {
   },
   data(ctx) {
     return {
-      username:                    '',
-      errorMessages:               [],
-      pCanShowMissmatchedPassword: false,
-      pIsRandomGenerated:            false,
-      form:                        {
+      username:                   '',
+      errorMessages:              [],
+      pCanShowMismatchedPassword: false,
+      pIsRandomGenerated:         false,
+      form:                       {
         deleteKeys:        false,
         currentP:          '',
         newP:              '',
@@ -135,11 +135,11 @@ export default {
 
     passwordConfirmBlurred: {
       get() {
-        return this.pCanShowMissmatchedPassword;
+        return this.pCanShowMismatchedPassword;
       },
 
       set(p) {
-        this.pCanShowMissmatchedPassword = p;
+        this.pCanShowMismatchedPassword = p;
         this.validate();
       }
     },

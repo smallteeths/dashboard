@@ -13,7 +13,9 @@ import { DEFAULT_WORKSPACE } from '@/models/provisioning.cattle.io.cluster';
 
 import { findBy, removeObject, clear } from '@/utils/array';
 import { createYaml } from '@/utils/create-yaml';
-import { clone, diff, set, get } from '@/utils/object';
+import {
+  clone, diff, set, get, isEmpty
+} from '@/utils/object';
 import { allHash } from '@/utils/promise';
 import { sortBy } from '@/utils/sort';
 import { camelToTitle, nlToBr } from '@/utils/string';
@@ -118,12 +120,28 @@ export default {
       const hash = {
         rke2Versions: this.$store.dispatch('management/request', { url: '/v1-rke2-release/releases' }),
         k3sVersions:  this.$store.dispatch('management/request', { url: '/v1-k3s-release/releases' }),
-        rke2Channels: this.$store.dispatch('management/request', { url: '/v1-rke2-release/channels' }),
-        k3sChannels:  this.$store.dispatch('management/request', { url: '/v1-k3s-release/channels' }),
       };
 
       if ( this.$store.getters['management/canList'](MANAGEMENT.POD_SECURITY_POLICY_TEMPLATE) ) {
         hash.allPSPs = await this.$store.dispatch('management/findAll', { type: MANAGEMENT.POD_SECURITY_POLICY_TEMPLATE });
+      }
+
+      // Get the latest versions from the global settings if possible
+      const globalSettings = await this.$store.getters['management/all'](MANAGEMENT.SETTING) || [];
+      const defaultRke2Setting = globalSettings.find(setting => setting.id === 'rke2-default-version') || {};
+      const defaultK3sSetting = globalSettings.find(setting => setting.id === 'k3s-default-version') || {};
+
+      let defaultRke2 = defaultRke2Setting?.value || defaultRke2Setting?.default;
+      let defaultK3s = defaultK3sSetting?.value || defaultK3sSetting?.default;
+
+      // RKE2: Use the channel if we can not get the version from the settings
+      if (!defaultRke2) {
+        hash.rke2Channels = this.$store.dispatch('management/request', { url: '/v1-rke2-release/channels' });
+      }
+
+      // K3S: Use the channel if we can not get the version from the settings
+      if (!defaultK3s) {
+        hash.k3sChannels = this.$store.dispatch('management/request', { url: '/v1-k3s-release/channels' });
       }
 
       const res = await allHash(hash);
@@ -131,12 +149,26 @@ export default {
       this.allPSPs = res.allPSPs || [];
       this.rke2Versions = res.rke2Versions.data || [];
       this.k3sVersions = res.k3sVersions.data || [];
-      this.rke2Channels = res.rke2Channels.data || [];
-      this.k3sChannels = res.k3sChannels.data || [];
+
+      if (!defaultRke2) {
+        const rke2Channels = res.rke2Channels.data || [];
+
+        defaultRke2 = rke2Channels.find(x => x.id === 'default')?.latest;
+      }
+
+      if (!defaultK3s) {
+        const k3sChannels = res.k3sChannels.data || [];
+
+        defaultK3s = k3sChannels.find(x => x.id === 'default')?.latest;
+      }
 
       if ( !this.rke2Versions.length && !this.k3sVersions.length ) {
         throw new Error('No version info found in KDM');
       }
+
+      // Store default versions
+      this.defaultRke2 = defaultRke2;
+      this.defaultK3s = defaultK3s;
     }
 
     if ( !this.value.spec ) {
@@ -233,7 +265,7 @@ export default {
 
     if ( !this.value.spec.rkeConfig.upgradeStrategy ) {
       set(this.value.spec.rkeConfig, 'upgradeStrategy', {
-        controlPlaneConcurrency:  '10%',
+        controlPlaneConcurrency:  '1',
         controlPlaneDrainOptions: {},
         workerConcurrency:        '10%',
         workerDrainOptions:       {},
@@ -258,8 +290,8 @@ export default {
       machinePools:            null,
       rke2Versions:            null,
       k3sVersions:             null,
-      rke2Channels:            [],
-      k3sChannels:             [],
+      defaultRke2:             '',
+      defaultK3s:              '',
       s3Backup:                false,
       versionInfo:             {},
       membershipUpdate:        {},
@@ -301,17 +333,13 @@ export default {
     },
 
     agentConfig() {
-      // The one we want is the first one with no selector.
-      // If there are multiple with no selector, that will fall under the unsupported message below.
-      return this.value.spec.rkeConfig.machineSelectorConfig.find(x => !x.machineLabelSelector).config;
+      return this.value.agentConfig;
     },
 
     showK3sTechPreviewWarning() {
-      // NOTE: Put this back in when RKE2 is out of tech preview, but K3s is not
-      // const selectedVersion = this.value?.spec?.kubernetesVersion || 'none';
+      const selectedVersion = this.value?.spec?.kubernetesVersion || 'none';
 
-      // return !!this.k3sVersions.find(v => v.version === selectedVersion);
-      return false;
+      return !!this.k3sVersions.find(v => v.version === selectedVersion);
     },
 
     // kubeletConfigs() {
@@ -352,10 +380,8 @@ export default {
       const cur = this.liveValue?.spec?.kubernetesVersion || '';
       const existingRke2 = this.mode === _EDIT && cur.includes('rke2');
       const existingK3s = this.mode === _EDIT && cur.includes('k3s');
-      const defaultRke2 = this.rke2Channels.find(x => x.id === 'default')?.latest;
-      const defaultK3s = this.k3sChannels.find(x => x.id === 'default')?.latest;
-      const rke2 = this.filterAndMap(this.rke2Versions, (existingRke2 ? cur : null), cur, defaultRke2);
-      const k3s = this.filterAndMap(this.k3sVersions, (existingK3s ? cur : null), cur, defaultK3s);
+      const rke2 = this.filterAndMap(this.rke2Versions, (existingRke2 ? cur : null), cur, this.defaultRke2);
+      const k3s = this.filterAndMap(this.k3sVersions, (existingK3s ? cur : null), cur, this.defaultK3s);
       const showRke2 = rke2.length && !existingK3s;
       const showK3s = k3s.length && !existingRke2;
       const out = [];
@@ -373,8 +399,7 @@ export default {
           out.push({
             kind:  'group',
             label: this.t('cluster.provider.k3s'),
-            // NOTE: Put this back in when RKE2 is out of tech preview, but K3s is not
-            // badge: this.t('generic.techPreview')
+            badge: this.t('generic.techPreview')
           });
         }
 
@@ -713,8 +738,7 @@ export default {
     defaultVersion() {
       const all = this.versionOptions.filter(x => !!x.value);
       const first = all[0]?.value;
-      const preferredVersion = this.rke2Channels.find(x => x.id === 'default')?.latest;
-      const preferred = all.find(x => x.value === preferredVersion)?.value;
+      const preferred = all.find(x => x.value === this.defaultRke2)?.value;
 
       const rke2 = this.filterAndMap(this.rke2Versions, null);
       const showRke2 = rke2.length;
@@ -792,13 +816,20 @@ export default {
       }
 
       return null;
+    },
+
+    showForm() {
+      return !!this.credentialId || !this.needCredential;
     }
   },
 
   watch: {
     s3Backup(neu) {
       if ( neu ) {
-        set(this.rkeConfig.etcd, 's3', {});
+        // We need to make sure that s3 doesn't already have an existing value otherwise when editing a cluster with s3 defined this will clear s3.
+        if (isEmpty(this.rkeConfig.etcd?.s3)) {
+          set(this.rkeConfig.etcd, 's3', {});
+        }
       } else {
         set(this.rkeConfig.etcd, 's3', null);
       }
@@ -1078,9 +1109,31 @@ export default {
       });
     },
 
+    showAddonConfirmation() {
+      return new Promise((resolve, reject) => {
+        this.$store.dispatch('cluster/promptModal', { component: 'AddonConfigConfirmationDialog', resources: [value => resolve(value)] });
+      });
+    },
+
     async saveOverride(btnCb) {
       if ( this.errors ) {
         clear(this.errors);
+      }
+
+      if (this.isEdit && this.liveValue?.spec?.kubernetesVersion !== this.value?.spec?.kubernetesVersion) {
+        const shouldContinue = await this.showAddonConfirmation();
+
+        if (!shouldContinue) {
+          return btnCb('cancelled');
+        }
+      }
+
+      if (this.value.cloudProvider === 'aws') {
+        const missingProfileName = this.machinePools.some(mp => !mp.config.iamInstanceProfile);
+
+        if (missingProfileName) {
+          this.errors.push(this.t('cluster.validation.iamInstanceProfileName', {}, true));
+        }
       }
 
       for (const [index] of this.machinePools.entries()) { // validator machine config
@@ -1418,7 +1471,8 @@ export default {
           set(rkeConfig.chartValues, name, userValues);
         }
       });
-    }
+    },
+    get
   },
 };
 </script>
@@ -1437,6 +1491,7 @@ export default {
     :done-route="doneRoute"
     :apply-hooks="applyHooks"
     :generate-yaml="generateYaml"
+    class="rke2"
     @done="done"
     @finish="saveOverride"
     @cancel="cancel"
@@ -1454,9 +1509,10 @@ export default {
       :mode="mode"
       :provider="provider"
       :cancel="cancelCredential"
+      :showing-form="showForm"
     />
 
-    <div v-if="credentialId || !needCredential" class="mt-20">
+    <div v-if="showForm" class="mt-20">
       <NameNsDescription
         v-if="!isView"
         v-model="value"
@@ -1511,6 +1567,7 @@ export default {
               <MachinePool
                 ref="pool"
                 :value="obj"
+                :cluster="value"
                 :mode="mode"
                 :provider="provider"
                 :credential-id="credentialId"
@@ -1671,6 +1728,8 @@ export default {
             <div class="col span-6">
               <LabeledInput
                 v-model="rkeConfig.etcd.snapshotScheduleCron"
+                type="cron"
+                placeholder="0 * * * *"
                 :mode="mode"
                 :label="t('cluster.rke2.etcd.snapshotScheduleCron.label')"
               />
@@ -1685,7 +1744,7 @@ export default {
             </div>
           </div>
 
-          <template v-if="false && rkeConfig.etcd.disableSnapshots !== true">
+          <template v-if="rkeConfig.etcd.disableSnapshots !== true">
             <div class="spacer" />
 
             <RadioGroup
@@ -1698,7 +1757,7 @@ export default {
             />
 
             <S3Config
-              v-if="rkeConfig.etcd.s3"
+              v-if="s3Backup"
               v-model="rkeConfig.etcd.s3"
               :namespace="value.metadata.namespace"
               :register-before-hook="registerBeforeHook"
@@ -1794,6 +1853,9 @@ export default {
         </Tab>
 
         <Tab name="upgrade" label-key="cluster.tabs.upgrade">
+          <Banner v-if="get(rkeConfig, 'upgradeStrategy.controlPlaneDrainOptions.deleteEmptyDirData')" color="warning">
+            {{ t('cluster.rke2.deleteEmptyDir', {}, true) }}
+          </Banner>
           <div class="row">
             <div class="col span-6">
               <h3>Control Plane</h3>
@@ -1844,6 +1906,7 @@ export default {
             v-model="registrySecret"
             :register-before-hook="registerBeforeHook"
             :hook-priority="1"
+            :mode="mode"
             in-store="management"
             :allow-ssh="false"
             :allow-rke="true"
@@ -1868,6 +1931,12 @@ export default {
         </Tab>
 
         <Tab name="addons" label-key="cluster.tabs.addons" @active="showAddons">
+          <Banner
+            v-if="isEdit"
+            color="warning"
+          >
+            {{ t('cluster.addOns.dependencyBanner') }}
+          </Banner>
           <div v-if="versionInfo && addonVersions.length" :key="addonsRev">
             <div v-for="v in addonVersions" :key="v._key">
               <h3>{{ labelForAddon(v.name) }}</h3>
@@ -2012,6 +2081,7 @@ export default {
     </template>
   </CruResource>
 </template>
+
 <style lang="scss" scoped>
   .k3s-tech-preview-info {
     color: var(--error);
