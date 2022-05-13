@@ -148,12 +148,20 @@ export default {
       EDITOR_MODES,
       expectedFields,
       fileFound:            false,
-      receiver:             {},
       receiverTypes:        RECEIVERS_TYPES,
       suffixYaml,
       view:                 _VIEW,
       yamlError:            '',
     };
+  },
+
+  mounted() {
+    if (this.mode === this.create) {
+      if (!this.alertmanagerConfigResource.spec.receivers) {
+        this.alertmanagerConfigResource.spec.receivers = [];
+      }
+      this.alertmanagerConfigResource.spec.receivers.push(this.value);
+    }
   },
 
   computed: {
@@ -224,17 +232,9 @@ export default {
       this.$router.push(this.alertmanagerConfigResource.getAlertmanagerConfigDetailRoute());
     },
 
-    redirectToReceiverDetail(name) {
-      this.$router.push(this.alertmanagerConfigResource.getReceiverDetailLink(name));
-    },
-
     createAddOptions(receiverType) {
       return receiverType.addOptions.map();
     },
-
-    getReceiverDetailRoute(name) {
-      return JSON.stringify(this.alertmanagerConfigResource.getReceiverDetailLink(name));
-    }
   }
 };
 </script>
@@ -242,7 +242,7 @@ export default {
 <template>
   <CruResource
     class="receiver"
-    :done-route="getReceiverDetailRoute(value.name)"
+    :done-route="alertmanagerConfigResource.getAlertmanagerConfigDetailRoute()"
     :mode="mode"
     :resource="alertmanagerConfigResource"
     :subtypes="[]"
@@ -250,10 +250,7 @@ export default {
     :errors="errors"
     :cancel-event="true"
     @error="e=>errors = e"
-    @finish="() => {
-      saveOverride()
-      redirectToReceiverDetail(value.name)
-    }"
+    @finish="saveOverride()"
     @cancel="redirectAfterCancel"
   >
     <div class="row mb-10">
