@@ -584,6 +584,10 @@ export const actions = {
       promises['workspaces'] = dispatch('management/findAll', { type: FLEET.WORKSPACE });
     }
 
+    if ( getters['management/schemaFor'](MANAGEMENT.GLOBAL_ROLE_BINDING) ) {
+      promises['globalRoleBindings'] = dispatch('management/findAll', { type: MANAGEMENT.GLOBAL_ROLE_BINDING });
+    }
+
     res = await allHash(promises);
 
     let isMultiCluster = true;
@@ -621,6 +625,19 @@ export const actions = {
         value: getters['prefs/get'](WORKSPACE),
         all:   res.workspaces,
       });
+    }
+
+    if (res.globalRoleBindings && getters['auth/me']?.id) {
+      const id = getters['auth/me']?.id;
+      const readOnlyAdmin = res.globalRoleBindings.find(binding => id === binding.userName && binding.globalRoleName === 'read-only-pandaria');
+
+      if (readOnlyAdmin) {
+        commit('auth/setReadOnlyAdmin', true);
+      } else {
+        commit('auth/setReadOnlyAdmin', false);
+      }
+    } else {
+      commit('auth/setReadOnlyAdmin', false);
     }
 
     console.log(`Done loading management; isRancher=${ isRancher }; isMultiCluster=${ isMultiCluster }`); // eslint-disable-line no-console
