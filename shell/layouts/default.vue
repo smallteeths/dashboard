@@ -29,6 +29,7 @@ import { getVersionInfo, markSeenReleaseNotes } from '@shell/utils/version';
 import { sortBy } from '@shell/utils/sort';
 import PageHeaderActions from '@shell/mixins/page-actions';
 import BrowserTabVisibility from '@shell/mixins/browser-tab-visibility';
+import AutoLogout from '@shell/mixins/auto-logout';
 
 const SET_LOGIN_ACTION = 'set-as-login';
 
@@ -49,7 +50,7 @@ export default {
     AzureWarning
   },
 
-  mixins: [PageHeaderActions, Brand, BrowserTabVisibility],
+  mixins: [PageHeaderActions, Brand, BrowserTabVisibility, AutoLogout],
 
   data() {
     return {
