@@ -64,6 +64,8 @@ export const SETTING = {
   SYSTEM_GPU_MANAGEMENT_SCHEDULER_NAME: 'system-gpu-management-scheduler-name',
   UI_SESSION_LOGOUT_MINUTES:            'ui-session-logout-minutes',
   UI_LOGIN_LANDSCAPE:                   'ui-login-landscape',
+  FOOTER_TEXT:                          'ui-footer-text',
+  FOOTER_URL:                           'ui-footer-url',
 };
 
 // These are the settings that are allowed to be edited via the UI
