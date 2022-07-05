@@ -6602,6 +6602,18 @@ branding:
     tip: 使用自定义链接颜色替换整个 UI 中使用的链接颜色。
     useCustom: 使用自定义链接颜色
     example: 链接示例
+  favicon:
+    label: 网站图标
+    preview: 网站图标预览
+    tip: '上传一个网站图标来替换浏览器选项卡中的 Rancher 图标。最大文件大小为 20KB'
+    upload: 上传网站图标
+    useCustom: 使用自定义网站图标
+  loginLandscape:
+    label: 登录页面的背景图
+    preview: 背景图预览
+    tip: 上传一个图片或SVG来替换登录页面的默认背景图片. 文件最大 100KB
+    upload: 上传背景图
+    useCustom: 使用自定义登录页面背景图
 resourceQuota:
   label: 资源限额
   headers:

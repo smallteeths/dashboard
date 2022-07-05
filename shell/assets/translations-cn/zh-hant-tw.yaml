@@ -6602,6 +6602,18 @@ branding:
     tip: 使用自定義鏈接顏色替換整個 UI 中使用的鏈接顏色。
     useCustom: 使用自定義鏈接顏色
     example: 鏈接示例
+  favicon:
+    label: 網站圖標
+    preview: 網站圖標預覽
+    tip: '上傳一個網站圖標來替換瀏覽器選項卡中的 Rancher 圖標。最大文件大小為 20KB'
+    upload: 上傳網站圖標
+    useCustom: 使用自定義網站圖標
+  loginLandscape:
+    label: 登錄頁面的背景圖
+    preview: 背景圖預覽
+    tip: 上傳一個圖片或SVG來替換登錄頁面的默認背景圖片. 文件最大 100KB
+    upload: 上傳背景圖
+    useCustom: 使用自定義登錄頁面背景圖
 resourceQuota:
   label: 資源限額
   headers:
