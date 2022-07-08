@@ -3097,6 +3097,7 @@ navLink:
       label: Window target
       option:
         blank: New window
+        iframe: Use iframe
         self: Replace window
         named: Custom named window
       namedValue:
@@ -3106,6 +3107,7 @@ navLink:
       group:
         label: Group name
         tooltip: Assign link to a group
+        placeholder: Please enter a group name
       sideLabel:
         label: Link Label
       description:
