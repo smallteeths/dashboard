@@ -1196,8 +1196,8 @@ export default {
                   text-required
                   :searchable="true"
                   :options="suggestions"
-                  @onSearch="onSearchImages"
                   :rules="fvGetAndReportPathRules('image')"
+                  @onSearch="onSearchImages"
                 />
               </div>
               <div class="col span-6">
