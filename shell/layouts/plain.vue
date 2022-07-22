@@ -1,4 +1,5 @@
 <script>
+import { mapPref, DEV } from '@shell/store/prefs';
 import ActionMenu from '@shell/components/ActionMenu';
 import Header from '@shell/components/nav/Header';
 import PromptRemove from '@shell/components/PromptRemove';
@@ -37,6 +38,13 @@ export default {
     };
   },
 
+  computed: { dev: mapPref(DEV) },
+
+  methods: {
+    toggleTheme() {
+      this.$store.dispatch('prefs/toggleTheme');
+    }
+  }
 };
 </script>
 
@@ -55,6 +63,7 @@ export default {
         <ActionMenu />
         <PromptRemove />
         <AssignTo />
+        <button v-if="dev" v-shortkey.once="['shift','t']" class="hide" @shortkey="toggleTheme()" />
       </main>
     </div>
 

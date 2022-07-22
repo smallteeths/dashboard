@@ -12,6 +12,8 @@ import { CATALOG } from '@shell/config/types';
 import { pullAllBy } from 'lodash';
 
 export default {
+  name: 'PromptRemove',
+
   components: {
     Card, Checkbox, AsyncButton
   },

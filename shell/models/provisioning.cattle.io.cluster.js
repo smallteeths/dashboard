@@ -253,6 +253,10 @@ export default class ProvCluster extends SteveModel {
     return out;
   }
 
+  get isReady() {
+    return !!this.mgmt?.isReady;
+  }
+
   waitForProvisioner(timeout, interval) {
     return this.waitForTestFn(() => {
       return !!this.provisioner;

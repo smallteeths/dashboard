@@ -14,6 +14,7 @@ import {
 } from '@shell/config/types';
 import Tab from '@shell/components/Tabbed/Tab';
 import CreateEditView from '@shell/mixins/create-edit-view';
+import FormValidation from '@shell/mixins/form-validation';
 import { allHash } from '@shell/utils/promise';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 import LabeledInputSugget from '@shell/components/form/LabeledInputSugget';
@@ -108,7 +109,7 @@ export default {
     LabeledInputSugget,
   },
 
-  mixins: [CreateEditView],
+  mixins: [CreateEditView, FormValidation],
 
   props: {
     value: {
@@ -238,12 +239,21 @@ export default {
       podFsGroup:        podTemplateSpec.securityContext?.fsGroup,
       savePvcHookName:   'savePvcHook',
       tabWeightMap:      TAB_WEIGHT_MAP,
+      fvFormRuleSets:    [{
+        path: 'image', rootObject: this.container, rules: ['required'], translationKey: 'workload.container.image'
+      }],
+      fvReportedValidationPaths: ['spec'],
 
       systemGpuManagementSchedulerName: '',
     };
   },
 
   computed: {
+
+    tabErrors() {
+      return { general: this.fvGetPathErrors(['image'])?.length > 0 };
+    },
+
     isEdit() {
       return this.mode === _EDIT;
     },
@@ -348,8 +358,10 @@ export default {
           each._init = true;
 
           return each;
-        }),
-      ];
+        })].map(container => ({
+        ...container,
+        error: this.formRules?.containerImage(container)
+      }));
     },
 
     flatResources: {
@@ -653,6 +665,10 @@ export default {
   },
 
   methods: {
+    containersHaveErrors() {
+      return this.fvGetPathErrors(['spec'])
+        .filter(error => error.startsWith(this.container.name, 9));
+    },
     nameDisplayFor(type) {
       const schema = this.$store.getters['cluster/schemaFor'](type);
 
@@ -1086,11 +1102,11 @@ export default {
 
   <form v-else class="filled-height">
     <CruResource
-      :validation-passed="true"
+      :validation-passed="fvFormIsValid"
       :selected-subtype="type"
       :resource="value"
       :mode="mode"
-      :errors="errors"
+      :errors="fvUnreportedValidationErrors"
       :done-route="doneRoute"
       :subtypes="workloadSubTypes"
       :apply-hooks="applyHooks"
@@ -1102,6 +1118,7 @@ export default {
       <NameNsDescription
         :value="value"
         :mode="mode"
+        :rules="{name: fvGetAndReportPathRules('metadata.name'), namespace: fvGetAndReportPathRules('metadata.namespace'), description: []}"
         @change="name=value.metadata.name"
       />
       <div v-if="isCronJob || isReplicable || isStatefulSet || containerOptions.length > 1" class="row mb-20">
@@ -1109,9 +1126,9 @@ export default {
           <LabeledInput
             v-model="spec.schedule"
             type="cron"
-            required
             :mode="mode"
             :label="t('workload.cronSchedule')"
+            :rules="fvGetAndReportPathRules('spec.schedule')"
             placeholder="0 * * * *"
           />
         </div>
@@ -1147,11 +1164,15 @@ export default {
       </div>
 
       <Tabbed :key="containerChange" :side-tabs="true">
-        <Tab :label="t('workload.container.titles.general')" name="general" :weight="tabWeightMap['general']">
+        <Tab :label="t('workload.container.titles.general')" name="general" :weight="tabWeightMap['general']" :error="tabErrors.general">
           <div>
             <div :style="{'align-items':'center'}" class="row mb-20">
               <div class="col span-6">
-                <LabeledInput v-model="container.name" :mode="mode" :label="t('workload.container.containerName')" />
+                <LabeledInput
+                  v-model="container.name"
+                  :mode="mode"
+                  :label="t('workload.container.containerName')"
+                />
               </div>
               <div class="col span-6">
                 <RadioGroup
@@ -1176,6 +1197,7 @@ export default {
                   :searchable="true"
                   :options="suggestions"
                   @onSearch="onSearchImages"
+                  :rules="fvGetAndReportPathRules('image')"
                 />
               </div>
               <div class="col span-6">

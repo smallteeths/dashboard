@@ -306,7 +306,7 @@ export default {
       <slot name="empty" />
     </div>
     <div v-if="showAdd && !isView" class="footer">
-      <slot v-if="showAdd" name="add">
+      <slot v-if="showAdd" name="add" :add="add">
         <button
           type="button"
           class="btn role-tertiary add"
