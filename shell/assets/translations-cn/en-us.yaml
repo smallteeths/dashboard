@@ -89,6 +89,7 @@ generic:
   deprecated: Deprecated
   placeholder: "e.g. {text}"
   moreInfo: More Info
+  clearAll: Clear All
 locale:
   en-us: English
   zh-hans: 简体中文
@@ -388,7 +389,10 @@ authConfig:
     groupSearchBase:
       label: Group Search Base
       placeholder: 'ou=groups,dc=mycompany,dc=com'
-    hostname: Hostname/IP
+    hostname:
+      hint: Multiple servers can be specified as a comma separated list
+      label: Hostname/IP
+      placeholder: eg server1,server2
     loginAttribute: Login Attribute
     nameAttribute: Name Attribute
     nestedGroupMembership:
@@ -457,6 +461,17 @@ authConfig:
     graphEndpoint: Graph Endpoint
     tokenEndpoint: Token Endpoint
     authEndpoint: Auth Endpoint
+    reply:
+      info: Azure AD requires a whitelisted URL for your Rancher server before beginning this setup. Please ensure that the following URL is set in the Reply URL section of your Azure Portal. Please note that it may take up to 5 minutes for the whitelisted URL to propagate.
+      label: Reply URL
+    updateEndpoint:
+      banner:
+        linkText: Update it here.
+        message: 'Azure AD Authentication must be updated: it is using the Azure Graph API, which will be deprecated at the end of 2022.'
+      button: Update Endpoint
+      modal:
+        body: '<p><b>You may need to make some additional changes</b>. Please ensure the Azure AD app has the following application permissions for Microsoft Graph: User.Read.All, Group.Read.All<br> If any endpoints were customized while configuring Azure AD authentication in Rancher, they will not be automatically updated. </p>'
+        title: Are you sure? This update is irreversible.
   oidc:
     oidc: Configure an OIDC account
     keycloakoidc: Configure a Keycloak OIDC account
@@ -710,7 +725,9 @@ backupRestoreOperator:
     bucketName: Bucket Name
     credentialSecretName: Credential Secret
     endpoint: Endpoint
-    endpointCA: Endpoint CA
+    endpointCA:
+      label: Endpoint CA
+      prompt: Endpoint CA must be Base64 encoded
     folder: Folder
     insecureTLSSkipVerify: Skip TLS Verifications
     region: Region
@@ -1273,7 +1290,7 @@ cluster:
       instanceDescription:
         label: Instance Description
         placeholder: Instance Description
-      instanceType: 
+      instanceType:
         label: Instance Type
       imageId:
         label: System image
@@ -1322,14 +1339,13 @@ cluster:
         prePaid: Subscription
         postPaid: Pay-as-you-go
         spotStrategy: Preemptible Instance
-      periodUnit: 
+      periodUnit:
         label: Duration
         placeholder: Choose Duration...
         week: Week
         month: Month
         year: Year
         half: Half
-
       spotDuration:
         label: Use Duration
         default: One Hour
@@ -1535,7 +1551,7 @@ cluster:
         title: Security Group
         vpcId: '(select a VPC/Subnet first)'
         mode:
-          default: 'Standard: Automatically create and use a "{defaultGroup}"; security group'
+          default: 'Standard: Automatically create and use a "{defaultGroup}" security group'
           custom: 'Choose one or more existing security groups:'
       volumeType:
         label: EBS Root Volume Type
@@ -1803,6 +1819,9 @@ cluster:
       }
     groupLabel: Location
     failed: "Snapshot from {time} failed"
+    rke1:
+      local: local
+      s3: s3
   tabs:
     ace: Authorized Endpoint
     addons: Add-On Config
@@ -1830,6 +1849,12 @@ cluster:
     v2: RKE2/K3s
   validation:
     iamInstanceProfileName: If the Amazon cloud provider is selected the "IAM Instance Profile Name" must be defined for each Machine Pool
+  detail:
+    kubernetesVersion: Kubernetes Version
+    machinePools: Machine Pools
+    machineProvider: Machine Provider
+    machines: Machines
+    provisioner: Provisioner
 clusterIndexPage:
   hardwareResourceGauge:
     consumption: "{useful} of {total} {units} {suffix}"
@@ -1977,6 +2002,7 @@ fleet:
       =1 {1 bundle is hidden as it belongs to a Harvester cluster that can not be used with Continuous Delivery}
       other {# bundles are hidden as they belong to Harvester clusters that can not be used with Continuous Delivery}
       }
+    resources: Resources
   fleetSummary:
     noClustersGitRepo: This git repo is not targeting any clusters
     state:
@@ -2460,6 +2486,7 @@ labels:
   addAnnotation: Add Annotation
   labels:
     title: Labels
+    fleetClusterTooltip: Label changes are made to the Management Cluster and synchronized to the Fleet Cluster
   annotations:
     title: Annotations
 landing:
@@ -2785,7 +2812,7 @@ members:
     custom:
       label: Custom
       description: Choose individual roles for this user.
-  localClusterWarning: "Caution: This is the cluster that Rancher is using as a data store.  Only administrators should be given write access to this cluster. Users with write access to this cluster can use it to grant themselves access to any other cluster managed by this installation."
+  localClusterWarning: "Caution: This is the cluster that Rancher is using as a data store. Only administrators should be given write access to this cluster. Users with write access to this cluster can use it to grant themselves access to any part of this installation."
 membershipEditor:
   label: Members
   user: User
@@ -3104,7 +3131,7 @@ monitoringRoute:
   groups:
     label: Group By
     addGroupByLabel: Labels to Group Alerts By
-    groupByTooltip: Add each key-value pair as a string in the format key:value. The special label ... will aggregate by all possible labels. If provided, the ... must be the only element in the list.
+    groupByTooltip: Add each label as a string in the format key:value. The special label ... will aggregate by all possible labels. If provided, the ... must be the only element in the list.
   info: This is the top-level Route used by Alertmanager as the default destination for any Alerts that do not match any other Routes. This Route must exist and cannot be deleted.
   interval:
     label: Group Interval
@@ -3168,6 +3195,10 @@ namespace:
       stateName: 'Inactive'
       shortDescription: Deployment is paused
       longDescription: Deployment is paused. Pausing stops the controller from deploying revisions.
+  createNamespace: Create a New Namespace
+  label: Namespace
+  selectNamespace: Select Namespace
+  selectOrCreate: Select or Create a Namespace
 namespaceFilter:
   noMatchingOptions: No matching options
   more: "+{more}"
@@ -3714,6 +3745,7 @@ prefs:
     'true': Include Prerelease Versions
     'false': Show Releases Only
     label: Helm Charts
+  advancedTooltip: Enables 'View in API' option and keyboard shortcut to toggle light or dark theme (shift+t)
 principal:
   loading: Loading&hellip;
   error: Unable to fetch principal info
@@ -3869,6 +3901,7 @@ promptForceRemove:
   forceDelete: Force Delete
   confirmName: "Enter in the pool name below to confirm:"
   namespaceWarning: Forcing deletions will directly modify finalizers, which can lead to errors.
+  podRemoveWarning: Force deleting pods does not wait for confirmation that the pod's processes have been terminated. This may result in <strong>data corruption or inconsistencies</strong>
 promptScaleMachineDown:
   attemptingToRemove: "You are attempting to delete {count} {type}"
   retainedMachine1: At least one Machine must exist for roles Control Plane and Etcd.
@@ -4138,7 +4171,7 @@ resourceTable:
     notInAWorkspace: Not in a Workspace
     workspace: "<span>Workspace:</span> {name}"
     notInANodePool: "Not in a Pool"
-    nodePool: "<span>Pool:</span> {name} ({count})"
+    nodePool: "<span>Pool:</span> {name}"
     node: "<span>Node:</span> {name}"
 resourceTabs:
   conditions:
@@ -4234,6 +4267,9 @@ secret:
     'kubernetes.io/tls':
       description: Store a certificate and key for TLS
       docLink: https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets
+    custom:
+      description: Create a Secret with a custom type
+  customType: Custom Type
 selectOrCreateAuthSecret:
   label: Authentication
   options:
@@ -4321,6 +4357,8 @@ servicesPage:
       label: Load Balancer IP
       placeholder: e.g. 192.0.xxx.xxx
       helpText: If you specify a loadBalancerIP but your cloud provider does not support the feature, the loadBalancerIP field that you set is ignored.
+    loadBalancer:
+      label: Load Balancer
   pods:
     label: Pods
   ports:
@@ -4376,7 +4414,7 @@ setup:
     skip: Skip
     tip: What URL should be used for this {vendor} installation? All the nodes in your clusters will need to be able to reach this.
   setPassword: The first order of business is to set a strong password for the default <code>{username}</code> user. We suggest using this random one generated just for you, but enter your own if you like.
-  telemetry: Allow collection of <a href="{docsBase}/faq/telemetry/" target="_blank" rel="noopener noreferrer nofollow">anonymous statistics</a> to help us improve {vendor}.
+  telemetry: Allow collection of <a href="{docsBase}/faq/telemetry/" target="_blank" rel="noopener noreferrer nofollow">anonymous statistics</a> to help us improve {name}.
   useManual: Set a specific password to use
   useRandom: Use a randomly generated password
   welcome: Welcome to {vendor}!
@@ -4433,6 +4471,7 @@ storageClass:
       provisionedIops:
         label: Provisioned IOPS
         suffix: per second, per GB
+      gp3: GP3 - General Purpose SSD
     filesystemType:
       label: Filesystem Type
       placeholder: e.g. ext4
@@ -5019,6 +5058,7 @@ validation:
     route:
       match: At least one Match or Match Regex must be selected
       interval: '"{key}" must be of a format with digits followed by a unit i.e. 1h, 2m, 30s'
+  tab: One or more fields in this tab contain a form validation error
 wizard:
   previous: Previous
   finish: Finish
@@ -5240,10 +5280,20 @@ workload:
       status: Status
       volumeClaimTemplates: Volume Claim Templates
       upgrading: Scaling and Upgrade Policy
+    terminationState: 'Last state: Terminated with {lsExitCode}: {lsDescription}, started: {lsStartedAt}, finished: {lsFinishedAt}'
   cronSchedule: Schedule
   detail:
     pods:
       title: Pods
+    cannotFindIngresses: Could not find any Ingresses that forward traffic to Services that select Pods in this workload.
+    cannotFindServices: Could not find any Services that select Pods from this workload.
+    cannotViewIngresses: Could not list Ingresses due to lack of permission.
+    cannotViewIngressesBecauseCannotViewServices: Could not find relevant relevant Ingresses due to lack of permission to view Services.
+    cannotViewServices: Could not list Services due to lack of permission.
+    ingressListCaption: 'The following Ingresses forward traffic to Services that select Pods from this workload:'
+    ingresses: Ingresses
+    serviceListCaption: 'The following Services select Pods from this workload:'
+    services: Services
   detailTop:
     node: Node
     podIP: Pod IP
@@ -5673,6 +5723,7 @@ harvester:
     virtualName: Virtual machine name
     promiscuous: Promiscuous
     ipv4Address: IPv4 Address
+    filterLabels: Filter Labels
   generic:
     close: Close
     open: Open
@@ -5826,9 +5877,17 @@ harvester:
       title: 'Are you sure that you want to detach volume {name} ?'
       actionLabel: Detach
       detachVolume: Detach Volume
-    restartTip: Restart the virtual machine now to take effect of the configuration changes.
+    restartTip: |-
+      {restart, select,
+        true {Restart}
+        other {Start}
+      } the virtual machine now to take effect of the configuration changes.
     runStrategy: Run Strategy
-    restartNow: Restart Now
+    restartNow: |-
+      {restart, select,
+        true {Restart}
+        other {Start}
+      } Now
     createSSHKey: Create a New...
     installAgent: Install guest agent
     enableUsb: Enable USB Tablet
@@ -5886,7 +5945,7 @@ harvester:
       affinity:
         anyNode: 'Run VM on any available node'
         schedulingRules: 'Run VM on node(s) matching scheduling rules'
-        specificNode: Run VM on specific node(s) - (Live migration is not supported)
+        specificNode: Run VM on specific node - (Live migration is not supported)
     accessCredentials:
       resetPwd:
         label: Add Basic Auth
@@ -5971,6 +6030,7 @@ harvester:
         down: No events in the past hour
       console:
         down: This Virtual Machine is down. Please start it to access its console.
+        shortKeys: Shortcut Keys
   volume:
     label: Volumes
     tabs:
@@ -6006,6 +6066,13 @@ harvester:
       basics: Basics
     nameNsDescription:
       name: Template Name
+    tips:
+      notExistImage:
+        message: Please select a new Image.
+        title: Image {name} does not exist!
+      notExistNode:
+        message: Please select a new Node.
+        title: Node {name} does not exist!
   upgradePage:
     upgradeApp: Upgrade Software
     upgrade: Upgrade
@@ -6666,9 +6733,9 @@ advancedSettings:
     'auth-user-info-resync-cron': 'Default cron schedule for resyncing auth provider group memberships.'
     'cluster-template-enforcement': 'Non-admins will be restricted to launching clusters via preapproved RKE Templates only.'
     'auth-user-session-ttl-minutes': 'Custom TTL (in minutes) on a user auth session.'
-    'auth-token-max-ttl-minutes': 'Custom max TTL (in minutes) on an auth token.'
-    'kubeconfig-generate-token': 'Automatically generate kubeconfig tokens for users.'
-    'kubeconfig-token-ttl-minutes': 'Custom max TTL (in minutes) on a kubeconfig token.'
+    'auth-token-max-ttl-minutes': 'Max TTL (in minutes) for all authentication tokens. When set to 0, the token never expires.'
+    'kubeconfig-generate-token': 'Automatically generate tokens for users when a kubeconfig is requested.'
+    'kubeconfig-token-ttl-minutes': 'TTL used for tokens generated via the CLI. Deprecated: This setting will be removed, and kubeconfig-default-ttl-minutes will be used for all kubeconfig tokens.'
     'rke-metadata-config': 'Configure RKE metadata refresh parameters.'
     'ui-banners': 'Classification banner is used to display a custom fixed banner in the header, footer, or both.'
     'custom-notifications': Edit custom notifications
@@ -6710,6 +6777,7 @@ advancedSettings:
     system-catalog: Configure Rancher to use System Chart Repo.
     ui-brand: Folder name for an alternative theme defined in '/assets/brand'
     ui-session-logout-minutes: User will automatically logout without any operation after the configured time (in minutes)
+    kubeconfig-default-ttl-minutes: TTL (in minutes) applied on all kubeconfig tokens. When set to 0, the token never expires.
   editHelp:
     'ui-banners': This setting takes a JSON object containing 3 root parameters; <code>banner</code>, <code>showHeader</code>, <code>showFooter</code>. <code>banner</code> is an object containing; <code>textColor</code>, <code>background</code>, and <code>text</code>, where <code>textColor</code> and <code>background</code> are any valid CSS color value.
   enum:
@@ -7231,3 +7299,10 @@ formScheduling:
     title: Tolerations
     add: Add Toleration
     workloadTitle: Tolerations for {workload} pod
+growl:
+  clearAll: Clear All Notifications
+  disconnected:
+    message: The connection to {url} closed unexpectedly {time}. Retrying...
+    title: Websocket Disconnected
+managementNode:
+  customName: Custom Name
