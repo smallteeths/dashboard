@@ -31,6 +31,16 @@ export default {
     },
 
     mode: { type: String, default: _CREATE },
+
+    noPodSpec: {
+      type:    Boolean,
+      default: false
+    },
+
+    noDeploymentSpec: {
+      type:    Boolean,
+      default: false
+    }
   },
   data() {
     const {
@@ -222,7 +232,7 @@ export default {
 <template>
   <div>
     <!--workload  spec.upgradeStrategy -->
-    <div v-if="strategyOptions" class="row mb-20">
+    <div v-if="strategyOptions && !noDeploymentSpec" class="row mb-20">
       <div class="col" data-testid="input-policy-strategy">
         <RadioGroup
           v-model="strategy"
@@ -234,7 +244,7 @@ export default {
         />
       </div>
     </div>
-    <div v-if="isStatefulSet" class="row mb-20">
+    <div v-if="isStatefulSet && !noDeploymentSpec" class="row mb-20">
       <div class="col span-6" data-testid="input-policy-pod">
         <RadioGroup
           v-model="podManagementPolicy"
@@ -246,7 +256,7 @@ export default {
         />
       </div>
     </div>
-    <template v-if="strategy === 'RollingUpdate'">
+    <template v-if="strategy === 'RollingUpdate' && !noDeploymentSpec">
       <div
         v-if="isDeployment || isDaemonSet"
         class="row mb-20"
@@ -283,7 +293,7 @@ export default {
     </template>
 
     <!-- workload spec -->
-    <div class="row mb-20">
+    <div v-if="!noDeploymentSpec" class="row mb-20">
       <div
         v-if="!isStatefulSet"
         class="col span-6"
@@ -314,7 +324,7 @@ export default {
       </div>
     </div>
     <div
-      v-if="isDeployment"
+      v-if="isDeployment && !noDeploymentSpec"
       class="row mb-20"
     >
       <div
@@ -333,7 +343,7 @@ export default {
     </div>
 
     <!-- pod spec -->
-    <div class="row">
+    <div v-if="!noPodSpec" class="row">
       <div
         class="col span-6"
         data-testid="input-policy-termination"

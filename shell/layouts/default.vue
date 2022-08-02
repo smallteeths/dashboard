@@ -71,7 +71,7 @@ export default {
     afterLoginRoute: mapPref(AFTER_LOGIN_ROUTE),
 
     namespaces() {
-      return this.$store.getters['namespaces']();
+      return this.$store.getters['activeNamespaceCache'];
     },
 
     dev:            mapPref(DEV),
