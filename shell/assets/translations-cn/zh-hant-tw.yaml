@@ -1207,6 +1207,9 @@ cluster:
         label: KubeconfigContent
       placeholder: '命名空間/名稱'
       cluster: 集群
+      affinity:
+        namespaces:
+          placeholder: 例如：default,system,base
   description:
     label: 集群描述
     placeholder: 輸入可以描述該集群的文本
@@ -6817,7 +6820,7 @@ advancedSettings:
     'ui-dashboard-index': '{appName} UI 的 HTML 索引位置。'
     'ui-offline-preferred': '控制 UI 資產是由服務器容器在本地提供，還是從 ui-index 和 ui-dashboard-index 設置中定義的遠程 URL 提供。`動態` 選項將在 {appName} 的生產版本中使用本地資產。'
     'ui-pl': '自有品牌公司名稱。'
-    'ui-issues': "使用 URL 地址發送新的`提交問題`報告，而不是讓用戶發送到 GitHub Issue 頁面。"
+    'ui-issues': "使用 URL 地址發送新的\"提交問題\"報告，而不是讓用戶發送到 GitHub Issue 頁面。"
     'telemetry-opt': '遙測報告加入。'
     'auth-user-info-max-age-seconds': '在同步驗證提供程序組成員之前，用戶驗證 Token 的最長存活時間。'
     'auth-user-info-resync-cron': '重新同步驗證提供程序組成員的默認 cron 調度。'

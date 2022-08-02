@@ -90,6 +90,8 @@ generic:
   placeholder: "e.g. {text}"
   moreInfo: More Info
   clearAll: Clear All
+  and: ' and '
+  comma: ', '
 locale:
   en-us: English
   zh-hans: 简体中文
@@ -1198,6 +1200,9 @@ cluster:
         label: KubeconfigContent
       placeholder: 'Namespace/Name'
       cluster: Cluster
+      affinity:
+        namespaces:
+          placeholder: e.g. default,system,base
   description:
     label: Cluster Description
     placeholder: Any text you want that better describes this cluster
@@ -1247,6 +1252,9 @@ cluster:
   kubernetesVersion:
     label: Kubernetes Version
     experimental: experimental
+    deprecated: deprecated
+    deprecatedPatchWarning: We recommend using the latest patch version for each minor Kubernetes version. Deprecated patch versions can be useful for migration purposes.
+    deprecatedPatches: Show deprecated Kubernetes patch versions
   toolsTip: Use the new Cluster Tools to manage and install Monitoring, Logging and other tools
   legacyWarning: The legacy feature flag is enabled and not all legacy features are supported in Kubernetes 1.21+.
   log:
@@ -1930,6 +1938,7 @@ cruResource:
   reviewForm: "Keep editing YAML"
   reviewYaml: "Keep editing YAML"
   previewYaml: Edit as YAML
+  showYaml: View as YAML
 detailText:
   collapse: Hide
   binary: '<Binary Data: {n, number} bytes>'
@@ -2073,6 +2082,18 @@ fleet:
       cluster: There are no clusters available
     workspace:
       label: Workspace
+    add:
+      steps:
+        repoInfo:
+          description: Fleet will continuously monitor the Git Repository you configure below and synchronise the resources contained in it to the configured targets.
+          label: Repository Details
+          subtext: Define repository details
+          title: Specify the Git Repository to add to fleet
+        targetInfo:
+          description: You can configure which clusters will be used as the target of synchronisation with the resources in the repository.
+          label: Target Details
+          subtext: Define target details
+          title: Specify which target to synchronise this repository to
   clusterGroup:
     selector:
       label: Cluster Selectors
@@ -2268,9 +2289,12 @@ ingress:
     port:
       label: Port
       placeholder: e.g. 80 or http
+      notInt: Port must be an integer
+      required: Port is required
     targetService:
       label: Target Service
       doesntExist: The selected service does not exist
+      required: Target Service is required
     warning: "Warning: Default backend is used globally for the entire cluster."
   rules:
     addPath: Add Path
@@ -2301,6 +2325,9 @@ ingress:
     defaultCertificate: default
   target:
     default: Default
+  ingressClass:
+    label: Ingress Class
+  rulesOrBackendSpecified: Either Default Backend or Rules must be specified
 internalExternalIP:
   none: None
 istio:
@@ -3745,7 +3772,7 @@ prefs:
     'true': Include Prerelease Versions
     'false': Show Releases Only
     label: Helm Charts
-  advancedTooltip: Enables 'View in API' option and keyboard shortcut to toggle light or dark theme (shift+t)
+  advancedTooltip: Enables 'View in API' option and keyboard shortcut to toggle light or dark theme (shift+t). This setting also reveals namespaces that are managed by Rancher and are not meant to be manually edited or deleted.
 principal:
   loading: Loading&hellip;
   error: Unable to fetch principal info
@@ -3917,6 +3944,7 @@ promptRemove:
   attemptingToRemove: "You are attempting to delete the {type}"
   protip: "Tip: Hold the {alternateLabel} key while clicking delete to bypass this confirmation"
   confirmName: "Enter <b>{nameToMatch}</b> below to confirm:"
+  deleteAssociatedNamespaces: 'Also delete the namespaces in this project:'
 promptRemoveApp:
   removeCrd: "Delete the CRD associated with this app"
 promptRestore:
@@ -4889,6 +4917,7 @@ tableHeaders:
   groupName: Group Name
   groupRoleNames: Group Role Names
   restart: Restart Required
+  ingressClass: Ingress Class
 target:
   router:
     label: Router
@@ -4973,6 +5002,8 @@ validation:
       startHyphen: '"{key}" cannot start with a hyphen'
       startNumber: '"{key}" cannot start with a number'
       tooLongLabel: '"{key}" cannot be more than {max} characters'
+      endDot: '"{key}" cannot end with a dot'
+      startDot: '"{key}" cannot start with a dot'
   flowOutput:
     both: Requires "Output" or "Cluster Output" to be selected.
     global: Requires "Cluster Output" to be selected.
@@ -4996,6 +5027,7 @@ validation:
     exactly: '"{key}" should be exactly {val}'
     max: '"{key}" should be at most {val}'
     min: '"{key}" should be at least {val}'
+    requiredInt: '"{key}" must be integer'
   podAffinity:
     affinityTitle: Pod Affinity
     antiAffinityTitle: Pod Anti-Affinity
@@ -5019,6 +5051,7 @@ validation:
           labels: 'Rule group {groupIndex} rule {ruleIndex} requires at least one label. Severity is recommended.'
           recordName: 'Rule group {groupIndex} rule {ruleIndex} requires a Time Series Name.'
         singleEntry: 'At least one alert rule or one recording rule is required in rule group {index}.'
+    noEdit: This Prometheus Rule may not be edited due to invalid characters in name.
   required: '"{key}" is required'
   invalid: '"{key}" is invalid'
   requiredOrOverride: '"{key}" is required or must allow override'
@@ -5036,9 +5069,11 @@ validation:
         required: 'Port Rule [{position}] - Name is required.'
       nodePort:
         requiredInt: 'Port Rule [{position}] - Node Port must be integer values if included.'
+        between: Port Rule [{position}] - Node Port must be between 1 and 65535
       port:
         required: 'Port Rule [{position}] - Port is required.'
         requiredInt: 'Port Rule [{position}] - Port must be integer values if included.'
+        between: Port Rule [{position}] - Port must be between 1 and 65535
       targetPort:
         between: 'Port Rule [{position}] - Target Port must be between 1 and 65535'
         iana: 'Port Rule [{position}] - Target Port must be an IANA Service Name or Integer'
@@ -5059,11 +5094,16 @@ validation:
       match: At least one Match or Match Regex must be selected
       interval: '"{key}" must be of a format with digits followed by a unit i.e. 1h, 2m, 30s'
   tab: One or more fields in this tab contain a form validation error
+  noUpperCase: Alphanumeric characters in "{key}" must be lowercase
+  path: '"{key}" must be an absolute path'
 wizard:
   previous: Previous
   finish: Finish
   next: Next
   step: "Step {number}"
+  create: Create
+  edit: Edit
+  view: View
 wm:
   connection:
     connected: Connected
@@ -5148,7 +5188,7 @@ workload:
       livenessProbe: Liveness Check
       livenessTip: Containers will be restarted when this check is failing.  Not recommended for most uses.
       noHealthCheck: "There is not a Readiness Check, Liveness Check or Startup Check configured."
-      readinessProbe: Readiness Check
+      readinessProbe: Readiness Checks
       readinessTip: Containers will be removed from service endpoints when this check is failing.  Recommended.
       startupProbe: Startup Check
       startupTip: Containers will wait until this check succeeds before attempting other health checks.
@@ -5280,7 +5320,9 @@ workload:
       status: Status
       volumeClaimTemplates: Volume Claim Templates
       upgrading: Scaling and Upgrade Policy
+      pods: Pods
     terminationState: 'Last state: Terminated with {lsExitCode}: {lsDescription}, started: {lsStartedAt}, finished: {lsFinishedAt}'
+    addContainer: Add Container
   cronSchedule: Schedule
   detail:
     pods:
@@ -5597,6 +5639,11 @@ workload:
       label: Termination Grace Period
       tip: The duration the pod needs to terminate successfully.
     title: Upgrading
+  tabs:
+    labels:
+      containers: Containers
+      deployment: Deployment
+      pod: Pod
 harvester:
   modal:
     backup:
@@ -6098,6 +6145,11 @@ harvester:
       fail: Fail
       ongoing: on-going
     dismissMessage: Dismiss it
+    upgradeInfo:
+      doc: Before you upgrade to the newer Harvester version, you must perform the required <a href="https://docs.harvesterhci.io/v1.0/upgrade/automatic/" target="_blank"> pre-upgrade checks </a>for your cluster. Complete only those tasks that apply to your environment.
+      moreNotes: For more details about the release notes, please visit -
+      tip: Failure to perform these checks may result in a failed upgrade or hitting known issues that require a manual workaround fix.
+      warning: WARNING
   backup:
     label: Backups
     createText: Restore Backup
@@ -6777,7 +6829,7 @@ advancedSettings:
     system-catalog: Configure Rancher to use System Chart Repo.
     ui-brand: Folder name for an alternative theme defined in '/assets/brand'
     ui-session-logout-minutes: User will automatically logout without any operation after the configured time (in minutes)
-    kubeconfig-default-ttl-minutes: TTL (in minutes) applied on all kubeconfig tokens. When set to 0, the token never expires.
+    kubeconfig-default-token-ttl-minutes: TTL (in minutes) applied on all kubeconfig tokens. When set to 0, the token never expires.
   editHelp:
     'ui-banners': This setting takes a JSON object containing 3 root parameters; <code>banner</code>, <code>showHeader</code>, <code>showFooter</code>. <code>banner</code> is an object containing; <code>textColor</code>, <code>background</code>, and <code>text</code>, where <code>textColor</code> and <code>background</code> are any valid CSS color value.
   enum:
