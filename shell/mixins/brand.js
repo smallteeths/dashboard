@@ -12,6 +12,7 @@ export default {
         this.apps = await this.$store.dispatch('management/findAll', { type: CATALOG.APP });
       }
     } catch (e) {}
+
     this.globalSettings = await this.$store.dispatch('management/findAll', { type: MANAGEMENT.SETTING });
 
     const uiFaviconSetting = this.$store.getters['management/byId'](MANAGEMENT.SETTING, SETTING.FAVICON);
@@ -31,6 +32,7 @@ export default {
   },
 
   computed: {
+
     brand() {
       const setting = findBy(this.globalSettings, 'id', SETTING.BRAND);
 
