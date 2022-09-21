@@ -5,6 +5,7 @@ import isEmpty from 'lodash/isEmpty';
 import { SETTING } from '@shell/config/settings';
 import { insertAt } from '@shell/utils/array';
 import { PROJECT_ID } from '@shell/config/query-params';
+import { HARVESTER_NAME as HARVESTER } from '@shell/config/product/harvester-manager';
 
 function clearUnusedResourceQuotas(spec, types) {
   types.forEach((type) => {
@@ -96,8 +97,28 @@ export default class Project extends HybridModel {
     });
   }
 
+  get doneOverride() {
+    return this.listLocation;
+  }
+
   get listLocation() {
+    // Harvester uses these resource directly... but has different routes. listLocation covers routes leading back to route
+    if (this.$rootGetters['currentProduct'].inStore === HARVESTER) {
+      return { name: `${ HARVESTER }-c-cluster-projectsnamespaces` };
+    }
+
     return { name: 'c-cluster-product-projectsnamespaces' };
+  }
+
+  get _detailLocation() {
+    // Harvester uses these resource directly... but has different routes. detailLocation covers routes leading to resource (like edit)
+    const _detailLocation = super._detailLocation;
+
+    if (this.$rootGetters['currentProduct'].inStore === HARVESTER) {
+      _detailLocation.name = `${ HARVESTER }-${ _detailLocation.name }`.replace('-product', '');
+    }
+
+    return _detailLocation;
   }
 
   get parentLocationOverride() {
@@ -116,9 +137,9 @@ export default class Project extends HybridModel {
     try {
       await newValue.doAction('setpodsecuritypolicytemplate', { podSecurityPolicyTemplateId: this.spec.podSecurityPolicyTemplateId || null });
     } catch (err) {
-      if (err.status === 409) {
+      if ( err.status === 409 || err.status === 403 ) {
         // The backend updates each new project soon after it is created,
-        // so there is a chance of a resource conflict error. If that happens,
+        // so there is a chance of a resource conflict or forbidden error. If that happens,
         // retry the action.
         await newValue.doAction('setpodsecuritypolicytemplate', { podSecurityPolicyTemplateId: this.spec.podSecurityPolicyTemplateId || null });
       } else {

@@ -9,6 +9,7 @@ import {
 import { MULTI_CLUSTER } from '@shell/store/features';
 import { DSL } from '@shell/store/type-map';
 import { SETTING } from '@shell/config/settings';
+import { BLANK_CLUSTER } from '@shell/store';
 
 export const NAME = 'manager';
 
@@ -30,6 +31,14 @@ export function init(store) {
     icon:                'cluster-management',
     removable:           false,
     showClusterSwitcher: false,
+    to:                   {
+      name:   'c-cluster-product-resource',
+      params: {
+        cluster:  BLANK_CLUSTER,
+        product:  NAME,
+        resource: CAPI.RANCHER_CLUSTER
+      }
+    },
   });
 
   virtualType({

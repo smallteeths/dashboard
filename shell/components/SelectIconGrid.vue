@@ -68,6 +68,15 @@ export default {
       type:    String,
       default: 'iframeSrc'
     },
+
+    /**
+     * Inherited global identifier prefix for tests
+     * Define a term based on the parent component to avoid conflicts on multiple components
+     */
+    componentTestid: {
+      type:    String,
+      default: 'select-icon-grid'
+    }
   },
 
   methods: {
@@ -108,7 +117,11 @@ export default {
       :target="get(r, targetField)"
       :rel="rel"
       class="item"
-      :class="{'has-description': !!get(r, descriptionField), 'has-side-label': !!get(r, sideLabelField), [colorFor(r, idx)]: true, disabled: get(r, disabledField) === true}"
+      :data-testid="componentTestid + '-' + idx"
+      :class="{
+        'has-description': !!get(r, descriptionField),
+        'has-side-label': !!get(r, sideLabelField), [colorFor(r, idx)]: true, disabled: get(r, disabledField) === true
+      }"
       @click="select(r, idx)"
     >
       <div class="side-label" :class="{'indicator': true }" />

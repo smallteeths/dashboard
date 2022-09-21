@@ -16,13 +16,13 @@ import FixedBanner from '@shell/components/FixedBanner';
 import AwsComplianceBanner from '@shell/components/AwsComplianceBanner';
 import AzureWarning from '@shell/components/auth/AzureWarning';
 import {
-  COUNT, SCHEMA, MANAGEMENT, UI, CATALOG, HCI
+  COUNT, SCHEMA, MANAGEMENT, UI, CATALOG
 } from '@shell/config/types';
 import { BASIC, FAVORITE, USED } from '@shell/store/type-map';
 import { addObjects, replaceWith, clear, addObject } from '@shell/utils/array';
 import { NAME as EXPLORER } from '@shell/config/product/explorer';
 import { NAME as NAVLINKS } from '@shell/config/product/navlinks';
-import { NAME as HARVESTER } from '@shell/config/product/harvester';
+import { HARVESTER_NAME as HARVESTER } from '@shell/config/product/harvester-manager';
 import isEqual from 'lodash/isEqual';
 import { ucFirst } from '@shell/utils/string';
 import { getVersionInfo, markSeenReleaseNotes } from '@shell/utils/version';
@@ -30,6 +30,7 @@ import { sortBy } from '@shell/utils/sort';
 import PageHeaderActions from '@shell/mixins/page-actions';
 import BrowserTabVisibility from '@shell/mixins/browser-tab-visibility';
 import AutoLogout from '@shell/mixins/auto-logout';
+import { getProductFromRoute } from '@shell/middleware/authenticated';
 
 const SET_LOGIN_ACTION = 'set-as-login';
 
@@ -52,15 +53,19 @@ export default {
 
   mixins: [PageHeaderActions, Brand, BrowserTabVisibility, AutoLogout],
 
+  // Note - This will not run on route change
   data() {
     return {
-      groups:         [],
-      gettingGroups:  false,
-      wantNavSync:    false,
+      groups:                        [],
+      gettingGroups:                 false,
+      wantNavSync:                   false,
     };
   },
 
-  middleware: ['authenticated'],
+  // Note - These will run on route change
+  middleware: [
+    'authenticated'
+  ],
 
   computed: {
     ...mapState(['managementReady', 'clusterReady']),
@@ -104,7 +109,7 @@ export default {
     },
 
     allSchemas() {
-      const managementReady = this.$store.getters['managementReady'];
+      const managementReady = this.managementReady;
       const product = this.$store.getters['currentProduct'];
 
       if ( !managementReady || !product ) {
@@ -123,7 +128,7 @@ export default {
     },
 
     counts() {
-      const managementReady = this.$store.getters['managementReady'];
+      const managementReady = this.managementReady;
       const product = this.$store.getters['currentProduct'];
       const inStore = product.inStore;
       const haveAllCount = this.$store.getters[`${ inStore }/haveAll`](COUNT);
@@ -148,13 +153,11 @@ export default {
     },
 
     displayVersion() {
-      let { displayVersion } = getVersionInfo(this.$store);
-
-      if (this.isVirtualProduct && this.isSingleProduct) {
-        const setting = this.$store.getters['harvester/byId'](HCI.SETTING, 'server-version');
-
-        displayVersion = setting?.value || 'unknown';
+      if (this.isSingleProduct?.getVersionInfo) {
+        return this.isSingleProduct?.getVersionInfo(this.$store);
       }
+
+      const { displayVersion } = getVersionInfo(this.$store);
 
       return displayVersion;
     },
@@ -172,32 +175,54 @@ export default {
     },
 
     supportLink() {
-      const product = this.$store.getters['currentProduct'].name;
+      const product = this.$store.getters['currentProduct'];
 
-      return { name: `c-cluster-${ product }-support` };
+      if (product?.supportRoute) {
+        return { ...product.supportRoute, params: { ...product.supportRoute.params, cluster: this.clusterId } };
+      }
+
+      return { name: `c-cluster-${ product?.name }-support` };
     },
 
     unmatchedRoute() {
       return !this.$route?.matched?.length;
-    }
+    },
+
+    /**
+     * When navigation involves unloading one cluster and loading another, clusterReady toggles from true->false->true in middleware (before new route content renders)
+     * Prevent rendering "outlet" until the route changes to avoid re-rendering old route content after its cluster is unloaded
+     */
+    clusterAndRouteReady() {
+      return this.clusterReady &&
+        this.clusterId === this.$route?.params?.cluster &&
+        this.currentProduct?.name === getProductFromRoute(this.$route);
+    },
 
   },
 
   watch: {
-    counts() {
-      this.queueUpdate();
+    counts(a, b) {
+      if ( a !== b ) {
+        this.queueUpdate();
+      }
     },
 
-    allSchemas() {
-      this.queueUpdate();
+    allSchemas(a, b) {
+      if ( a !== b ) {
+        this.queueUpdate();
+      }
     },
 
-    allNavLinks() {
-      this.queueUpdate();
+    allNavLinks(a, b) {
+      if ( a !== b ) {
+        this.queueUpdate();
+      }
     },
 
-    favoriteTypes() {
-      this.queueUpdate();
+    favoriteTypes(a, b) {
+      if ( !isEqual(a, b) ) {
+        this.queueUpdate();
+      }
     },
 
     locale(a, b) {
@@ -334,7 +359,6 @@ export default {
       if ( this.gettingGroups ) {
         return;
       }
-
       this.gettingGroups = true;
 
       if ( !this.clusterReady ) {
@@ -389,6 +413,7 @@ export default {
 
         for ( const mode of modes ) {
           const types = this.$store.getters['type-map/allTypes'](productId, mode) || {};
+
           const more = this.$store.getters['type-map/getTree'](productId, mode, types, clusterId, namespaceMode, namespaces, currentType);
 
           if ( productId === EXPLORER || !this.isExplorer ) {
@@ -643,7 +668,7 @@ export default {
           {{ displayVersion }}
         </div>
       </nav>
-      <main v-if="clusterReady">
+      <main v-if="clusterAndRouteReady">
         <nuxt class="outlet" />
         <ActionMenu />
         <PromptRemove />

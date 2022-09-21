@@ -7,7 +7,7 @@ import KeyValue from '@shell/components/form/KeyValue.vue';
 import { Banner } from '@components/Banner';
 import Tolerations from '@shell/components/form/Tolerations';
 import Reservation from '@shell/components/Reservation.vue';
-import ToggleSwitch from '@shell/components/form/ToggleSwitch';
+import { ToggleSwitch } from '@components/Form/ToggleSwitch';
 import { random32 } from '@shell/utils/string';
 import { uniqBy } from 'lodash';
 import GlobalDashboard from './GlobalDashboard';
