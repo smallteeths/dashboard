@@ -92,6 +92,8 @@ generic:
   clearAll: Clear All
   and: ' and '
   comma: ', '
+  basic: Basic
+  inProgress: In Progress
 locale:
   en-us: English
   zh-hans: 简体中文
@@ -137,6 +139,8 @@ nav:
     imageRepo: Image Repo
     globalMonitoring: Global Monitoring
     vlansubnet: Flat NetWork
+    backupAndSnapshot: Backup & Snapshot
+    networks: Networks
   ns:
     all: All Namespaces
     clusterLevel: Only Cluster Resources
@@ -1235,6 +1239,8 @@ cluster:
     warning:
       label: This is a Harvester Cluster - enable the Harvester feature flag to manage it
       state: Warning
+      cloudProvider:
+        incompatible: You cannot select the Harvester cloud provider as the current Harvester version is not compatible with the selected RKE2 Kubernetes version, click <a target="_blank" rel="noopener noreferrer nofollow" href="https://www.suse.com/suse-harvester/support-matrix/all-supported-versions">here</a> to see which Kubernetes versions are supported.
     clusterWarning: |-
       There {count, plural,
       =1 {is 1 Harvester cluster that is not shown}
@@ -2760,6 +2766,9 @@ logging:
       certificate: Connection
       labels: Labels
       configuration: Configuration
+    tips:
+      multipleProviders: This output is configured with providers we don't support yet. You can view or edit the YAML.
+      singleProvider: This output is configured with multiple providers. We currently only support a single provider per output. You can view or edit the YAML.
   outputProviders:
     elasticsearch: Elasticsearch
     splunkHec: Splunk
@@ -4173,6 +4182,18 @@ rbac:
       read-only-pandaria:
         description: A read-only administrator can access all resources in all downstream clusters, but cannot access the local cluster
         label: Read-Only Administrator
+    notBound: 'No users bound <i class="icon icon-checkmark" style="margin-left: 5px"></i>'
+    unableToCheck: Unable to check if any user is bound to the role(s). Please try again.
+    usersBound: |-
+      {count, plural,
+        =1 { Caution: There is 1 user bound to the role(s) about to be deleted. Do you want to proceed? }
+        other { Caution: There are {count} users bound to the role(s) about to be deleted. Do you want to proceed? }
+      }
+    waiting: |-
+      {count, plural,
+        =1 { Checking if there are any users bound to this role <i class="icon-spin icon icon-spinner" style="margin-left: 5px"></i> }
+        other { Checking if there are any users bound to these roles <i class="icon-spin icon icon-spinner" style="margin-left: 5px"></i> }
+      }
 resourceDetail:
   detailTop:
     annotations: Annotations
@@ -4235,6 +4256,7 @@ resourceTable:
     namespace: Group by Namespace
     project: Group by Project
     node: Group by Node
+    device: Group by Device
   groupLabel:
     cluster: "<span>Cluster:</span> {name}"
     namespace: "<span>Namespace:</span> {name}"
@@ -5146,6 +5168,7 @@ validation:
   tab: One or more fields in this tab contain a form validation error
   noUpperCase: Alphanumeric characters in "{key}" must be lowercase
   path: '"{key}" must be an absolute path'
+  arrayCountRequired: At least {count} {key} {count, plural, =1 {is} other {are}} required, and {key} can not be empty.
 wizard:
   previous: Previous
   finish: Finish
@@ -5647,6 +5670,8 @@ workload:
         label: Path
         placeholder: e.g. my-group/my-username
       specific: Select Specific Keys
+    noVolumes: Volumes will appear here after they are added in the Pod tab
+    selectVolume: Select Volume
   typeDescriptions:
     apps.daemonset: DaemonSets run exactly one pod on every eligible node. When new nodes are added to the cluster, DaemonSets automatically deploy to them. Recommended for system-wide or vertically-scalable workloads that never need more than one pod per node.
     apps.deployment: Deployments run a scalable number of replicas of a pod distributed among the eligible nodes. Changes are rolled out incrementally and can be rolled back to the previous revision when needed. Recommended for stateless & horizontally-scalable workloads.
@@ -7412,6 +7437,15 @@ growl:
   disconnected:
     message: The connection to {url} closed unexpectedly {time}. Retrying...
     title: Websocket Disconnected
+  connectError:
+    message: 'The connection to {url} closed unexpectedly at {time}. Reconnect attempt #{tries}.'
+    title: Websocket Reconnecting
+  disconnectError:
+    message: The connection to {url} closed unexpectedly at {time}. Disconnected after {tries} reconnect attempts. Check your network connection and reload the page
+    title: Websocket Disconnected
+  reconnected:
+    message: 'The connection to {url} was restored on attempt #{tries}.'
+    title: Websocket Reconnected
 managementNode:
   customName: Custom Name
 performance:
@@ -7519,3 +7553,6 @@ harvesterManager:
   manage: Manage
   plugins:
     loadError: Error loading harvester plugin
+labeledSelect:
+  pressEnter: Press enter to add "{input}"
+  startTyping: Start typing to define an item
