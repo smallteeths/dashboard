@@ -1,7 +1,6 @@
 <script>
 import BrandImage from '@shell/components/BrandImage';
 import ClusterProviderIcon from '@shell/components/ClusterProviderIcon';
-import LocaleSelector from '@shell/components/LocaleSelector';
 import { mapGetters } from 'vuex';
 import $ from 'jquery';
 import { CAPI, MANAGEMENT } from '@shell/config/types';
@@ -20,9 +19,7 @@ const UI_COMMIT = process.env.COMMIT || UNKNOWN;
 
 export default {
 
-  components: {
-    BrandImage, ClusterProviderIcon, LocaleSelector
-  },
+  components: { BrandImage, ClusterProviderIcon },
 
   data() {
     const { displayVersion, fullVersion } = getVersionInfo(this.$store);
@@ -365,7 +362,6 @@ export default {
               v-html="displayVersion"
             />
           </div>
-          <LocaleSelector></LocaleSelector>
         </div>
         <div v-if="footerText && footerText.value" class="footer-banner">
           <div v-if="footerUrl && footerUrl.value">

@@ -116,7 +116,11 @@ export default {
     getCustomDetailLink: {
       type:    Function,
       default: null
-    }
+    },
+    ignoreFilter: {
+      type:    Boolean,
+      default: false
+    },
   },
 
   data() {
@@ -128,7 +132,11 @@ export default {
       return acc;
     }, {});
 
-    return { listGroups, listGroupMapped };
+    return {
+      options,
+      listGroups,
+      listGroupMapped
+    };
   },
 
   computed: {
@@ -197,7 +205,7 @@ export default {
       const isAll = this.$store.getters['isAllNamespaces'];
 
       // If the resources isn't namespaced or we want ALL of them, there's nothing to do.
-      if ( !this.isNamespaced || (isAll && !this.currentProduct?.hideSystemResources)) {
+      if ( !this.isNamespaced || (isAll && !this.currentProduct?.hideSystemResources) || this.ignoreFilter) {
         return this.rows || [];
       }
 
@@ -231,7 +239,7 @@ export default {
         const exists = this.groupOptions.find(g => g.value === this._group);
 
         if (!exists) {
-          return DEFAULT_GROUP;
+          return this.groupOptions.find(g => g.value === DEFAULT_GROUP) ? DEFAULT_GROUP : 'none';
         }
 
         return this._group;
@@ -276,13 +284,16 @@ export default {
           tooltipKey: 'resourceTable.groupBy.none',
           icon:       'icon-list-flat',
           value:      'none',
-        },
-        {
+        }
+      ];
+
+      if (!this.options?.hiddenNamespaceGroupButton) {
+        standard.push( {
           tooltipKey: this.groupTooltip,
           icon:       'icon-folder',
           value:      'namespace',
-        },
-      ];
+        });
+      }
 
       return standard.concat(this.listGroups);
     },

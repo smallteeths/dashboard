@@ -38,6 +38,7 @@ import CruResource from '@shell/components/CruResource';
 import Command from '@shell/components/form/Command';
 import LifecycleHooks from '@shell/components/form/LifecycleHooks';
 import Storage from '@shell/edit/workload/storage';
+import ContainerMountPaths from '@shell/edit/workload/storage/ContainerMountPaths.vue';
 import Labels from '@shell/components/form/Labels';
 import { RadioGroup } from '@components/Form/Radio';
 import { UI_MANAGED } from '@shell/config/labels-annotations';
@@ -105,6 +106,7 @@ export default {
     Upgrading,
     VolumeClaimTemplate,
     WorkloadPorts,
+    ContainerMountPaths
   },
 
   mixins: [CreateEditView],
@@ -172,7 +174,6 @@ export default {
   },
 
   data() {
-    let defaultTab;
     let type = this.$route.params.resource;
     const createSidecar = !!this.$route.query.sidecar;
     const isInitContainer = !!this.$route.query.init;
@@ -183,22 +184,16 @@ export default {
 
     if (!this.value.spec) {
       this.value.spec = {};
-      if (this.value.type === WORKLOAD_TYPES.POD) {
+      if (this.value.type === POD) {
         const podContainers = [{
           imagePullPolicy: 'Always',
           name:            `container-0`,
         }];
 
-        defaultTab = 'container-0';
-
         const podSpec = { template: { spec: { containers: podContainers, initContainers: [] } } };
 
         this.$set(this.value, 'spec', podSpec);
       }
-    }
-
-    if (this.mode === _CREATE) {
-      defaultTab = 'container-0';
     }
 
     if ((this.mode === _EDIT || this.mode === _VIEW ) && this.value.type === 'pod' ) {
@@ -238,7 +233,6 @@ export default {
           imagePullPolicy: 'IfNotPresent',
           name:            `container-${ allContainers.length }`,
         });
-        defaultTab = 'container-0';
 
         containers = podTemplateSpec.initContainers;
       }
@@ -247,8 +241,6 @@ export default {
           imagePullPolicy: 'IfNotPresent',
           name:            `container-${ allContainers.length }`,
         };
-
-        defaultTab = 'container-0';
 
         containers.push(container);
       } else {
@@ -288,14 +280,20 @@ export default {
       fvReportedValidationPaths: ['spec'],
 
       systemGpuManagementSchedulerName: '',
-      defaultTab
-
     };
   },
 
   computed: {
     tabErrors() {
       return { general: this.fvGetPathErrors(['image'])?.length > 0 };
+    },
+
+    defaultTab() {
+      if (!!this.$route.query.sidecar || this.$route.query.init || this.mode === _CREATE) {
+        return 'container-0';
+      }
+
+      return this.allContainers.length ? this.allContainers[0].name : '';
     },
 
     isEdit() {
@@ -324,7 +322,7 @@ export default {
     },
 
     isPod() {
-      return this.value.type === WORKLOAD_TYPES.POD;
+      return this.value.type === POD;
     },
 
     isStatefulSet() {

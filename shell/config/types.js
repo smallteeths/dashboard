@@ -81,7 +81,6 @@ export const WORKLOAD_TYPES = {
   STATEFUL_SET:           'apps.statefulset',
   REPLICA_SET:            'apps.replicaset',
   REPLICATION_CONTROLLER: 'replicationcontroller',
-  POD:                    'pod'
 };
 
 const {
@@ -270,9 +269,10 @@ export const VIRTUAL_TYPES = {
 
 // harvester
 export const HCI = {
-  CLUSTER:   'harvesterhci.io.management.cluster',
-  DASHBOARD: 'harvesterhci.io.dashboard',
-  IMAGE:     'harvesterhci.io.virtualmachineimage',
+  CLUSTER:    'harvesterhci.io.management.cluster',
+  DASHBOARD:  'harvesterhci.io.dashboard',
+  IMAGE:      'harvesterhci.io.virtualmachineimage',
+  SETTING:   'harvesterhci.io.setting',
 };
 
 export const VIRTUAL_HARVESTER_PROVIDER = 'harvester';

@@ -23,6 +23,7 @@ generic:
   id: ID
   ignored: Ignored
   invalidCron: Invalid cron schedule
+  inProgress: In Progress
   imagePullPolicy:
     always: Always
     ifNotPresent: IfNotPresent
@@ -93,6 +94,7 @@ generic:
   deprecated: Deprecated
   placeholder: "e.g. {text}"
   moreInfo: More Info
+  basic: Basic
 
 locale:
   en-us: English
@@ -135,6 +137,8 @@ nav:
     apps: Apps
     clusterProvisioning: Cluster Provisioning
     core: Core
+    networks: Networks
+    backupAndSnapshot: Backup & Snapshot
   ns:
     all: All Namespaces
     clusterLevel: Only Cluster Resources
@@ -1191,6 +1195,9 @@ cluster:
     warning:
       label: This is a Harvester Cluster - enable the Harvester feature flag to manage it
       state: Warning
+      cloudProvider: 
+        incompatible:
+          You cannot select the Harvester cloud provider as the current Harvester version is not compatible with the selected RKE2 Kubernetes version, click <a target="_blank" rel="noopener noreferrer nofollow" href="https://www.suse.com/suse-harvester/support-matrix/all-supported-versions">here</a> to see which Kubernetes versions are supported.
     clusterWarning: |-
       There {count, plural,
       =1 {is 1 Harvester cluster that is not shown}
@@ -2096,9 +2103,15 @@ graphOptions:
 
 growl:
   clearAll: Clear All Notifications
-  disconnected: 
-    message: "The connection to {url} closed unexpectedly {time}. Retrying..."
+  disconnectError: 
+    message: "The connection to {url} closed unexpectedly at {time}. Disconnected after {tries} reconnect attempts. Check your network connection and reload the page"
     title: Websocket Disconnected 
+  connectError: 
+    message: "The connection to {url} closed unexpectedly at {time}. Reconnect attempt #{tries}."
+    title: Websocket Reconnecting 
+  reconnected: 
+    message: "The connection to {url} was restored on attempt #{tries}."
+    title: Websocket Reconnected
 
 hpa:
   detail:
@@ -2426,6 +2439,10 @@ labels:
   annotations:
     title: Annotations
 
+labeledSelect:
+  startTyping: Start typing to define an item
+  pressEnter: Press enter to add "{input}"
+
 landing:
   clusters:
     title: Clusters
@@ -2633,6 +2650,9 @@ logging:
       certificate: Connection
       labels: Labels
       configuration: Configuration
+    tips:
+      singleProvider: This output is configured with multiple providers. We currently only support a single provider per output. You can view or edit the YAML.
+      multipleProviders: This output is configured with providers we don't support yet. You can view or edit the YAML.
   outputProviders:
     elasticsearch: Elasticsearch
     splunkHec: Splunk
@@ -3642,6 +3662,7 @@ prefs:
     auto: Auto
     dark: Dark
     autoDetail: Auto uses OS preference if available, or dark from {pm} to {am}
+  language: Language
   landing:
     label: Login Landing Page
     vue: Cluster Explorer
@@ -3960,6 +3981,18 @@ rbac:
       noContext:
         label: No Context
   globalRoles:
+    notBound: 'No users bound <i class="icon icon-checkmark" style="margin-left: 5px"></i>'
+    unableToCheck: Unable to check if any user is bound to the role(s). Please try again.
+    waiting: |-
+      {count, plural,
+        =1 { Checking if there are any users bound to this role <i class="icon-spin icon icon-spinner" style="margin-left: 5px"></i> }
+        other { Checking if there are any users bound to these roles <i class="icon-spin icon icon-spinner" style="margin-left: 5px"></i> }
+      }
+    usersBound: |-
+      {count, plural,
+        =1 { Caution: There is 1 user bound to the role(s) about to be deleted. Do you want to proceed? }
+        other { Caution: There are {count} users bound to the role(s) about to be deleted. Do you want to proceed? }
+      }
     types:
       global:
         label: Global Permissions
@@ -4110,6 +4143,7 @@ resourceTable:
     namespace: Group by Namespace
     project: Group by Project
     node: Group by Node
+    device: Group by Device
   groupLabel:
     cluster: "<span>Cluster:</span> {name}"
     namespace: "<span>Namespace:</span> {name}"
@@ -4996,6 +5030,7 @@ validation:
   required: '"{key}" is required'
   invalid: '"{key}" is invalid'
   requiredOrOverride: '"{key}" is required or must allow override'
+  arrayCountRequired: "At least {count} {key} {count, plural, =1 {is} other {are}} required, and {key} can not be empty."
   roleTemplate:
     roleTemplateRules:
       missingVerb: You must specify at least one verb for each resource grant
@@ -5452,6 +5487,8 @@ workload:
     addClaim: Add Claim
     addMount: Add Mount
     addVolume: Add Volume
+    selectVolume: Select Volume
+    noVolumes: Volumes will appear here after they are added in the Pod tab
     certificate: Certificate
     csi:
       diskName: Disk Name

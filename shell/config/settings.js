@@ -148,7 +148,7 @@ export const DEFAULT_PERF_SETTING = {
     enabled:   false,
     threshold: 1500,
   },
-  disableWebsocketNotification: false
+  disableWebsocketNotification: true
 };
 
 export const fetchOrCreateSetting = async(store, id, val, save = true) => {
