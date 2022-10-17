@@ -92,6 +92,8 @@ generic:
   readFromFolder: 從文件夾讀取
   and: ' 和 '
   comma: ，
+  basic: 基本信息
+  inProgress: 進行中
 locale:
   en-us: English
   zh-hans: 简体中文
@@ -141,6 +143,8 @@ nav:
     imageRepo: 鏡像倉庫
     globalMonitoring: 全局監控
     vlansubnet: 扁平網絡
+    backupAndSnapshot: 備份和快照
+    networks: 網絡
   ns:
     all: 所有命名空間
     clusterLevel: 集羣資源
@@ -1244,6 +1248,8 @@ cluster:
     warning:
       label: 這是一個 Harvester 集羣 - 請啓用 Harvester 功能開關以對其進行管理。
       state: 警告
+      cloudProvider:
+        incompatible: 由於當前的 Harvester 版本與所選的 RKE2 Kubernetes 版本不兼容，因此你無法選擇 Harvester cloud provider。請單擊 <a target="_blank" rel="noopener noreferrer nofollow" href="https://www.suse.com/suse-harvester/support-matrix/all-supported-versions">此處</a>查看支持的 Kubernetes 版本。
     clusterWarning: |-
       還有 {count, plural,
       =1 {1個 Harvester 集羣未顯示}
@@ -1643,6 +1649,7 @@ cluster:
     warning: '此集羣包含此表單不完全支持的 machineSelectorConfig。使用 YAML 編輯器管理完整配置。'
     os: '你正在將 {newOS} worker 節點添加到具有一個或多個 {existingOS} worker 節點的集羣。你可能需要升級或刪除某些已安裝的應用。'
     rke2-k3-reprovisioning: '更改集羣配置可能導致節點重新配置。詳情請參見 <a target="blank" href="{docsBase}/cluster-provisioning/rke-clusters/behavior-differences-between-rke1-and-rke2/" target="_blank" rel="noopener nofollow">文檔</a>。'
+    desiredNodeGroupWarning: 沒有可用於運行 Cluster Agent 的節點。要讓集羣變爲 Active 狀態，至少需要有 1 個可用的節點。
   machinePool:
     name:
       label: 池名稱
@@ -1689,7 +1696,7 @@ cluster:
     autoReplace:
       label: 自動替換
       toolTip: 如果大於 0，則在此期間無法訪問的節點將被自動刪除和替換。
-      unit: "分鐘"
+      unit: "秒"
   memberRoles:
     removeMessage: '注意：刪除用戶不會刪除其項目權限。'
     addClusterMember:
@@ -2769,6 +2776,9 @@ logging:
       certificate: 連接
       labels: 標籤
       configuration: 配置
+    tips:
+      multipleProviders: 此輸出配置了不受支持的提供程序。你可以查看或編輯 YAML。
+      singleProvider: 此輸出配置了多個提供程序。目前，我們僅支持爲輸出配置單個提供程序。你可以查看或編輯 YAML。
   outputProviders:
     elasticsearch: Elasticsearch
     splunkHec: Splunk
@@ -3814,6 +3824,10 @@ prefs:
     'false': 只顯示正式版本
     label: Helm Chart
   advancedTooltip: 啓用“在 API 中查看”選項並使用鍵盤快捷鍵來切換淺色或深色主題 (shift+t)。此設置還顯示了由 Rancher 管理的命名空間，不要手動編輯或刪除這些命名空間。
+  displaySettings:
+    detail: 更改在 UI 中顯示信息的方式。
+    title: 顯示設置
+  language: 語言
 principal:
   loading: 正在加載&hellip;
   error: 無法獲取信息
@@ -3985,7 +3999,7 @@ promptRemove:
   attemptingToRemove: "你正在試圖刪除 {type}"
   protip: "提示：按住 {alternateLabel} 鍵的同時單擊刪除，以繞過此確認。"
   confirmName: "在下方輸入 <b>{nameToMatch}</b> 以確認："
-  confirmRelatedResource: 刪除 {type} 將刪除這個特定 {type} 上的所有資源，這是不可恢復的，您確定要繼續刪除 {names} 嗎？
+  confirmRelatedResource: 刪除 {type} 將刪除這個 {type} 上的所有資源，此過程不可逆。你確定要繼續刪除 {names} 嗎？
   deleteAssociatedNamespaces: 同時刪除此項目中的命名空間：
   willDeleteAssociatedNamespaces: 項目中的所有命名空間也都會被刪除：
 promptRemoveApp:
@@ -4169,6 +4183,18 @@ rbac:
       read-only-pandaria:
         description: 只讀管理員可以訪問所有下游集羣中的所有資源，但不能訪問local集羣
         label: 只讀管理員
+    notBound: '沒有綁定的用戶 <i class="icon icon-checkmark" style="margin-left: 5px"></i>'
+    unableToCheck: 無法檢查是否存在綁定了該角色的用戶，請重試。
+    usersBound: |-
+      {count, plural,
+        =1 { 注意：有 1 個用戶綁定了即將被刪除的角色，是否繼續操作？}
+        other { 注意：有 {count} 個用戶綁定了即將被刪除的角色，是否繼續操作？}
+      }
+    waiting: |-
+      {count, plural,
+        =1 { 檢查是否存在綁定了該角色的用戶 <i class="icon-spin icon icon-spinner" style="margin-left: 5px"></i> }
+        other { 檢查是否存在綁定了這些角色的用戶 <i class="icon-spin icon icon-spinner" style="margin-left: 5px"></i> }
+      }
 resourceDetail:
   detailTop:
     annotations: 註釋
@@ -4231,6 +4257,7 @@ resourceTable:
     namespace: 按命名空間分組
     project: 按項目分組
     node: 按節點分組
+    device: 按設備分組
   groupLabel:
     cluster: "<span>集羣：</span> {name}"
     namespace: "<span>命名空間：</span> {name}"
@@ -4461,6 +4488,24 @@ servicesPage:
       label: 節點端口
   typeOpts:
     label: 服務類型
+  harvester:
+    healthCheckEnabled:
+      label: 健康檢查
+    healthCheckFailureThreshold:
+      description: 如果健康檢查失敗的數量達到失敗閾值，後端服務器將停止轉發流量。
+      label: 健康檢查失敗閾值
+    healthCheckPeriod:
+      label: 健康檢查週期
+    healthCheckPort:
+      label: 健康檢查端口
+    healthCheckSuccessThreshold:
+      description: 如果探針連續檢測到某個地址的成功次數達到成功閾值，後端服務器就可以開始轉發流量。
+      label: 健康檢查成功闕值
+    healthCheckTimeout:
+      label: 健康檢查超時
+    ipam:
+      label: IPAM
+    title: 附加配置
 setup:
   currentPassword: Bootstrap 密碼
   confirmPassword: 確認新密碼
@@ -4502,6 +4547,9 @@ sortableTable:
       =1 {{count} {count, plural, =1 {{singularLabel}} other {{pluralLabel}}}}
       other {{from} - {to} of {count} {pluralLabel}}}
   search: 篩選
+  bulkActions:
+    collapsed:
+      label: 操作
 storageClass:
   actions:
     setAsDefault: 設爲默認配置
@@ -4871,13 +4919,13 @@ tableHeaders:
   publicPorts: 公共端口
   ram: 內存（RAM）
   rbac:
-    create: 創建
-    delete: 刪除
-    get: 查詢
-    list: 列出
-    patch: 修改
-    update: 更新
-    watch: 監視
+    create: Create
+    delete: Delete
+    get: Get
+    list: List
+    patch: Patch
+    update: Update
+    watch: Watch
   ready: 就緒
   reason: 原因
   reclaimPolicy: 回收策略
@@ -5162,6 +5210,7 @@ validation:
   tab: 此選項卡中的一個或多個字段包含表單驗證錯誤
   noUpperCase: “{key}” 中的字母數字字符必須爲小寫
   path: '"{key}" 必須是絕對路徑'
+  arrayCountRequired: 至少需要 {count} 個 {key}，而且 {key} 不能爲空。
 wizard:
   previous: 上一步
   finish: 完成
@@ -5663,6 +5712,8 @@ workload:
         label: 路徑
         placeholder: '例如: my-group/my-username'
       specific: 選擇特定的鍵
+    noVolumes: 在 Pod 選項卡中添加捲後，卷將顯示在此處
+    selectVolume: 選擇卷
   typeDescriptions:
     apps.daemonset: DaemonSet 在每個符合條件的節點上僅運行一個 Pod。當新節點添加到集羣時，DaemonSet 會自動部署新節點。推薦用於全系統或可垂直擴展，且每個節點永遠不需要超過一個 pod 的工作負載。
     apps.deployment: Deployment 運行分佈在符合條件的節點中的可擴展數量的 Pod 副本。變更會逐步推出，並可回滾到之前的版本。推薦用於無狀態和水平可擴展的工作負載。
@@ -7183,7 +7234,7 @@ support:
       text: 無論你使用的 Rancher Labs 產品、Kubernetes、Docker 還是底層基礎架構出現問題，我們都會努力找到問題的根本原因。
     four:
       title: 自由創新
-      text: 基於我們與各 Kubernetes 供應商、操作系統和開源軟件認證的兼容性，實現自主創新
+      text: 基於我們與衆多 Kubernetes 供應商、操作系統和開源軟件認證的兼容性，實現自主創新。
 embedding:
   retry: 重試
   unavailable: Cluster Manager UI 不可用
@@ -7838,6 +7889,15 @@ growl:
   disconnected:
     message: 與 {url} 的連接意外斷開 {time}，正在重試...
     title: Websocket 斷開連接
+  connectError:
+    message: '與 {url} 的連接在 {time} 意外斷開，重連次數爲 #{tries}。'
+    title: Websocket 重新連接
+  disconnectError:
+    message: 與 {url} 的連接在 {time} 意外斷開，重連 {tries} 次後斷開連接。請檢查你的網絡連接並重新加載頁面。
+    title: Websocket 斷開連接
+  reconnected:
+    message: '在嘗試第 #{tries} 次時恢復了與 {url} 的連接。'
+    title: Websocket 已重新連接
 harvesterManager:
   cluster:
     description: Harvester 是一個採用企業級開源技術，包括Kubernetes、Kubevirt和Longhorn，爲裸金屬服務器打造的現代超融合基礎設施（HCI）解決方案。
@@ -7845,6 +7905,8 @@ harvesterManager:
     learnMore: 訪問 <a target="_blank" href="https://harvesterhci.io/" rel="noopener noreferrer nofollow">Harvester 網站</a> 或閱讀 <a target="_blank" href="https://docs.harvesterhci.io/" rel="noopener noreferrer nofollow">Harvester 官方文檔</a>，以瞭解更多關於 Harvester 的信息。
     none: 不存在 Harvester 集羣
   manage: 管理
+  plugins:
+    loadError: 加載 Harvester 插件時出錯
 managementNode:
   customName: 自定義名稱
 performance:
@@ -7852,7 +7914,7 @@ performance:
   description: 性能設置允許你在需要處理大量集羣資源時配置 UI 的行爲。設置僅適用於以下資源：Pod、Deployment、CronJob、DaemonSet、Job、StatefulSet、ReplicaSet、Replication Controller、Workload 和 Secret。
   incrementalLoad:
     checkboxLabel: 啓用增量加載
-    description: 啓用後，資源會更快出現，但可能需要更長的時間來加載整個資源集。
+    description: 啓用後，資源會更快出現，但可能需要更長的時間來加載整個資源集。此設置僅適用於以下資源：Pod、Deployment、CronJob、DaemonSet、Job、StatefulSet、ReplicaSet、Replication Controller、Workload 和 Secret。
     inputLabel: 資源閾值
     label: 增量加載
     setting: 你可以配置一個閾值，高於該閾值時則使用增量加載。
@@ -7860,13 +7922,21 @@ performance:
   manualRefresh:
     buttonTooltip: 刷新列表
     checkboxLabel: 啓用列表數據的手動刷新
-    description: 啓用後，列表數據不會自動更新，用戶必須手動刷新列表視圖。
+    description: 啓用後，列表數據不會自動更新，用戶必須手動刷新列表視圖。此設置僅適用於以下資源：Pod、Deployment、CronJob、DaemonSet、Job、StatefulSet、ReplicaSet、Replication Controller、Workload 和 Secret。
     inputLabel: 資源閾值
     label: 手動刷新
     setting: 你可以配置一個閾值，高於該閾值時則啓用手動刷新。
+    banner: 此設置是實驗性的，可能會在後續版本中刪除或更新。
   settingName: 性能
+  websocketNotification:
+    checkboxLabel: 禁用 WebSocket 通知
+    description: 啓用後，UI 檢測到斷開連接時不會出現 WebSocket 通知。
+    label: WebSocket 通知
 resourceLoadingIndicator:
   loading: 正在加載
 forceUpdateMachinePlan:
   attemptingToUpdate: "你正在試圖強制更新 machine-plan"
   error: 強制更新 machine-plan 時出錯
+labeledSelect:
+  pressEnter: 按回車以添加 “{input}”
+  startTyping: 輸入以定義一個項
