@@ -97,7 +97,14 @@ export default {
           />
         </div>
       </div>
-      <Tabbed class="deployment-tabs" :show-tabs-add-remove="true" :default-tab="defaultTab" :flat="true" @changed="changed">
+      <Tabbed
+        ref="containersTabbed"
+        class="deployment-tabs"
+        :show-tabs-add-remove="true"
+        :default-tab="defaultTab"
+        :flat="true"
+        @changed="changed"
+      >
         <Tab
           v-for="(tab, i) in allContainers"
           :key="i"
