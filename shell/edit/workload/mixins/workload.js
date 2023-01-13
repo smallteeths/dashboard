@@ -77,6 +77,28 @@ const MACVLAN_ANNOTATION_MAP = {
   mac:      'macvlan.pandaria.cattle.io/mac',
   subnet:   'macvlan.pandaria.cattle.io/subnet'
 };
+const ID_KEY = Symbol('container-id');
+
+const serialMaker = function() {
+  let prefix = '';
+  let seq = 0;
+
+  return {
+    setPrefix(p) {
+      prefix = p;
+    },
+    setSeq(s) {
+      seq = s;
+    },
+    genSym() {
+      const result = prefix + seq;
+
+      seq += 1;
+
+      return result;
+    }
+  };
+}();
 
 export default {
   name:       'CruWorkload',
@@ -174,9 +196,10 @@ export default {
   },
 
   data() {
+    serialMaker.setPrefix('container-');
+    serialMaker.setSeq(0);
     let type = this.$route.params.resource;
     const createSidecar = !!this.$route.query.sidecar;
-    const isInitContainer = !!this.$route.query.init;
 
     if (type === 'workload') {
       type = null;
@@ -232,6 +255,7 @@ export default {
         podTemplateSpec.initContainers.push({
           imagePullPolicy: 'IfNotPresent',
           name:            `container-${ allContainers.length }`,
+          _init:           true,
         });
 
         containers = podTemplateSpec.initContainers;
@@ -240,6 +264,7 @@ export default {
         container = {
           imagePullPolicy: 'IfNotPresent',
           name:            `container-${ allContainers.length }`,
+          _init:           false,
         };
 
         containers.push(container);
@@ -267,7 +292,6 @@ export default {
       servicesOwned:     [],
       servicesToRemove:  [],
       portsForServices:  [],
-      isInitContainer,
       container,
       containerChange:   0,
       tabChange:         0,
@@ -278,6 +302,8 @@ export default {
         path: 'image', rootObject: this.container, rules: ['required'], translationKey: 'workload.container.image'
       }],
       fvReportedValidationPaths: ['spec'],
+      isNamespaceNew:            false,
+      idKey:                     ID_KEY,
 
       systemGpuManagementSchedulerName: '',
     };
@@ -295,7 +321,7 @@ export default {
         return container?.name ?? 'container-0';
       }
 
-      return this.allContainers.length ? this.allContainers[0].name : '';
+      return this.allContainers.length ? this.allContainers[0][this.idKey] : '';
     },
 
     isEdit() {
@@ -403,11 +429,22 @@ export default {
     allContainers() {
       const containers = this.podTemplateSpec?.containers || [];
       const initContainers = this.podTemplateSpec?.initContainers || [];
+      const key = this.idKey;
 
       return [
-        ...containers,
+        ...containers.map((each) => {
+          each._init = false;
+          if (!each[key]) {
+            each[key] = serialMaker.genSym();
+          }
+
+          return each;
+        }),
         ...initContainers.map((each) => {
           each._init = true;
+          if (!each[key]) {
+            each[key] = serialMaker.genSym();
+          }
 
           return each;
         }),
@@ -734,13 +771,6 @@ export default {
       delete this.value.apiVersion;
     },
 
-    container(neu) {
-      const containers = this.isInitContainer ? this.podTemplateSpec.initContainers : this.podTemplateSpec.containers;
-      const existing = containers.find(container => container.__active) || {};
-
-      Object.assign(existing, neu);
-    },
-
     'container.imageTag'(neu) {
       const tag = this.container.imageTag;
 
@@ -1027,7 +1057,6 @@ export default {
       });
       container.__active = true;
       this.container = container;
-      this.isInitContainer = !!container._init;
       this.containerChange++;
     },
 
@@ -1064,27 +1093,27 @@ export default {
       this.selectContainer(this.allContainers[0]);
     },
 
-    updateInitContainer(neu) {
-      if (!this.container) {
+    updateInitContainer(neu, container) {
+      if (!container) {
         return;
       }
       const containers = this.podTemplateSpec.containers;
+      const initContainers = this.podTemplateSpec.initContainers ?? [];
 
       if (neu) {
-        if (!this.podTemplateSpec.initContainers) {
-          this.podTemplateSpec.initContainers = [];
+        this.podTemplateSpec.initContainers = initContainers;
+        container._init = true;
+        if (!initContainers.includes(container)) {
+          initContainers.push(container);
         }
-        this.podTemplateSpec.initContainers.push(this.container);
-
-        removeObject(containers, this.container);
+        removeObject(containers, container);
       } else {
-        delete this.container._init;
-        const initContainers = this.podTemplateSpec.initContainers;
-
-        removeObject(initContainers, this.container);
-        containers.push(this.container);
+        container._init = false;
+        removeObject(initContainers, container);
+        if (!containers.includes(container)) {
+          containers.push(container);
+        }
       }
-      this.isInitContainer = neu;
     },
 
     updateStaticPod(neu) {
