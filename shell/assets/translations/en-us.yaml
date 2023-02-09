@@ -480,7 +480,7 @@ authConfig:
         linkText: 'Update it here.'
       modal:
         title: Are you sure? This update is irreversible.
-        body: '<p><b>You may need to make some additional changes</b>. Please ensure the Azure AD app has the following application permissions for Microsoft Graph: User.Read.All, Group.Read.All<br> If any endpoints were customized while configuring Azure AD authentication in Rancher, they will not be automatically updated. </p>'
+        body: '<p><b>You may need to make some additional changes</b>. Please ensure the Azure AD app has the Directory.Read.All <b>Application</b> permission added to Microsoft Graph.<br> If any endpoints were customized while configuring Azure AD authentication in Rancher, they will not be automatically updated. </p>'
   oidc:
     oidc: Configure an OIDC account
     keycloakoidc: Configure a Keycloak OIDC account
@@ -1165,14 +1165,25 @@ cluster:
           </ul>
           More info on roles can be found <a href="https://cloud.google.com/kubernetes-engine/docs/how-to/iam-integration" target="_blank" rel="noopener noreferrer nofollow">here</a>.
     harvester:
-      import: Imported Harvester
-      external: External Harvester (Experimental)
       namespace: Namespace
       cpu: CPUs
       memory: Memory
       disk: Disk
       image: Image
-      network: Network Name
+      network: 
+        title: Networks
+        network: Network
+        addNetwork: Add Network
+        networkName: Network Name
+        macAddress: Mac Address
+        macFormat: 'Invalid MAC address format.'
+      volume:
+        title: Volumes
+        volume: Volume
+        imageVolume: Image Volume
+        addVolume: Add Volume
+        addVMImage: Add VM Image
+        storageClass: Storage Class
       sshUser: SSH User
       userData:
         label: User Data Template
@@ -1183,7 +1194,7 @@ cluster:
       kubeconfigContent:
         label: KubeconfigContent
       placeholder: 'Namespace/Name'
-      cluster: Cluster
+      cluster: Imported Harvester Cluster
       affinity:
         namespaces:
           placeholder: e.g. default,system,base
@@ -3875,6 +3886,7 @@ promptRemove:
     other { and <b>{count} others</b>.}
     }
   attemptingToRemove: "You are attempting to delete the {type}"
+  attemptingToRemoveAuthConfig: "You are attempting to disable this Auth Provider. <br><br> Be aware that cluster role template bindings, project role template bindings, global role bindings, users, tokens will be all deleted. <br><br> Are you sure you want to proceed?"
   protip: "Tip: Hold the {alternateLabel} key while clicking delete to bypass this confirmation"
   confirmName: "Enter <b>{nameToMatch}</b> below to confirm:"
   deleteAssociatedNamespaces: "Also delete the namespaces in this project:"
@@ -4740,6 +4752,14 @@ storageClass:
       placeholder: e.g. storageos-secret
   no-provisioner:
     title: Local Storage (Unsupported)
+  harvesterhci:
+    title: Harvester (CSI)
+    warning: 
+      unSatisfiesVersion: Please upgrade your Harvester CSI driver version to use this feature. (csi-driver >= v0.1.15)
+    hostStorageClass:
+      label: Host Storage Class
+      placeholder: Storage class name on the host Harvester cluster
+      tooltip: By default the default storage class on the host Harvester cluster is used.
 
 tableHeaders:
   accessKey: Access Key
@@ -5502,6 +5522,7 @@ workload:
       gcePersistentDisk: Google Persistent Disk
       driver.longhorn.io: Longhorn
       vsphereVolume: VMWare vSphere Volume
+      emptyDir: Empty Dir
     addClaim: Add Claim
     addMount: Add Mount
     addVolume: Add Volume
@@ -5561,6 +5582,14 @@ workload:
     title: 'Storage'
     volumeName: Volume Name
     volumePath: Volume Path
+    emptyDir:
+      medium:
+        label: Medium
+        default: Node's Default Medium
+        memory: Memory
+      sizeLimit:
+        label: Size Limit
+        placeholder: "e.g. 300"
   typeDescriptions:
     apps.daemonset: DaemonSets run exactly one pod on every eligible node. When new nodes are added to the cluster, DaemonSets automatically deploy to them. Recommended for system-wide or vertically-scalable workloads that never need more than one pod per node.
     apps.deployment: Deployments run a scalable number of replicas of a pod distributed among the eligible nodes. Changes are rolled out incrementally and can be rolled back to the previous revision when needed. Recommended for stateless & horizontally-scalable workloads.

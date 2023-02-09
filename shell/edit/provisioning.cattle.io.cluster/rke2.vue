@@ -202,26 +202,6 @@ export default {
       set(this.value.spec, 'kubernetesVersion', this.defaultVersion);
     }
 
-    for ( const k in this.serverArgs ) {
-      if ( this.serverConfig[k] === undefined ) {
-        const def = this.serverArgs[k].default;
-
-        set(this.serverConfig, k, (def !== undefined ? def : undefined));
-      }
-    }
-
-    for ( const k in this.agentArgs ) {
-      if ( this.agentConfig[k] === undefined ) {
-        const def = this.agentArgs[k].default;
-
-        set(this.agentConfig, k, (def !== undefined ? def : undefined));
-      }
-    }
-
-    if ( !this.serverConfig.profile ) {
-      set(this.serverConfig, 'profile', null);
-    }
-
     if ( this.rkeConfig.etcd?.s3?.bucket ) {
       this.s3Backup = true;
     }
@@ -314,6 +294,7 @@ export default {
         path: 'metadata.name', rules: ['subDomain'], translationKey: 'nameNsDescription.name.label'
       }],
       harvesterVersionRange: {},
+      harvesterVersion:      ''
     };
   },
 
@@ -854,6 +835,7 @@ export default {
     },
 
     isHarvesterIncompatible() {
+      const CompareVersion = '<v1.2';
       let ccmRke2Version = (this.chartVersions['harvester-cloud-provider'] || {})['version'];
       let csiRke2Version = (this.chartVersions['harvester-csi-driver'] || {})['version'];
 
@@ -869,8 +851,12 @@ export default {
       }
 
       if (ccmVersion && csiVersion) {
-        if (semver.satisfies(ccmRke2Version, ccmVersion) &&
-            semver.satisfies(csiRke2Version, csiVersion)) {
+        if (semver.satisfies(this.harvesterVersion, CompareVersion) || !(this.harvesterVersion || '').startsWith('v')) {
+          // When harveste version is less than `CompareVersion`, compatibility is not determined,
+          // At the same time, version numbers like this will not be checked: master-14bbee2c-head
+          return false;
+        } else if (semver.satisfies(ccmRke2Version, ccmVersion) &&
+          semver.satisfies(csiRke2Version, csiVersion)) {
           return false;
         } else {
           return true;
@@ -922,6 +908,9 @@ export default {
 
       // Allow time for addonNames to update... then fetch any missing addons
       this.$nextTick(() => this.initAddons());
+      if (this.mode === _CREATE) {
+        this.initServerAgentArgs();
+      }
     },
 
     showCni(neu) {
@@ -1113,10 +1102,6 @@ export default {
           entry.config = await entry.config.save();
         }
 
-        if ( !entry.pool.hostnamePrefix ) {
-          entry.pool.hostnamePrefix = `${ prefix }-`;
-        }
-
         finalPools.push(entry.pool);
       }
 
@@ -1236,6 +1221,7 @@ export default {
             url:                  `/k8s/clusters/${ clusterId }/v1/harvester/kubeconfig`,
             method:               'POST',
             data:                 {
+              csiClusterRoleName: 'harvesterhci.io:csi-driver',
               clusterRoleName:    'harvesterhci.io:cloudprovider',
               namespace,
               serviceAccountName: this.value.metadata.name,
@@ -1385,6 +1371,28 @@ export default {
       const key = this.chartVersionKey(name);
 
       return merge({}, defaultChartValue?.values || {}, this.userChartValues[key] || {});
+    },
+
+    initServerAgentArgs() {
+      for ( const k in this.serverArgs ) {
+        if ( this.serverConfig[k] === undefined ) {
+          const def = this.serverArgs[k].default;
+
+          set(this.serverConfig, k, (def !== undefined ? def : undefined));
+        }
+      }
+
+      for ( const k in this.agentArgs ) {
+        if ( this.agentConfig[k] === undefined ) {
+          const def = this.agentArgs[k].default;
+
+          set(this.agentConfig, k, (def !== undefined ? def : undefined));
+        }
+      }
+
+      if ( !this.serverConfig.profile ) {
+        set(this.serverConfig, 'profile', null);
+      }
     },
 
     chartVersionKey(name) {
@@ -1623,7 +1631,10 @@ export default {
         const res = await this.$store.dispatch('cluster/request', { url: `${ url }/${ HCI.SETTING }s` });
 
         const version = (res?.data || []).find(s => s.id === 'harvester-csi-ccm-versions');
+        // get harvester server-version
+        const serverVersion = (res?.data || []).find(s => s.id === 'server-version');
 
+        this.harvesterVersion = serverVersion.value;
         if (version) {
           this.harvesterVersionRange = JSON.parse(version.value || version.default || '{}');
         } else {
