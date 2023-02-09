@@ -495,7 +495,7 @@ authConfig:
         message: 'Azure AD Authentication must be updated: it is using the Azure Graph API, which will be deprecated at the end of 2022.'
       button: Update Endpoint
       modal:
-        body: '<p><b>You may need to make some additional changes</b>. Please ensure the Azure AD app has the following application permissions for Microsoft Graph: User.Read.All, Group.Read.All<br> If any endpoints were customized while configuring Azure AD authentication in Rancher, they will not be automatically updated. </p>'
+        body: '<p><b>You may need to make some additional changes</b>. Please ensure the Azure AD app has the Directory.Read.All <b>Application</b> permission added to Microsoft Graph.<br> If any endpoints were customized while configuring Azure AD authentication in Rancher, they will not be automatically updated. </p>'
         title: Are you sure? This update is irreversible.
   oidc:
     oidc: Configure an OIDC account
@@ -1216,7 +1216,13 @@ cluster:
       memory: Memory
       disk: Disk
       image: Image
-      network: Network Name
+      network:
+        addNetwork: Add Network
+        macAddress: Mac Address
+        macFormat: Invalid MAC address format.
+        network: Network
+        networkName: Network Name
+        title: Networks
       sshUser: SSH User
       userData:
         label: User Data Template
@@ -1227,10 +1233,17 @@ cluster:
       kubeconfigContent:
         label: KubeconfigContent
       placeholder: 'Namespace/Name'
-      cluster: Cluster
+      cluster: Imported Harvester Cluster
       affinity:
         namespaces:
           placeholder: e.g. default,system,base
+      volume:
+        addVMImage: Add VM Image
+        addVolume: Add Volume
+        imageVolume: Image Volume
+        storageClass: Storage Class
+        title: Volumes
+        volume: Volume
   description:
     label: Cluster Description
     placeholder: Any text you want that better describes this cluster
@@ -4003,6 +4016,7 @@ promptRemove:
   deleteAssociatedNamespaces: 'Also delete the namespaces in this project:'
   willDeleteAssociatedNamespaces: 'This will also delete all namespaces in the project: '
   confirmRelatedResource: Deleting the {type} will remove all the resources on this particular {type} and this is not revertable, are you sure you want to continue deleting {names}?
+  attemptingToRemoveAuthConfig: You are attempting to disable this Auth Provider. <br><br> Be aware that cluster role template bindings, project role template bindings, global role bindings, users, tokens will be all deleted. <br><br> Are you sure you want to proceed?
 promptRemoveApp:
   removeCrd: "Delete the CRD associated with this app"
 promptRestore:
@@ -4843,6 +4857,14 @@ storageClass:
       placeholder: e.g. storageos-secret
   no-provisioner:
     title: Local Storage (Unsupported)
+  harvesterhci:
+    hostStorageClass:
+      label: Host Storage Class
+      placeholder: Storage class name on the host Harvester cluster
+      tooltip: By default the default storage class on the host Harvester cluster is used.
+    title: Harvester (CSI)
+    warning:
+      unSatisfiesVersion: Please upgrade your Harvester CSI driver version to use this feature. (csi-driver >= v0.1.15)
 tableHeaders:
   accessKey: Access Key
   address: Address
@@ -5620,6 +5642,7 @@ workload:
       gcePersistentDisk: Google Persistent Disk
       driver.longhorn.io: Longhorn
       vsphereVolume: VMWare vSphere Volume
+      emptyDir: Empty Dir
     addClaim: Add Claim
     addMount: Add Mount
     addVolume: Add Volume
@@ -5692,6 +5715,14 @@ workload:
       specific: Select Specific Keys
     noVolumes: Volumes will appear here after they are added in the Pod tab
     selectVolume: Select Volume
+    emptyDir:
+      medium:
+        default: Node's Default Medium
+        label: Medium
+        memory: Memory
+      sizeLimit:
+        label: Size Limit
+        placeholder: e.g. 300
   typeDescriptions:
     apps.daemonset: DaemonSets run exactly one pod on every eligible node. When new nodes are added to the cluster, DaemonSets automatically deploy to them. Recommended for system-wide or vertically-scalable workloads that never need more than one pod per node.
     apps.deployment: Deployments run a scalable number of replicas of a pod distributed among the eligible nodes. Changes are rolled out incrementally and can be rolled back to the previous revision when needed. Recommended for stateless & horizontally-scalable workloads.
@@ -6930,6 +6961,7 @@ advancedSettings:
     ui-session-logout-minutes: User will automatically logout without any operation after the configured time (in minutes)
     kubeconfig-default-token-ttl-minutes: TTL (in minutes) applied on all kubeconfig tokens. When set to 0, the token never expires.
     password-min-length: Define minimum characters required for an user password.
+    subtext: Typical users will not need to change these. Proceed with caution, incorrect values can break your {appName} installation. Settings which have been customized from default settings are tagged 'Modified'. If there are no configuration items you need here, please view <a href="/v3/setting" target="_blank">More Settings</a>.
   editHelp:
     'ui-banners': This setting takes a JSON object containing 3 root parameters; <code>banner</code>, <code>showHeader</code>, <code>showFooter</code>. <code>banner</code> is an object containing; <code>textColor</code>, <code>background</code>, and <code>text</code>, where <code>textColor</code> and <code>background</code> are any valid CSS color value.
   enum:
@@ -7262,10 +7294,10 @@ globalMonitoringPage:
   cluster: Global Monitoring Cluster
   token:
     label: Use default token
-    custom: 
+    custom:
       label: Custom token
       placeholder: Please configure a custom token
-  customAddress: 
+  customAddress:
     add: Add Address
     otherHeader: Customize other addresses
     header: Custom Address

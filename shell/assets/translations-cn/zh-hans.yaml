@@ -5643,6 +5643,7 @@ workload:
       gcePersistentDisk: Google 持久磁盘
       driver.longhorn.io: Longhorn
       vsphereVolume: VMWare vSphere 卷
+      emptyDir: Empty Dir
     addClaim: 添加声明
     addMount: 添加挂载
     addVolume: 添加卷
@@ -5715,6 +5716,14 @@ workload:
       specific: 选择特定的键
     noVolumes: 在 Pod 选项卡中添加卷后，卷将显示在此处
     selectVolume: 选择卷
+    emptyDir:
+      medium:
+        default: 主机的默认存储
+        label: 存储介质
+        memory: 内存
+      sizeLimit:
+        label: 大小限制
+        placeholder: '例如: 300'
   typeDescriptions:
     apps.daemonset: DaemonSet 在每个符合条件的节点上仅运行一个 Pod。当新节点添加到集群时，DaemonSet 会自动部署新节点。推荐用于全系统或可垂直扩展，且每个节点永远不需要超过一个 pod 的工作负载。
     apps.deployment: Deployment 运行分布在符合条件的节点中的可扩展数量的 Pod 副本。变更会逐步推出，并可回滚到之前的版本。推荐用于无状态和水平可扩展的工作负载。
@@ -6951,7 +6960,7 @@ modalDownLoadFileComponent:
 ##############################
 advancedSettings:
   label: 设置
-  subtext: 一般用户不需要改变这些。请谨慎操作，一旦输入了不正确的值，会破坏你的{appName}安装。从默认设置中定制的设置被标记为 "已修改"。如果这里没有您需要的配置项，请查看<a href="/v3/setting" target="_blank">更多设置</a>。
+  subtext: 一般用户不需要修改此处的设置。请谨慎操作，不正确的值会破坏 {appName} 的安装。与默认不同的设置会标记为 "Modified"。如果这里没有您需要的配置项，请查看<a href="/v3/setting" target="_blank">更多设置</a>。
   show: 显示
   hide: 隐藏
   none: 无
@@ -7026,6 +7035,7 @@ advancedSettings:
     custom-notifications: 编辑自定义通知
     harv-release-download-url: 此设置用于配置<code>升级版本下载</code>的 URL 地址。Harvester 将从该 URL 托管的 (<code>$URL</code>/<code>$VERSION</code>/version.yaml) 文件中获取 ISO URL 和校验和值。
     kubeconfig-default-token-ttl-minutes: 应用于所有 kubeconfig Token 的 TTL（单位：分钟）。如果设置为 0，则 Token 永不过期。
+    password-min-length: 定义用户密码所需的最少字符数。
   editHelp:
     'ui-banners': 此设置使用包含 3 个根参数的 JSON 对象，分别是<code>banner</code>、<code>showHeader</code>和<code>showFooter</code>。<code>banner</code> 是包含 <code>textColor</code>，<code>background</code>和<code>text</code>的对象，其中<code>textColor</code> 和 <code>background</code>的值可以是任何有效的 CSS 颜色值。
   enum:
@@ -7594,10 +7604,10 @@ globalMonitoringPage:
   cluster: 全局监控所在集群
   token:
     label: 使用默认 token
-    custom: 
+    custom:
       label: 自定义 token
       placeholder: 请配置自定义 token
-  customAddress: 
+  customAddress:
     add: 添加地址
     otherHeader: 自定义其他地址
     header: 自定义地址
