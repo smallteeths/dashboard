@@ -175,7 +175,7 @@ export default {
 </script>
 <template>
   <Card ref="modal" name="modal" :show-highlight-border="false">
-    <h4 slot="title" class="text-default-text" v-html="t('modalDownLoadFileComponent.title')" />
+    <h4 slot="title" v-clean-html="t('modalDownLoadFileComponent.title')" class="text-default-text" />
     <template #body>
       <LabeledSelect
         v-model="currentContainer"

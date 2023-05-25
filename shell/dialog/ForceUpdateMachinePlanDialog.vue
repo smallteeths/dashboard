@@ -135,7 +135,7 @@ export default {
       <div slot="body" class="pr-10 pl-10">
         {{ t('forceUpdateMachinePlan.attemptingToUpdate') }}
         <span
-          v-html="resourceNames(names, plusMore)"
+          v-clean-html="resourceNames(names, plusMore)"
         ></span>
       </div>
       <div slot="actions" class="bottom">

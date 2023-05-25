@@ -147,7 +147,7 @@ export default {
     @finish="saveSettings"
     @cancel="done"
   >
-    <h4 v-html="description"></h4>
+    <h4 v-clean-html="description"></h4>
 
     <h5 v-if="editHelp" v-clean-html="editHelp" class="edit-help" />
 

@@ -64,7 +64,7 @@ export default {
         </h3>
       </div>
     </div>
-    <Banner v-if="showNamespaceBanner" color="info" v-html="t('monitoringReceiver.webhook.modifyNamespace', {}, raw=true)" />
+    <Banner v-if="showNamespaceBanner" v-clean-html="t('monitoringReceiver.webhook.modifyNamespace', {}, raw=true)" color="info" />
     <div v-if="showTargetUrl" class="row mb-20">
       <div class="col span-12">
         <LabeledInput v-model="value.webhook_url" :required="true" :mode="mode" label="URL" :tooltip="t('monitoringReceiver.webhook.urlTooltip')" />

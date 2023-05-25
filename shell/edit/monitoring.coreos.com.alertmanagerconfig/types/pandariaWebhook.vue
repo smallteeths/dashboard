@@ -68,8 +68,8 @@ export default {
   <div>
     <Banner
       v-if="mode !== view"
+      v-clean-html="t('monitoringReceiver.pandariaWebhook.banner', {}, raw=true)"
       color="info"
-      v-html="t('monitoringReceiver.pandariaWebhook.banner', {}, raw=true)"
     />
     <div data-testid="input-config-webhook_type" class="row mb-20">
       <LabeledSelect
@@ -91,8 +91,8 @@ export default {
     </div>
     <Banner
       v-if="showNamespaceBanner"
+      v-clean-html="t('monitoringReceiver.webhook.modifyNamespace', {}, raw=true)"
       color="info"
-      v-html="t('monitoringReceiver.webhook.modifyNamespace', {}, raw=true)"
     />
     <div
       v-if="showTargetUrl"
