@@ -215,7 +215,7 @@ export default {
           <Tab name="selectors" label-key="networkpolicy.selectors.label" :show-header="false" :weight="1">
             <h2>
               {{ t('networkpolicy.selectors.label') }}
-              <i v-tooltip="t('networkpolicy.selectors.hint')" class="icon icon-info" />
+              <i v-clean-tooltip="t('networkpolicy.selectors.hint')" class="icon icon-info" />
             </h2>
             <div class="row">
               <div class="col span-12">
@@ -230,7 +230,7 @@ export default {
             <div class="row">
               <div class="col span-12">
                 <Banner color="success">
-                  <span v-html="t('networkpolicy.selectors.matchingPods.matchesSome', matchingPods)" />
+                  <span v-clean-html="t('networkpolicy.selectors.matchingPods.matchesSome', matchingPods)" />
                 </Banner>
               </div>
             </div>

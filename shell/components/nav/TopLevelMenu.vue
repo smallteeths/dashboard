@@ -356,10 +356,10 @@ export default {
           </div>
           <div @click="hide()">
             <nuxt-link
-              v-tooltip="{ content: fullVersion, classes: 'footer-tooltip' }"
+              v-clean-tooltip="{ content: fullVersion, classes: 'footer-tooltip' }"
+              v-clean-html="displayVersion"
               :to="{ name: 'about' }"
               class="version"
-              v-html="displayVersion"
             />
           </div>
         </div>

@@ -255,7 +255,7 @@ export default {
           />
         </div>
         <div v-if="canBeScheduled" class="col span-6">
-          <span>{{ t('cis.scoreWarning.label') }}</span> <i v-tooltip="t('cis.scoreWarning.protip')" class="icon icon-info" />
+          <span>{{ t('cis.scoreWarning.label') }}</span> <i v-clean-tooltip="t('cis.scoreWarning.protip')" class="icon icon-info" />
           <RadioGroup v-model="value.spec.scoreWarning" :mode="mode" name="scoreWarning" :options="['pass', 'fail']" :labels="[t('cis.scan.pass'), t('cis.scan.fail')]" />
         </div>
       </div>
@@ -288,7 +288,7 @@ export default {
           <div class="row mb-20">
             <div class="col span-12">
               <Banner v-if="scanAlertRule.alertOnFailure || scanAlertRule.alertOnComplete" class="mt-0" :color="hasAlertManager ? 'info' : 'warning'">
-                <span v-html="t('cis.alertNeeded', {link: monitoringUrl}, true)" />
+                <span v-clean-html="t('cis.alertNeeded', {link: monitoringUrl}, true)" />
               </banner>
               <Checkbox v-model="scanAlertRule.alertOnComplete" :mode="mode" :label="t('cis.alertOnComplete')" />
               <Checkbox v-model="scanAlertRule.alertOnFailure" :mode="mode" :label="t('cis.alertOnFailure')" />

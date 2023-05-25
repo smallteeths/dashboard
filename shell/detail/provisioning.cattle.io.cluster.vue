@@ -624,8 +624,8 @@ export default {
           <template #group-by="{group}">
             <div class="pool-row" :class="{'has-description':group.ref && group.ref.template}">
               <div v-trim-whitespace class="group-tab">
-                <div v-if="group && group.ref" v-html="group.ref.groupByPoolShortLabel" />
-                <div v-else v-html="t('resourceTable.groupLabel.notInANodePool')">
+                <div v-if="group && group.ref" v-clean-html="group.ref.groupByPoolShortLabel" />
+                <div v-else v-clean-html="t('resourceTable.groupLabel.notInANodePool')">
                 </div>
                 <div v-if="group.ref && group.ref.template" class="description text-muted text-small">
                   {{ group.ref.providerDisplay }} &ndash;  {{ group.ref.providerLocation }} / {{ group.ref.providerSize }} ({{ group.ref.providerName }})
@@ -633,10 +633,10 @@ export default {
               </div>
               <div v-if="group.ref" class="right mr-45">
                 <template v-if="value.hasLink('update')">
-                  <button v-tooltip="t('node.list.scaleDown')" :disabled="!group.ref.canScaleDownPool()" type="button" class="btn btn-sm role-secondary" @click="group.ref.scalePool(-1)">
+                  <button v-clean-tooltip="t('node.list.scaleDown')" :disabled="!group.ref.canScaleDownPool()" type="button" class="btn btn-sm role-secondary" @click="group.ref.scalePool(-1)">
                     <i class="icon icon-sm icon-minus" />
                   </button>
-                  <button v-tooltip="t('node.list.scaleUp')" type="button" class="btn btn-sm role-secondary ml-10" @click="group.ref.scalePool(1)">
+                  <button v-clean-tooltip="t('node.list.scaleUp')" type="button" class="btn btn-sm role-secondary ml-10" @click="group.ref.scalePool(1)">
                     <i class="icon icon-sm icon-plus" />
                   </button>
                 </template>
@@ -666,9 +666,9 @@ export default {
           <template #group-by="{group}">
             <div class="pool-row" :class="{'has-description':group.ref && group.ref.nodeTemplate}">
               <div v-trim-whitespace class="group-tab">
-                <div v-if="group.ref" v-html="t('resourceTable.groupLabel.nodePool', { name: group.ref.spec.hostnamePrefix}, true)">
+                <div v-if="group.ref" v-clean-html="t('resourceTable.groupLabel.nodePool', { name: group.ref.spec.hostnamePrefix}, true)">
                 </div>
-                <div v-else v-html="t('resourceTable.groupLabel.notInANodePool')">
+                <div v-else v-clean-html="t('resourceTable.groupLabel.notInANodePool')">
                 </div>
                 <div v-if="group.ref && group.ref.nodeTemplate" class="description text-muted text-small">
                   {{ group.ref.providerDisplay }} &ndash;  {{ group.ref.providerLocation }} / {{ group.ref.providerSize }} ({{ group.ref.providerName }})
@@ -677,10 +677,10 @@ export default {
               <div v-if="group.ref" class="right group-header-buttons">
                 <MachineSummaryGraph :row="poolSummaryInfo[group.ref]" :horizontal="true" class="mr-20" />
                 <template v-if="group.ref.hasLink('update')">
-                  <button v-tooltip="t('node.list.scaleDown')" :disabled="group.ref.spec.quantity < 2" type="button" class="btn btn-sm role-secondary" @click="group.ref.scalePool(-1)">
+                  <button v-clean-tooltip="t('node.list.scaleDown')" :disabled="group.ref.spec.quantity < 2" type="button" class="btn btn-sm role-secondary" @click="group.ref.scalePool(-1)">
                     <i class="icon icon-sm icon-minus" />
                   </button>
-                  <button v-tooltip="t('node.list.scaleUp')" type="button" class="btn btn-sm role-secondary ml-10" @click="group.ref.scalePool(1)">
+                  <button v-clean-tooltip="t('node.list.scaleUp')" type="button" class="btn btn-sm role-secondary ml-10" @click="group.ref.scalePool(1)">
                     <i class="icon icon-sm icon-plus" />
                   </button>
                 </template>
@@ -699,8 +699,8 @@ export default {
           <tbody class="logs-body">
             <template v-if="logs.length">
               <tr v-for="line in logs" :key="line.id">
-                <td :key="line.id + '-time'" class="time" v-html="format(line.time)" />
-                <td :key="line.id + '-msg'" class="msg" v-html="line.msg" />
+                <td :key="line.id + '-time'" v-clean-html="format(line.time)" class="time" />
+                <td :key="line.id + '-msg'" v-clean-html="line.msg" class="msg" />
               </tr>
             </template>
             <tr v-else-if="!logOpen" v-t="'cluster.log.connecting'" colspan="2" class="msg text-muted" />
@@ -713,17 +713,17 @@ export default {
         <Banner color="warning" :label="t('cluster.import.warningBanner')" />
         <CustomCommand v-if="value.isCustom" :cluster-token="clusterToken" :cluster="value" @copied-windows="hasWindowsMachine ? null : showWindowsWarning = true" />
         <template v-else>
-          <h4 v-html="t('cluster.import.commandInstructions', null, true)" />
+          <h4 v-clean-html="t('cluster.import.commandInstructions', null, true)" />
           <CopyCode class="m-10 p-10">
             {{ clusterToken.command }}
           </CopyCode>
 
-          <h4 class="mt-10" v-html="t('cluster.import.commandInstructionsInsecure', null, true)" />
+          <h4 v-clean-html="t('cluster.import.commandInstructionsInsecure', null, true)" class="mt-10" />
           <CopyCode class="m-10 p-10">
             {{ clusterToken.insecureCommand }}
           </CopyCode>
 
-          <h4 class="mt-10" v-html="t('cluster.import.clusterRoleBindingInstructions', null, true)" />
+          <h4 v-clean-html="t('cluster.import.clusterRoleBindingInstructions', null, true)" class="mt-10" />
           <CopyCode class="m-10 p-10">
             {{ t('cluster.import.clusterRoleBindingCommand', null, true) }}
           </CopyCode>
