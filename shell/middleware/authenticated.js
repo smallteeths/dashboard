@@ -16,6 +16,7 @@ import { AFTER_LOGIN_ROUTE, WORKSPACE } from '@shell/store/prefs';
 import { BACK_TO } from '@shell/config/local-storage';
 import { NAME as FLEET_NAME } from '@shell/config/product/fleet.js';
 import AESEncrypt from '@shell/utils/aes-encrypt';
+import { canViewResource } from '@shell/utils/auth';
 
 const getPackageFromRoute = (route) => {
   if (!route?.meta) {
@@ -134,20 +135,7 @@ function invalidResource(store, to, redirect) {
     return false;
   }
 
-  // Note - don't use the current products store... because products can override stores for resources with `typeStoreMap`
-  const inStore = store.getters['currentStore'](resource);
-  // There's a chance we're in an extension's product who's store could be anything, so confirm schemaFor exists
-  const schemaFor = store.getters[`${ inStore }/schemaFor`];
-
-  // In order to check a resource is valid we need these
-  if (!inStore || !schemaFor) {
-    return false;
-  }
-
-  // Resource is valid if a schema exists for it (standard resource, spoofed resource) or it's a virtual resource
-  const validResource = schemaFor(resource) || store.getters['type-map/isVirtual'](resource);
-
-  if (validResource) {
+  if (canViewResource(store, resource)) {
     return false;
   }
 

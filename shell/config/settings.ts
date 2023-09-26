@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 // Settings
-import { GC_DEFAULTS } from '../utils/gc/gc-types';
 import { MANAGEMENT } from './types';
 import { Store } from 'vuex';
+import { GC_DEFAULTS, GC_PREFERENCES } from '@shell/utils/gc/gc-types';
 
 interface GlobalSettingRuleset {
   name: string,
@@ -187,7 +187,47 @@ export const ALLOWED_SETTINGS: GlobalSetting = {
   },
 };
 
-export const DEFAULT_PERF_SETTING = {
+/**
+ * Settings on how to handle warnings returning in api responses, specifically which to show as growls
+ */
+export interface PerfSettingsWarningHeaders {
+  /**
+   * Warning is a string containing multiple entries. This determines how they are split up
+   *
+   * See https://github.com/kubernetes/enhancements/tree/master/keps/sig-api-machinery/1693-warnings#design-details
+   */
+  separator: string,
+  /**
+   * Show warnings in a notification if they're not in this block list
+   */
+  notificationBlockList: string[]
+}
+
+export interface PerfSettingsKubeApi {
+  /**
+   * Settings related to the response header `warnings` value
+   */
+  warningHeader: PerfSettingsWarningHeaders
+}
+
+export interface PerfSettings {
+  inactivity: {
+      enabled: boolean;
+      threshold: number;
+  };
+  incrementalLoading: {
+      enabled: boolean;
+      threshold: number;
+  };
+  manualRefresh: {};
+  disableWebsocketNotification: boolean;
+  garbageCollection: GC_PREFERENCES;
+  forceNsFilterV2: any;
+  advancedWorker: {};
+  kubeAPI: PerfSettingsKubeApi;
+}
+
+export const DEFAULT_PERF_SETTING: PerfSettings = {
   inactivity: {
     enabled:   false,
     threshold: 900,
@@ -204,6 +244,23 @@ export const DEFAULT_PERF_SETTING = {
   garbageCollection:            GC_DEFAULTS,
   forceNsFilterV2:              { enabled: false },
   advancedWorker:               { enabled: false },
+  kubeAPI:                      {
+    /**
+     * Settings related to the response header `warnings` value
+     */
+    warningHeader: {
+      /**
+       * Warning is a string containing multiple entries. This determines how they are split up
+       *
+       * See https://github.com/kubernetes/enhancements/tree/master/keps/sig-api-machinery/1693-warnings#design-details
+       */
+      separator:             '299 - ',
+      /**
+       * Show warnings in a notification if they're not in this block list
+       */
+      notificationBlockList: ['299 - unknown field']
+    }
+  }
 };
 
 export const DEFAULT_GMV2_SETTING = {

@@ -3,6 +3,7 @@ import { defineConfig } from 'cypress';
 require('dotenv').config();
 
 const skipSetup = process.env.TEST_SKIP_SETUP === 'true';
+const hasCoverage = (process.env.TEST_INSTRUMENT === 'true') || false; // Add coverage if instrumented
 
 /**
  * Filter test spec paths based on env var configuration
@@ -67,11 +68,11 @@ console.log(`    Dashboard URL: ${ baseUrl }`); // eslint-disable-line no-consol
 const apiUrl = process.env.API || (baseUrl.endsWith('/dashboard') ? baseUrl.split('/').slice(0, -1).join('/') : baseUrl);
 
 console.log(`    Rancher API URL: ${ apiUrl }`); // eslint-disable-line no-console
-
 export default defineConfig({
   projectId:             process.env.TEST_PROJECT_ID,
   defaultCommandTimeout: process.env.TEST_TIMEOUT ? +process.env.TEST_TIMEOUT : 60000,
   trashAssetsBeforeRuns: true,
+  chromeWebSecurity:     false,
   retries:               {
     runMode:  2,
     openMode: 0
@@ -79,13 +80,18 @@ export default defineConfig({
   env: {
     grepFilterSpecs: true,
     baseUrl,
-    coverage:        false,
+    coverage:        hasCoverage,
     codeCoverage:    {
       exclude: [
         'cypress/**/*.*',
         '**/__tests__/**/*.*',
         '**/__mocks__/**/*.*',
         '**/shell/scripts/**/*.*',
+        'docusaurus/**/*.*',
+        'stories/**/*.*',
+        'drone/**/*.*',
+        '.nuxt/**/*.*',
+        '.nuxt-prod/**/*.*',
       ],
       include: [
         'shell/**/*.{vue,ts,js}',

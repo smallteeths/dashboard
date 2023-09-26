@@ -19,6 +19,7 @@ import PasswordStrength from '@shell/components/PasswordStrength';
 import { applyProducts } from '@shell/store/type-map';
 import AESEncrypt from '@shell/utils/aes-encrypt';
 import BrandImage from '@shell/components/BrandImage';
+import { waitFor } from '@shell/utils/async';
 
 const calcIsFirstLogin = (store) => {
   const firstLoginSetting = store.getters['management/byId'](MANAGEMENT.SETTING, SETTING.FIRST_LOGIN);
@@ -262,10 +263,10 @@ export default {
 
         await Promise.all(promises);
 
-        setTimeout(() => {
-          buttonCb(true);
-          this.done();
-        }, 2000);
+        await waitFor(() => !calcIsFirstLogin(this.$store), 'first login to be completed', 10000, 1000, true);
+
+        buttonCb(true);
+        this.done();
       } catch (err) {
         console.error(err) ; // eslint-disable-line no-console
         buttonCb(false);

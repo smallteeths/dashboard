@@ -39,8 +39,8 @@ export default {
       const {
         clientId,
         clientSecret,
-        environment,
         subscriptionId,
+        environment,
       } = this.value.decodedData;
 
       try {
@@ -50,8 +50,8 @@ export default {
           data:   {
             clientId,
             clientSecret,
-            environment,
             subscriptionId,
+            environment,
           },
           redirectUnauthorized: false,
         });
@@ -98,6 +98,7 @@ export default {
           :searchable="false"
           :required="true"
           :label="t('cluster.credential.azure.environment.label')"
+          data-testid="azure-cloud-credentials-environment"
           @input="value.setData('environment', $event)"
         />
       </div>
@@ -108,6 +109,7 @@ export default {
           type="text"
           :mode="mode"
           :required="true"
+          data-testid="azure-cloud-credentials-subscription-id"
           @input="value.setData('subscriptionId', $event)"
         />
       </div>
@@ -120,6 +122,7 @@ export default {
           type="text"
           :mode="mode"
           :required="true"
+          data-testid="azure-cloud-credentials-client-id"
           @input="value.setData('clientId', $event)"
         />
       </div>
@@ -130,6 +133,7 @@ export default {
           type="password"
           :mode="mode"
           :required="true"
+          data-testid="azure-cloud-credentials-client-secret"
           @input="value.setData('clientSecret', $event)"
         />
       </div>

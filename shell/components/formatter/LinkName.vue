@@ -1,6 +1,6 @@
 <script>
 import { NAME as EXPLORER } from '@shell/config/product/explorer';
-import { NODE as NODE_TYPE } from '@shell/config/types';
+import { canViewResource } from '@shell/utils/auth';
 
 export default {
   props: {
@@ -43,12 +43,9 @@ export default {
 
       return { name, params };
     },
-    hasPermission() {
-      if (this.type === NODE_TYPE) {
-        return this.$store.getters['management/schemaFor'](NODE_TYPE);
-      }
 
-      return true;
+    canViewResource() {
+      return canViewResource(this.$store, this.type);
     }
   }
 };
@@ -57,7 +54,7 @@ export default {
 <template>
   <span v-if="value">
     <nuxt-link
-      v-if="hasPermission"
+      v-if="canViewResource"
       :to="url"
     >
       {{ value }}

@@ -993,14 +993,13 @@ export const UI_PLUGIN_CATALOG = [
     name:     'image',
     sort:     ['image'],
     labelKey: 'plugins.manageCatalog.headers.image.label',
-    value:    'deploymentImage'
+    value:    'image'
   },
   {
-    name:      'cacheState',
-    sort:      ['cacheState'],
-    labelKey:  'plugins.manageCatalog.headers.cacheState.label',
-    value:     'cacheState',
-    formatter: 'ExtensionCache'
+    name:     'repository',
+    sort:     ['repository'],
+    labelKey: 'plugins.manageCatalog.headers.repository.label',
+    value:    'repo.metadata.name'
   }
 ];
 
