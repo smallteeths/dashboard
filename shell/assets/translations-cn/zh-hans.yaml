@@ -2101,7 +2101,7 @@ cluster:
       server: Server CIS 配置文件
     modal:
       pspChange:
-        body: 从 v1.25 版开始，Kubernetes 已经取消了对 Pod 安全策略 (PSP) 的支持。如果你的集群通过集群 YAML 中的 “kube-apiserver-arg.enable-admission-plugins” 启用了 PodSecurityPolicy 准入控制器，你必须在继续升级之前<i>手动</i>删除它。此外，集群中存在的任何 PSP 将不再可用或强制执行。是否继续操作？
+        body: <p>从 v1.25 版开始，Kubernetes 已经取消了对 Pod 安全策略 (PSP) 的支持。如果你的集群通过集群 YAML 中的 “kube-apiserver-arg.enable-admission-plugins” 启用了 PodSecurityPolicy 准入控制器，你必须在继续升级之前<i>手动</i>删除它。此外，集群中存在的任何 PSP 将不再可用或强制执行。是否继续操作？</p>
         title: 弃用 Pod 安全策略
     truncateHostnames: 将主机名截断为 15 个字符来兼容 NetBIOS。
   selectCredential:
@@ -3231,7 +3231,7 @@ logging:
     label: 有关配置请参考
     doc: Logging Operator 官方文档
   extension:
-    storage: 
+    storage:
       title: 存储
       selectContainer: 选择容器
       mountPath: 容器目录
@@ -3280,6 +3280,7 @@ login:
   useNonLocal: 使用非本地用户
   remember:
     label: 记住用户名
+  specificError: 登录时发生错误：{msg}
 managementNode:
   customName: 自定义名称
 members:
@@ -3768,6 +3769,11 @@ navLink:
         label: 链接描述
       iconSrc:
         label: 添加图片
+    groupImage:
+      iconSrc:
+        label: 添加图片
+        tip: 图片的高度应为 21 像素，最大宽度为 200 像素。最大文件大小为 20KB。支持的格式：JPEG、PNG、SVG。
+      label: 组图片
 networkpolicy:
   egress:
     label: Egress 规则
@@ -5797,6 +5803,8 @@ validation:
   maxValue: '"{key}" 必须等于或少于 {max}'
   minLength: '"{key}" 必须多于 {min} 个字符'
   minValue: '"{key}" 必须等于或多于 {min}'
+  invalidCidr: 无效的 CIDR
+  invalidIP: 无效的 IP
 wizard:
   previous: 上一步
   finish: 完成
@@ -5843,6 +5851,7 @@ wm:
     permissionDenied:
       message: 无权访问
       title: 无法打开 Shell 窗口
+    failed: "无法打开容器 shell（所有 shell 命令均未成功）\n\r"
   kubectlShell:
     title: "Kubectl: {name}"
 workload:

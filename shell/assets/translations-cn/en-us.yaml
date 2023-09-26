@@ -185,6 +185,7 @@ nav:
   search:
     placeholder: Type to search clusters
     noResults: No matching clusters
+    clusters: clusters
   resourceSearch:
     label: Resource Search
     toolTip: Resource Search {key}
@@ -217,6 +218,8 @@ nav:
     label: Global Monitoring
     dashboard: Dashboard
   harvesterDashboard: Harvester Dashboard
+  seeAllClusters: See all clusters
+  seeAllClustersCollapsed: See all
 product:
   apps: Apps
   auth: Users & Authentication
@@ -1820,7 +1823,7 @@ cluster:
       machineSelector:
         label: Add Machine Selector
         listLabel: Add Argument
-        bannerLabel: 'Note: The last selector that matches wins and only args from it will be used.  Args from other matches above will not combined together or merged.'
+        bannerLabel: 'Note: The last selector that matches wins, and only args from it will be used.  Args from other matches above will not be combined together or merged.'
         title: 'For machines with labels matching:'
         subTitle: 'Use the Kubelet args:'
         titleAlt: |-
@@ -1836,14 +1839,19 @@ cluster:
     agentArgs:
       label: Raise error if kernel parameters are different than the expected kubelet defaults
   banner:
-    warning: 'This cluster contains a machineSelectorConfig which this form does not fully support; use the YAML editor to manage the full configuration.'
-    os: 'You are attemping to add a {newOS} worker node to a cluster with one or more {existingOS} worker nodes: some installed apps may need to be upgraded or removed.'
+    warning: 'This cluster contains a machineSelectorConfig, which this form does not fully support; use the YAML editor to manage the full configuration.'
+    os: 'You are attempting to add a {newOS} worker node to a cluster with one or more {existingOS} worker nodes: some installed apps may need to be upgraded or removed.'
     rke2-k3-reprovisioning: 'Making changes to cluster configuration may result in nodes reprovisioning. For more information see the <a target="blank" href="{docsBase}/cluster-provisioning/rke-clusters/behavior-differences-between-rke1-and-rke2/" target="_blank" rel="noopener nofollow">documentation</a>.'
     desiredNodeGroupWarning: There are 0 nodes available to run the cluster agent. The cluster will not become active until at least one node is available.
     deprecatedPsp: Pod Security Policies are deprecated as of Kubernetes v1.21, and have been removed in Kubernetes v1.25.
-    haveArgInfo: Configuration information is not available for the selected Kubernetes version.  The options available in this screen will be limited, you may want to use the YAML editor.
+    haveArgInfo: Configuration information is not available for the selected Kubernetes version.  The options available on this screen will be limited; you may want to use the YAML editor.
     invalidPsps: You have one or more PodSecurityPolicy resource(s) in this cluster. Pod Security Policies are not available in Kubernetes v1.25 and will be automatically removed.
-    removedPsp: Pod Security Policies have been removed in Kubernetes v1.25, use Pod Security Admission instead.
+    removedPsp: Pod Security Policies have been removed in Kubernetes v1.25. Use Pod Security Admission instead.
+    machinePoolError: |-
+      {count, plural,
+        =1 { {pool_name}: The provided value for {fields} was not found in the list of expected values. This can happen with clusters provisioned outside of Rancher or when options for the provider have changed. }
+        other { {pool_name}: The provided values for {fields} were not found in the list of expected values. This can happen with clusters provisioned outside of Rancher or when options for the provider have changed. }
+      }
   rkeTemplateUpgrade: Template revision {name} available for upgrade
   detail:
     provisioner: Provisioner
@@ -1927,6 +1935,7 @@ cluster:
     docsLinkK3s: For help configuring private registry mirrors, see the K3s <a href="https://docs.k3s.io/installation/private-registry" target="_blank">documentation.</a>
     docsLinkRke2: For help configuring private registry mirrors, see the RKE2 <a href="https://docs.rke2.io/install/containerd_registry_configuration/" target="_blank">documentation.</a>
     label: Enable cluster scoped container registry for Rancher system container images
+    header: Registry for Rancher System Container Images
   provider:
     ack: ACK
     ackoperatorsetting: Alibaba ACK
@@ -2020,6 +2029,7 @@ cluster:
       header: Cloud Provider Config
       defaultValue:
         label: Default - RKE2 Embedded
+      unsupported: The current Cloud Provider is not supported by this version of Kubernetes. The Cloud Provider has been changed to External. Please use the Cloud Provider Config to supply an out-of-tree configuration as needed.
     security:
       header: Security
     defaultPodSecurityPolicyTemplateName:
@@ -2033,6 +2043,7 @@ cluster:
     controlPlaneConcurrency:
       label: Control Plane Concurrency
       toolTip: "This can be either a fixed number of nodes (e.g. 1) at a time or a percentage (e.g. 10%)"
+      header: Control Plane
     workerConcurrency:
       label: Worker Concurrency
       toolTip: "This can be either a fixed number of nodes (e.g. 1) at a time or a percentage (e.g. 10%)"
@@ -2091,9 +2102,11 @@ cluster:
       server: Server CIS Profile
     modal:
       pspChange:
-        body: Kubernetes has removed support for Pod Security Policies (PSPs) starting with version 1.25. If your cluster has PodSecurityPolicy admission controller enabled via "kube-apiserver-arg.enable-admission-plugins" in Cluster YAML, it has to be <i>manually</i> removed before proceeding with the upgrade. Additionally, any PSPs that may be present in the cluster will no longer be available/enforced. Do you want to proceed?
+        body: <p>Kubernetes has removed support for Pod Security Policies (PSPs) starting with version 1.25. If your cluster has PodSecurityPolicy admission controller enabled via "kube-apiserver-arg.enable-admission-plugins" in Cluster YAML, it has to be <i>manually</i> removed before proceeding with the upgrade. Additionally, any PSPs that may be present in the cluster will no longer be available/enforced. Do you want to proceed?</p>
         title: Pod Security Policy deprecation
     truncateHostnames: Truncate hostnames to 15 characters for NetBIOS compatibility.
+    secretEncryption:
+      label: Encrypt Secrets
   k3s:
     techPreview: K3s provisioning is in Tech Preview
     systemService:
@@ -2166,7 +2179,7 @@ cluster:
       advanced: These are advanced configuration options. Generally, they should be left as-is.
       limits: Pod Requests and Limits do not have a default configuration.
       tolerations: Additional Pod Tolerations will be added to the default Tolerations applied by Rancher.
-      windowsCompatibility: We do not recommended removing the Node Affinity rule that prevents the <b>agent</b> from running on Windows nodes as this is not a supported configuration.
+      windowsCompatibility: We do not recommend removing the Node Affinity rule that prevents the <b>agent</b> from running on Windows nodes as this is not a supported configuration.
     groups:
       deploymentLabels: Deployment Labels
       podAffinity: Affinity
@@ -2434,6 +2447,7 @@ fleet:
       correctDrift: Enable Self-Healing
       correctDriftBanner: When enabled, Fleet will ensure that the cluster resources are kept in sync with the git repository. All resource changes made on th ecluster will be lost.
       keepResourcesBanner: When enabled above, resources will be kept when deleting a GitRepo or Bundle - only Helm release secrets will be deleted.
+    helmRepoURLRegex: Helm Repos (URL Regex)
   clusterGroup:
     selector:
       label: Cluster Selectors
@@ -2506,6 +2520,7 @@ gatekeeperIndex:
   poweredBy: OPA Gatekeeper
   unavailable: OPA + Gatekeeper is not available in the system-charts catalog.
   violations: Violations
+  deprecated: The OPA Gatekeeper chart is deprecated as of Rancher 2.8 and will be removed in a future release. Please consider switching to <a target="_blank" rel="noopener noreferrer nofollow" href="https://www.kubewarden.io">Kubewarden</a>.
 glance:
   created: Created
   cpu: CPU Usage
@@ -2562,6 +2577,9 @@ growl:
   podSecurity:
     message: The creation of this Pod would violate existing restricted policies for the adopted Namespace
     title: PodSecurity violation
+  kubeApiHeaderWarning:
+    titleCreate: '{resourceType} Creation Warning'
+    titleUpdate: '{resourceType} Update Warning'
 hpa:
   detail:
     currentMetrics:
@@ -3215,7 +3233,7 @@ logging:
     label: For configuration, please refer to
     doc: Logging Operator Official documents
   extension:
-    storage: 
+    storage:
       title: Storage
       selectContainer: Select Container
       mountPath: Container directory
@@ -3678,7 +3696,7 @@ namespace:
   workloads: Workloads
   label: Namespace
   selectNamespace: Select Namespace
-  createNamespace: Create a New Namespace
+  createNamespace: Create a new Namespace
   selectOrCreate: Select or Create a Namespace
   resourceStates:
     success: 'Active'
@@ -5757,6 +5775,8 @@ validation:
   maxValue: '"{key}" must be equal or lower than {max}'
   minLength: '"{key}" must contain more than {min} characters'
   minValue: '"{key}" must be equal or higher than {min}'
+  invalidCidr: Invalid CIDR
+  invalidIP: Invalid IP
 wizard:
   previous: Previous
   finish: Finish
@@ -7582,6 +7602,7 @@ plugins:
     prompt: Are you sure that you want to uninstall this Extension?
     title: 'Uninstall Extension: {name}'
     custom: Are you sure that you want to uninstall this Extension Image? This will also remove any Extensions provided by this image.
+    catalog: Are you sure that you want to uninstall this Extension Catalog Image? This will also remove any Extensions provided by this image.
   update:
     label: Update
     prompt: Are you sure that you want to update this Extension?
@@ -7597,6 +7618,8 @@ plugins:
       image:
         label: Deployment Image
         name: images
+      repository:
+        label: Repository Name
     imageLoad:
       banner: This will create an Deployment, Service, and Helm repository to serve the extension charts.
       error:
