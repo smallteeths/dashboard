@@ -11,8 +11,11 @@ export default {
   computed: {
 
     boundRoles() {
-      const principal = this.$store.getters['rancher/byId'](NORMAN.PRINCIPAL, this.value);
+      // need to use getter to fetch all NORMAN.PRINCIPAL, otherwise `rancher/byId` is not reactive...
+      const principals = this.$store.getters['rancher/all'](NORMAN.PRINCIPAL);
       const globalRoleBindings = this.$store.getters['management/all'](MANAGEMENT.GLOBAL_ROLE_BINDING);
+
+      const principal = principals.find((x) => x.id === this.value);
 
       return globalRoleBindings
         // Bindings for this group
