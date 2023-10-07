@@ -796,7 +796,7 @@ backupRestoreOperator:
       warning: '此 {type} 沒有將其回收策略設置爲 "保留"。如果卷被更改或未綁定，你的備份可能會丟失。'
   encryption: 加密
   encryptionConfigName:
-    backuptip: '<code>cattle-resource-system</code>命名空間中具有<code>encryption-provider-config.yaml</code>密鑰的任何密文。<br/>此文件的內容是還原此備份所必需的，Rancher Backup 不會存儲這些內容。'
+    backuptip: '<code>cattle-resources-system</code>命名空間中具有<code>encryption-provider-config.yaml</code>密鑰的任何密文。<br/>此文件的內容是還原此備份所必需的，Rancher Backup 不會存儲這些內容。'
     label: 加密配置密文
     options:
       none: 存儲未加密的備份內容。
