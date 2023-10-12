@@ -31,6 +31,10 @@ export const KONTAINER_TO_DRIVER = {
   tke:                              'tencenttkev2'
 };
 
+// Pandaria: Although the Pandaria's self-developed kontainerDriver is external,
+// it can still be identified by its unique ID to retrieve the kontainer name.
+const PANDARIA_KONTAINER_DRIVER = ['aliyunkubernetescontainerservice', 'huaweicontainercloudengine', 'tencentkubernetesengine'];
+
 // And the Import page has even shorter ones that don't match kontainer or create...
 export const DRIVER_TO_IMPORT = {
   googlegke: 'gke',
@@ -71,7 +75,7 @@ export default class KontainerDriver extends HybridModel {
   }
 
   get driverName() {
-    if (!this.spec.builtIn) {
+    if (!this.spec.builtIn && !PANDARIA_KONTAINER_DRIVER.includes(this.id)) {
       // if the driver is not built in, there's a good change its a custom one
       // custom drivers have a random id, so shouldn't be used as the type
       // instead use the status.displayName. this will map to the name extracted from the binary
