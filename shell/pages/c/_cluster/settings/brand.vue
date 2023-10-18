@@ -355,14 +355,15 @@ export default {
       >
         <div class="col logo-container span-6">
           <div class="mb-10">
-            <FileSelector
+            <FileImageSelector
               :byte-limit="100000"
               :read-as-data-url="true"
               class="role-secondary"
               :label="t('branding.loginLandscape.upload')"
               :mode="mode"
+              accept="image/jpeg,image/png,image/svg+xml"
               @error="setError"
-              @selected="updateLogo($event, 'uiLoginLandscape')"
+              @input="updateLogo($event, 'uiLoginLandscape')"
             />
           </div>
           <SimpleBox
