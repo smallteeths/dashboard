@@ -41,7 +41,8 @@ describe('component: TopLevelMenu', () => {
     const getFeature = jest.fn(() => false);
     const harvester = {
       isHarvester: true,
-      id:          'harvester'
+      id:          'harvester',
+      status:      { provider: 'harvester' }
     };
     const localThis = {
       explorerHarvesterClusterEnabled: false,
