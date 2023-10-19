@@ -2940,7 +2940,7 @@ landing:
     cpuUsed: 已用 CPU
     memoryUsed: 已用內存
   seeWhatsNew: 點擊右側鏈接，瞭解此版本的新功能和優化。
-  whatsNewLink: "2.7 的新功能"
+  whatsNewLink: "2.8 的新功能"
   learnMore: 瞭解更多
   gettingStarted:
     title: 快速入門
@@ -3011,7 +3011,7 @@ logging:
     dockerRootDirectory: Docker 根目錄
     systemdLogPath: systemd 日誌路徑
     tooltip: '某些 Kubernetes 發行版在 <code>journald</code>中記錄日誌。你需要定義<code>systemdLogPath</code> 以收集日誌。默認路徑是<code>/run/log/journal</code>，但某些 Linux 發行版不默認使用該路徑。'
-    url: '<a href="https://rancher.com/docs/rancher/v2.6/en/logging/helm-chart-options/" target="_blank" rel="noopener nofollow noreferrer">瞭解更多</a>'
+    url: '<a href="https://ranchermanager.docs.rancher.com/v2.8/integrations-in-rancher/logging/logging-helm-chart-options" target="_blank" rel="noopener nofollow noreferrer">瞭解更多</a>'
     default: /run/log/journal
     clusterType:
       label: 集群類型
