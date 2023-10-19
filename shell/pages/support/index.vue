@@ -7,8 +7,7 @@ import { getVendor } from '@shell/config/private-label';
 import { SETTING } from '@shell/config/settings';
 import { addParam } from '@shell/utils/url';
 import { isRancherPrime } from '@shell/config/version';
-import { hasCspAdapter } from '@shell/mixins/brand';
-import { generateSupportLink } from '@shell/utils/version';
+import { hasCspAdapter } from 'mixins/brand';
 
 export default {
   layout: 'home',
@@ -110,12 +109,6 @@ export default {
 
     sccLink() {
       return this.hasAWSSupport ? addParam('https://support-cn.rancher.cn', 'from_marketplace', '1') : 'https://support-cn.rancher.cn';
-    },
-
-    supportLink() {
-      const version = this.settings?.find((s) => s.id === SETTING.VERSION_RANCHER)?.value;
-
-      return generateSupportLink(version);
     }
   },
 
@@ -137,7 +130,7 @@ export default {
               <div class="support-link">
                 <a
                   class="support-link"
-                  href="https://rancher.com/support-maintenance-terms"
+                  href="https://www.rancher.com/support"
                   target="_blank"
                   rel="noopener noreferrer nofollow"
                 >{{ t('support.community.learnMore') }}</a>

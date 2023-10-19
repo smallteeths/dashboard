@@ -35,6 +35,7 @@ export const EXPLORER_HARVESTER_CLUSTER = create('explorer-harvester-cluster', f
 export const FLAT_NETWORKS_UI_EXTENSION = create('flat-networks-ui-extension', false);
 export const HARVESTER_CONTAINER = create('harvester-baremetal-container-workload', false);
 export const AUDIT_LOG_UI_EXTENSION = create('audit-log-ui-extension', false);
+export const FLEET_WORKSPACE_BACK = create('provisioningv2-fleet-workspace-back-population', false);
 
 // Not currently used.. no point defining ones we don't use
 // export const EMBEDDED_CLUSTER_API = create('embedded-cluster-api', true);

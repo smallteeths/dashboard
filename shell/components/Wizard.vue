@@ -184,6 +184,12 @@ export default {
         this.activeStep = this.visibleSteps[this.initStepIndex];
         this.goToStep(this.activeStepIndex + 1);
       }
+    },
+    errors() {
+      // Ensurce we scroll the errors into view
+      this.$nextTick(() => {
+        this.$refs.wizard.scrollTop = this.$refs.wizard.scrollHeight;
+      });
     }
   },
 
@@ -255,7 +261,10 @@ export default {
 </script>
 
 <template>
-  <div class="outer-container">
+  <div
+    ref="wizard"
+    class="outer-container"
+  >
     <Loading
       v-if="!stepsLoaded"
       mode="relative"
@@ -399,6 +408,7 @@ export default {
             color="error"
             :label="err"
             :closable="true"
+            class="footer-error"
             @close="errors.splice(idx, 1)"
           />
         </div>
@@ -647,6 +657,12 @@ $spacer: 10px;
     flex-direction: column;
     flex: 1;
   }
+}
+
+// We have to account for the absolute position of the .controls-row
+.footer-error {
+  margin-top: -40px;
+  margin-bottom: 70px;
 }
 
   .controls-row {

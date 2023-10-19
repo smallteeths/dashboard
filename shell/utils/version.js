@@ -21,6 +21,10 @@ export function sortable(str) {
 }
 
 export function compare(in1, in2) {
+  if (in1 === undefined && in2 === undefined) {
+    return null;
+  }
+
   if ( !in1 ) {
     return 1;
   }
@@ -124,17 +128,4 @@ export async function markReadReleaseNotes(store) {
   if (!readReleaseNotes(store)) {
     await store.dispatch('prefs/set', { key: READ_WHATS_NEW, value: getVersionInfo(store).fullVersion });
   }
-}
-
-export function generateSupportLink(version) {
-  const defaultSupportURL = 'https://rancher.com/support-maintenance-terms';
-
-  if (!version || isDevBuild(version)) {
-    return defaultSupportURL;
-  }
-
-  const baseUrl = 'https://www.suse.com/suse-rancher/support-matrix/all-supported-versions/rancher-';
-  const formattedVersion = version.split('.').join('-');
-
-  return baseUrl + formattedVersion;
 }
