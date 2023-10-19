@@ -418,14 +418,14 @@ export default {
             </div>
           </template>
         </div>
-        <LabeledInput
-          v-if="needsConfirm"
-          id="confirm"
-          v-model="confirmName"
-          v-focus
-          :data-testid="componentTestid + '-input'"
-          type="text"
-        >
+        <template v-if="needsConfirm">
+          <LabeledInput
+            id="confirm"
+            v-model="confirmName"
+            v-focus
+            :data-testid="componentTestid + '-input'"
+            type="text"
+          />
           <div class="text-warning mb-10 mt-10">
             {{ warning }}
           </div>
@@ -452,7 +452,7 @@ export default {
             class="mt-10 type"
             @input="finalizersToRemove"
           />
-        </labeledinput>
+        </template>
         <template v-else>
           <div class="text-warning mb-10 mt-10">
             {{ warning }}
