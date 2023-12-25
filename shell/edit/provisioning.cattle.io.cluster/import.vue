@@ -122,6 +122,17 @@ export default {
 
       this.hideDescriptions = neu;
     },
+
+    cancel() {
+      this.$router.push({
+        name:   'c-cluster-product-resource',
+        params: {
+          cluster:  this.$route.params.cluster,
+          product:  this.$store.getters['productId'],
+          resource: CAPI.RANCHER_CLUSTER,
+        },
+      });
+    },
   },
 };
 </script>
@@ -132,9 +143,11 @@ export default {
     v-else
     :mode="mode"
     :resource="value"
+    :cancel-event="true"
     :errors="errors"
     component-testid="cluster-manager-import"
     @finish="saveOverride"
+    @cancel="cancel"
     @error="e=>errors = e"
   >
     <Banner
