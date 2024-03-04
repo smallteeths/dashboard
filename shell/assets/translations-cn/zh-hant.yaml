@@ -1854,6 +1854,7 @@ cluster:
     haveArgInfo: 所選 Kubernetes 版本的配置信息不可用。此屏幕中可用的選項將受到限制，你可能需要使用 YAML 編輯器。
     invalidPsps: 你在此集羣中有一個或多個 PSP 資源。Pod 安全策略在 Kubernetes v1.25 中不可用並將自動刪除。
     removedPsp: Pod 安全策略已在 Kubernetes v1.25 中刪除，請改用 Pod Security Admission。
+    cloudProviderAddConfig: 在 Kubernetes 1.27 或更高版本上，亞馬遜雲提供商需要額外配置。有關詳細信息，請參閱<a href="https://ranchermanager.docs.rancher.com/how-to-guides/new-user-guides/kubernetes-clusters-in-rancher-setup/set-up-cloud-providers/amazon" target="_blank" rel="noopener noreferrer nofollow">文檔</a>。
   rkeTemplateUpgrade: 模板修訂版 {name} 可用於升級
   detail:
     provisioner: 提供商
@@ -3232,7 +3233,7 @@ logging:
     label: 有關配置請參考
     doc: Logging Operator 官方文檔
   extension:
-    storage: 
+    storage:
       title: 存儲
       selectContainer: 選擇容器
       mountPath: 容器目錄
