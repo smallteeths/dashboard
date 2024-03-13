@@ -165,6 +165,7 @@ export default {
     await this.initSpecs();
     await this.initAddons();
     await this.initRegistry();
+    await this.fetchSupportedK8sVersionRange();
 
     Object.entries(this.chartValues).forEach(([name, value]) => {
       const key = this.chartVersionKey(name);
@@ -230,6 +231,7 @@ export default {
       showCustomRegistryAdvancedInput: false,
       registrySecret:                  null,
       userChartValues:                 {},
+      supportedK8sVersionRange:        '',
       userChartValuesTemp:             {},
       addonsRev:                       0,
       clusterIsAlreadyCreated:         !!this.value.id,
@@ -1204,6 +1206,84 @@ export default {
       }
     },
 
+    async fetchSupportedK8sVersionRange() {
+      const globalSettings = await this.$store.getters['management/all'](MANAGEMENT.SETTING) || [];
+      const defaultSupportedK8sVersionRange = globalSettings.find((setting) => setting.id === 'ui-k8s-supported-versions-range') || {};
+
+      const supportedK8sVersionRange = defaultSupportedK8sVersionRange?.value || defaultSupportedK8sVersionRange?.default;
+
+      this.supportedK8sVersionRange = supportedK8sVersionRange;
+    },
+
+    satisfies(version) {
+      // Semver doesn't take padding zeros like 17.03.1
+      const range = this.supportedK8sVersionRange.replace(/\.0+(\d+)/g, '.$1');
+
+      version = version.replace(/\.0+(\d+)/g, '.$1');
+      version = version.replace(/\-.*$/g, ''); // strip hyphen (prerelease in semver) because cloud providers dont use it as prerelease
+
+      if ( !semver.validRange(range) ) {
+        return false;
+      }
+
+      if ( !semver.valid(version) ) {
+        return false;
+      }
+
+      return semver.satisfies(version, range);
+    },
+
+    maxSatisfying(versions, range) {
+      const versionsErrors = [];
+      const nueVersions = [].concat(versions);
+
+      let satisfiedVersion = null;
+
+      // Semver doesn't take padding zeros like 17.03.1
+      range = range.replace(/\.0+(\d+)/g, '.$1');
+
+      const coercedVersions = [];
+      const origin = [];
+
+      nueVersions.forEach( ( version, i, ary ) => {
+        ary[i] = version.replace(/\.0+(\d+)/g, '.$1');
+        ary[i] = version.replace(/\-.*$/g, ''); // strip hyphen (prerelease in semver) because cloud providers dont use it as prerelease
+
+        if ( !semver.valid(semver.coerce(version)) ) {
+          versionsErrors.pushObject(`Invalid semver version: ${ version }`);
+        } else {
+          coercedVersions.push(this.coerceVersion(version));
+          origin.push(version);
+        }
+      });
+
+      if ( !semver.validRange(range) ) {
+        return false;
+      }
+
+      if ( versionsErrors.length > 0 ) {
+        return false;
+      }
+
+      satisfiedVersion = semver.maxSatisfying(coercedVersions, range);
+
+      if (satisfiedVersion) {
+        return origin.find((v) => {
+          return this.coerceVersion(v).includes(satisfiedVersion);
+        });
+      } else {
+        return null;
+      }
+    },
+
+    coerceVersion(version) {
+      const out = semver.coerce(version) || {};
+
+      if (semver.valid(out)) {
+        return out.version;
+      }
+    },
+
     cleanAgentConfiguration(model, key) {
       if (!model || !model[key]) {
         return;
@@ -2022,6 +2102,26 @@ export default {
           disabled,
         };
       });
+
+      // Pandaria: Disable lower versions of Kubernetes
+      if (this.supportedK8sVersionRange) {
+        const versionsClone = out ? out.map((version) => version.value) : [];
+        const maxVersion = this.maxSatisfying(versionsClone, this.supportedK8sVersionRange);
+
+        if (maxVersion) {
+          out.forEach((v) => {
+            const versionSatisfies = this.satisfies(v.value, this.supportedVersionsRange);
+
+            if (!versionSatisfies) {
+              // unspport version
+              if (semver.lt(v.value, this.coerceVersion(maxVersion))) {
+                v.disabled = true;
+              }
+            }
+          });
+        }
+      }
+      // Pandaria: end
 
       if (currentVersion && !out.find((obj) => obj.value === currentVersion)) {
         out.push({
