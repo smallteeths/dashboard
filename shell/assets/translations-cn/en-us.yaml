@@ -1572,6 +1572,7 @@ cluster:
         label: DNS Label
       environment:
         label: Environment
+        tooltip: The environment is configured when cloud credentials are created.
       faultDomainCount:
         help: If the availability set has already been created, the fault domain count will be ignored.
         label: Fault Domain Count
@@ -1722,6 +1723,9 @@ cluster:
         host:
           label: Host
           note: Specific host to create VM on (leave blank for standalone ESXi or for cluster with DRS)
+        gracefulShutdownTimeout:
+          label: Graceful Shutdown Timeout
+          note: The time in seconds to wait before forcing deleting VMs in the infrastructure. Zero means disable graceful shutdown.
       instanceOptions:
         label: Instance Options
         description: Choose the size and OS of the virtual machine
@@ -7598,6 +7602,7 @@ customLinks:
     issues: File an Issue
     slack: Slack
     mirror: Download Mirror
+    suseCollective: SUSE Collective
   description: Configure the links to display on the home page. You can define your own custom links as well as show or hide default links.
   displayTitle: Links
   label: Home Links

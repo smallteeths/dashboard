@@ -1574,6 +1574,7 @@ cluster:
         label: DNS 标签
       environment:
         label: 环境
+        tooltip: 环境是在创建云凭据时配置的。
       faultDomainCount:
         help: 如果可用性集已创建，将忽略容错域数量。
         label: 容错域数量
@@ -1724,6 +1725,9 @@ cluster:
         host:
           label: 主机
           note: 用于创建虚拟机的主机（如果是独立的 ESXi 或是带有 DRS 的集群，请留空)
+        gracefulShutdownTimeout:
+          label: 正常关机超时
+          note: 强制删除基础架构中的虚拟机前的等待时间（秒）。零表示禁用正常关机。
       instanceOptions:
         label: 实例选项
         description: 选择虚拟机的大小和操作系统
@@ -7853,6 +7857,7 @@ customLinks:
     slack: Slack
     mirror: 下载 Rancher 资源
     cnforums: 中文社区
+    suseCollective: SUSE Collective
   description: 配置要在主页上显示的链接。你可以配置自定义链接以及显示或隐藏默认链接。
   displayTitle: 链接
   label: 主页链接

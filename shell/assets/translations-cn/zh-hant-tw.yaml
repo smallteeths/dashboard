@@ -1574,6 +1574,7 @@ cluster:
         label: DNS 標籤
       environment:
         label: 環境
+        tooltip: 環境是在創建雲憑據時配置的。
       faultDomainCount:
         help: 如果可用性集已創建，將忽略容錯域數量。
         label: 容錯域數量
@@ -1724,6 +1725,9 @@ cluster:
         host:
           label: 主機
           note: 用於創建虛擬機的主機（如果是獨立的 ESXi 或是帶有 DRS 的集群，請留空)
+        gracefulShutdownTimeout:
+          label: 正常關機超時
+          note: 強制刪除基礎架構中的虛擬機前的等待時間（秒）。零表示禁用正常關機。
       instanceOptions:
         label: 實例選項
         description: 選擇虛擬機的大小和操作系統
@@ -7853,6 +7857,7 @@ customLinks:
     slack: Slack
     mirror: 下載 Rancher 資源
     cnforums: 中文社區
+    suseCollective: SUSE Collective
   description: 配置要在主頁上顯示的鏈接。你可以配置自定義鏈接以及顯示或隱藏默認鏈接。
   displayTitle: 鏈接
   label: 主頁鏈接
