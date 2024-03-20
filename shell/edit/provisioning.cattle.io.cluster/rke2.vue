@@ -251,7 +251,6 @@ export default {
       machinePoolValidation: {}, // map of validation states for each machine pool
       machinePoolErrors:     {},
       allNamespaces:         [],
-      initialCloudProvider:  this.value?.agentConfig?.['cloud-provider-name'] || '',
       extensionTabs:         getApplicableExtensionEnhancements(this, ExtensionPoint.TAB, TabLocation.CLUSTER_CREATE_RKE2, this.$route, this),
     };
   },
@@ -646,30 +645,8 @@ export default {
 
       const cur = this.agentConfig['cloud-provider-name'];
 
-      if (cur && !out.find((x) => x.value === cur)) {
-        // Localization missing
-        // Look up cur in the localization file
-        const label = this.$store.getters['i18n/withFallback'](`cluster.cloudProvider."${ cur }".label`, null, cur);
-
-        out.unshift({
-          label:       `${ label } (Current)`,
-          value:       cur,
-          unsupported: true,
-          disabled:    true
-        });
-      }
-
-      const initial = this.initialCloudProvider;
-
-      if (cur !== initial && initial && !out.find((x) => x.value === initial)) {
-        const label = this.$store.getters['i18n/withFallback'](`cluster.cloudProvider."${ initial }".label`, null, initial);
-
-        out.unshift({
-          label:       `${ label } (Current)`,
-          value:       initial,
-          unsupported: true,
-          disabled:    true
-        });
+      if ( cur && !out.find((x) => x.value === cur) ) {
+        out.unshift({ label: `${ cur } (Current)`, value: cur });
       }
 
       return out;
@@ -784,18 +761,8 @@ export default {
 
       return validRequiredPools && base;
     },
-
     generateName() {
       return this.registryHost || '';
-    },
-
-    unsupportedCloudProvider() {
-      // The current cloud provider
-      const cur = this.initialCloudProvider;
-
-      const provider = cur && this.cloudProviderOptions.find((x) => x.value === cur);
-
-      return !!provider?.unsupported;
     },
   },
 
@@ -1250,8 +1217,14 @@ export default {
               title:     this.t('cluster.rke2.modal.editYamlMachinePool.title'),
               body:      this.t('cluster.rke2.modal.editYamlMachinePool.body'),
               applyMode: 'editAndContinue',
-              confirm:   (confirmed) => {
+              confirm:   async(confirmed) => {
                 if (confirmed) {
+                  await this.validateMachinePool();
+
+                  if (this.errors.length) {
+                    reject(new Error('Machine Pool validation errors'));
+                  }
+
                   resolve();
                 } else {
                   reject(new Error('User Cancelled'));
@@ -1416,10 +1389,6 @@ export default {
       // We cannot use the hook, because it is triggered on YAML toggle without restore initialized data
       this.agentConfigurationCleanup();
 
-      if ( this.errors ) {
-        clear(this.errors);
-      }
-
       const isEditVersion = this.isEdit && this.liveValue?.spec?.kubernetesVersion !== this.value?.spec?.kubernetesVersion;
       const hasPspManuallyAdded = !!this.value.spec.rkeConfig?.machineGlobalConfig?.['kube-apiserver-arg'];
 
@@ -1437,31 +1406,9 @@ export default {
         }
       }
 
-      if (this.value.cloudProvider === 'aws') {
-        const missingProfileName = this.machinePools.some((mp) => !mp.config.iamInstanceProfile);
+      this.validateClusterName();
 
-        if (missingProfileName) {
-          this.errors.push(this.t('cluster.validation.iamInstanceProfileName', {}, true));
-        }
-      }
-
-      for (const [index] of this.machinePools.entries()) { // validator machine config
-        if ( typeof this.$refs.pool[index]?.test === 'function' ) {
-          try {
-            const res = await this.$refs.pool[index].test();
-
-            if (Array.isArray(res) && res.length > 0) {
-              this.errors.push(...res);
-            }
-          } catch (e) {
-            this.errors.push(e);
-          }
-        }
-      }
-
-      if (!this.value.metadata.name && this.agentConfig['cloud-provider-name'] === HARVESTER) {
-        this.errors.push(this.t('validation.required', { key: this.t('cluster.name.label') }, true));
-      }
+      await this.validateMachinePool();
 
       if (this.errors.length) {
         btnCb(false);
@@ -1728,8 +1675,7 @@ export default {
         set(regs, 'mirrors', {});
       }
 
-      const hostname = Object.keys(regs.configs)[0];
-      const config = regs.configs[hostname];
+      const config = regs.configs[this.registryHost];
 
       if ( config ) {
         registrySecret = config.authConfigSecretName;
@@ -2062,18 +2008,6 @@ export default {
         if (this.isHarvesterDriver && this.mode === _CREATE && this.isHarvesterIncompatible) {
           this.setHarvesterDefaultCloudProvider();
         }
-
-        // Cloud Provider check
-        // If the cloud provider is unsupported, switch provider to 'external'
-        if (this.unsupportedCloudProvider) {
-          set(this.agentConfig, 'cloud-provider-name', 'external');
-        } else {
-          // Switch the cloud provider back to the initial value
-          // Use changed the Kubernetes version back to a version where the initial cloud provider is valid - so switch back to this one
-          // to undo the change to external that we may have made
-          // Note: Cloud Provider can only be changed on edit when the initial provider is no longer supported
-          set(this.agentConfig, 'cloud-provider-name', this.initialCloudProvider);
-        }
       }
     },
 
@@ -2161,8 +2095,41 @@ export default {
       }
 
       this.errors = errors;
+    },
+
+    validateClusterName() {
+      if (!this.value.metadata.name && this.agentConfig['cloud-provider-name'] === HARVESTER) {
+        this.errors.push(this.t('validation.required', { key: this.t('cluster.name.label') }, true));
+      }
+    },
+
+    async validateMachinePool() {
+      if (this.errors) {
+        clear(this.errors);
+      }
+      if (this.value.cloudProvider === 'aws') {
+        const missingProfileName = this.machinePools.some((mp) => !mp.config.iamInstanceProfile);
+
+        if (missingProfileName) {
+          this.errors.push(this.t('cluster.validation.iamInstanceProfileName', {}, true));
+        }
+      }
+
+      for (const [index] of this.machinePools.entries()) { // validator machine config
+        if ( typeof this.$refs.pool[index]?.test === 'function' ) {
+          try {
+            const res = await this.$refs.pool[index].test();
+
+            if (Array.isArray(res) && res.length > 0) {
+              this.errors.push(...res);
+            }
+          } catch (e) {
+            this.errors.push(e);
+          }
+        }
+      }
     }
-  },
+  }
 };
 </script>
 
@@ -2189,7 +2156,7 @@ export default {
     @done="done"
     @finish="saveOverride"
     @cancel="cancel"
-    @error="fvUnreportedValidationErrors"
+    @error="e=>errors = e"
   >
     <div class="header-warnings">
       <Banner
@@ -2295,6 +2262,7 @@ export default {
                 :machine-pools="machinePools"
                 :busy="busy"
                 :pool-id="obj.id"
+                :pool-create-mode="obj.create"
                 @error="handleMachinePoolError"
                 @validationChanged="v=>machinePoolValidationChanged(obj.id, v)"
               />
@@ -2346,7 +2314,6 @@ export default {
             :have-arg-info="haveArgInfo"
             :show-cni="showCni"
             :show-cloud-provider="showCloudProvider"
-            :unsupported-cloud-provider="unsupportedCloudProvider"
             :cloud-provider-options="cloudProviderOptions"
             @cilium-ipv6-changed="handleCiliumIpv6Changed"
             @enabled-system-services-changed="handleEnabledSystemServicesChanged"
@@ -2640,6 +2607,7 @@ export default {
               v-model="showCustomRegistryInput"
               class="mb-20"
               :label="t('cluster.privateRegistry.label')"
+              data-testid="registries-enable-checkbox"
               @input="toggleCustomRegistry"
             />
           </div>
@@ -2652,6 +2620,7 @@ export default {
                 v-model="registryHost"
                 label-key="catalog.chart.registry.custom.inputLabel"
                 placeholder-key="catalog.chart.registry.custom.placeholder"
+                data-testid="registry-host-input"
                 :min-height="30"
               />
               <SelectOrCreateAuthSecret
@@ -2678,6 +2647,7 @@ export default {
                 class="col span-12 advanced"
                 :is-open-by-default="showCustomRegistryAdvancedInput"
                 :mode="mode"
+                data-testid="registries-advanced-section"
               >
                 <Banner
                   :closable="false"

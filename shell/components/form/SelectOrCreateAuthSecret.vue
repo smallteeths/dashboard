@@ -212,7 +212,7 @@ export default {
         types.push(SECRET_TYPES.RKE_AUTH_CONFIG);
       }
 
-      const out = this.allSecrets
+      let out = this.allSecrets
         .filter((x) => this.namespace && this.limitToNamespace ? x.metadata.namespace === this.namespace : true)
         .filter((x) => {
           // Must match one of the types if given
@@ -260,7 +260,7 @@ export default {
       }
 
       if ( !this.limitToNamespace ) {
-        sortBy(out, 'group');
+        out = sortBy(out, 'group');
         if ( out.length ) {
           let lastGroup = '';
 
@@ -516,7 +516,7 @@ export default {
         <div :class="moreCols">
           <LabeledInput
             v-model="publicKey"
-            data-testid="auth-secret-basic-public-key"
+            data-testid="auth-secret-basic-username"
             :mode="mode"
             label-key="selectOrCreateAuthSecret.basic.username"
           />
@@ -524,7 +524,7 @@ export default {
         <div :class="moreCols">
           <LabeledInput
             v-model="privateKey"
-            data-testid="auth-secret-basic-private-key"
+            data-testid="auth-secret-basic-password"
             :mode="mode"
             type="password"
             label-key="selectOrCreateAuthSecret.basic.password"

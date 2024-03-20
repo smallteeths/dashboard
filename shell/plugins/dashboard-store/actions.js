@@ -8,6 +8,7 @@ import { classify } from '@shell/plugins/dashboard-store/classify';
 import { normalizeType } from './normalize';
 import garbageCollect from '@shell/utils/gc/gc';
 import { addSchemaIndexFields } from '@shell/plugins/steve/schema.utils';
+import { addParam } from '@shell/utils/url';
 
 export const _ALL = 'all';
 export const _MERGE = 'merge';
@@ -16,7 +17,8 @@ export const _ALL_IF_AUTHED = 'allIfAuthed';
 export const _NONE = 'none';
 
 const SCHEMA_CHECK_RETRIES = 15;
-const SCHEMA_CHECK_RETRY_LOG = 10;
+const HAVE_ALL_CHECK_RETRIES = 15;
+const RETRY_LOG = 10;
 
 export async function handleSpoofedRequest(rootGetters, schemaStore, opt, product) {
   // Handle spoofed types instead of making an actual request
@@ -204,12 +206,12 @@ export default {
 
       const pageFetchOpts = {
         ...opt,
-        url: `${ opt.url }?limit=${ opt.incremental }`
+        url: addParam(opt.url, 'limit', `${ opt.incremental }`),
       };
 
       // this is where we "hijack" the limit for the dispatch('request') some lines below
       // and therefore have 2 initial requests in parallel
-      opt.url = `${ opt.url }?limit=100`;
+      opt.url = addParam(opt.url, 'limit', '100');
       skipHaveAll = true;
 
       // since we are forcing a request, clear the haveAll
@@ -364,10 +366,7 @@ export default {
     const typeOptions = rootGetters['type-map/optionsFor'](type);
 
     opt = opt || {};
-
-    opt.filter = opt.filter || {};
-    opt.filter['labelSelector'] = selector;
-
+    opt.labelSelector = selector;
     opt.url = getters.urlFor(type, null, opt);
     opt.depaginate = typeOptions?.depaginate;
 
@@ -441,8 +440,13 @@ export default {
       const watchMsg = {
         type,
         id,
-        revision: res?.metadata?.resourceVersion,
-        force:    opt.forceWatch === true,
+        // Although not used by sockets, we need this for when resyncWatch calls find.... which needs namespace to construct the url
+        namespace: opt.namespaced,
+        // Override the revision. Used in cases where we need to avoid using the resource's own revision which would be `too old`.
+        // For the above case opt.revision will be `null`. If left as `undefined` the subscribe mechanism will try to determine a revision
+        // from resources in store (which would be this one, with the too old revision)
+        revision:  typeof opt.revision !== 'undefined' ? opt.revision : res?.metadata?.resourceVersion,
+        force:     opt.forceWatch === true,
       };
 
       const idx = id.indexOf('/');
@@ -631,7 +635,7 @@ export default {
       schema = getters['schemaFor'](type);
 
       if (!schema) {
-        if (tries === SCHEMA_CHECK_RETRY_LOG) {
+        if (tries === RETRY_LOG) {
           console.warn(`Schema for ${ type } not available... retrying...`); // eslint-disable-line no-console
         }
         await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -643,6 +647,27 @@ export default {
       // Ran out of tries - fetch the schemas again
       console.warn(`Schema for ${ type } still unavailable... loading schemas again...`); // eslint-disable-line no-console
       await dispatch('loadSchemas', true);
+    }
+  },
+
+  async waitForHaveAll({ getters }, { type, throwError = false, attempts = HAVE_ALL_CHECK_RETRIES }) {
+    let tries = attempts;
+    let haveAll = null;
+
+    while (!haveAll && tries > 0) {
+      haveAll = getters['haveAll'](type);
+
+      if (!haveAll) {
+        if (tries === RETRY_LOG) {
+          console.warn(`wait for all of ${ type } continuing...`); // eslint-disable-line no-console
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        tries--;
+      }
+    }
+
+    if (tries === 0 && throwError) {
+      throw new Error(`Failed to wait for all of ${ type }`);
     }
   },
 

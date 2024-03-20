@@ -2,7 +2,6 @@
 import Loading from '@shell/components/Loading';
 import CreateEditView from '@shell/mixins/create-edit-view';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
-// import { Checkbox } from '@components/Form/Checkbox';
 import { exceptionToErrorsArray, stringify } from '@shell/utils/error';
 import { Banner } from '@components/Banner';
 import UnitInput from '@shell/components/form/UnitInput';
@@ -16,7 +15,8 @@ import { get, set } from '@shell/utils/object';
 import { integerString, keyValueStrings } from '@shell/utils/computed';
 import { _CREATE, _EDIT, _VIEW } from '@shell/config/query-params';
 
-const SENTINEL = '__SENTINEL__';
+export const SENTINEL = '__SENTINEL__';
+const NULLABLE_EMPTY_FIELDS = ['contentLibrary', 'folder', 'hostsystem'];
 const VAPP_MODE = {
   DISABLED: 'disabled',
   AUTO:     'auto',
@@ -39,7 +39,17 @@ const OS_OPTIONS = [
   'linux',
   'windows'
 ];
-const DEFAULT_CFGPARAM = ['disk.enableUUID=TRUE'];
+
+export const DEFAULT_VALUES = {
+  cpuCount:                '2',
+  diskSize:                '20000',
+  memorySize:              '4096',
+  hostsystem:              '',
+  cloudConfig:             '#cloud-config\n\n',
+  gracefulShutdownTimeout: '0',
+  cfgparam:                ['disk.enableUUID=TRUE'],
+  os:                      OS_OPTIONS[0]
+};
 
 const getDefaultVappOptions = (networks) => {
   return {
@@ -98,7 +108,7 @@ const getInitialVappMode = (c) => {
     return VAPP_MODE.DISABLED;
   }
 
-  const d = getDefaultVappOptions(c.network);
+  const d = getDefaultVappOptions(c.network || []);
 
   if (
     c.vappIpprotocol === d.vappIpprotocol &&
@@ -159,7 +169,11 @@ export default {
     },
     disabled: {
       type:    Boolean,
-      default: false
+      default: false,
+    },
+    poolCreateMode: {
+      type:     Boolean,
+      required: true,
     },
   },
 
@@ -214,18 +228,30 @@ export default {
       },
     ];
 
-    if (this.mode === _CREATE && !this.value.initted) {
+    if ((this.mode === _CREATE || this.poolCreateMode) && !this.value.initted) {
       Object.defineProperty(this.value, 'initted', { value: true, enumerable: false });
 
+      const {
+        cpuCount,
+        diskSize,
+        memorySize,
+        hostsystem,
+        cloudConfig,
+        gracefulShutdownTimeout,
+        cfgparam,
+        os
+      } = DEFAULT_VALUES;
+
       set(this.value, 'creationType', creationMethods[0].value);
-      set(this.value, 'cpuCount', '2');
-      set(this.value, 'diskSize', '20000');
-      set(this.value, 'memorySize', '4096');
-      set(this.value, 'hostsystem', '');
-      set(this.value, 'cloudConfig', '#cloud-config\n\n');
-      set(this.value, 'cfgparam', DEFAULT_CFGPARAM);
+      set(this.value, 'cpuCount', cpuCount);
+      set(this.value, 'diskSize', diskSize);
+      set(this.value, 'memorySize', memorySize);
+      set(this.value, 'hostsystem', hostsystem);
+      set(this.value, 'gracefulShutdownTimeout', gracefulShutdownTimeout);
+      set(this.value, 'cloudConfig', cloudConfig);
+      set(this.value, 'cfgparam', cfgparam);
       set(this.value, 'vappProperty', this.value.vappProperty);
-      set(this.value, 'os', OS_OPTIONS[0]);
+      set(this.value, 'os', os);
       Object.entries(INITIAL_VAPP_OPTIONS).forEach(([key, value]) => {
         set(this.value, key, value);
       });
@@ -304,7 +330,9 @@ export default {
     },
 
     templateTooltip() {
-      return this.failedToLoadTemplates ? this.t('cluster.machineConfig.vsphere.instanceOptions.template.none') : null;
+      const rawTemplateValue = this.value.cloneFrom;
+
+      return this.failedToLoadTemplates ? this.t('cluster.machineConfig.vsphere.instanceOptions.template.none') : rawTemplateValue;
     },
 
     host: {
@@ -325,6 +353,26 @@ export default {
     cpuCount:   integerString('value.cpuCount'),
     memorySize: integerString('value.memorySize'),
     diskSize:   integerString('value.diskSize'),
+
+    gracefulShutdownTimeout: integerString('value.gracefulShutdownTimeout'),
+
+    network: {
+      get() {
+        return this.value.network || [];
+      },
+      set(newValue) {
+        set(this.value, 'network', newValue);
+      }
+    },
+
+    tag: {
+      get() {
+        return this.value.tag || [];
+      },
+      set(newValue) {
+        set(this.value, 'tag', newValue);
+      }
+    },
 
     showCloudConfigYaml() {
       return this.value.creationType !== 'legacy';
@@ -351,7 +399,7 @@ export default {
     },
     vappMode(value) {
       if (value === VAPP_MODE.AUTO) {
-        const defaultVappOptions = getDefaultVappOptions(this.value.network);
+        const defaultVappOptions = getDefaultVappOptions(this.value.network || []);
 
         return this.updateVappOptions(defaultVappOptions);
       }
@@ -397,13 +445,13 @@ export default {
       const valueInContent = content.find((c) => c.value === this.value.datacenter );
 
       if (!valueInContent) {
-        if (this.mode === _CREATE) {
+        if (this.mode === _CREATE || this.poolCreateMode) {
           set(this.value, 'datacenter', options[0]);
           set(this.value, 'cloneFrom', undefined);
           set(this.value, 'useDataStoreCluster', false);
         }
 
-        if ([_EDIT, _VIEW].includes(this.mode)) {
+        if ([_EDIT, _VIEW].includes(this.mode) && !this.poolCreateMode) {
           this.manageErrors(errorActions.CREATE, 'datacenter');
         }
       } else {
@@ -464,7 +512,7 @@ export default {
 
       const options = await this.requestOptions('resource-pools', this.value.datacenter);
 
-      const content = this.mapPoolOptionsToContent(options);
+      const content = this.mapPathOptionsToContent(options);
 
       this.resetValueIfNecessary('pool', content, options);
 
@@ -596,22 +644,26 @@ export default {
     resetValueIfNecessary(key, content, options, isArray = false) {
       const isValueInContent = () => {
         if (isArray) {
-          return this.value[key].every((value) => content.find((c) => c.value === value));
+          return this.value[key]?.every((value) => content.find((c) => c.value === value));
         }
 
         return content.find((c) => c.value === this.value[key] );
       };
 
       if (!isValueInContent()) {
-        if (this.mode === _CREATE) {
-          const value = isArray ? [] : content[0]?.value;
+        const value = isArray ? [] : content[0]?.value;
+        const isNullOrEmpty = NULLABLE_EMPTY_FIELDS.includes(key) && (this.value[key] === null || this.value[key] === '');
+        const shouldHandleError =
+          [_EDIT, _VIEW].includes(this.mode) && // error messages should only be displayed in Edit or View mode
+          !this.poolCreateMode && // almost identical to Create mode
+          !isNullOrEmpty && // null and empty string are valid values for some fields e.g. contentLibrary, folder and hostsystem
+          !isArray; // this flag is used for network and tag fields, and should not display error for them
 
-          if (value !== SENTINEL) {
-            set(this.value, key, value);
-          }
+        if ((this.mode === _CREATE || this.poolCreateMode) && value !== SENTINEL) {
+          set(this.value, key, value);
         }
 
-        if ([_EDIT, _VIEW].includes(this.mode)) {
+        if (shouldHandleError) {
           this.manageErrors(errorActions.CREATE, key);
         }
       } else {
@@ -621,10 +673,8 @@ export default {
 
     mapPathOptionsToContent(pathOptions) {
       return (pathOptions || []).map((pathOption) => {
-        const split = pathOption.split('/');
-
         return {
-          label: split[split.length - 1],
+          label: pathOption,
           value: pathOption
         };
       });
@@ -643,18 +693,6 @@ export default {
         label: option || '\u00A0',
         value: option || ''
       }));
-    },
-
-    mapPoolOptionsToContent(pathOptions) {
-      return pathOptions.map((pathOption) => {
-        const splitOptions = pathOption.split('/');
-        const label = splitOptions.slice(2).join('/');
-
-        return {
-          label,
-          value: pathOption
-        };
-      });
     },
 
     mapCustomAttributesToContent(customAttributes) {
@@ -731,7 +769,10 @@ export default {
         </p>
       </h4>
       <div slot="body">
-        <div class="row">
+        <div
+          class="row"
+          data-testid="datacenter"
+        >
           <div class="col span-6">
             <LabeledSelect
               v-model="value.datacenter"
@@ -740,9 +781,13 @@ export default {
               :options="dataCenters"
               :label="t('cluster.machineConfig.vsphere.scheduling.dataCenter')"
               :disabled="disabled"
+              :tooltip="value.datacenter"
             />
           </div>
-          <div class="col span-6">
+          <div
+            class="col span-6"
+            data-testid="resourcePool"
+          >
             <LabeledSelect
               v-model="value.pool"
               :loading="resourcePoolsLoading"
@@ -750,11 +795,15 @@ export default {
               :options="resourcePools"
               :label="t('cluster.machineConfig.vsphere.scheduling.resourcePool')"
               :disabled="disabled"
+              :tooltip="value.pool"
             />
           </div>
         </div>
         <div class="row mt-10">
-          <div class="col span-6">
+          <div
+            class="col span-6"
+            data-testid="dataStore"
+          >
             <LabeledSelect
               v-model="value.datastore"
               :loading="dataStoresLoading"
@@ -762,9 +811,13 @@ export default {
               :options="dataStores"
               :label="t('cluster.machineConfig.vsphere.scheduling.dataStore')"
               :disabled="disabled"
+              :tooltip="value.datastore"
             />
           </div>
-          <div class="col span-6">
+          <div
+            class="col span-6"
+            data-testid="folder"
+          >
             <LabeledSelect
               v-model="value.folder"
               :loading="foldersLoading"
@@ -772,11 +825,15 @@ export default {
               :options="folders"
               :label="t('cluster.machineConfig.vsphere.scheduling.folder')"
               :disabled="disabled"
+              :tooltip="value.folder"
             />
           </div>
         </div>
         <div class="row mt-10">
-          <div class="col span-12">
+          <div
+            class="col span-6"
+            data-testid="host"
+          >
             <LabeledSelect
               v-model="host"
               :loading="hostsLoading"
@@ -784,9 +841,26 @@ export default {
               :options="hosts"
               :label="t('cluster.machineConfig.vsphere.scheduling.host.label')"
               :disabled="disabled"
+              :tooltip="host"
             />
             <p class="text-muted mt-5">
               {{ t('cluster.machineConfig.vsphere.scheduling.host.note') }}
+            </p>
+          </div>
+          <div
+            class="col span-6"
+            data-testid="gracefulShutdownTimeout"
+          >
+            <UnitInput
+              v-model="gracefulShutdownTimeout"
+              :mode="mode"
+              :label="t('cluster.machineConfig.vsphere.scheduling.gracefulShutdownTimeout.label')"
+              :suffix="t('suffix.seconds', { count: gracefulShutdownTimeout})"
+              :disabled="disabled"
+              min="0"
+            />
+            <p class="text-muted mt-5">
+              {{ t('cluster.machineConfig.vsphere.scheduling.gracefulShutdownTimeout.note') }}
             </p>
           </div>
         </div>
@@ -900,6 +974,7 @@ export default {
               :searchable="true"
               :label="t('cluster.machineConfig.vsphere.instanceOptions.libraryTemplate')"
               :disabled="disabled"
+              :tooltip="value.cloneFrom"
             />
           </div>
           <div
@@ -913,6 +988,7 @@ export default {
               :options="virtualMachines"
               :label="t('cluster.machineConfig.vsphere.instanceOptions.virtualMachine')"
               :disabled="disabled"
+              :tooltip="value.cloneFrom"
             />
           </div>
           <div
@@ -967,7 +1043,7 @@ export default {
               {{ t('cluster.machineConfig.vsphere.networks.label') }}
             </label>
             <ArrayListSelect
-              v-model="value.network"
+              v-model="network"
               :options="networks"
               :array-list-props="{ addLabel: t('cluster.machineConfig.vsphere.networks.add') }"
               :loading="networksLoading"
@@ -1009,7 +1085,7 @@ export default {
       </h4>
       <div slot="body">
         <ArrayListSelect
-          v-model="value.tag"
+          v-model="tag"
           :options="tags"
           :array-list-props="{ addLabel: t('cluster.machineConfig.vsphere.tags.addTag') }"
           :loading="tagsLoading"
@@ -1127,3 +1203,9 @@ export default {
     </Card>
   </div>
 </template>
+
+<style lang="scss" scoped>
+::v-deep .labeled-tooltip .status-icon.icon-info {
+    z-index: 0;
+}
+</style>
