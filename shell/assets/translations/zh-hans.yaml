@@ -366,7 +366,6 @@ authConfig:
     unrestricted: 允许所有用户访问
   allowedPrincipalIds:
     title: 授权的用户和用户组
-  associatedWarning: '注意：你认证的 {provider} 用户将作为你当前登录的 {vendor} 用户（<code>{username}</code>）的替代登录方式。此 {vendor} 用户的所有全局权限、项目和集群角色绑定也将应用到 {provider} 用户。'
   github:
     clientId:
       label: 客户端 ID
@@ -845,9 +844,6 @@ catalog:
       keywords: 关键词
     errors:
       clusterToolExists: 此 Chart 含有固定的命名空间和名称。找到一个匹配的 <a href="{url}">应用</a>，任何修改都将应用于此应用。
-    banner:
-      legacy: 'PSP 删除：在将集群升级到 Kubernetes 1.25+ 之前，请确保你针对 PSP 检查了 Helm 应用程序并相应进行更新'
-    enablePSP: 启用 Pod 安全策略
     global: 全局
   charts:
     all: 全部
@@ -887,7 +883,7 @@ catalog:
       requiresFound: '在安装这个 Chart 前，你需要安装<a href="{url}">{name}</a>。'
       requiresMissing: '这个 Chart 另一个提供 {name} 的 Chart，但我们找不到这个Chart。'
       insufficientCpu: '这个 Chart 需要 {need, number} 个 CPU 核，但集群只有 {have, number} 个可用。'
-      insufficientMemory: '这个 Cchart 需要 {need} 内存，但集群只有 {have} 可用。'
+      insufficientMemory: '这个 Chart 需要 {need} 内存，但集群只有 {have} 可用。'
       legacy:
         label: 这是个 {legacyType} 应用，无法在这里修改。
         enableLegacy:
@@ -1673,10 +1669,7 @@ cluster:
     os: '你正在将 {newOS} worker 节点添加到具有一个或多个 {existingOS} worker 节点的集群。你可能需要升级或删除某些已安装的应用。'
     rke2-k3-reprovisioning: '更改集群配置可能导致节点重新配置。详情请参见 <a target="blank" href="{docsBase}/cluster-provisioning/rke-clusters/behavior-differences-between-rke1-and-rke2/" target="_blank" rel="noopener nofollow">文档</a>。'
     desiredNodeGroupWarning: 没有可用于运行 Cluster Agent 的节点。要让集群变为 Active 状态，至少需要有 1 个可用的节点。
-    invalidPsps: 你在此集群中有一个或多个 PSP 资源。Pod 安全策略在 Kubernetes v1.25 中不可用并将自动删除。
     haveArgInfo: 所选 Kubernetes 版本的配置信息不可用。此屏幕中可用的选项将受到限制，你可能需要使用 YAML 编辑器。
-    deprecatedPsp: Pod 安全策略自 Kubernetes v1.21 起已弃用，并已在 Kubernetes v1.25 中删除。
-    removedPsp: Pod 安全策略已在 Kubernetes v1.25 中删除，请改用 Pod Security Admission。
   rkeTemplateUpgrade: 模板修订版 {name} 可用于升级
 
   availabilityWarnings:
@@ -1835,10 +1828,6 @@ cluster:
       psaChange: PSACT 现在自动设置为 Rancher 默认值
       cisOverride: 更改此设置可能会影响集群安全，因为它会覆盖默认的 CIS 设置
       cisUnsupported: 所选 Kubernetes 版本不再支持 CIS 配置文件 “{cisProfile}”，请选择支持的配置文件。建议你查看<a href="https://docs.rke2.io/security/hardening_guide" target="_blank" rel="noopener noreferrer nofollow">文档</a>评估更改 CIS 配置文件的影响。
-    modal:
-      pspChange:
-        title: 弃用 Pod 安全策略
-        body: <p>从 v1.25 版开始，Kubernetes 已经取消了对 Pod 安全策略 (PSP) 的支持。如果你的集群通过集群 YAML 中的 “kube-apiserver-arg.enable-admission-plugins” 启用了 PodSecurityPolicy 准入控制器，你必须在继续升级之前<i>手动</i>删除它。此外，集群中存在的任何 PSP 将不再可用或强制执行。是否继续操作？</p>
     snapshots:
       suffix: 每个节点的快照
     systemService:
@@ -2090,7 +2079,7 @@ drainNode:
 etcdInfoBanner:
   hasLeader: "ETCD 有一个 Leader："
   leaderChanges: "Leader 变化的次数："
-  failedProposals: "失败的 proposal 数量"
+  failedProposals: "失败的 proposal 数量："
 
 fleet:
   dashboard:
@@ -2323,7 +2312,6 @@ glance:
   version: Kubernetes 版本
   monitoringDashboard: 监控仪表板
   installMonitoring: 安装 Monitoring
-  v1MonitoringInstalled: 已安装 Monitoring V1
   clusterInfo: 集群信息
   eventsTable: 完整事件列表
 
@@ -2738,8 +2726,6 @@ landing:
   whatsNewLink: "2.8 的新功能"
   learnMore: 了解更多
   support: 支持
-  psps: PSP
-  deprecatedPsp: Pod 安全策略自 Kubernetes v1.21 起已弃用，并已在 Kubernetes v1.25 中删除。你在此集群中有一个或多个 PSP 资源。
   community:
     title: 社区支持
     docs: Rancher 官方文档
@@ -3302,15 +3288,6 @@ monitoring:
       bearerTokenSecret: 持有者令牌密文
       basicAuthUsername: 具有基本认证用户名的密文
       basicAuthPassword: 具有基本认证密码的密文
-  installSteps:
-    uninstallV1:
-      stepTitle: 卸载 V1
-      stepSubtext: 卸载旧版 Monitoring
-      warning1: 已部署 Monitoring V1。你需要先卸载 Monitoring V1 才能安装 Monitoring V2。
-      warning2: <a target="blank" href="{docsBase}/monitoring-alerting/guides/migrating/" target='_blank' rel='noopener nofollow'>了解迁移到 Monitoring V2 的步骤</a>。
-      promptDescription: <div class="mt-20 mb-20">你正在尝试卸载 Monitoring V1。请确保你已阅读迁移步骤。</div>
-      success1:  Monitoring V1 已成功卸载。
-      success2: 点击下一步继续
   tabs:
     alerting: 告警
     general: 通用
@@ -4314,10 +4291,6 @@ project:
   vmDefaultResourceLimit: 虚拟机默认资源限制
   resourceQuotas: 资源配额
   haveOneOwner: 至少有一名成员需要具有所有者角色。
-  psp:
-    default: 集群默认
-    label: Pod 安全策略
-    current: "{value} (Current)"
 
 
 projectMembers:
@@ -4622,9 +4595,6 @@ rbac:
       nodetemplates-manage:
         label: 管理节点模板
         description: 允许用户定义、编辑和移除节点模板。
-      podsecuritypolicytemplates-manage:
-        label: 管理 Pod 安全策略（PSP）
-        description: 允许用户定义、编辑和移除 Pod 安全策略。
       roles-manage:
         label: 管理角色
         description: 允许用户定义、编辑和移除角色定义。
@@ -7358,17 +7328,6 @@ embedding:
   retry: 重试
   unavailable: Cluster Manager UI 不可用
 
-v1ClusterTools:
-  monitoring:
-    label: Monitoring（旧版）
-    description: '旧版 Monitoring V1。自 Rancher 2.5.0 起，我们已弃用 Monitoring V1。了解<a target="blank" href="{docsBase}/monitoring-alerting/guides/migrating/">迁移到 Monitoring V2 的步骤</a>。'
-  logging:
-    label: Logging（旧版）
-    description: '旧版 Logging V1。自 Rancher 2.5.0 起，我们已弃用 Logging V1。了解<a target="blank" href="{docsBase}/logging/migrating/">迁移到 Logging V2 的步骤</a>。'
-  istio:
-    label: Istio（旧版）
-    description: '旧版 Istio V1。自 Rancher 2.5.0 起，我们已弃用 Istio V1.5。了解<a target="blank" href="{docsBase}/istio/#migrate-from-previous-istio-version">迁移到最新版本</a> 的更多信息。'
-
 legacy:
   alerts: 告警
   apps: 应用
@@ -7379,7 +7338,6 @@ legacy:
   globalDnsProviders: 全局 DNS 提供商
   notifiers: Notifiers
   monitoring: 监控
-  psps: Pod 安全策略模板
   secrets: 密文
 
   project:
@@ -7460,9 +7418,6 @@ charts:
     service.ui.type:
       label: Longhorn UI 服务
       description: 定义 Longhorn UI 服务类型
-    enablePSP:
-      label: Pod 安全策略
-      description: 为 Longhorn 工作负载设置 Pod 安全策略
     csi.kubeletRootDir:
       label: Kubelet 根目录
       description: 指定 kubelet root-dir。如留空，则自动检测。

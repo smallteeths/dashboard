@@ -4,7 +4,10 @@
 
 // Steve-specific virtual types
 // Base: /v1
-export const STEVE = { PREFERENCE: 'userpreference' };
+export const STEVE = {
+  PREFERENCE:        'userpreference',
+  SCHEMA_DEFINITION: 'schemaDefinition'
+};
 
 // Old APIs via Norman
 // Base: /v3
@@ -26,10 +29,13 @@ export const NORMAN = {
   PRINCIPAL:                     'principal',
   PROJECT:                       'project',
   PROJECT_ROLE_TEMPLATE_BINDING: 'projectroletemplatebinding',
+  SETTING:                       'setting',
   SPOOFED:                       { GROUP_PRINCIPAL: 'group.principal' },
   ROLE_TEMPLATE:                 'roleTemplate',
   TOKEN:                         'token',
   USER:                          'user',
+  KONTAINER_DRIVER:              'kontainerDriver',
+  NODE_DRIVER:                   'nodeDriver',
   OPERATOR_SETTINGS:             'operatorsettings',
 };
 
@@ -54,8 +60,6 @@ export const NODE = 'node';
 export const NETWORK_POLICY = 'networking.k8s.io.networkpolicy';
 export const POD = 'pod';
 export const POD_DISRUPTION_BUDGET = 'policy.poddisruptionbudget';
-export const PSP = 'policy.podsecuritypolicy';
-export const PSPS = 'policy.podsecuritypolicies';
 export const PV = 'persistentvolume';
 export const PVC = 'persistentvolumeclaim';
 export const RESOURCE_QUOTA = 'resourcequota';
@@ -127,20 +131,19 @@ export const MONITORING = {
   SERVICEMONITOR:     'monitoring.coreos.com.servicemonitor',
   THANOSRULER:        'monitoring.coreos.com.thanosruler',
   SPOOFED:            {
-    RECEIVER:                         'monitoring.coreos.com.receiver',
-    RECEIVER_SPEC:                    'monitoring.coreos.com.receiver.spec',
-    RECEIVER_EMAIL:                   'monitoring.coreos.com.receiver.email',
-    RECEIVER_SLACK:                   'monitoring.coreos.com.receiver.slack',
-    RECEIVER_WEBHOOK:                 'monitoring.coreos.com.receiver.webhook',
-    RECEIVER_PANDARIA_WEBHOOK:        'monitoring.coreos.com.receiver.webhook',
-    RECEIVER_PAGERDUTY:               'monitoring.coreos.com.receiver.pagerduty',
-    RECEIVER_OPSGENIE:                'monitoring.coreos.com.receiver.opsgenie',
-    RECEIVER_HTTP_CONFIG:             'monitoring.coreos.com.receiver.httpconfig',
-    RESPONDER:                        'monitoring.coreos.com.receiver.responder',
-    ROUTE:                            'monitoring.coreos.com.route',
-    ROUTE_SPEC:                       'monitoring.coreos.com.route.spec',
-    ALERTMANAGERCONFIG_RECEIVER_SPEC: 'monitoring.coreos.com.v1alpha1.alertmanagerconfig.spec.receivers',
-    ALERTMANAGERCONFIG_ROUTE_SPEC:    'monitoring.coreos.com.v1alpha1.alertmanagerconfig.spec.route'
+    RECEIVER:             'monitoring.coreos.com.receiver',
+    RECEIVER_SPEC:        'monitoring.coreos.com.receiver.spec',
+    RECEIVER_EMAIL:       'monitoring.coreos.com.receiver.email',
+    RECEIVER_SLACK:       'monitoring.coreos.com.receiver.slack',
+    RECEIVER_WEBHOOK:     'monitoring.coreos.com.receiver.webhook',
+    RECEIVER_PAGERDUTY:   'monitoring.coreos.com.receiver.pagerduty',
+    RECEIVER_OPSGENIE:    'monitoring.coreos.com.receiver.opsgenie',
+    RECEIVER_HTTP_CONFIG: 'monitoring.coreos.com.receiver.httpconfig',
+    RESPONDER:            'monitoring.coreos.com.receiver.responder',
+    ROUTE:                'monitoring.coreos.com.route',
+    ROUTE_SPEC:           'monitoring.coreos.com.route.spec',
+
+    RECEIVER_PANDARIA_WEBHOOK: 'monitoring.coreos.com.receiver.webhook',
   }
 };
 
@@ -185,8 +188,6 @@ export const MANAGEMENT = {
   TOKEN:                         'management.cattle.io.token',
   GLOBAL_ROLE:                   'management.cattle.io.globalrole',
   GLOBAL_ROLE_BINDING:           'management.cattle.io.globalrolebinding',
-  POD_SECURITY_POLICY_TEMPLATE:  'management.cattle.io.podsecuritypolicytemplate',
-  PSP_TEMPLATE_BINDING:          'management.cattle.io.podsecuritypolicytemplateprojectbinding',
   PSA:                           'management.cattle.io.podsecurityadmissionconfigurationtemplate',
   MANAGED_CHART:                 'management.cattle.io.managedchart',
   USER_NOTIFICATION:             'management.cattle.io.rancherusernotification',

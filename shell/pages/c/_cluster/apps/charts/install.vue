@@ -248,7 +248,7 @@ export default {
       return;
     }
 
-    if ( this.version && process.client ) {
+    if ( this.version ) {
       /*
         Check if the Helm chart has provided the name
         of a Vue component to use for configuring
@@ -477,7 +477,7 @@ export default {
      * Return list of variables to filter chart questions
      */
     ignoreVariables() {
-      return ignoreVariables(this.currentCluster, this.versionInfo);
+      return ignoreVariables(this.versionInfo);
     },
 
     namespaceIsNew() {
@@ -861,11 +861,9 @@ export default {
         }
 
         if (provCluster?.isRke2) { // isRke2 returns true for both RKE2 and K3s clusters.
-          const agentConfig = provCluster.spec?.rkeConfig?.machineSelectorConfig?.find((x) => !x.machineLabelSelector).config;
-
           // If a cluster scoped registry exists,
           // it should be used by default.
-          const clusterRegistry = agentConfig?.['system-default-registry'] || '';
+          const clusterRegistry = provCluster.agentConfig?.['system-default-registry'] || '';
 
           if (clusterRegistry) {
             return clusterRegistry;
@@ -1608,6 +1606,7 @@ export default {
                 v-if="componentHasTabs"
                 ref="tabs"
                 :side-tabs="true"
+                :hide-single-tab="true"
                 :class="{'with-name': showNameEditor}"
                 class="step__values__content"
                 @changed="tabChanged($event)"
@@ -1652,6 +1651,7 @@ export default {
               v-else-if="hasQuestions && showQuestions"
               ref="tabs"
               :side-tabs="true"
+              :hide-single-tab="true"
               :class="{'with-name': showNameEditor}"
               class="step__values__content"
               @changed="tabChanged($event)"
@@ -1858,17 +1858,17 @@ export default {
         </span>
         <template v-if="!legacyEnabled">
           <span v-clean-html="t('catalog.install.error.legacy.enableLegacy.prompt', true)" />
-          <nuxt-link :to="legacyFeatureRoute">
+          <router-link :to="legacyFeatureRoute">
             {{ t('catalog.install.error.legacy.enableLegacy.goto') }}
-          </nuxt-link>
+          </router-link>
         </template>
         <template v-else-if="mcapp">
           <span v-clean-html="t('catalog.install.error.legacy.mcmNotSupported')" />
         </template>
         <template v-else>
-          <nuxt-link :to="legacyAppRoute">
+          <router-link :to="legacyAppRoute">
             <span v-clean-html="t('catalog.install.error.legacy.navigate')" />
-          </nuxt-link>
+          </router-link>
         </template>
       </Banner>
     </div>

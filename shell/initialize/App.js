@@ -2,74 +2,58 @@
 
 import Vue from 'vue';
 
-import { getMatchedComponentsInstances, getChildrenComponentInstancesUsingFetch, promisify, globalHandleError } from '../utils/nuxt';
-import NuxtError from '../layouts/error.vue';
+import {
+  getMatchedComponentsInstances, getChildrenComponentInstancesUsingFetch, promisify, globalHandleError, sanitizeComponent
+} from '../utils/nuxt';
+import NuxtError from '../components/templates/error.vue';
 import NuxtLoading from '../components/nav/GlobalLoading.vue';
 
 import '../assets/styles/app.scss';
-import { getLayouts } from './layouts';
-
-const layouts = getLayouts();
 
 export default {
   render(h) {
     const loadingEl = h('NuxtLoading', { ref: 'loading' });
 
-    const layoutEl = h(this.layout || 'nuxt');
     const templateEl = h('div', {
       domProps: { id: '__layout' },
-      key:      this.layoutName
-    }, [layoutEl]);
-
-    const transitionEl = h('transition', {
-      props: {
-        name: 'layout',
-        mode: 'out-in'
-      },
-      on: {
-        beforeEnter(el) {
-          // Ensure to trigger scroll event after calling scrollBehavior
-          window.$nuxt.$nextTick(() => {
-            window.$nuxt.$emit('triggerScroll');
-          });
-        }
-      }
-    }, [templateEl]);
+      key:      this.showErrorPage
+    }, [this.showErrorPage ? h(sanitizeComponent(NuxtError)) : h('router-view')]);
 
     return h('div', { domProps: { id: '__nuxt' } }, [
       loadingEl,
       // h(NuxtBuildIndicator), // The build indicator doesn't work as is right now and emits an error in the console so I'm leaving it out for now
-      transitionEl
+      templateEl
     ]);
   },
 
   data: () => ({
     isOnline: true,
 
-    layout:     null,
-    layoutName: '',
-
-    nbFetching: 0
+    showErrorPage: false,
   }),
 
-  beforeCreate() {
-    Vue.util.defineReactive(this, 'nuxt', this.$options.nuxt);
-  },
   created() {
-    // Add this.$nuxt in child instances
-    this.$root.$options.$nuxt = this;
+    // add to window so we can listen when ready
+    window.$globalApp = this;
+    Object.defineProperty(window, '$nuxt', {
+      get() {
+        const isHarvester = this.$globalApp?.$store.getters['currentCluster']?.isHarvester;
 
-    if (process.client) {
-      // add to window so we can listen when ready
-      window.$nuxt = this;
+        if (!isHarvester) {
+          console.warn('window.$nuxt is deprecated. It would be best to stop using globalState all together. For an alternative you can use window.$globalApp.'); // eslint-disable-line no-console
+        }
 
-      this.refreshOnlineStatus();
-      // Setup the listeners
-      window.addEventListener('online', this.refreshOnlineStatus);
-      window.addEventListener('offline', this.refreshOnlineStatus);
-    }
+        return window.$globalApp;
+      }
+    });
+
+    this.refreshOnlineStatus();
+    // Setup the listeners
+    window.addEventListener('online', this.refreshOnlineStatus);
+    window.addEventListener('offline', this.refreshOnlineStatus);
+
     // Add $nuxt.error()
-    this.error = this.nuxt.error;
+    this.error = this.$options.nuxt.error;
     // Add $nuxt.context
     this.context = this.$options.context;
   },
@@ -84,23 +68,17 @@ export default {
     isOffline() {
       return !this.isOnline;
     },
-
-    isFetching() {
-      return this.nbFetching > 0;
-    },
   },
 
   methods: {
     refreshOnlineStatus() {
-      if (process.client) {
-        if (typeof window.navigator.onLine === 'undefined') {
-          // If the browser doesn't support connection status reports
-          // assume that we are online because most apps' only react
-          // when they now that the connection has been interrupted
-          this.isOnline = true;
-        } else {
-          this.isOnline = window.navigator.onLine;
-        }
+      if (typeof window.navigator.onLine === 'undefined') {
+        // If the browser doesn't support connection status reports
+        // assume that we are online because most apps' only react
+        // when they now that the connection has been interrupted
+        this.isOnline = true;
+      } else {
+        this.isOnline = window.navigator.onLine;
       }
     },
 
@@ -152,45 +130,20 @@ export default {
       this.$loading.finish();
     },
     errorChanged() {
-      if (this.nuxt.err) {
+      if (this.$options.nuxt.err) {
         if (this.$loading) {
           if (this.$loading.fail) {
-            this.$loading.fail(this.nuxt.err);
+            this.$loading.fail(this.$options.nuxt.err);
           }
           if (this.$loading.finish) {
             this.$loading.finish();
           }
         }
 
-        let errorLayout = (NuxtError.options || NuxtError).layout;
-
-        if (typeof errorLayout === 'function') {
-          errorLayout = errorLayout(this.context);
-        }
-
-        this.setLayout(errorLayout);
+        this.showErrorPage = true;
+      } else {
+        this.showErrorPage = false;
       }
-    },
-
-    setLayout(layout) {
-      if (layout && typeof layout !== 'string') {
-        throw new Error('[nuxt] Avoid using non-string value as layout property.');
-      }
-
-      if (!layout || !layouts[`_${ layout }`]) {
-        layout = 'default';
-      }
-      this.layoutName = layout;
-      this.layout = layouts[`_${ layout }`];
-
-      return this.layout;
-    },
-    loadLayout(layout) {
-      if (!layout || !layouts[`_${ layout }`]) {
-        layout = 'default';
-      }
-
-      return Promise.resolve(layouts[`_${ layout }`]);
     },
   },
 

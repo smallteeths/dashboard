@@ -15,6 +15,7 @@ import DefaultBackend from './DefaultBackend';
 import Certificates from './Certificates';
 import Rules from './Rules';
 import IngressClass from './IngressClass';
+import Loading from '@shell/components/Loading';
 import ClientCertAuth from './ClientCertAuth';
 import IngressGeneralSettings from './IngressGeneralSettings';
 import IngressCorsSettings from './IngressCorsSettings';
@@ -33,8 +34,9 @@ export default {
     Tab,
     Tabbed,
     Error,
-    ClientCertAuth,
     Banner,
+    Loading,
+    ClientCertAuth,
     IngressGeneralSettings,
     IngressCorsSettings
   },
@@ -54,9 +56,10 @@ export default {
   async fetch() {
     this.ingressClassSchema = this.$store.getters[`cluster/schemaFor`](INGRESS_CLASS);
     const hash = await allHash({
-      secrets:        this.$store.dispatch('cluster/findAll', { type: SECRET }),
-      services:       this.$store.dispatch('cluster/findAll', { type: SERVICE }),
-      ingressClasses: this.ingressClassSchema ? this.$store.dispatch('cluster/findAll', { type: INGRESS_CLASS }) : Promise.resolve([]),
+      secrets:               this.$store.dispatch('cluster/findAll', { type: SECRET }),
+      services:              this.$store.dispatch('cluster/findAll', { type: SERVICE }),
+      ingressClasses:        this.ingressClassSchema ? this.$store.dispatch('cluster/findAll', { type: INGRESS_CLASS }) : Promise.resolve([]),
+      ingressResourceFields: this.schema.fetchResourceFields(),
     });
 
     this.allServices = hash.services;
@@ -222,7 +225,9 @@ export default {
 };
 </script>
 <template>
+  <Loading v-if="$fetchState.pending" />
   <CruResource
+    v-else
     :done-route="doneRoute"
     :mode="mode"
     :resource="value"

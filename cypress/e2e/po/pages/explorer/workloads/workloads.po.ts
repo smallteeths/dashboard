@@ -107,6 +107,10 @@ export class WorkloadsListPageBasePo extends PagePo {
     return this.sortableTable().detailsPageLinkWithName(elemName).click();
   }
 
+  goToEditYamlPage(elemName: string) {
+    return this.sortableTable().rowActionMenuOpen(elemName).getMenuItem('Edit YAML').click();
+  }
+
   private workload() {
     return new WorkloadPagePo();
   }
@@ -175,8 +179,4 @@ export class WorkloadsCreatePageBasePo extends PagePo {
   createWithKubectl(blueprintJson: string | Object, wait = 6000) {
     this.workload().createWithKubectl(blueprintJson, wait);
   }
-
-  // waitForCreate() {
-  //   cy.interceptAny
-  // }
 }

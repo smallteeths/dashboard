@@ -250,7 +250,7 @@ export default class CapiMachine extends SteveModel {
       return false;
     }
 
-    return notOnlyOfRole(this, this.cluster.machines);
+    return notOnlyOfRole(this, this.cluster?.machines);
   }
 
   get roles() {

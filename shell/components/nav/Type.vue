@@ -1,13 +1,14 @@
 <script>
 import Favorite from '@shell/components/nav/Favorite';
-import { FAVORITE, USED } from '@shell/store/type-map';
-import { linkActiveClass } from '@shell/config/router';
+import { TYPE_MODES } from '@shell/store/type-map';
 
-const showFavoritesFor = [FAVORITE, USED];
+import TabTitle from '@shell/components/TabTitle';
+
+const showFavoritesFor = [TYPE_MODES.FAVORITE, TYPE_MODES.USED];
 
 export default {
 
-  components: { Favorite },
+  components: { Favorite, TabTitle },
 
   props: {
     type: {
@@ -31,7 +32,6 @@ export default {
       near:     false,
       over:     false,
       menuPath: this.type.route ? this.$router.resolve(this.type.route)?.route?.path : undefined,
-      linkActiveClass
     };
   },
 
@@ -92,12 +92,23 @@ export default {
     },
 
     showCount() {
-      return typeof this.type.count !== 'undefined';
+      return this.count !== undefined && this.count !== null;
     },
 
     namespaceIcon() {
       return this.type.namespaced;
     },
+
+    count() {
+      if (this.type.count !== undefined) {
+        return this.type.count;
+      }
+
+      const inStore = this.$store.getters['currentStore'](this.type.name);
+
+      return this.$store.getters[`${ inStore }/count`]({ name: this.type.name });
+    }
+
   },
 
   methods: {
@@ -151,15 +162,21 @@ export default {
 </script>
 
 <template>
-  <n-link
+  <router-link
     v-if="type.route"
     :key="type.name"
     :to="type.route"
     tag="li"
     class="child nav-type"
-    :class="{'root': isRoot, [`depth-${depth}`]: true, [linkActiveClass]: isCurrent}"
+    :class="{'root': isRoot, [`depth-${depth}`]: true, 'router-link-active': isCurrent}"
     :exact="type.exact"
   >
+    <TabTitle
+      v-if="$router.resolve(type.route).route.path === $route.path"
+      :show-child="false"
+    >
+      {{ type.labelKey ? t(type.labelKey) : (type.labelDisplay || type.label) }}
+    </TabTitle>
     <a
       @click="selectType"
       @mouseenter="setNear(true)"
@@ -176,7 +193,7 @@ export default {
         :class="{'no-icon': !type.icon}"
       />
       <span
-        v-if="showFavorite || showCount"
+        v-if="showFavorite || namespaceIcon || showCount"
         class="count"
       >
         <Favorite
@@ -185,12 +202,15 @@ export default {
         />
         <i
           v-if="namespaceIcon"
-          class="icon icon-namespace namespaced"
+          class="icon icon-namespace"
+          :class="{'ns-and-icon': showCount}"
         />
-        {{ type.count }}
+        <span
+          v-if="showCount"
+        >{{ count }}</span>
       </span>
     </a>
-  </n-link>
+  </router-link>
   <li
     v-else-if="type.link"
     class="child nav-type"
@@ -212,7 +232,7 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-  .namespaced {
+  .ns-and-icon {
     margin-right: 4px;
   }
 

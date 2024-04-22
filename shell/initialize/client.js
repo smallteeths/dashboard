@@ -19,23 +19,23 @@ import {
   isSamePath,
   urlJoin
 } from '../utils/nuxt.js';
-import { createApp, NuxtError } from './index.js';
+import { createApp } from './index.js';
 import fetchMixin from '../mixins/fetch.client';
-import NuxtLink from '../components/nuxt/nuxt-link.client.js'; // should be included after ./index.js
+import { nuxtLinkAlias } from '../components/nuxt/nuxt-link.client.js'; // should be included after ./index.js
+import { updatePageTitle } from '@shell/utils/title';
+import { getVendor } from '@shell/config/private-label';
 
 // Mimic old @nuxt/vue-app/template/client.js
 const isDev = process.env.dev;
 const debug = isDev;
 
 // Fetch mixin
-if (!Vue.__nuxt__fetch__mixin__) {
-  Vue.mixin(fetchMixin);
-  Vue.__nuxt__fetch__mixin__ = true;
-}
+Vue.mixin(fetchMixin);
 
 // Component: <NuxtLink>
-Vue.component(NuxtLink.name, NuxtLink);
-Vue.component('NLink', NuxtLink);
+// TODO: #9541 Remove for Vue 3 migration
+Vue.component('NuxtLink', nuxtLinkAlias('NuxtLink'));
+Vue.component('NLink', nuxtLinkAlias('NLink'));
 
 if (!global.fetch) {
   global.fetch = fetch;
@@ -46,8 +46,7 @@ let _lastPaths = [];
 let app;
 let router;
 
-// Try to rehydrate SSR data from window
-const NUXT = window.__NUXT__ || {};
+const NUXT = {};
 
 const $config = nuxt.publicRuntimeConfig || {}; // eslint-disable-line no-undef
 
@@ -58,118 +57,48 @@ if ($config._app) {
 Object.assign(Vue.config, { silent: false, performance: true });
 
 if (debug) {
-  const logs = NUXT.logs || [];
+  const defaultErrorHandler = Vue.config.errorHandler;
 
-  if (logs.length > 0) {
-    const ssrLogStyle = 'background: #2E495E;border-radius: 0.5em;color: white;font-weight: bold;padding: 2px 0.5em;';
-
-    console.group && console.group('%cNuxt SSR', ssrLogStyle); // eslint-disable-line no-console
-    logs.forEach((logObj) => (console[logObj.type] || console.log)(...logObj.args)); // eslint-disable-line no-console
-    delete NUXT.logs;
-    console.groupEnd && console.groupEnd(); // eslint-disable-line no-console
-  }
-
-  // Setup global Vue error handler
-  if (!Vue.config.$nuxt) {
-    const defaultErrorHandler = Vue.config.errorHandler;
-
-    Vue.config.errorHandler = async(err, vm, info, ...rest) => {
+  Vue.config.errorHandler = async(err, vm, info, ...rest) => {
     // Call other handler if exist
-      let handled = null;
+    let handled = null;
 
-      if (typeof defaultErrorHandler === 'function') {
-        handled = defaultErrorHandler(err, vm, info, ...rest);
+    if (typeof defaultErrorHandler === 'function') {
+      handled = defaultErrorHandler(err, vm, info, ...rest);
+    }
+    if (handled === true) {
+      return handled;
+    }
+
+    if (vm && vm.$root) {
+      const nuxtApp = Object.keys(window.$globalApp)
+        .find((nuxtInstance) => vm.$root[nuxtInstance]);
+
+      // Show Nuxt Error Page
+      if (nuxtApp && vm.$root[nuxtApp].error && info !== 'render function') {
+        const currentApp = vm.$root[nuxtApp];
+
+        currentApp.error(err);
       }
-      if (handled === true) {
-        return handled;
-      }
+    }
 
-      if (vm && vm.$root) {
-        const nuxtApp = Object.keys(Vue.config.$nuxt)
-          .find((nuxtInstance) => vm.$root[nuxtInstance]);
+    if (typeof defaultErrorHandler === 'function') {
+      return handled;
+    }
 
-        // Show Nuxt Error Page
-        if (nuxtApp && vm.$root[nuxtApp].error && info !== 'render function') {
-          const currentApp = vm.$root[nuxtApp];
-
-          // Load error layout
-          let layout = (NuxtError.options || NuxtError).layout;
-
-          if (typeof layout === 'function') {
-            layout = layout(currentApp.context);
-          }
-          if (layout) {
-            await currentApp.loadLayout(layout).catch(() => {});
-          }
-          currentApp.setLayout(layout);
-
-          currentApp.error(err);
-        }
-      }
-
-      if (typeof defaultErrorHandler === 'function') {
-        return handled;
-      }
-
-      // Log to console
-      if (process.env.NODE_ENV !== 'production') {
-        console.error(err); // eslint-disable-line no-console
-      } else {
-        console.error(err.message || err); // eslint-disable-line no-console
-      }
-    };
-    Vue.config.$nuxt = {};
-  }
-  Vue.config.$nuxt.$nuxt = true;
+    // Log to console
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(err); // eslint-disable-line no-console
+    } else {
+      console.error(err.message || err); // eslint-disable-line no-console
+    }
+  };
 }
 
 const errorHandler = Vue.config.errorHandler || console.error; // eslint-disable-line no-console
 
 // Create and mount App
-createApp(null, nuxt.publicRuntimeConfig).then(mountApp).catch(errorHandler); // eslint-disable-line no-undef
-
-function componentOption(component, key, ...args) {
-  if (!component || !component.options || !component.options[key]) {
-    return {};
-  }
-  const option = component.options[key];
-
-  if (typeof option === 'function') {
-    return option(...args);
-  }
-
-  return option;
-}
-
-function mapTransitions(toComponents, to, from) {
-  const componentTransitions = (component) => {
-    const transition = componentOption(component, 'transition', to, from) || {};
-
-    return (typeof transition === 'string' ? { name: transition } : transition);
-  };
-
-  const fromComponents = from ? getMatchedComponents(from) : [];
-  const maxDepth = Math.max(toComponents.length, fromComponents.length);
-
-  const mergedTransitions = [];
-
-  for (let i = 0; i < maxDepth; i++) {
-    // Clone original objects to prevent overrides
-    const toTransitions = Object.assign({}, componentTransitions(toComponents[i]));
-    const transitions = Object.assign({}, componentTransitions(fromComponents[i]));
-
-    // Combine transitions & prefer `leave` properties of "from" route
-    Object.keys(toTransitions)
-      .filter((key) => typeof toTransitions[key] !== 'undefined' && !key.toLowerCase().includes('leave'))
-      .forEach((key) => {
-        transitions[key] = toTransitions[key];
-      });
-
-    mergedTransitions.push(transitions);
-  }
-
-  return mergedTransitions;
-}
+createApp(nuxt.publicRuntimeConfig).then(mountApp).catch(errorHandler); // eslint-disable-line no-undef
 
 async function loadAsyncComponents(to, from, next) {
   // Check if route changed (this._routeChanged), only if the page is not an error (for validate())
@@ -225,19 +154,8 @@ async function loadAsyncComponents(to, from, next) {
     }
 
     this.error({ statusCode, message });
-    this.$nuxt.$emit('routeChanged', to, from, err);
     next();
   }
-}
-
-function applySSRData(Component, ssrData) {
-  if (NUXT.serverRendered && ssrData) {
-    applyAsyncData(Component, ssrData);
-  }
-
-  Component._Ctor = Component;
-
-  return Component;
 }
 
 // Get matched components
@@ -247,32 +165,25 @@ function resolveComponents(route) {
     if (typeof Component === 'function' && !Component.options) {
       Component = await Component();
     }
+
     // Sanitize it and save it
-    const _Component = applySSRData(sanitizeComponent(Component), NUXT.data ? NUXT.data[index] : null);
+    Component._Ctor = sanitizeComponent(Component);
 
-    match.components[key] = _Component;
+    match.components[key] = Component;
 
-    return _Component;
+    return Component;
   });
 }
 
-function callMiddleware(Components, context, layout) {
+function callMiddleware(Components, context) {
   let midd = ['i18n'];
   let unknownMiddleware = false;
 
-  // If layout is undefined, only call global middleware
-  if (typeof layout !== 'undefined') {
-    midd = []; // Exclude global middleware if layout defined (already called before)
-    layout = sanitizeComponent(layout);
-    if (layout.options.middleware) {
-      midd = midd.concat(layout.options.middleware);
+  Components.forEach((Component) => {
+    if (Component.options.middleware) {
+      midd = midd.concat(Component.options.middleware);
     }
-    Components.forEach((Component) => {
-      if (Component.options.middleware) {
-        midd = midd.concat(Component.options.middleware);
-      }
-    });
-  }
+  });
 
   midd = midd.map((name) => {
     if (typeof name === 'function') {
@@ -342,25 +253,20 @@ async function render(to, from, next) {
 
   // If no Components matched, generate 404
   if (!Components.length) {
-    // Default layout
-    await callMiddleware.call(this, Components, app.context);
-    if (nextCalled) {
-      return;
-    }
+    // Call the authenticated middleware. This used to attempt to load the error layout but because it was missing it would:
+    // 1. load the default layout instead
+    // 2. then call the authenticated middleware
+    // 3. Authenticated middleware would then load plugins and check to see if there was a valid route and navigate to that if it existed
+    // 4. This would allow harvester cluster pages to load on page reload
+    // We should really make authenticated middleware do less...
+    await callMiddleware.call(this, [{ options: { middleware: ['authenticated'] } }], app.context);
 
-    // Load layout for error page
-    const errorLayout = (NuxtError.options || NuxtError).layout;
-    const layout = await this.loadLayout(
-      typeof errorLayout === 'function' ? errorLayout.call(NuxtError, app.context) : errorLayout
-    );
-
-    await callMiddleware.call(this, Components, app.context, layout);
     if (nextCalled) {
       return;
     }
 
     // Show error page
-    app.context.error({ statusCode: 404, message: 'This page could not be found' });
+    this.error({ statusCode: 404, message: 'This page could not be found' });
 
     return next();
   }
@@ -373,9 +279,6 @@ async function render(to, from, next) {
     }
   });
 
-  // Apply transitions
-  this.setTransitions(mapTransitions(Components, to, from));
-
   try {
     // Call middleware
     await callMiddleware.call(this, Components, app.context);
@@ -386,16 +289,8 @@ async function render(to, from, next) {
       return next();
     }
 
-    // Set layout
-    let layout = Components[0].options.layout;
-
-    if (typeof layout === 'function') {
-      layout = layout(app.context);
-    }
-    layout = await this.loadLayout(layout);
-
     // Call middleware for layout
-    await callMiddleware.call(this, Components, app.context, layout);
+    await callMiddleware.call(this, Components, app.context);
     if (nextCalled) {
       return;
     }
@@ -529,23 +424,11 @@ async function render(to, from, next) {
   } catch (err) {
     const error = err || {};
 
-    if (error.message === 'ERR_REDIRECT') {
-      return this.$nuxt.$emit('routeChanged', to, from, error);
-    }
     _lastPaths = [];
 
     globalHandleError(error);
 
-    // Load error layout
-    let layout = (NuxtError.options || NuxtError).layout;
-
-    if (typeof layout === 'function') {
-      layout = layout(app.context);
-    }
-    await this.loadLayout(layout);
-
     this.error(error);
-    this.$nuxt.$emit('routeChanged', to, from, error);
     next();
   }
 }
@@ -562,22 +445,6 @@ function normalizeComponents(to, ___) {
 
     return Component;
   });
-}
-
-function setLayoutForNextPage(to) {
-  // Set layout
-  let hasError = Boolean(this.$options.nuxt.err);
-
-  if (this._hadError && this._dateLastError === this.$options.nuxt.dateErr) {
-    hasError = false;
-  }
-  let layout = hasError ? (NuxtError.options || NuxtError).layout : to.matched[0].components.default.options.layout;
-
-  if (typeof layout === 'function') {
-    layout = layout(app.context);
-  }
-
-  this.setLayout(layout);
 }
 
 function checkForErrors(app) {
@@ -597,8 +464,6 @@ function fixPrepatch(to, ___) {
   const instances = getMatchedComponentsInstances(to);
   const Components = getMatchedComponents(to);
 
-  let triggerScroll = false;
-
   Vue.nextTick(() => {
     instances.forEach((instance, i) => {
       if (!instance || instance._isDestroyed) {
@@ -616,17 +481,8 @@ function fixPrepatch(to, ___) {
         for (const key in newData) {
           Vue.set(instance.$data, key, newData[key]);
         }
-
-        triggerScroll = true;
       }
     });
-
-    if (triggerScroll) {
-      // Ensure to trigger scroll event after calling scrollBehavior
-      window.$nuxt.$nextTick(() => {
-        window.$nuxt.$emit('triggerScroll');
-      });
-    }
 
     checkForErrors(this);
 
@@ -647,11 +503,6 @@ function nuxtReady(_app) {
   if (typeof window._onNuxtLoaded === 'function') {
     window._onNuxtLoaded(_app);
   }
-  // Add router hooks
-  router.afterEach((to, from) => {
-    // Wait for fixPrepatch + $data updates
-    Vue.nextTick(() => _app.$nuxt.$emit('routeChanged', to, from));
-  });
 }
 
 const noopData = () => {
@@ -678,7 +529,7 @@ function hotReloadAPI(_app) {
     return;
   }
 
-  const $components = getNuxtChildComponents(_app.$nuxt, []);
+  const $components = getNuxtChildComponents(window.$globalApp, []);
 
   $components.forEach(addHotReload.bind(_app));
 }
@@ -723,31 +574,7 @@ function addHotReload($component, depth) {
 
     callMiddleware.call(this, Components, context)
       .then(() => {
-      // If layout changed
-        if (depth !== 0) {
-          return;
-        }
-
-        let layout = Component.options.layout || 'default';
-
-        if (typeof layout === 'function') {
-          layout = layout(context);
-        }
-        if (this.layoutName === layout) {
-          return;
-        }
-        const promise = this.loadLayout(layout);
-
-        promise.then(() => {
-          this.setLayout(layout);
-          Vue.nextTick(() => hotReloadAPI(this));
-        });
-
-        return promise;
-      })
-
-      .then(() => {
-        return callMiddleware.call(this, Components, context, this.layout);
+        return callMiddleware.call(this, Components, context);
       })
 
       .then(() => {
@@ -795,8 +622,6 @@ async function mountApp(__app) {
     // Add afterEach router hooks
     router.afterEach(normalizeComponents);
 
-    router.afterEach(setLayoutForNextPage.bind(_app));
-
     router.afterEach(fixPrepatch.bind(_app));
 
     // Listen for first Vue update
@@ -814,10 +639,7 @@ async function mountApp(__app) {
   // Resolve route components
   const Components = await Promise.all(resolveComponents(app.context.route));
 
-  // Enable transitions
-  _app.setTransitions = _app.$options.nuxt.setTransitions.bind(_app);
   if (Components.length) {
-    _app.setTransitions(mapTransitions(Components, router.currentRoute));
     _lastPaths = router.currentRoute.matched.map((route) => compile(route.path)(router.currentRoute.params));
   }
 
@@ -830,6 +652,13 @@ async function mountApp(__app) {
   // Add beforeEach router hooks
   router.beforeEach(loadAsyncComponents.bind(_app));
   router.beforeEach(render.bind(_app));
+  router.beforeEach((from, to, next) => {
+    if (from?.name !== to?.name) {
+      updatePageTitle(getVendor());
+    }
+
+    next();
+  });
 
   // Fix in static: remove trailing slash to force hydration
   // Full static, if server-rendered: hydrate, to allow custom redirect to generated page
@@ -842,7 +671,6 @@ async function mountApp(__app) {
   // First render on client-side
   const clientFirstMount = () => {
     normalizeComponents(router.currentRoute, router.currentRoute);
-    setLayoutForNextPage.call(_app, router.currentRoute);
     checkForErrors(_app);
     // Don't call fixPrepatch.call(_app, router.currentRoute, router.currentRoute) since it's first render
     mount();

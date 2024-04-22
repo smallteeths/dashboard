@@ -6,6 +6,8 @@ import SimpleBoxPo from '@/cypress/e2e/po/components/simple-box.po';
 import HomeClusterListPo from '@/cypress/e2e/po/lists/home-cluster-list.po';
 import BurgerMenuPo from '@/cypress/e2e/po/side-bars/burger-side-menu.po';
 
+const burgerMenu = new BurgerMenuPo();
+
 export default class HomePagePo extends PagePo {
   static url = '/home'
   static goTo(): Cypress.Chainable<Cypress.AUTWindow> {
@@ -35,8 +37,6 @@ export default class HomePagePo extends PagePo {
   }
 
   static navTo() {
-    const burgerMenu = new BurgerMenuPo();
-
     BurgerMenuPo.toggle();
     burgerMenu.home().click();
   }
@@ -62,7 +62,7 @@ export default class HomePagePo extends PagePo {
   }
 
   list(): HomeClusterListPo {
-    return new HomeClusterListPo('[data-testid="cluster-list-container"]');
+    return new HomeClusterListPo('[data-testid="sortable-table-list-container"]');
   }
 
   manageButton() {
@@ -101,6 +101,14 @@ export default class HomePagePo extends PagePo {
    */
   getLoginPageBanner() {
     return new BannersPo(cy.getId('set-login-page-banner'));
+  }
+
+  /**
+    * Get the home page banner image
+   * @returns
+   */
+  getBrandBannerImage(): Cypress.Chainable {
+    return cy.getId('banner-brand__img');
   }
 
   /**

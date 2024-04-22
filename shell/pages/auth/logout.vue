@@ -3,8 +3,6 @@ import { findBy } from '@shell/utils/array';
 import { NORMAN } from '@shell/config/types';
 
 export default {
-  layout: 'unauthenticated',
-
   async asyncData({ redirect, store, router }) {
     let principal;
 

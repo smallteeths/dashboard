@@ -1,10 +1,9 @@
 import { mapGetters } from 'vuex';
 import { CATALOG, MANAGEMENT } from '@shell/config/types';
-import { getVendor } from '@shell/config/private-label';
 import { SETTING } from '@shell/config/settings';
-import { findBy } from '@shell/utils/array';
 import { createCssVars } from '@shell/utils/color';
-import { _ALL_IF_AUTHED } from '@shell/plugins/dashboard-store/actions';
+import { setTitle } from '@shell/config/private-label';
+import { fetchInitialSettings } from '@shell/utils/settings';
 
 const cspAdaptorApp = ['rancher-csp-adapter', 'rancher-csp-billing-adapter'];
 
@@ -23,12 +22,7 @@ export default {
 
     // Ensure we read the settings even when we are not authenticated
     try {
-      this.globalSettings = await this.$store.dispatch('management/findAll', {
-        type: MANAGEMENT.SETTING,
-        opt:  {
-          load: _ALL_IF_AUTHED, url: `/v1/${ MANAGEMENT.SETTING }`, redirectUnauthorized: false
-        }
-      });
+      this.globalSettings = await fetchInitialSettings(this.$store);
     } catch (e) {}
 
     // Setting this up front will remove `computed` churn, and we only care that we've initialised them
@@ -45,25 +39,25 @@ export default {
     ...mapGetters({ loggedIn: 'auth/loggedIn' }),
 
     brand() {
-      const setting = findBy(this.globalSettings, 'id', SETTING.BRAND);
+      const setting = this.globalSettings?.find((gs) => gs.id === SETTING.BRAND);
 
       return setting?.value;
     },
 
     color() {
-      const setting = findBy(this.globalSettings, 'id', SETTING.PRIMARY_COLOR);
+      const setting = this.globalSettings?.find((gs) => gs.id === SETTING.PRIMARY_COLOR);
 
       return setting?.value;
     },
 
     linkColor() {
-      const setting = findBy(this.globalSettings, 'id', SETTING.LINK_COLOR);
+      const setting = this.globalSettings?.find((gs) => gs.id === SETTING.LINK_COLOR);
 
       return setting?.value;
     },
 
     theme() {
-      const setting = findBy(this.globalSettings, 'id', SETTING.THEME);
+      const setting = this.globalSettings?.find((gs) => gs.id === SETTING.THEME);
 
       // This handles cases where the settings update after the page loads (like on log out)
       if (setting?.value) {
@@ -116,6 +110,7 @@ export default {
       if (this.linkColor) {
         this.setCustomColor(this.linkColor, 'link');
       }
+      this.setBodyClass();
     },
 
     cspAdapter(neu) {
@@ -126,7 +121,7 @@ export default {
       // The brand setting will only get updated if...
       if (neu && !this.brand) {
         // 1) There should be a brand... but there's no brand setting
-        const brandSetting = findBy(this.globalSettings, 'id', SETTING.BRAND);
+        const brandSetting = this.globalSettings?.find((gs) => gs.id === SETTING.BRAND);
 
         if (brandSetting) {
           brandSetting.value = 'csp';
@@ -142,7 +137,15 @@ export default {
           }
         }
       }
+    },
+    brand() {
+      this.setBodyClass();
     }
+
+  },
+  mounted() {
+    this.setBodyClass();
+    setTitle();
   },
   methods: {
     setCustomColor(color, name = 'primary') {
@@ -159,47 +162,26 @@ export default {
       for (const prop in vars) {
         document.body.style.removeProperty(prop);
       }
-    }
-  },
-  head() {
-    let cssClass = `overflow-hidden dashboard-body`;
-    const out = {
-      bodyAttrs: { class: `theme-${ this.theme } ${ cssClass }` },
-      title:     getVendor(),
-    };
+    },
+    setBodyClass() {
+      const body = document.getElementsByTagName('body')[0];
+      const cssClass = `overflow-hidden dashboard-body`;
+      let bodyClass = `theme-${ this.theme } ${ cssClass }`;
 
-    if (getVendor() === 'Harvester') {
-      const ico = require(`~shell/assets/images/pl/harvester.png`);
+      if ( this.brand ) {
+        try {
+          const brandMeta = require(`~shell/assets/brand/${ this.brand }/metadata.json`);
 
-      out.title = 'Harvester';
-      out.link = [{
-        hid:  'icon',
-        rel:  'icon',
-        type: 'image/x-icon',
-        href: ico
-      }];
-    }
-
-    let brandMeta;
-
-    if ( this.brand ) {
-      try {
-        brandMeta = require(`~shell/assets/brand/${ this.brand }/metadata.json`);
-      } catch {
-        return out;
+          if (brandMeta?.hasStylesheet === 'true') {
+            bodyClass = `${ cssClass } ${ this.brand } theme-${ this.theme }`;
+          } else {
+            bodyClass = `theme-${ this.theme } overflow-hidden dashboard-body`;
+            this.$store.dispatch('prefs/setBrandStyle', this.theme === 'dark');
+          }
+        } catch {}
       }
+      body.className = bodyClass;
     }
-
-    if (brandMeta?.hasStylesheet === 'true') {
-      cssClass = `${ cssClass } ${ this.brand } theme-${ this.theme }`;
-    } else {
-      cssClass = `theme-${ this.theme } overflow-hidden dashboard-body`;
-      this.$store.dispatch('prefs/setBrandStyle', this.theme === 'dark');
-    }
-
-    out.bodyAttrs.class = cssClass;
-
-    return out;
-  },
+  }
 
 };

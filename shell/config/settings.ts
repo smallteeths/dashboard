@@ -75,12 +75,17 @@ export const SETTING = {
   BRAND:                                'ui-brand',
   LOGO_LIGHT:                           'ui-logo-light',
   LOGO_DARK:                            'ui-logo-dark',
+  BANNER_LIGHT:                         'ui-banner-light',
+  BANNER_DARK:                          'ui-banner-dark',
+  LOGIN_BACKGROUND_LIGHT:               'ui-login-background-light',
+  LOGIN_BACKGROUND_DARK:                'ui-login-background-dark',
   PRIMARY_COLOR:                        'ui-primary-color',
   LINK_COLOR:                           'ui-link-color',
   COMMUNITY_LINKS:                      'ui-community-links',
   FAVICON:                              'ui-favicon',
   UI_PERFORMANCE:                       'ui-performance',
   UI_CUSTOM_LINKS:                      'ui-custom-links',
+  UI_SUPPORTED_K8S_VERSIONS:            'ui-k8s-supported-versions-range',
   /**
    * Allow the backend to force a light/dark theme. Used in non-rancher world and results in the theme used
    * both pre and post log in. If not present defaults to the usual process

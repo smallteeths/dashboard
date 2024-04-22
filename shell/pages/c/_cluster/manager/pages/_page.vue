@@ -11,11 +11,10 @@ export default {
 
     return {
       PAGES: {
-        'rke-drivers':           '/n/drivers/cluster',
-        'rke-templates':         '/g/rke-templates/index',
-        'cloud-credentials':     '/g/security/cloud-credentials',
-        'node-templates':        '/n/node-templates',
-        'pod-security-policies': '/g/security/policies',
+        'rke-drivers':       '/n/drivers/cluster',
+        'rke-templates':     '/g/rke-templates/index',
+        'cloud-credentials': '/g/security/cloud-credentials',
+        'node-templates':    '/n/node-templates',
 
         'image-repo-config':     '/custom-extension/image-repo/image-router',
         'image-repo-projects':   '/custom-extension/image-repo/projects-router',

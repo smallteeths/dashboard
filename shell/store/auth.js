@@ -42,7 +42,7 @@ export const state = function() {
 };
 
 export const getters = {
-  fromHeader() {
+  fromHeader(state) {
     return state.fromHeader;
   },
 

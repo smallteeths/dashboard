@@ -374,13 +374,13 @@ export default {
         v-if="showCreateNsButton"
         slot="extraActions"
       >
-        <n-link
+        <router-link
           :to="createNamespaceLocationFlatList()"
           class="btn role-primary mr-10"
           data-testid="create_project_namespaces"
         >
           {{ t('projectNamespaces.createNamespace') }}
-        </n-link>
+        </router-link>
       </template>
     </Masthead>
     <!-- Extensions area -->
@@ -391,7 +391,7 @@ export default {
     />
     <ResourceTable
       ref="table"
-      class="table"
+      class="table project-namespaces-table"
       v-bind="$attrs"
       :schema="schema"
       :headers="headers"
@@ -424,13 +424,13 @@ export default {
             </div>
           </div>
           <div class="right">
-            <n-link
+            <router-link
               v-if="isNamespaceCreatable && (canSeeProjectlessNamespaces || group.group.key !== notInProjectKey)"
               class="create-namespace btn btn-sm role-secondary mr-5"
               :to="createNamespaceLocation(group.group)"
             >
               {{ t('projectNamespaces.createNamespace') }}
-            </n-link>
+            </router-link>
             <button
               type="button"
               class="project-action btn btn-sm role-multi-action actions mr-10"
@@ -451,12 +451,12 @@ export default {
       </template>
       <template #cell:name="{row}">
         <div class="namespace-name">
-          <n-link
+          <router-link
             v-if="row.detailLocation && !row.hideDetailLocation"
             :to="row.detailLocation"
           >
             {{ row.name }}
-          </n-link>
+          </router-link>
           <span v-else>
             {{ row.name }}
           </span>
@@ -505,6 +505,10 @@ export default {
 <style lang="scss" scoped>
 .project-namespaces {
   & ::v-deep {
+    .project-namespaces-table table {
+      table-layout: fixed;
+    }
+
     .project-name {
       line-height: 30px;
     }
@@ -513,6 +517,26 @@ export default {
       display: flex;
       flex-direction: row;
       justify-content: space-between;
+
+      .group-tab {
+        max-width: calc(100% - 230px);
+      }
+
+      .project-name {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+
+        span:first-child {
+          padding-right: 8px;
+        }
+
+        span:last-child {
+          text-overflow: ellipsis;
+          overflow: hidden;
+          white-space: nowrap;
+        }
+      }
 
       &.has-description {
         .right {

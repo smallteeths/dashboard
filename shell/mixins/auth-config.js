@@ -42,13 +42,8 @@ export default {
     },
 
     serverUrl() {
-      if (process.client) {
-        // Client-side rendered: use the current window location
-        return window.location.origin;
-      }
-
-      // Server-side rendered
-      return this.serverSetting || '';
+      // Client-side rendered: use the current window location
+      return window.location.origin;
     },
 
     baseUrl() {
@@ -207,7 +202,7 @@ export default {
           }
         }
         if (wasEnabled && configType === 'oauth') {
-          await this.model.save({ ignoreFields: ['oauthCredential', 'serviceAccountCredential'] });
+          await this.model.save({ ignoreFields: ['oauthCredential', 'serviceAccountCredential'] } );
         } else {
           await this.model.save();
         }

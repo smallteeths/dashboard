@@ -105,9 +105,9 @@ export default {
     >
       <div>
         {{ t('authConfig.localEnabled') }}
-        <nuxt-link :to="localUsersRoute">
+        <router-link :to="localUsersRoute">
           {{ t('authConfig.manageLocal') }}
-        </nuxt-link>
+        </router-link>
         <br>
         {{ t('authConfig.noneEnabled') }}
       </div>

@@ -1,4 +1,3 @@
-import Vue from 'vue';
 import { CATALOG, CLUSTER_BADGE } from '@shell/config/labels-annotations';
 import { NODE, FLEET, MANAGEMENT, CAPI } from '@shell/config/types';
 import { insertAt, addObject, removeObject } from '@shell/utils/array';
@@ -15,6 +14,7 @@ import HybridModel from '@shell/plugins/steve/hybrid-class';
 import { LINUX, WINDOWS } from '@shell/store/catalog';
 import { KONTAINER_TO_DRIVER } from './management.cattle.io.kontainerdriver';
 import { PINNED_CLUSTERS } from '@shell/store/prefs';
+import { copyTextToClipboard } from '@shell/utils/clipboard';
 
 // See translation file cluster.providers for list of providers
 // If the logo is not named with the provider name, add an override here
@@ -88,6 +88,10 @@ export default class MgmtCluster extends HybridModel {
   }
 
   get provisioner() {
+    if (this.status?.provider ) {
+      return this.status.provider;
+    }
+
     // For imported K3s clusters, this.status.driver is 'k3s.'
     return this.status?.driver ? this.status.driver : 'imported';
   }
@@ -295,9 +299,10 @@ export default class MgmtCluster extends HybridModel {
 
   // Custom badge to show for the Cluster (if the appropriate annotations are set)
   get badge() {
-    const text = this.metadata?.annotations?.[CLUSTER_BADGE.TEXT];
+    const icon = this.metadata?.annotations?.[CLUSTER_BADGE.ICON_TEXT];
+    const comment = this.metadata?.annotations?.[CLUSTER_BADGE.TEXT];
 
-    if (!text) {
+    if (!icon) {
       return undefined;
     }
 
@@ -305,10 +310,10 @@ export default class MgmtCluster extends HybridModel {
     const iconText = this.metadata?.annotations[CLUSTER_BADGE.ICON_TEXT] || '';
 
     return {
-      text,
+      text:      comment || undefined,
       color,
       textColor: textColor(parseColor(color)),
-      iconText:  iconText.substr(0, 2)
+      iconText:  iconText.substr(0, 3)
     };
   }
 
@@ -404,9 +409,13 @@ export default class MgmtCluster extends HybridModel {
   }
 
   async copyKubeConfig() {
-    const config = await this.generateKubeConfig();
+    try {
+      const config = await this.generateKubeConfig();
 
-    Vue.prototype.$copyText(config);
+      if (config) {
+        await copyTextToClipboard(config);
+      }
+    } catch {}
   }
 
   async fetchNodeMetrics() {

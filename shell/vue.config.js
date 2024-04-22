@@ -1,11 +1,11 @@
 const fs = require('fs');
 const path = require('path');
-const serveStatic = require('serve-static');
 const webpack = require('webpack');
 const { generateDynamicTypeImport } = require('./pkg/auto-import');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const serverMiddlewares = require('./server/server-middleware.js');
 const configHelper = require('./vue-config-helper.js');
+const har = require('./server/har-file');
 
 // Suppress info level logging messages from http-proxy-middleware
 // This hides all of the "[HPM Proxy created] ..." messages
@@ -42,7 +42,6 @@ const api = configHelper.api;
 // from it, rather than from the location of this file
 module.exports = function(dir, _appConfig) {
   // Paths to the shell folder when it is included as a node dependency
-  let SHELL = 'node_modules/@rancher/shell';
   let SHELL_ABS = path.join(dir, 'node_modules/@rancher/shell');
   let COMPONENTS_DIR = path.join(SHELL_ABS, 'rancher-components');
 
@@ -60,23 +59,8 @@ module.exports = function(dir, _appConfig) {
   // If we have a local folder named 'shell' then use that rather than the one in node_modules
   // This will be the case in the main dashboard repository.
   if (fs.existsSync(path.join(dir, 'shell'))) {
-    SHELL = './shell';
     SHELL_ABS = path.join(dir, 'shell');
     COMPONENTS_DIR = path.join(dir, 'pkg', 'rancher-components', 'src', 'components');
-  }
-
-  const babelPlugins = [
-    // TODO: Browser support
-    // ['@babel/plugin-transform-modules-commonjs'],
-    ['@babel/plugin-proposal-private-property-in-object', { loose: true }]
-  ];
-
-  if (instrumentCode) {
-    babelPlugins.push([
-      'babel-plugin-istanbul', { extension: ['.js', '.vue'] }, 'add-vue'
-    ]);
-
-    console.warn('Instrumenting code for coverage'); // eslint-disable-line no-console
   }
 
   // ===============================================================================================
@@ -86,7 +70,6 @@ module.exports = function(dir, _appConfig) {
   const appConfig = _appConfig || {};
   const excludes = appConfig.excludes || [];
 
-  const serverMiddleware = [];
   const watcherIgnores = [
     /.shell/,
     /dist-pkg/,
@@ -107,33 +90,9 @@ module.exports = function(dir, _appConfig) {
         const id = `${ f.name }-${ f.version }`;
 
         nmPackages[id] = f.main;
-
-        // Add server middleware to serve up the files for this UI package
-        serverMiddleware.push({
-          path:    `/pkg/${ id }`,
-          handler: serveStatic(path.join(NM, pkg))
-        });
       }
     });
   }
-
-  serverMiddleware.push({
-    path:    '/uiplugins-catalog',
-    handler: (req, res, next) => {
-      const p = req.url.split('?');
-
-      try {
-        const proxy = createProxyMiddleware({
-          target:      p[1],
-          pathRewrite: { '^.*': p[0] }
-        });
-
-        return proxy(req, res, next);
-      } catch (e) {
-        console.error(e); // eslint-disable-line no-console
-      }
-    }
-  });
 
   function includePkg(name) {
     if (name.startsWith('.') || name === 'node_modules') {
@@ -168,13 +127,6 @@ module.exports = function(dir, _appConfig) {
         reqs += `$plugin.initPlugin('${ name }', require(\'~/pkg/${ name }\')); `;
       }
 
-      // // Serve the code for the UI package in case its used for dynamic loading (but not if the same package was provided in node_modules)
-      // if (!nmPackages[name]) {
-      //   const pkgPackageFile = require(path.join(dir, 'pkg', name, 'package.json'));
-      //   const pkgRef = `${ name }-${ pkgPackageFile.version }`;
-
-      //   serverMiddleware.push({ path: `/pkg/${ pkgRef }`, handler: serveStatic(`${ dir }/dist-pkg/${ pkgRef }`) });
-      // }
       autoImportTypes[`node_modules/@rancher/auto-import/${ name }`] = generateDynamicTypeImport(`@pkg/${ name }`, path.join(dir, `pkg/${ name }`));
     });
   }
@@ -211,11 +163,6 @@ module.exports = function(dir, _appConfig) {
       resource.request = p;
     }
   });
-
-  // Serve up the dist-pkg folder under /pkg
-  serverMiddleware.push({ path: `/pkg/`, handler: serveStatic(`${ dir }/dist-pkg/`) });
-  // Endpoint to download and unpack a tgz from the local verdaccio rgistry (dev)
-  serverMiddleware.push(path.resolve(dir, SHELL, 'server', 'verdaccio-middleware'));
 
   // ===============================================================================================
   // Dashboard nuxt configuration
@@ -291,6 +238,14 @@ module.exports = function(dir, _appConfig) {
     '/engines-dist':   configHelper.proxyOpts('https://127.0.0.1:8000'),
   };
 
+  // HAR File support - load network responses from the specified .har file and use those rather than communicating to the Rancher server
+  const harFile = process.env.HAR_FILE;
+  let harData;
+
+  if (harFile) {
+    harData = har.loadFile(harFile, devPorts ? 8005 : 80, ''); // eslint-disable-line no-console
+  }
+
   const config = {
     // Vue server
     devServer: {
@@ -312,6 +267,19 @@ module.exports = function(dir, _appConfig) {
         });
 
         app.use(serverMiddlewares);
+
+        if (harData) {
+          console.log('Installing HAR file middleware'); // eslint-disable-line no-console
+          app.use(har.harProxy(harData, process.env.HAR_DIR));
+
+          server.websocketProxies.push({
+            upgrade(req, socket, head) {
+              const responseHeaders = ['HTTP/1.1 101 Web Socket Protocol Handshake', 'Upgrade: WebSocket', 'Connection: Upgrade'];
+
+              socket.write(`${ responseHeaders.join('\r\n') }\r\n\r\n`);
+            }
+          });
+        }
 
         Object.keys(proxy).forEach((p) => {
           const px = createProxyMiddleware({
@@ -378,7 +346,7 @@ module.exports = function(dir, _appConfig) {
       config.resolve.alias['@pkg'] = path.join(dir, 'pkg');
       config.resolve.alias['./node_modules'] = path.join(dir, 'node_modules');
       config.resolve.alias['@components'] = COMPONENTS_DIR;
-      config.resolve.alias['vue$'] = dev ? path.resolve(process.cwd(), 'node_modules', 'vue') : 'vue';
+      config.resolve.alias['vue$'] = path.resolve(process.cwd(), 'node_modules', 'vue', 'dist', dev ? 'vue.js' : 'vue.min.js');
       config.resolve.modules.push(__dirname);
       config.plugins.push(virtualModules);
       config.plugins.push(autoImport);
@@ -387,7 +355,6 @@ module.exports = function(dir, _appConfig) {
       // DefinePlugin does string replacement within our code. We may want to consider replacing it with something else. In code we'll see something like
       // process.env.commit even though process and env aren't even defined objects. This could cause people to be mislead.
       config.plugins.push(new webpack.DefinePlugin({
-        'process.client':                  JSON.stringify(true),
         'process.env.commit':              JSON.stringify(commit),
         'process.env.version':             JSON.stringify(dashboardVersion),
         'process.env.dev':                 JSON.stringify(dev),
@@ -544,7 +511,7 @@ module.exports = function(dir, _appConfig) {
               options: { mode: ['body'] }
             }
           ]
-        }
+        },
       ];
 
       config.module.rules.push(...loaders);

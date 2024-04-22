@@ -39,7 +39,13 @@ const defaultStubs = {
   UnitInput:                true,
   YamlEditor:               true,
   MemberRoles:              true,
-  Basics:                   true
+  Basics:                   true,
+  Etcd:                     true,
+  Networking:               true,
+  Upgrade:                  true,
+  Registries:               true,
+  AddOnConfig:              true,
+  Advanced:                 true
 };
 
 const mockAgentArgs = { 'cloud-provider-name': { options: [], profile: { options: [{ anything: 'yes' }] } } };
@@ -70,12 +76,13 @@ const defaultComputed = {
 };
 
 const defaultGetters = {
-  currentStore:                     () => 'current_store',
-  'management/schemaFor':           jest.fn(),
-  'current_store/all':              jest.fn(),
-  'i18n/t':                         jest.fn(),
-  'i18n/withFallback':              jest.fn(),
-  'plugins/cloudProviderForDriver': jest.fn()
+  currentStore:                      () => 'current_store',
+  'management/schemaFor':            jest.fn(),
+  'current_store/all':               jest.fn(),
+  'i18n/t':                          jest.fn(),
+  'i18n/withFallback':               jest.fn(),
+  'plugins/cloudProviderForDriver':  jest.fn(),
+  'customization/getPreviewCluster': jest.fn(),
 };
 
 const defaultMocks = {
@@ -124,7 +131,7 @@ describe('component: rke2', () => {
       computed: defaultComputed,
       mocks:    {
         ...defaultMocks,
-        $store: { getters: defaultGetters },
+        $store: { dispatch: () => jest.fn(), getters: defaultGetters },
       },
       stubs: defaultStubs
     });
@@ -150,7 +157,7 @@ describe('component: rke2', () => {
       computed: defaultComputed,
       mocks:    {
         ...defaultMocks,
-        $store: { getters: defaultGetters },
+        $store: { dispatch: () => jest.fn(), getters: defaultGetters },
       },
       stubs: defaultStubs
     });
@@ -176,7 +183,7 @@ describe('component: rke2', () => {
       computed: defaultComputed,
       mocks:    {
         ...defaultMocks,
-        $store: { getters: defaultGetters },
+        $store: { dispatch: () => jest.fn(), getters: defaultGetters },
       },
       stubs: defaultStubs
     });

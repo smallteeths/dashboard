@@ -1,9 +1,17 @@
 import { ConfigMapPagePo } from '@/cypress/e2e/po/pages/explorer/config-map.po';
 import ConfigMapPo from '@/cypress/e2e/po/components/storage/config-map.po';
 
-describe('ConfigMap', () => {
+describe('ConfigMap', { tags: ['@explorer', '@adminUser'] }, () => {
   beforeEach(() => {
     cy.login();
+  });
+
+  it('has the correct title', () => {
+    const configMapPage = new ConfigMapPagePo('local');
+
+    configMapPage.goTo();
+
+    cy.title().should('eq', 'Rancher - local - ConfigMaps');
   });
 
   it('creates a configmap and displays it in the list', () => {

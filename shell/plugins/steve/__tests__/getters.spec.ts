@@ -1,9 +1,9 @@
 import _getters from '@shell/plugins/steve/getters';
 
-const { urlFor, urlOptions } = _getters;
+const { urlFor, urlOptions, pathExistsInSchema } = _getters;
 
-describe('steve: getters', () => {
-  describe('steve > getters > urlFor', () => {
+describe('steve: getters:', () => {
+  describe('urlFor', () => {
     // we're not testing function output based off of state or getter inputs here since they are dependencies
     const baseUrl = '/v1';
     const collectionUrl = 'https://abc.com/v1/urlFoo';
@@ -65,7 +65,7 @@ describe('steve: getters', () => {
     });
   });
 
-  describe('steve > getters > urlOptions', () => {
+  describe('urlOptions', () => {
     // we're not testing function output based off of state or getter inputs here since they are dependencies
     const state = { config: { baseUrl: 'protocol' } };
     const getters = {
@@ -94,8 +94,8 @@ describe('steve: getters', () => {
     it('returns a string with a single filter statement applied and formatted for steve if a single filter statement is applied and the url starts with "/v1"', () => {
       expect(urlOptionsGetter('/v1/foo', { filter: { bar: 'baz' } })).toBe('/v1/foo?filter=bar=baz&exclude=metadata.managedFields');
     });
-    it('returns a string with a single filter statement applied and formatted for steve if a single filter statement is NOT applied and the url starts with "/k8s/clusters/c-m-n4x45x4b/v1/"', () => {
-      expect(urlOptionsGetter('/k8s/clusters/c-m-n4x45x4b/v1/foo', { filter: { bar: 'baz' } })).toBe('/k8s/clusters/c-m-n4x45x4b/v1/foo?bar=baz');
+    it('returns a string with a single filter statement applied and formatted for steve if a single filter statement is applied and the url starts with "/k8s/clusters/c-m-n4x45x4b/v1/"', () => {
+      expect(urlOptionsGetter('/k8s/clusters/c-m-n4x45x4b/v1/foo', { filter: { bar: 'baz' } })).toBe('/k8s/clusters/c-m-n4x45x4b/v1/foo?filter=bar=baz&exclude=metadata.managedFields');
     });
     it('returns a string with a multiple filter statements applied if a single filter statement is applied', () => {
       expect(urlOptionsGetter('foo', { filter: { bar: 'baz', far: 'faz' } })).toBe('foo?bar=baz&far=faz');
@@ -125,16 +125,87 @@ describe('steve: getters', () => {
       expect(urlOptionsGetter('foo', { sortBy: 'bar' })).toBe('foo?sort=bar');
     });
     it('returns a string with a sorting criteria formatted for steve if the sort option is provided and the url starts with "/v1"', () => {
-      expect(urlOptionsGetter('/v1/foo', { sortBy: 'bar' })).toBe('/v1/foo?exclude=metadata.managedFields&sort=bar');
+      expect(urlOptionsGetter('/v1/foo', { sortBy: 'bar' })).toBe('/v1/foo?sort=bar&exclude=metadata.managedFields');
     });
     it('returns a string with a sorting criteria if the sort option is provided and an order if sortOrder is provided', () => {
       expect(urlOptionsGetter('foo', { sortBy: 'bar', sortOrder: 'baz' })).toBe('foo?sort=bar&order=baz');
     });
     it('returns a string with a sorting criteria formatted for steve if the sort option is provided and an order if sortOrder is provided and the url starts with "/v1"', () => {
-      expect(urlOptionsGetter('/v1/foo', { sortBy: 'bar', sortOrder: 'baz' })).toBe('/v1/foo?exclude=metadata.managedFields&sort=bar');
+      expect(urlOptionsGetter('/v1/foo', { sortBy: 'bar', sortOrder: 'baz' })).toBe('/v1/foo?sort=bar&exclude=metadata.managedFields');
     });
     it('returns a string with a sorting criteria formatted for steve if the sort option is provided and an order if sortOrder is "desc" and the url starts with "/v1"', () => {
-      expect(urlOptionsGetter('/v1/foo', { sortBy: 'bar', sortOrder: 'desc' })).toBe('/v1/foo?exclude=metadata.managedFields&sort=-bar');
+      expect(urlOptionsGetter('/v1/foo', { sortBy: 'bar', sortOrder: 'desc' })).toBe('/v1/foo?sort=-bar&exclude=metadata.managedFields');
+    });
+  });
+
+  describe('pathExistsInSchema', () => {
+    const state = {};
+
+    const getters = { schemaFor: (type: string) => ({}) };
+
+    it('expects pathExistsInSchema to return a function', () => {
+      expect(typeof pathExistsInSchema(state, getters)).toBe('function');
+    });
+
+    describe('resourceFields', () => {
+      it('requires resourceFields but no resourceFields', () => {
+        expect(pathExistsInSchema(state, {
+          ...getters,
+          schemaFor: () => ({
+            requiresResourceFields: true,
+            hasResourceFields:      false,
+          })
+        })()).toBe(false);
+      });
+
+      it('requires resourceFields but empty resourceFields', () => {
+        expect(pathExistsInSchema(state, {
+          ...getters,
+          schemaFor: () => ({
+            requiresResourceFields: true,
+            hasResourceFields:      true,
+            schemaDefinitions:      {}
+          })
+        })('', 'name')).toBe(false);
+      });
+
+      it('requires resourceFields and has resourceFields', () => {
+        expect(pathExistsInSchema(state, {
+          ...getters,
+          schemaFor: () => ({
+            requiresResourceFields: true,
+            hasResourceFields:      true,
+            resourceFields:         { name: { type: 'string' } },
+            schemaDefinitions:      { name: { } },
+          })
+        })('n/a', 'name')).toBe(true);
+      });
+
+      it('requires nested resourceFields and has resourceFields', () => {
+        expect(pathExistsInSchema(state, {
+          ...getters,
+          schemaFor: (type) => {
+            const metadata = { resourceFields: { name: { type: 'string' } } };
+
+            switch (type) {
+            case 'root':
+              return {
+                requiresResourceFields: true,
+                hasResourceFields:      true,
+                resourceFields:         { metadata: { type: 'metadata' } },
+                schemaDefinitions:      { metadata: { ...metadata } },
+              };
+            case 'metadata':
+              return {
+                requiresResourceFields: true,
+                hasResourceFields:      true,
+                ...metadata,
+              };
+            }
+            expect(type).toBe('Something known');
+          }
+        })('root', 'metadata.name')).toBe(true);
+      });
     });
   });
 });

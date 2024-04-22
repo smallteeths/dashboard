@@ -5,7 +5,7 @@ import Type from '@shell/components/nav/Type.vue';
 jest.mock('vue-router');
 
 // Configuration text
-const className = 'nuxt-link-active';
+const className = 'router-link-active';
 
 describe('component: Type', () => {
   describe('should not use highlight class', () => {
@@ -16,6 +16,12 @@ describe('component: Type', () => {
         mocks:     {
           $route:  { path: 'whatever' },
           $router: { resolve: () => ({ route: { path: 'whatever' } }) },
+          $store:  {
+            getters: {
+              currentStore:    () => 'cluster',
+              'cluster/count': () => 1,
+            }
+          }
         },
       });
 
@@ -31,6 +37,12 @@ describe('component: Type', () => {
         mocks:     {
           $route:  { hash: 'whatever' },
           $router: { resolve: () => ({ route: { path: 'whatever' } }) },
+          $store:  {
+            getters: {
+              currentStore:    () => 'cluster',
+              'cluster/count': () => 1,
+            }
+          }
         },
       });
 
@@ -67,6 +79,12 @@ describe('component: Type', () => {
             path: 'whatever',
           },
           $router: { resolve: () => ({ route: { path: 'many/parts' } }) },
+          $store:  {
+            getters: {
+              currentStore:    () => 'cluster',
+              'cluster/count': () => 1,
+            }
+          }
         },
       });
 
@@ -101,6 +119,12 @@ describe('component: Type', () => {
             path: currentPath,
           },
           $router: { resolve: () => ({ route: { path: menuPath } }) },
+          $store:  {
+            getters: {
+              currentStore:    () => 'cluster',
+              'cluster/count': () => 1,
+            }
+          }
         },
       });
 
@@ -126,6 +150,12 @@ describe('component: Type', () => {
             path: currentPath,
           },
           $router: { resolve: () => ({ route: { path: menuPath } }) },
+          $store:  {
+            getters: {
+              currentStore:    () => 'cluster',
+              'cluster/count': () => 1,
+            }
+          }
         },
       });
 

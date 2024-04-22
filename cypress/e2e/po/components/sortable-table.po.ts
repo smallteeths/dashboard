@@ -76,16 +76,36 @@ export default class SortableTablePo extends ComponentPo {
   // sortable-table
   //
 
-  rowElements() {
-    return this.self().find('tbody tr:not(.sub-row)');
+  groupElementWithName(name: string) {
+    return this.self().contains('tr.group-row', name);
+  }
+
+  rowElements(options?: any) {
+    return this.self().find('tbody tr:not(.sub-row)', options);
   }
 
   rowElementWithName(name: string) {
     return this.self().contains('tbody tr', new RegExp(` ${ name } `));
   }
 
+  rowElementWithPartialName(name: string) {
+    return this.self().contains('tbody tr', name);
+  }
+
+  rowElementLink(rowIndex: number, columnIndex: number) {
+    return this.getTableCell(rowIndex, columnIndex).find('a');
+  }
+
+  getTableCell(rowIndex: number, columnIndex: number) {
+    return this.row(rowIndex).column(columnIndex);
+  }
+
   row(index: number) {
     return new ListRowPo(this.rowElements().eq(index));
+  }
+
+  rowWithPartialName(name: string) {
+    return new ListRowPo(this.rowElementWithPartialName(name));
   }
 
   rowWithName(name: string) {
@@ -168,5 +188,10 @@ export default class SortableTablePo extends ComponentPo {
     new PromptRemove().remove();
 
     return row;
+  }
+
+  // Check that the sortable table loading indicator does not exist (data loading complete)
+  checkLoadingIndicatorNotVisible() {
+    cy.get('.data-loading').should('not.exist');
   }
 }

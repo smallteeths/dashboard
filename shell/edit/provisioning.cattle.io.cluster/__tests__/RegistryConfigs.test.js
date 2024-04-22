@@ -1,4 +1,4 @@
-import RegistryConfigs from '@shell/edit/provisioning.cattle.io.cluster/RegistryConfigs.vue';
+import RegistryConfigs from '@shell/edit/provisioning.cattle.io.cluster/tabs/registries/RegistryConfigs.vue';
 
 describe('component: RegistryConfigs, methods: generateName', () => {
   it('should return default generate name when empty hostname & empty registry hostname', () => {

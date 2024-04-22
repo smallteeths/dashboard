@@ -14,8 +14,8 @@ import { NAME as HARVESTER_MANAGER } from '@shell/config/harvester-manager-types
 import { HARVESTER as HARVESTER_FEATURE, mapFeature } from '@shell/store/features';
 import { addObject } from '@shell/utils/array';
 import { HIDE_DESC, mapPref } from '@shell/store/prefs';
-import Labels from './Labels';
-import AgentEnv from './AgentEnv';
+import Labels from '@shell/edit/provisioning.cattle.io.cluster/Labels';
+import AgentEnv from '@shell/edit/provisioning.cattle.io.cluster/AgentEnv';
 import PrivateRegistry from './PrivateRegistry';
 
 const HARVESTER_HIDE_KEY = 'cm-harvester-import';
@@ -158,9 +158,9 @@ export default {
       @close="hideHarvesterNotice"
     >
       {{ t('cluster.harvester.importNotice') }}
-      <nuxt-link :to="harvesterLocation">
+      <router-link :to="harvesterLocation">
         {{ t('product.harvesterManager') }}
-      </nuxt-link>
+      </router-link>
     </Banner>
 
     <NameNsDescription

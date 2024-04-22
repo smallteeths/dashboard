@@ -37,12 +37,14 @@ let store = {};
   resolveStoreModules(require('../store/type-map.js'), 'type-map.js');
   resolveStoreModules(require('../store/uiplugins.ts'), 'uiplugins.ts');
   resolveStoreModules(require('../store/wm.js'), 'wm.js');
+  resolveStoreModules(require('../store/customisation.js'), 'customisation.js');
+  resolveStoreModules(require('../store/cru-resource.ts'), 'cru-resource.ts');
   resolveStoreModules(require('../store/aliyun.js'), 'aliyun.js');
   resolveStoreModules(require('../store/harbor.js'), 'harbor.js');
 
   // If the environment supports hot reloading...
 
-  if (process.client && module.hot) {
+  if (module.hot) {
     // Whenever any Vuex module is updated...
     module.hot.accept([
       '../store/action-menu.js',
@@ -64,13 +66,15 @@ let store = {};
       '../store/type-map.js',
       '../store/uiplugins.ts',
       '../store/wm.js',
+      '../store/customisation.js',
+      '../store/cru-resource.ts',
       '../store/aliyun.js',
       '../store/harbor.js',
     ], () => {
       // Update `root.modules` with the latest definitions.
       updateModules();
       // Trigger a hot update in the store.
-      window.$nuxt.$store.hotUpdate(store);
+      window.$globalApp.$store.hotUpdate(store);
     });
   }
 })();
