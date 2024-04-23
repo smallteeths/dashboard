@@ -49,7 +49,7 @@ export default {
       removeObject(providers, 'local');
     }
 
-    let firstLoginSetting, plSetting, brand, disabledEncryption, uiLoginLandscape, footerText, footerUrl;
+    let firstLoginSetting, plSetting, brand, disabledEncryption, footerText, footerUrl;
 
     // Load settings.
     // For newer versions this will return all settings if you are somehow logged in,
@@ -61,7 +61,6 @@ export default {
       plSetting = store.getters['management/byId'](MANAGEMENT.SETTING, SETTING.PL);
       brand = store.getters['management/byId'](MANAGEMENT.SETTING, SETTING.BRAND);
       disabledEncryption = store.getters['management/byId'](MANAGEMENT.SETTING, SETTING.DISABLE_PASSWORD_ENCRYPT);
-      uiLoginLandscape = store.getters['management/byId'](MANAGEMENT.SETTING, SETTING.UI_LOGIN_LANDSCAPE);
       footerText = store.getters['management/byId'](MANAGEMENT.SETTING, SETTING.FOOTER_TEXT);
       footerUrl = store.getters['management/byId'](MANAGEMENT.SETTING, SETTING.FOOTER_URL);
     } catch (e) {
@@ -88,12 +87,6 @@ export default {
         type: 'setting',
         id:   SETTING.BRAND,
         opt:  { url: `/v3/settings/${ SETTING.DISABLE_PASSWORD_ENCRYPT }` }
-      });
-
-      uiLoginLandscape = await store.dispatch('rancher/find', {
-        type: 'setting',
-        id:   SETTING.BRAND,
-        opt:  { url: `/v3/settings/${ SETTING.UI_LOGIN_LANDSCAPE }` }
       });
 
       footerText = await store.dispatch('rancher/find', {
@@ -135,8 +128,6 @@ export default {
       disabledEncryption,
       footerText,
       footerUrl,
-
-      uiLoginLandscape: uiLoginLandscape?.value,
     };
   },
 
@@ -555,13 +546,7 @@ export default {
           <LocaleSelector mode="login" />
         </div>
       </div>
-      <img
-        v-if="uiLoginLandscape"
-        :src="uiLoginLandscape"
-        class="col span-6 landscape"
-      >
       <BrandImage
-        v-else
         class="col span-6 landscape"
         data-testid="login-landscape__img"
         file-name="login-landscape.svg"
