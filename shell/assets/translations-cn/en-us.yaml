@@ -166,6 +166,8 @@ nav:
     Scheduling: Scheduling
     Storage: Storage
     legacy: Legacy
+    Project: Project
+    drivers: Drivers
   ns:
     all: All Namespaces
     clusterLevel: Only Cluster Resources
@@ -183,7 +185,7 @@ nav:
     configuration: Configuration
     hci: HCI
   search:
-    placeholder: Type to search clusters
+    placeholder: Filter clusters by...
     noResults: No matching clusters
     clusters: clusters
   resourceSearch:
@@ -220,6 +222,7 @@ nav:
   harvesterDashboard: Harvester Dashboard
   seeAllClusters: See all clusters
   seeAllClustersCollapsed: See all
+  keyComboTooltip: Switch clusters and keep location
 product:
   apps: Apps
   auth: Users & Authentication
@@ -375,7 +378,7 @@ authConfig:
     unrestricted: Allow any valid user
   allowedPrincipalIds:
     title: Authorized Users & Groups
-  associatedWarning: 'Note: The {provider} user you authenticate as will be associated as an alternate way to login to the {vendor} user you are currently logged in as <code>{username}</code>; all the global permissions, project, and cluster role bindings of this {vendor} user will also apply to the {provider} user.'
+  associatedWarning: 'The {provider} account that is used to enable the external provider will be granted admin permissions. If you use a test account or non-admin account, that account will still be granted admin-level permissions. See <a href="{docsBase}/how-to-guides/new-user-guides/authentication-permissions-and-global-configuration/authentication-config#external-authentication-configuration-and-principal-users" target="_blank" rel="noopener noreferrer nofollow">External Authentication Configuration and Principal Users</a> to understand why.'
   github:
     clientId:
       label: Client ID
@@ -776,6 +779,15 @@ asyncButton:
     action: Save and Continue
     success: Saved
     waiting: Saving&hellip;
+  manual-refresh:
+    action: ""
+    actionIcon: refresh
+    error: ""
+    errorIcon: error
+    success: ""
+    successIcon: checkmark
+    waiting: ""
+    waitingIcon: refresh
 backupRestoreOperator:
   backupFilename: Backup Filename
   deleteTimeout:
@@ -902,7 +914,7 @@ catalog:
     windowsIncompatible: Linux only
     versionWindowsIncompatible: Linux only version
     header: Charts
-    noCharts: 'There are no charts available, have you added any repos?'
+    noCharts: 'There are no charts available, have you added any repos or set filters?'
     noWindows: Your repos do not contain any charts capable of being deployed on a cluster with Windows nodes.
     noWindowsAndLinux: Your repos do not contain any charts capable of being deployed on a cluster with both Windows and Linux worker nodes.
     operatingSystems:
@@ -1003,6 +1015,8 @@ catalog:
       current: '{ver} (Current)'
       linux: '{ver} (Linux-only)'
       windows: '{ver} (Windows-only)'
+    warning:
+      managed: Warning, Rancher manages deployment and upgrade of the {name} app. Upgrading this app is not supported.<br> {version, select, null { } other { Under most circumstances, no user intervention should be needed to ensure that the {version} version is compatible with the version of Rancher that you are running.} }
   operation:
     tableHeaders:
       action: Action
@@ -1045,6 +1059,9 @@ catalog:
   os:
     versionIncompatible: "This version is not compatible with Windows nodes."
     chartIncompatible: "This chart is not compatible with Windows nodes."
+  delete:
+    warning:
+      managed: Warning, Rancher manages deployment and upgrade of the {name} app. Deleting this app is not supported.
 changePassword:
   title: Change Password
   cancel: Cancel
@@ -1290,7 +1307,7 @@ cluster:
         placeholder: Your Linode API Access Token
     name:
       label: Credential Name
-      placeholder: Name for this credential (optional)
+      placeholder: Name for this credential
     s3:
       accessKey:
         label: Access Key
@@ -1838,19 +1855,24 @@ cluster:
         titleAlt: |-
           {count, plural,
             =1 { For all machines, use the Kubelet args: }
-            other { For any machines, use the Kubelet args: }
+            other { For machines without matched labels below: }
           }
         kubeControllerManagerTitle: Additional Controller Manager Args
         kubeApiServerTitle: Additional API Server Args
         kubeSchedulerTitle: Additional Scheduler Args
         kubePlaceholder: e.g. max-pods=110
         protip: 'The parameter format is <em>key=value</em>，Paste lines of <em>key=value</em> into any list field for easy bulk entry.'
+      machineGlobal:
+        listLabel: Add Global Argument
+      tooltip:
+        global-args: Kubelet args are defined at Global level.<br> Click on "Add Global Argument" to add them as Global config.
+        mixed-args: Kubelet args are defined both at Global and Machine Selector level.<br> Click on "Add Global Argument" to add them as Global config.
     agentArgs:
       label: Raise error if kernel parameters are different than the expected kubelet defaults
   banner:
     warning: 'This cluster contains a machineSelectorConfig, which this form does not fully support; use the YAML editor to manage the full configuration.'
     os: 'You are attempting to add a {newOS} worker node to a cluster with one or more {existingOS} worker nodes: some installed apps may need to be upgraded or removed.'
-    rke2-k3-reprovisioning: 'Making changes to cluster configuration may result in nodes reprovisioning. For more information see the <a target="blank" href="{docsBase}/cluster-provisioning/rke-clusters/behavior-differences-between-rke1-and-rke2/" target="_blank" rel="noopener nofollow">documentation</a>.'
+    rke2-k3-reprovisioning: 'Making changes to cluster configuration may result in nodes reprovisioning. For more information see the <a href="{docsBase}/cluster-provisioning/rke-clusters/behavior-differences-between-rke1-and-rke2#cluster-api" target="_blank" rel="noopener nofollow">documentation</a>.'
     desiredNodeGroupWarning: There are 0 nodes available to run the cluster agent. The cluster will not become active until at least one node is available.
     deprecatedPsp: Pod Security Policies are deprecated as of Kubernetes v1.21, and have been removed in Kubernetes v1.25.
     haveArgInfo: Configuration information is not available for the selected Kubernetes version.  The options available on this screen will be limited; you may want to use the YAML editor.
@@ -2034,6 +2056,10 @@ cluster:
       header: System Services
     cni:
       label: Container Network
+      cilium:
+        BandwidthManager:
+          enable: Enable Bandwidth Manager
+      cniNoneBanner: When CNI is set to 'none' an <a href="https://ranchermanager.docs.rancher.com/reference-guides/cluster-configuration/rancher-server-configuration/rke2-cluster-configuration#additionalmanifest" target="_blank" rel="noopener noreferrer nofollow">Additional Manifest</a> deploying an alternate CNI must be specified for successful cluster provisioning.
     cloudProvider:
       label: Cloud Provider
       header: Cloud Provider Config
@@ -2278,6 +2304,10 @@ clusterIndexPage:
       etcd: Etcd
       scheduler: Scheduler
       controller-manager: Controller Manager
+      cattle: Cattle
+      fleet: Fleet
+    certs:
+      label: Certificates
 configmap:
   tabs:
     data:
@@ -2573,20 +2603,22 @@ glance:
   v1MonitoringInstalled: V1 Monitoring Installed
   clusterInfo: Cluster Information
   eventsTable: Full events list
+  secretsTable: Full secrets list
 clusterBadge:
   addLabel: Add Cluster Badge
   editLabel: Edit Cluster Badge
   modal:
     title: Custom Cluster Badge
-    checkbox: Show badge for this cluster
+    checkbox: Show cluster comment
     description: Custom description
     iconText: Icon Text
     buttonAction: Apply
     badgeBgColor: Badge background color
     badgeTextColor: Badge text color
     badgeAsIcon: Customize cluster icon
-    maxCharsTooltip: Maximum two characters
+    maxCharsTooltip: Maximum three characters
     previewTitle: "Cluster icon and name presentation:"
+    comment: Custom comment
 grafanaDashboard:
   failedToLoad: Failed to load graph
   reload: Reload
@@ -3053,7 +3085,7 @@ landing:
     cpuUsed: CPU Used
     memoryUsed: Memory Used
   seeWhatsNew: Learn more about the improvements and new capabilities in this version.
-  whatsNewLink: "What's new in 2.8"
+  whatsNewLink: "What's new in 2.9"
   learnMore: Learn More
   gettingStarted:
     title: Getting Started
@@ -3361,6 +3393,7 @@ longhorn:
         label: 'Longhorn'
         description: 'Manage storage system via UI'
         na: Resource Unavailable
+        uiServiceUnavailable: The Longhorn UI service is not available or you do not have permission to access it.
 neuvector:
   overview:
     title: Overview
@@ -3395,6 +3428,7 @@ login:
   remember:
     label: Remember Username
   specificError: 'An error occurred logging in: {msg}'
+  loggedOutFromSso: You've been logged out of Rancher, however you may still be logged in to your single sign-on identity provider.
 managementNode:
   customName: Custom Name
 members:
@@ -3454,9 +3488,9 @@ monitoring:
         label: Additional Secrets
       existing: Choose an existing config secret
       info: |
-        <span class="text-bold">Create default config</span>: A Secret containing your Alertmanager Config will be created in the <pre class='inline-block m-0'>cattle-monitoring-system</pre> namespace on deploying this chart under the name <pre class='inline-block m-0'>alertmanager-rancher-monitoring-alertmanager</pre>. By default, this Secret will never be modified on an uninstall or upgrade of this chart. <br />
+        <span class="text-bold">Create default config</span>:<br>A Secret containing your Alertmanager Config will be created in the <pre class='inline-block m-0'>cattle-monitoring-system</pre> namespace on deploying this chart under the name <pre class='inline-block m-0'>alertmanager-rancher-monitoring-alertmanager</pre>. By default, this Secret will never be modified on an uninstall or upgrade of this chart. <br /><br />
         Once you have deployed this chart, you should edit the Secret via the UI in order to add your custom notification configurations that will be used by Alertmanager to send alerts. <br /> <br />
-        <span class="text-bold">Choose an existing config secret</span>: You must specify a Secret that exists in the <pre class='inline-block m-0'>cattle-monitoring-system</pre> namespace. If the namespace does not exist, you will not be able to select an existing secret.
+        <span class="text-bold">Choose an existing config secret</span>:<br>You must specify a Secret that exists in the <pre class='inline-block m-0'>cattle-monitoring-system</pre> namespace. If the namespace does not exist, you will not be able to select an existing secret.
       label: Alertmanager Secret
       new: Create default config
       radio:
@@ -4412,13 +4446,13 @@ prefs:
   dev:
     label: Enable Developer Tools & Features
   hideDesc:
-    label: Hide All Type Descriptions
+    label: Hide Type Description banners above resource lists
   helm:
     'true': Include Prerelease Versions
     'false': Show Releases Only
     label: Helm Charts
   advFeatures:
-    allNamespaces: Show system Namespaces managed by Rancher (not intended for editing or deletion)
+    allNamespaces: Show dynamic Namespaces managed by Rancher (not intended for editing or deletion)
     pluginDeveloper: Enable Extension developer features
     themeShortcut: Enable Dark/Light Theme keyboard shortcut toggle (shift+T)
     title: Advanced Features
@@ -4860,6 +4894,7 @@ resourceList:
     createResource: "Create {resourceName}"
   nsFilterToolTip: Filtering is restricted to projects and namespaces
   nsFiltering: Please select one or more namespaces or projects using the filter above.
+  nsFilteringGeneric: Please select a valid namespace or project option using the filter above.
 resourceLoadingIndicator:
   loading: Loading
 resourceTable:
@@ -4877,7 +4912,7 @@ resourceTable:
     machinePool: "<span>Pool:</span> {name}"
     notInANamespace: Not Namespaced
     notInAProject: Not in a Project
-    project: "<span>Project:</span> {name}"
+    project: "<span>Project:</span> <span>{name}</span>"
     notInAWorkspace: Not in a Workspace
     workspace: "<span>Workspace:</span> {name}"
     notInANodePool: "Not in a Pool"
@@ -4914,6 +4949,19 @@ secret:
     plusMore: "+ {n} more"
     privateKey: Private Key
     privateKeyPlaceholder: "Paste in the private key, typically starting with -----BEGIN RSA PRIVATE KEY-----"
+    certificates: Certificates
+    expiresDuration: Expires In
+    expiresOn: Expires On
+    lifetime: Lifetime
+    paging: |-
+      {pages, plural,
+      =0 {No {pluralLabel}}
+      =1 {{count} {count, plural, =1 {{singularLabel}} other {{pluralLabel}}}}
+      other {{from} - {to} of {count} {pluralLabel}}}
+    warnings:
+      expired: '{count} {count, plural, =1 {Certificate has expired} other {Certificates have expired}}'
+      expiring: '{count} {count, plural, =1 {Certificate expires soon} other {Certificates expire soon}}'
+      filtered: . Not all may be visible given the selected project/namespace filter
   data: Data
   registry:
     address: Registry
@@ -5706,6 +5754,9 @@ tableHeaders:
   lastSeenTooltip: The time at which the most recent occurrence of this event was recorded
   constraint: Constraint
   template: Template
+  clusterResources: Cluster Resources
+  repoPerClusterState: Cluster State
+  repoPerClusterStateTooltip: The state of the repo on the cluster
 target:
   router:
     label: Router
@@ -5874,7 +5925,10 @@ validation:
         required: 'Port Rule [{position}] - Target Port is required'
   setting:
     serverUrl:
-      https: server-url must be https.
+      https: Server URL must be https.
+      localhost: If the Server URL is internal to the Rancher server (e.g. localhost) the downstream clusters may not be able to communicate with Rancher.
+      trailingForwardSlash: Server URL should not have a trailing forward slash.
+      url: Server URL must be an URL.
   stringLength:
     between: '"{key}" should be between {min} and {max} {max, plural, =1 {character} other {characters}}'
     exactly: '"{key}" should be {count, plural, =1 {# character} other {# characters}}'
@@ -5895,6 +5949,7 @@ validation:
   minValue: '"{key}" must be equal or higher than {min}'
   invalidCidr: Invalid CIDR
   invalidIP: Invalid IP
+  alphanumeric: '"{key}" must be alphanumeric'
 wizard:
   previous: Previous
   finish: Finish
@@ -6002,7 +6057,9 @@ workload:
         exec: Command run inside the container exits with status 0
     image: Container Image
     imagePullPolicy: Pull Policy
-    imagePullSecrets: Pull Secrets
+    imagePullSecrets:
+      label: Pull Secrets
+      tooltip: Must be of Type `kubernetes.io/dockercfg` or `kubernetes.io/dockerconfigjson`
     init: Init Container
     lifecycleHook:
       postStart:
@@ -7122,6 +7179,16 @@ typeLabel:
       one { Project Membership }
       other { Project Memberships }
     }
+  kontainerdriver: |-
+    {count, plural,
+      one { Cluster Driver }
+      other { Cluster Drivers }
+    }
+  nodedriver: |-
+    {count, plural,
+      one { Node Driver }
+      other { Node Drivers }
+    }
 action:
   clone: Clone
   disable: Disable
@@ -7411,7 +7478,7 @@ branding:
     useCustom: Use a Custom Logo
   favicon:
     label: Favicon
-    tip: 'Upload an icon to replace the Rancher favicon in the browser tab. Max file size is 20KB'
+    tip: 'Upload an icon to replace the Rancher favicon in the browser tab. Max file size is 20KB.'
     preview: Favicon Preview
     upload: Upload Favicon
     useCustom: Use a Custom Favicon
@@ -7435,6 +7502,22 @@ branding:
     tip: You can override the link color used throughout the UI with a custom color of your choice.
     useCustom: Use a Custom Link Color
     example: Link Example
+  banner:
+    darkPreview: Dark Theme Preview
+    label: Banner
+    lightPreview: Light Theme Preview
+    tip: 'Upload an image to replace the default Rancher banner in the Dashboard page. We recommend using an SVG image with an aspect ratio of 6:1. The default image size is 4197x633. Max file size is 200KB. Accepted formats: JPEG, PNG, SVG.'
+    uploadDark: Upload Dark Banner
+    uploadLight: Upload Light Banner
+    useCustom: Use a Custom Banner
+  loginBackground:
+    darkPreview: Dark Theme Preview
+    label: Login Background
+    lightPreview: Light Theme Preview
+    tip: 'Upload an image to replace the default Rancher background in the Login page. We recommend using an SVG image with an aspect ratio of 7:8. The default image size is 683x768. Max file size is 200KB. Accepted formats: JPEG, PNG, SVG.'
+    uploadDark: Upload Dark Background
+    uploadLight: Upload Light Background
+    useCustom: Use a Custom Background
 notifications:
   header: Custom notifications
   menuLabel: 'Custom Notifications'
@@ -7754,6 +7837,9 @@ plugins:
           placeholder: e.g. hub.docker.io/example-org/my-image:latest
         secrets:
           banner: If the registry that hosts the Catalog Image requires Pull Secrets, they must be created in the following namespace:<pre>cattle-ui-plugin-system</pre>
+        imagePullSecrets:
+          label: Image Pull Secrets
+          tooltip: Must be of Type `kubernetes.io/dockercfg` or `kubernetes.io/dockerconfigjson`
       imageVersion:
         message: Unable to determine image version from {image}, defaulting to latest
         title: Image Version Not Found
@@ -8257,3 +8343,32 @@ gitPicker:
       tooltip: Username / Organization of the Git Repository
 logout:
   message: Logging Out...
+codeMirror:
+  keymap:
+    tooltip: Key mapping preference.
+drivers:
+  actions:
+    refresh: Refresh Kubernetes Metadata
+  add:
+    checksum:
+      label: Checksum
+      tooltip: Checksum to verify that the downloaded driver matches the expected checksum.
+    customUiUrl:
+      label: Custom UI URL
+      placeholder: https://test.com/ui
+      tooltip: The URL to load for customized Add Nodes screen for this driver. See https://github.com/rancher/ui-driver-skel for more info.
+    downloadUrl:
+      label: Download URL
+      placeholder: https://test.com/driver
+      tooltip: The URL to download the machine driver binary for 64-bit Linux.
+    name:
+      label: Driver name
+    title: Add Driver
+    whitelist: Whitelist Domains
+  deactivate:
+    title: Are you sure?
+    warning: You will no longer be able to edit the configuration of clusters using {name} driver. Resources in the provider will not be automatically removed.
+  kontainer:
+    title: Cluster Drivers
+  node:
+    title: Node Drivers
