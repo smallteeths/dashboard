@@ -28,13 +28,12 @@ import {
 } from '@shell/config/table-headers';
 
 import { mapPref, PSP_DEPRECATION_BANNER } from '@shell/store/prefs';
-import { haveV1Monitoring, monitoringStatus, canViewGrafanaLink } from '@shell/utils/monitoring';
+import { monitoringStatus, canViewGrafanaLink } from '@shell/utils/monitoring';
 import Tabbed from '@shell/components/Tabbed';
 import Tab from '@shell/components/Tabbed/Tab';
 import { allDashboardsExist } from '@shell/utils/grafana';
 import EtcdInfoBanner from '@shell/components/EtcdInfoBanner';
 import metricPoller from '@shell/mixins/metric-poller';
-import EmberPage from '@shell/components/EmberPage';
 import ResourceSummary, { resourceCounts } from '@shell/components/ResourceSummary';
 import HardwareResourceGauge from '@shell/components/HardwareResourceGauge';
 import { isEmpty } from '@shell/utils/object';
@@ -73,7 +72,6 @@ export default {
     Tabbed,
     AlertTable,
     Banner,
-    EmberPage,
     ConfigBadge,
     EventsTable,
     ConnectMode,
@@ -181,14 +179,6 @@ export default {
     },
 
     hidePspDeprecationBanner: mapPref(PSP_DEPRECATION_BANNER),
-
-    hasV1Monitoring() {
-      return haveV1Monitoring(this.$store.getters);
-    },
-
-    v1MonitoringURL() {
-      return `/k/${ this.currentCluster.id }/monitoring`;
-    },
 
     displayProvider() {
       const other = 'other';
@@ -515,7 +505,7 @@ export default {
           <i class="icon icon-edit" /> <span>{{ t('clusterConnectMode.connectMode.label') }}</span>
         </a>
       </div>
-      <div v-if="!monitoringStatus.v2 && !monitoringStatus.v1">
+      <div v-if="!monitoringStatus.v2">
         <n-link
           :to="{name: 'c-cluster-explorer-tools'}"
           class="monitoring-install"
@@ -523,9 +513,6 @@ export default {
           <i class="icon icon-gear" />
           <span>{{ t('glance.installMonitoring') }}</span>
         </n-link>
-      </div>
-      <div v-if="monitoringStatus.v1">
-        <span>{{ t('glance.v1MonitoringInstalled') }}</span>
       </div>
       <ConfigBadge
         v-if="currentCluster.canUpdate"
@@ -567,13 +554,13 @@ export default {
     </div>
 
     <h3
-      v-if="!hasV1Monitoring && hasStats"
+      v-if="hasStats"
       class="mt-40"
     >
       {{ t('clusterIndexPage.sections.capacity.label') }}
     </h3>
     <div
-      v-if="!hasV1Monitoring && hasStats"
+      v-if="hasStats"
       class="hardware-resource-gauges"
     >
       <HardwareResourceGauge
@@ -594,7 +581,7 @@ export default {
       />
     </div>
 
-    <div v-if="!hasV1Monitoring && componentServices">
+    <div v-if="componentServices">
       <div
         v-for="status in componentServices"
         :key="status.name"
@@ -611,17 +598,6 @@ export default {
         />
         <div>{{ t(status.labelKey) }}</div>
       </div>
-    </div>
-
-    <div
-      v-if="hasV1Monitoring"
-      id="ember-anchor"
-      class="mt-20"
-    >
-      <EmberPage
-        inline="ember-anchor"
-        :src="v1MonitoringURL"
-      />
     </div>
 
     <div class="mt-30">
