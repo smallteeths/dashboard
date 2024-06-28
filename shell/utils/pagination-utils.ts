@@ -9,36 +9,33 @@ import {
   NAMESPACE_FILTER_NS_FULL_PREFIX,
   NAMESPACE_FILTER_P_FULL_PREFIX,
 } from '@shell/utils/namespace-filter';
-import { OptPagination, OptPaginationFilter, OptPaginationSort } from '@shell/types/store/dashboard-store.types';
+import { PaginationArgs, PaginationParam, PaginationSort } from '@shell/types/store/pagination.types';
 import { sameArrayObjects } from '@shell/utils/array';
 import { isEqual } from '@shell/utils/object';
-
-// This are hardcoded atm, but will be changed via the `Performance` settings
-const settings: PaginationSettings = {
-  enabled: false,
-  stores:  {
-    cluster: {
-      resources: {
-        enableAll:  false,
-        enableSome: {
-          enabled: ['configmap', 'secret', 'pod'],
-          generic: true,
-        }
-      }
-    }
-  }
-};
+import { STEVE_CACHE } from '@shell/store/features';
+import { getPerformanceSetting } from '@shell/utils/settings';
 
 /**
  * Helper functions for server side pagination
  */
 class PaginationUtils {
   /**
-   * When a ns filter isn't one or more projects/namespaces... what the the valid values?
+   * When a ns filter isn't one or more projects/namespaces... what are the valid values?
    *
    * This basically blocks 'Not in a Project'.. which would involve a projectsornamespaces param with every ns not in a project.
    */
   validNsProjectFilters = [ALL, ALL_SYSTEM, ALL_USER, ALL_SYSTEM, NAMESPACE_FILTER_KINDS.NAMESPACE, NAMESPACE_FILTER_KINDS.PROJECT, NAMESPACED_YES, NAMESPACED_NO];
+
+  private getSettings({ rootGetters }: any): PaginationSettings {
+    const perf = getPerformanceSetting(rootGetters);
+
+    return perf.serverPagination;
+  }
+
+  isSteveCacheEnabled({ rootGetters }: any): boolean {
+    // We always get Feature flags as part of start up (see `dispatch('features/loadServer')` in loadManagement)
+    return rootGetters['features/get']?.(STEVE_CACHE);
+  }
 
   /**
    * Is pagination enabled at a global level or for a specific resource
@@ -49,6 +46,13 @@ class PaginationUtils {
       id: string,
     }
   }) {
+    // Cache must be enabled to support pagination api
+    if (!this.isSteveCacheEnabled({ rootGetters })) {
+      return false;
+    }
+
+    const settings = this.getSettings({ rootGetters });
+
     // No setting, not enabled
     if (!settings?.enabled) {
       return false;
@@ -110,15 +114,15 @@ class PaginationUtils {
     return this.validNsProjectFilters.includes(nsProjectFilter);
   }
 
-  paginationFilterEqual(a: OptPaginationFilter, b: OptPaginationFilter): boolean {
+  paginationFilterEqual(a: PaginationParam, b: PaginationParam): boolean {
     if (a.param !== b.param || a.equals !== b.equals) {
       return false;
     }
 
-    return isEqual(a.fields, b.fields);
+    return sameArrayObjects(a.fields, b.fields, true);
   }
 
-  paginationFiltersEqual(a: OptPaginationFilter[], b: OptPaginationFilter[]): boolean {
+  paginationFiltersEqual(a: PaginationParam[], b: PaginationParam[]): boolean {
     if (!!a && a?.length !== b?.length) {
       return false;
     }
@@ -132,18 +136,18 @@ class PaginationUtils {
     return true;
   }
 
-  paginationEqual(a?: OptPagination, b?: OptPagination): boolean {
+  paginationEqual(a?: PaginationArgs, b?: PaginationArgs): boolean {
     const {
-      filter: aFilter = [], sort: aSort = [], projectsOrNamespaces: aPN = [], ...aPrimitiveTypes
+      filters: aFilter = [], sort: aSort = [], projectsOrNamespaces: aPN = [], ...aPrimitiveTypes
     } = a || {};
     const {
-      filter: bFilter = [], sort: bSort = [], projectsOrNamespaces: bPN = [], ...bPrimitiveTypes
+      filters: bFilter = [], sort: bSort = [], projectsOrNamespaces: bPN = [], ...bPrimitiveTypes
     } = b || {};
 
     return isEqual(aPrimitiveTypes, bPrimitiveTypes) &&
       this.paginationFiltersEqual(aFilter, bFilter) &&
       this.paginationFiltersEqual(aPN, bPN) &&
-      sameArrayObjects<OptPaginationSort>(aSort, bSort);
+      sameArrayObjects<PaginationSort>(aSort, bSort, true);
   }
 }
 

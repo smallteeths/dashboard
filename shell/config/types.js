@@ -17,7 +17,7 @@ export const NORMAN = {
   ETCD_BACKUP:                   'etcdbackup',
   CLUSTER:                       'cluster',
   CLUSTER_TOKEN:                 'clusterregistrationtoken',
-  CLUSTER_ROLE_TEMPLATE_BINDING: 'clusterRoleTemplateBinding',
+  CLUSTER_ROLE_TEMPLATE_BINDING: 'clusterroletemplatebinding',
   CLOUD_CREDENTIAL:              'cloudcredential',
   FLEET_WORKSPACES:              'fleetworkspace',
   GLOBAL_ROLE:                   'globalRole',
@@ -296,6 +296,7 @@ export const HCI = {
   CLUSTER:          'harvesterhci.io.management.cluster',
   DASHBOARD:        'harvesterhci.io.dashboard',
   IMAGE:            'harvesterhci.io.virtualmachineimage',
+  VGPU_DEVICE:      'devices.harvesterhci.io.vgpudevice',
   SETTING:          'harvesterhci.io.setting',
   HARVESTER_CONFIG: 'rke-machine-config.cattle.io.harvesterconfig',
 };
@@ -318,3 +319,13 @@ export const AUTH_TYPE = {
 };
 
 export const LOCAL_CLUSTER = 'local';
+
+export const CLUSTER_REPO_TYPES = {
+  HELM_URL: 'helm-url',
+  GIT_REPO: 'git-repo',
+  OCI_URL:  'oci-url'
+};
+
+export const ZERO_TIME = '0001-01-01T00:00:00Z';
+
+export const DEFAULT_GRAFANA_STORAGE_SIZE = '10Gi';

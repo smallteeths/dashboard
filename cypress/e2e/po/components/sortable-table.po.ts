@@ -1,8 +1,9 @@
-import ComponentPo from '@/cypress/e2e/po/components/component.po';
+import ComponentPo, { GetOptions } from '@/cypress/e2e/po/components/component.po';
 import ActionMenuPo from '@/cypress/e2e/po/components/action-menu.po';
 import CheckboxInputPo from '@/cypress/e2e/po/components/checkbox-input.po';
 import ListRowPo from '@/cypress/e2e/po/components/list-row.po';
 import PromptRemove from '@/cypress/e2e/po/prompts/promptRemove.po';
+import PaginationPo from '@/cypress/e2e/po/components/pagination.po';
 
 export default class SortableTablePo extends ComponentPo {
   //
@@ -84,12 +85,24 @@ export default class SortableTablePo extends ComponentPo {
     return this.self().find('tbody tr:not(.sub-row)', options);
   }
 
-  rowElementWithName(name: string) {
-    return this.self().contains('tbody tr', new RegExp(` ${ name } `));
+  rowElementWithName(name: string, options?: GetOptions) {
+    return this.self().contains('tbody tr', new RegExp(` ${ name } `), options);
   }
 
   rowElementWithPartialName(name: string) {
     return this.self().contains('tbody tr', name);
+  }
+
+  tableHeaderRowElementWithPartialName(name: string) {
+    return this.self().contains('thead tr', name);
+  }
+
+  tableHeaderRow() {
+    return this.self().find('thead tr');
+  }
+
+  subRows() {
+    return this.self().find('tbody tr.sub-row');
   }
 
   rowElementLink(rowIndex: number, columnIndex: number) {
@@ -132,7 +145,14 @@ export default class SortableTablePo extends ComponentPo {
   }
 
   noRowsText() {
-    return this.self().find('tbody').find('.no-rows');
+    return this.self().find('tbody', { timeout: 10000 }).find('.no-rows');
+  }
+
+  /**
+   * Get the row element count on sortable table
+   */
+  rowCount(): Cypress.Chainable<number> {
+    return this.rowElements().then((el) => el.length);
   }
 
   /**
@@ -171,6 +191,10 @@ export default class SortableTablePo extends ComponentPo {
     return new CheckboxInputPo(this.rowWithName(clusterName).column(0));
   }
 
+  rowWithClusterName(clusterName: string) {
+    return this.rowWithName(clusterName).column(2);
+  }
+
   /**
    * Select all list items
    */
@@ -192,6 +216,11 @@ export default class SortableTablePo extends ComponentPo {
 
   // Check that the sortable table loading indicator does not exist (data loading complete)
   checkLoadingIndicatorNotVisible() {
-    cy.get('.data-loading').should('not.exist');
+    cy.get('tbody', { timeout: 10000 }).find('.data-loading').should('not.exist');
+  }
+
+  // pagination
+  pagination() {
+    return new PaginationPo();
   }
 }

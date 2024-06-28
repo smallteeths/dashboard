@@ -2,29 +2,31 @@ import ExtensionsPagePo from '@/cypress/e2e/po/pages/extensions.po';
 import RepositoriesPagePo from '@/cypress/e2e/po/pages/chart-repositories.po';
 import PromptRemove from '@/cypress/e2e/po/prompts/promptRemove.po';
 import BurgerMenuPo from '@/cypress/e2e/po/side-bars/burger-side-menu.po';
+import { LoginPagePo } from '@/cypress/e2e/po/pages/login-page.po';
 
+const DISABLED_CACHE_EXTENSION_NAME = 'large-extension';
+const DISABLED_CACHE_EXTENSION_MENU_LABEL = 'Large-extension';
+const DISABLED_CACHE_EXTENSION_TITLE = 'Large extension demo (> 20mb) - cache testing';
+const UNAUTHENTICATED_EXTENSION_NAME = 'uk-locale';
 const EXTENSION_NAME = 'clock';
 const UI_PLUGINS_PARTNERS_REPO_URL = 'https://github.com/rancher/partner-extensions';
 const UI_PLUGINS_PARTNERS_REPO_NAME = 'partner-extensions';
 
 describe('Extensions page', { tags: ['@extensions', '@adminUser'] }, () => {
-  before(() => {
+  beforeEach(() => {
     cy.login();
+  });
 
+  it('add repository', () => {
+    // This should be in a `before` however is flaky. Move it to an `it` to let cypress retry
     const extensionsPo = new ExtensionsPagePo();
 
     extensionsPo.goTo();
     extensionsPo.waitForPage();
-
-    // install extensions operator if it's not installed
-    extensionsPo.installExtensionsOperatorIfNeeded();
+    extensionsPo.extensionTabInstalledClick(); // Avoid nav guard failures that probably auto move user to this tab
 
     // install the rancher plugin examples
     extensionsPo.addExtensionsRepository('https://github.com/rancher/ui-plugin-examples', 'main', 'rancher-plugin-examples');
-  });
-
-  beforeEach(() => {
-    cy.login();
   });
 
   it('has the correct title', () => {
@@ -35,13 +37,49 @@ describe('Extensions page', { tags: ['@extensions', '@adminUser'] }, () => {
     cy.title().should('eq', 'Rancher - Extensions');
   });
 
+  it('Should check the feature flag', () => {
+    const extensionsPo = new ExtensionsPagePo();
+
+    extensionsPo.goTo();
+
+    cy.intercept('GET', '/v1/management.cattle.io.features?*', {
+      type:         'collection',
+      resourceType: 'management.cattle.io.feature',
+      data:         [
+        {
+          id:     'uiextension',
+          type:   'management.cattle.io.feature',
+          kind:   'Feature',
+          spec:   { value: true },
+          status: {
+            default:     true,
+            description: 'Enable UI Extensions when starting Rancher',
+            dynamic:     false,
+            lockedValue: null
+          }
+        }
+      ]
+    }).as('getFeatureFlag');
+
+    extensionsPo.waitForPage();
+    extensionsPo.waitForTitle();
+
+    cy.wait('@getFeatureFlag').then(() => {
+      extensionsPo.extensionTabs.checkVisible();
+    });
+  });
+
   it('using "Add Rancher Repositories" should add a new repository (Partners repo)', () => {
     const extensionsPo = new ExtensionsPagePo();
 
     extensionsPo.goTo();
 
     // check if burguer menu nav is highlighted correctly for extensions
+    // https://github.com/rancher/dashboard/issues/10010
     BurgerMenuPo.checkIfMenuItemLinkIsHighlighted('Extensions');
+
+    // catching regression https://github.com/rancher/dashboard/issues/10576
+    BurgerMenuPo.checkIfClusterMenuLinkIsHighlighted('local', false);
 
     // go to "add rancher repositories"
     extensionsPo.extensionMenuToggle();
@@ -57,34 +95,6 @@ describe('Extensions page', { tags: ['@extensions', '@adminUser'] }, () => {
     appRepoList.goTo();
     appRepoList.waitForPage();
     appRepoList.sortableTable().rowElementWithName(UI_PLUGINS_PARTNERS_REPO_URL).should('exist');
-  });
-
-  it('Should disable and enable extension support', () => {
-    const extensionsPo = new ExtensionsPagePo();
-
-    extensionsPo.goTo();
-
-    // open menu and click on disable extension support
-    extensionsPo.extensionMenuToggle();
-    extensionsPo.disableExtensionsClick();
-
-    // on the modal, keep the extensions repo and click disable
-    extensionsPo.disableExtensionModalDisableClick();
-
-    // let's wait for the install button to become visible and re-install
-    // the extensions operator
-    extensionsPo.installOperatorBtn().checkVisible();
-    extensionsPo.installOperatorBtn().click();
-    extensionsPo.enableExtensionModalEnableClick();
-
-    // wait for operation to finish and refresh...
-    extensionsPo.extensionTabs.checkVisible();
-    extensionsPo.goTo();
-    extensionsPo.waitForPage();
-
-    // let's make sure all went good
-    extensionsPo.extensionTabAvailableClick();
-    extensionsPo.extensionCard(EXTENSION_NAME).should('be.visible');
   });
 
   it('New repos banner should only appear once (after dismiss should NOT appear again)', () => {
@@ -251,7 +261,77 @@ describe('Extensions page', { tags: ['@extensions', '@adminUser'] }, () => {
     extensionsPo.extensionCard(EXTENSION_NAME).should('be.visible');
   });
 
-  it('Should uninstall an extension', () => {
+  it('An extension larger than 20mb, which will trigger chacheState disabled, should install and work fine', () => {
+    const extensionsPo = new ExtensionsPagePo();
+
+    extensionsPo.goTo();
+
+    extensionsPo.extensionTabAvailableClick();
+
+    // click on install button on card
+    extensionsPo.extensionCardInstallClick(DISABLED_CACHE_EXTENSION_NAME);
+    extensionsPo.extensionInstallModal().should('be.visible');
+
+    // click install
+    extensionsPo.installModalInstallClick();
+
+    // let's check the extension reload banner and reload the page
+    extensionsPo.extensionReloadBanner().should('be.visible');
+    extensionsPo.extensionReloadClick();
+
+    // make sure extension card is in the installed tab
+    extensionsPo.extensionTabInstalledClick();
+    extensionsPo.extensionCardClick(DISABLED_CACHE_EXTENSION_NAME);
+    extensionsPo.extensionDetailsTitle().should('contain', DISABLED_CACHE_EXTENSION_NAME);
+    extensionsPo.extensionDetailsCloseClick();
+
+    // check if extension is working fine
+    BurgerMenuPo.burgerMenuNavToMenubyLabel(DISABLED_CACHE_EXTENSION_MENU_LABEL);
+    cy.get('h1').should('have.text', DISABLED_CACHE_EXTENSION_TITLE);
+  });
+
+  it('Should respect authentication when importing extension scripts', () => {
+    const extensionsPo = new ExtensionsPagePo();
+
+    extensionsPo.goTo();
+
+    extensionsPo.extensionTabAvailableClick();
+
+    // Install unauthenticated extension
+    extensionsPo.extensionCardInstallClick(UNAUTHENTICATED_EXTENSION_NAME);
+    extensionsPo.extensionInstallModal().should('be.visible');
+    extensionsPo.installModalInstallClick();
+
+    // let's check the extension reload banner and reload the page
+    extensionsPo.extensionReloadBanner().should('be.visible');
+    extensionsPo.extensionReloadClick();
+
+    // make sure both extensions have been imported
+    extensionsPo.extensionScriptImport(UNAUTHENTICATED_EXTENSION_NAME).should('exist');
+    extensionsPo.extensionScriptImport(EXTENSION_NAME).should('exist');
+
+    cy.logout();
+
+    // make sure only the unauthenticated extension has been imported after logout
+    const loginPage = new LoginPagePo();
+
+    loginPage.goTo();
+    loginPage.waitForPage();
+    loginPage.extensionScriptImport(UNAUTHENTICATED_EXTENSION_NAME).should('exist');
+    loginPage.extensionScriptImport(EXTENSION_NAME).should('not.exist');
+
+    // make sure both extensions have been imported after logging in again
+    cy.login(undefined, undefined, false);
+    extensionsPo.goTo();
+    extensionsPo.waitForPage();
+    extensionsPo.waitForTitle();
+    extensionsPo.extensionScriptImport(UNAUTHENTICATED_EXTENSION_NAME).should('exist');
+    extensionsPo.extensionScriptImport(EXTENSION_NAME).should('exist');
+  });
+
+  it('Should uninstall extensions', () => {
+    // Because we logged out in the previous test this one will also have to use an uncached login
+    cy.login(undefined, undefined, false);
     const extensionsPo = new ExtensionsPagePo();
 
     extensionsPo.goTo();
@@ -262,6 +342,7 @@ describe('Extensions page', { tags: ['@extensions', '@adminUser'] }, () => {
     extensionsPo.extensionCardUninstallClick(EXTENSION_NAME);
     extensionsPo.extensionUninstallModal().should('be.visible');
     extensionsPo.uninstallModaluninstallClick();
+    extensionsPo.extensionReloadBanner().should('be.visible');
 
     // let's check the extension reload banner and reload the page
     extensionsPo.extensionReloadBanner().should('be.visible');
@@ -271,5 +352,54 @@ describe('Extensions page', { tags: ['@extensions', '@adminUser'] }, () => {
     extensionsPo.extensionTabAvailableClick();
     extensionsPo.extensionCardClick(EXTENSION_NAME);
     extensionsPo.extensionDetailsTitle().should('contain', EXTENSION_NAME);
+  });
+
+  it('Should uninstall unathenticated extensions', () => {
+    // Because we logged out in the previous test this one will also have to use an uncached login
+    cy.login(undefined, undefined, false);
+    const extensionsPo = new ExtensionsPagePo();
+
+    extensionsPo.goTo();
+
+    extensionsPo.extensionTabInstalledClick();
+
+    // click on uninstall button on card
+    extensionsPo.extensionCardUninstallClick(UNAUTHENTICATED_EXTENSION_NAME);
+    extensionsPo.extensionUninstallModal().should('be.visible');
+    extensionsPo.uninstallModaluninstallClick();
+    extensionsPo.extensionReloadBanner().should('be.visible');
+
+    // let's check the extension reload banner and reload the page
+    extensionsPo.extensionReloadBanner().should('be.visible');
+    extensionsPo.extensionReloadClick();
+
+    // make sure extension card is in the available tab
+    extensionsPo.extensionTabAvailableClick();
+    extensionsPo.extensionCardClick(UNAUTHENTICATED_EXTENSION_NAME);
+    extensionsPo.extensionDetailsTitle().should('contain', UNAUTHENTICATED_EXTENSION_NAME);
+  });
+
+  it('Should uninstall un-cached extensions', () => {
+    // Because we logged out in the previous test this one will also have to use an uncached login
+    cy.login(undefined, undefined, false);
+    const extensionsPo = new ExtensionsPagePo();
+
+    extensionsPo.goTo();
+
+    extensionsPo.extensionTabInstalledClick();
+
+    // click on uninstall button on card
+    extensionsPo.extensionCardUninstallClick(DISABLED_CACHE_EXTENSION_NAME);
+    extensionsPo.extensionUninstallModal().should('be.visible');
+    extensionsPo.uninstallModaluninstallClick();
+
+    // let's check the extension reload banner and reload the page
+    extensionsPo.extensionReloadBanner().should('be.visible');
+    extensionsPo.extensionReloadClick();
+
+    // make sure extension card is in the available tab
+    extensionsPo.extensionTabAvailableClick();
+    extensionsPo.extensionCardClick(DISABLED_CACHE_EXTENSION_NAME);
+    extensionsPo.extensionDetailsTitle().should('contain', DISABLED_CACHE_EXTENSION_NAME);
   });
 });

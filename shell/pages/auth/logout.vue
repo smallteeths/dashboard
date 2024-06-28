@@ -3,11 +3,11 @@ import { findBy } from '@shell/utils/array';
 import { NORMAN } from '@shell/config/types';
 
 export default {
-  async asyncData({ redirect, store, router }) {
+  async fetch() {
     let principal;
 
     try {
-      const principals = await store.dispatch('rancher/findAll', {
+      const principals = await this.$store.dispatch('rancher/findAll', {
         type: NORMAN.PRINCIPAL,
         opt:  { url: '/v3/principals', force: true }
       });
@@ -16,8 +16,7 @@ export default {
     } catch (e) {
       // Maybe not Rancher
     }
-
-    await store.dispatch('auth/logout', { provider: principal?.provider ?? '' }, { root: true });
+    await this.$store.dispatch('auth/logout', { provider: principal?.provider ?? '', force: true }, { root: true });
   }
 };
 </script>

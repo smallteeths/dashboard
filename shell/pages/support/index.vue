@@ -58,6 +58,11 @@ export default {
       brandSetting:    null,
       uiIssuesSetting: null,
       serverSetting:   null,
+      settings:        null,
+      // i18n-uses support.promos.one.*
+      // i18n-uses support.promos.two.*
+      // i18n-uses support.promos.three.*
+      // i18n-uses support.promos.four.*
       promos:          [
         'support.promos.one',
         'support.promos.two',

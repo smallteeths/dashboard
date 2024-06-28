@@ -7,10 +7,13 @@ pwd
 ls -al
 cd "dashboard"
 
+kubectl version --client=true
+kubectl get nodes
+
 node -v
 yarn add --dev -W mocha mochawesome mochawesome-merge \
   mochawesome-report-generator cypress-multi-reporters \
-  mocha-junit-reporter 
+  mocha-junit-reporter
 
 NO_COLOR=1 CYPRESS_grepTags="CYPRESSTAGS" cypress run --browser chrome \
   --reporter cypress-multi-reporters \

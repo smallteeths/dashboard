@@ -2,23 +2,19 @@
 import Brand from '@shell/mixins/brand';
 
 export default {
-  name:       'NuxtError',
-  mixins:     [Brand],
-  middleware: ['unauthenticated'],
+  name:   'NuxtError',
+  mixins: [Brand],
 
   data() {
     return { ready: false };
   },
 
   computed: {
-    error() {
-      return window.$globalApp.nuxt.err || {};
-    },
     statusCode() {
-      return (this.error && this.error.statusCode) || 599;
+      return 599;
     },
     message() {
-      return this.error.message || '';
+      return '';
     }
   },
   watch: {

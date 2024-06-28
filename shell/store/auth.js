@@ -413,10 +413,24 @@ export const actions = {
     }
   },
 
-  async logout({ dispatch, commit }, payload) {
-    if (payload?.provider) {
+  async logout({
+    dispatch, commit, getters, rootState
+  }, options = {}) {
+    // So, we only do this check if auth has been initialized.
+    //
+    // It's possible to be logged in and visit auth/logout directly instead
+    // of navigating from the app while being logged in. Unfortunately auth/logout
+    // doesn't use the authenticated middleware which means auth will never be
+    // initialized and this check will be invalid. This interferes with how we sometimes
+    // logout in our e2e tests.
+    //
+    // I'm going to leave this as is because we will be modifying and removing authenticated
+    // middleware soon and we should remove `force` at that time.
+    //
+    // TODO: remove `force` once authenticated middleware is removed/made sane.
+    if (options?.provider) {
       try {
-        const driver = await dispatch('getAuthProvider', payload.provider);
+        const driver = await dispatch('getAuthProvider', options.provider);
 
         if (driver?.logoutUrl) {
           await thirdAuthLogout(driver.logoutUrl);
@@ -424,8 +438,12 @@ export const actions = {
       } catch (e) {
       }
     }
+    if (!options?.force && !getters['loggedIn']) {
+      return;
+    }
+
     // Unload plugins - we will load again on login
-    await this.$plugin.logout();
+    await rootState.$plugin.logout();
 
     try {
       await dispatch('rancher/request', {

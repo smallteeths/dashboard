@@ -21,12 +21,12 @@ import { merge } from 'lodash';
 export default {
   data() {
     return {
-      version:     null,
-      versionInfo: null,
-      existing:    null,
+      version:          null,
+      versionInfo:      null,
+      versionInfoError: null,
+      existing:         null,
 
       ignoreWarning: false,
-
     };
   },
 
@@ -256,7 +256,9 @@ export default {
 
   methods: {
     async fetchChart() {
-      await this.$store.dispatch('catalog/load', { force: true, reset: true }); // not the problem
+      this.versionInfoError = null;
+
+      await this.$store.dispatch('catalog/load'); // not the problem
 
       if ( this.query.appNamespace && this.query.appName ) {
         // First check the URL query for an app name and namespace.
@@ -357,6 +359,8 @@ export default {
         // - values: All Helm chart values for the currently installed
         //   app.
       } catch (e) {
+        this.versionInfoError = e;
+
         console.error('Unable to fetch VersionInfo: ', e); // eslint-disable-line no-console
       }
     }, // End of fetchChart

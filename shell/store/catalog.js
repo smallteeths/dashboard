@@ -324,13 +324,22 @@ export const mutations = {
     }
   },
 
+  setVersions(state, versions) {
+    state.versionInfos = versions;
+  },
+
   cacheVersion(state, { key, info }) {
     state.versionInfos[key] = info;
   }
 };
 
 export const actions = {
-  async load(ctx, { force, reset, inStore } = {}) {
+  /**
+   * force: Always refresh catalog's helm repo by re-fetching index.yaml
+   *
+   * reset: clear existing charts and version cache
+   */
+  async load(ctx, { force, reset } = {}) {
     const {
       state, getters, rootGetters, commit, dispatch
     } = ctx;
@@ -340,9 +349,8 @@ export const actions = {
     // Installing an app? This is fine (in cluster store)
     // Fetching list of cluster templates? This is fine (in management store)
     // Installing a cluster template? This isn't fine (in cluster store as per installing app, but if there is no cluster we need to default to management)
-    if (!inStore) {
-      inStore = rootGetters['currentCluster'] ? rootGetters['currentProduct'].inStore : 'management';
-    }
+
+    const inStore = rootGetters['currentCluster'] ? rootGetters['currentProduct'].inStore : 'management';
 
     if ( rootGetters[`${ inStore }/schemaFor`](CATALOG.CLUSTER_REPO) ) {
       promises.cluster = dispatch(`${ inStore }/findAll`, { type: CATALOG.CLUSTER_REPO }, { root: true });
@@ -399,6 +407,10 @@ export const actions = {
       errors,
       loaded,
     });
+
+    if (reset) {
+      commit('setVersions', {});
+    }
   },
 
   async refresh({ getters, commit, dispatch }) {

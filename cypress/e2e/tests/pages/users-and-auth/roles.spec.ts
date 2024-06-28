@@ -3,15 +3,19 @@ import UsersPo from '@/cypress/e2e/po/pages/users-and-auth/users.po';
 import PromptRemove from '@/cypress/e2e/po/prompts/promptRemove.po';
 import BurgerMenuPo from '@/cypress/e2e/po/side-bars/burger-side-menu.po';
 import * as path from 'path';
+import * as jsyaml from 'js-yaml';
+import ProductNavPo from '@/cypress/e2e/po/side-bars/product-side-nav.po';
 
 const roles = new RolesPo('_');
 const usersPo = new UsersPo('_');
 const userCreate = usersPo.createEdit();
+const sideNav = new ProductNavPo();
 
-const runTimestamp = +new Date();
-const runPrefix = `e2e-test-${ runTimestamp }`;
 const downloadsFolder = Cypress.config('downloadsFolder');
-const globalRoleName = `${ runPrefix }-my-global-role`;
+
+let runTimestamp;
+let runPrefix;
+let globalRoleName;
 
 describe('Roles', { tags: ['@usersAndAuths', '@adminUser'] }, () => {
   beforeEach(() => {
@@ -20,14 +24,24 @@ describe('Roles', { tags: ['@usersAndAuths', '@adminUser'] }, () => {
   });
 
   it('can create a Global Role', () => {
+    // We want to define these here because if this test fails after it created the global role all subsequent
+    // retries will reference the wrong global-role because a second roll will with the same name but different id will be created
+    runTimestamp = +new Date();
+    runPrefix = `e2e-test-${ runTimestamp }`;
+    globalRoleName = `${ runPrefix }-my-global-role`;
+
     // create global role
     const fragment = 'GLOBAL';
 
     roles.goTo(undefined, fragment);
     roles.waitForPage(undefined, fragment);
 
-    // check if burguer menu nav is highlighted correctly for users & auth
+    // check if burger menu nav is highlighted correctly for users & auth
+    // https://github.com/rancher/dashboard/issues/10010
     BurgerMenuPo.checkIfMenuItemLinkIsHighlighted('Users & Authentication');
+
+    // catching regression https://github.com/rancher/dashboard/issues/10576
+    BurgerMenuPo.checkIfClusterMenuLinkIsHighlighted('local', false);
 
     roles.listCreate('Create Global Role');
 
@@ -40,17 +54,54 @@ describe('Roles', { tags: ['@usersAndAuths', '@adminUser'] }, () => {
     createGlobalRole.selectVerbs(0, 3);
     createGlobalRole.selectVerbs(0, 4);
     createGlobalRole.selectResourcesByLabelValue(0, 'GlobalRoles');
+
     createGlobalRole.saveAndWaitForRequests('POST', '/v3/globalroles').then((res) => {
       const globalRoleId = res.response?.body.id;
 
       // view role details
       roles.waitForPage(undefined, fragment);
+
+      // testing https://github.com/rancher/dashboard/issues/9800
+      // confirming that the globalRole created is not flagged as built-in
+      roles.list().checkBuiltIn(globalRoleName, false);
+      // eo test
+
       roles.list().details(globalRoleName, 2).find('a').click();
 
       const globalRoleDetails = roles.detailGlobal(globalRoleId);
 
       globalRoleDetails.waitForPage();
       globalRoleDetails.mastheadTitle().should('include', `${ globalRoleName }`);
+
+      sideNav.navToSideMenuEntryByLabel('Role Templates');
+      roles.waitForPage(undefined, fragment);
+
+      // testing https://github.com/rancher/dashboard/issues/5291
+      roles.list().checkDefault(globalRoleName, true);
+      UsersPo.navTo();
+      usersPo.list().create();
+      userCreate.waitForPage();
+      userCreate.globalRoleBindings().roleCheckbox(globalRoleId).checkVisible();
+      userCreate.globalRoleBindings().roleCheckbox(globalRoleId).isChecked();
+      sideNav.navToSideMenuEntryByLabel('Role Templates');
+
+      // testing https://github.com/rancher/dashboard/issues/9800
+      roles.goToEditYamlPage(globalRoleName);
+
+      createGlobalRole.yamlEditor().value().then((val) => {
+        // convert yaml into json to update values
+        const json: any = jsyaml.load(val);
+
+        json.builtin = false;
+
+        createGlobalRole.yamlEditor().set(jsyaml.dump(json));
+        createGlobalRole.saveEditYamlForm().click();
+
+        roles.waitForPage();
+        // confirming, once again, that the globalRole created is not flagged as built-in
+        roles.list().details(globalRoleName, 4).should('not.contain', 'i.icon-checkmark');
+      });
+      // eo test
     });
   });
 
@@ -79,6 +130,7 @@ describe('Roles', { tags: ['@usersAndAuths', '@adminUser'] }, () => {
 
       // view role details
       roles.waitForPage(undefined, fragment);
+      roles.list().checkDefault(clusterRoleName, true);
       roles.list().details(clusterRoleName, 2).find('a').click();
 
       const clusterRoleDetails = roles.detailRole(clusterRoleId);
@@ -112,6 +164,7 @@ describe('Roles', { tags: ['@usersAndAuths', '@adminUser'] }, () => {
 
       // view role details
       roles.waitForPage(undefined, fragment);
+      roles.list().checkDefault(projectRoleName, true);
       roles.list().details(projectRoleName, 2).find('a').click();
 
       const projectRoleDetails = roles.detailRole(projectRoleId);
@@ -145,6 +198,24 @@ describe('Roles', { tags: ['@usersAndAuths', '@adminUser'] }, () => {
     promptRemove.remove();
     cy.wait('@deleteRole').its('response.statusCode').should('be.lessThan', 300); // Can sometimes be 204
     roles.list().elementWithName(globalRoleName).should('not.exist');
+  });
+
+  it('shows warning message when deleting the Administrator role', () => {
+    const fragment = 'GLOBAL';
+    const globalAdminRoleName = 'Administrator';
+
+    roles.goTo(undefined, fragment);
+    roles.waitForPage(undefined, fragment);
+
+    // Show delete confirmation dialog
+    roles.waitForRequests();
+    roles.list().elementWithName(globalAdminRoleName).click();
+    roles.list().delete().click();
+    const promptRemove = new PromptRemove();
+
+    promptRemove.warning().should('be.visible');
+    promptRemove.warning().shouldHaveCssVar('color', '--warning'); // Check warning message color
+    promptRemove.warning().first().should('contain.text', 'Caution:'); // Check warning message content
   });
 
   it('Standard user with List, Get & Resources: Global Roles should be able to list users in Users and Auth', () => {

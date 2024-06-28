@@ -240,9 +240,14 @@ export function DSL(store, product, module = 'type-map') {
         ...inOpt
       };
 
+      // Convert strings to regex's - we do this once here for efficiency
       for ( const k of ['ifHaveGroup', 'ifHaveType'] ) {
         if ( opt[k] ) {
-          opt[k] = regexToString(ensureRegex(opt[k]));
+          if (Array.isArray(opt[k])) {
+            opt[k] = opt[k].map((r) => regexToString(ensureRegex(r)));
+          } else {
+            opt[k] = regexToString(ensureRegex(opt[k]));
+          }
         }
       }
 
@@ -437,6 +442,7 @@ export const getters = {
   labelFor(state, getters, rootState, rootGetters) {
     return (schema, count = 1, language = null) => {
       return _applyMapping(schema, state.typeMappings, 'id', false, () => {
+        // i18n-uses typeLabel.*
         const key = `typeLabel."${ schema.id.toLowerCase() }"`;
 
         if ( rootGetters['i18n/exists'](key, language) ) {
@@ -646,7 +652,7 @@ export const getters = {
           continue;
         } else if ( mode === TYPE_MODES.USED && count <= 0 ) {
           // If there's none of this type, ignore this entry when viewing only in-use types
-          // Note: count is sometimes null, which is <= 0.
+          // Note: count is sometimes null, in js `null <= 0` is `true`.
           continue;
         }
 
@@ -698,13 +704,14 @@ export const getters = {
         group.children.push({
           label,
           labelDisplay,
-          mode:     typeObj.mode,
-          exact:    typeObj.exact || false,
+          mode:         typeObj.mode,
+          exact:        typeObj.exact || false,
+          'exact-path': typeObj['exact-path'] || false,
           namespaced,
           route,
-          name:     typeObj.name,
-          weight:   typeObj.weight || getters.typeWeightFor(typeObj.schema?.id || label, isBasic),
-          overview: !!typeObj.overview,
+          name:         typeObj.name,
+          weight:       typeObj.weight || getters.typeWeightFor(typeObj.schema?.id || label, isBasic),
+          overview:     !!typeObj.overview,
         });
       }
 
@@ -728,6 +735,7 @@ export const getters = {
 
         // Translate if an entry exists
         let label = name;
+        // i18n-uses nav.group.*
         const key = `nav.group."${ name }"`;
 
         if ( rootGetters['i18n/exists'](key) ) {
@@ -981,16 +989,29 @@ export const getters = {
           }
 
           if ( item.ifHaveType ) {
-            const targetedSchemas = typeof item.ifHaveType === 'string' ? schemas : rootGetters[`${ item.ifHaveType.store }/all`](SCHEMA);
-            const type = typeof item.ifHaveType === 'string' ? item.ifHaveType : item.ifHaveType?.type;
+            const ifHaveTypeArray = Array.isArray(item.ifHaveType) ? item.ifHaveType : [item.ifHaveType];
+            let satisfiesIfHave = true;
 
-            const haveIds = filterBy(targetedSchemas, 'id', normalizeType(type)).map((s) => s.id);
+            // Support an array of required types that the user must have access to
+            for (let i = 0; i < ifHaveTypeArray.length; i++) {
+              const ifHaveType = ifHaveTypeArray[i];
+              const targetedSchemas = typeof ifHaveType === 'string' ? schemas : rootGetters[`${ ifHaveType.store }/all`](SCHEMA);
+              const type = typeof ifHaveType === 'string' ? ifHaveType : ifHaveType?.type;
 
-            if (!haveIds.length) {
-              continue;
+              const haveIds = filterBy(targetedSchemas, 'id', normalizeType(type)).map((s) => s.id);
+
+              if (!haveIds.length) {
+                satisfiesIfHave = false;
+                break;
+              }
+
+              if (item.ifHaveVerb && !ifHaveVerb(rootGetters, module, item.ifHaveVerb, haveIds)) {
+                satisfiesIfHave = false;
+                break;
+              }
             }
 
-            if (item.ifHaveVerb && !ifHaveVerb(rootGetters, module, item.ifHaveVerb, haveIds)) {
+            if (!satisfiesIfHave) {
               continue;
             }
           }
@@ -1009,8 +1030,18 @@ export const getters = {
             continue;
           }
 
-          if (item.ifFeature && !rootGetters['features/get'](item.ifFeature)) {
-            continue;
+          if (item.ifFeature) {
+            if (item.ifFeature[0] === '!') {
+              const feature = item.ifFeature.replace('!', '');
+
+              if (rootGetters['features/get'](feature)) {
+                continue;
+              }
+            } else {
+              if (!rootGetters['features/get'](item.ifFeature)) {
+                continue;
+              }
+            }
           }
 
           if (item.showMenuFun && typeof item.showMenuFun === 'function' && !item.showMenuFun(state, getters, rootState, rootGetters, out)) {

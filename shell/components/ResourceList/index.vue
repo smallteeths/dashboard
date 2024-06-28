@@ -45,7 +45,7 @@ export default {
     const schema = this.schema;
 
     if ( this.hasListComponent ) {
-      // If you provide your own list then call its asyncData
+      // If you provide your own list then call its fetch
       const importer = this.listComponent;
       const component = (await importer())?.default;
 
@@ -172,7 +172,7 @@ export default {
      * This covers case 1
      */
     pagination(neu, old) {
-      if (neu && !this.componentWillFetch && this.paginationEqual(neu, old)) {
+      if (neu && !this.componentWillFetch && !this.paginationEqual(neu, old)) {
         this.$fetchType(this.resource);
       }
     },
@@ -264,6 +264,7 @@ export default {
       v-else
       :schema="schema"
       :rows="rows"
+      :alt-loading="canPaginate"
       :loading="loading"
       :headers="headers"
       :group-by="groupBy"

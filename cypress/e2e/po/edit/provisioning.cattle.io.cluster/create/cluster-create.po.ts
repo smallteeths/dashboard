@@ -37,8 +37,8 @@ export default class ClusterManagerCreatePagePo extends ClusterManagerCreateImpo
     this.self().find('.toggle-container').should(assertion);
   }
 
-  gridElementExistance(groupIndex = 0, itemIndex = 0, assertion: string) {
-    this.self().find(`[data-testid="cluster-manager-create-grid-${ groupIndex }-${ itemIndex }"]`).should(assertion);
+  gridElementExistanceByName(name: string, assertion: string) {
+    return this.self().contains('.grid .name', name, { timeout: 10000 }).should(assertion);
   }
 
   selectKubeProvider(index: number) {
@@ -51,5 +51,17 @@ export default class ClusterManagerCreatePagePo extends ClusterManagerCreateImpo
 
   selectCustom(index: number) {
     return this.resourceDetail().cruResource().selectSubType(2, index).click();
+  }
+
+  commandFromCustomClusterUI() {
+    return this.self().get('code').contains('--insecure');
+  }
+
+  activateInsecureRegistrationCommandFromUI() {
+    return this.self().get('.checkbox-label').contains('Insecure:');
+  }
+
+  customClusterRegistrationCmd(cmd: string) {
+    return `ssh -i custom_node.key -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" root@${ Cypress.env('customNodeIp') } \"nohup ${ cmd }\"`;
   }
 }

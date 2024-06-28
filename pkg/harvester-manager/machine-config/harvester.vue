@@ -11,6 +11,7 @@ import InfoBox from '@shell/components/InfoBox';
 import Loading from '@shell/components/Loading';
 import CreateEditView from '@shell/mixins/create-edit-view';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
+import ArrayListSelect from '@shell/components/form/ArrayListSelect';
 import { LabeledInput } from '@components/Form/LabeledInput';
 import UnitInput from '@shell/components/form/UnitInput';
 import YamlEditor from '@shell/components/YamlEditor';
@@ -39,6 +40,7 @@ import { stringify, exceptionToErrorsArray } from '@shell/utils/error';
 import { isValidMac } from '@shell/utils/validators/cidr';
 import { HCI as HCI_ANNOTATIONS, STORAGE } from '@shell/config/labels-annotations';
 import { isEqual } from 'lodash';
+import { FilterArgs, PaginationFilterField, PaginationParamFilter } from '@shell/types/store/pagination.types';
 
 const STORAGE_NETWORK = 'storage-network.settings.harvesterhci.io';
 
@@ -79,11 +81,13 @@ const SOURCE_TYPE = {
   IMAGE:  'image',
 };
 
+const VGPU_PREFIX = { NVIDIA: 'nvidia.com/' };
+
 export default {
   name: 'ConfigComponentHarvester',
 
   components: {
-    Checkbox, draggable, Loading, LabeledSelect, LabeledInput, UnitInput, Banner, YamlEditor, NodeAffinity, PodAffinity, InfoBox
+    ArrayListSelect, Checkbox, draggable, Loading, LabeledSelect, LabeledInput, UnitInput, Banner, YamlEditor, NodeAffinity, PodAffinity, InfoBox
   },
 
   mixins: [CreateEditView],
@@ -128,10 +132,25 @@ export default {
       const url = `/k8s/clusters/${ clusterId }/v1`;
 
       if (clusterId) {
+        let configMapsUrl = `${ url }/${ CONFIG_MAP }s`;
+
+        if (this.$store.getters[`cluster/paginationEnabled`](CONFIG_MAP)) {
+          const pagination = new FilterArgs({
+            filters: [
+              PaginationParamFilter.createMultipleFields([
+                new PaginationFilterField({ field: `metadata.label["${ HCI_ANNOTATIONS.CLOUD_INIT }"]`, value: 'user' }),
+                new PaginationFilterField({ field: `metadata.label["${ HCI_ANNOTATIONS.CLOUD_INIT }"]`, value: 'network' })
+              ])
+            ]
+          });
+
+          configMapsUrl = this.$store.getters[`cluster/urlFor`](CONFIG_MAP, null, { pagination, url: configMapsUrl });
+        }
+
         const res = await allHashSettled({
           namespaces:   this.$store.dispatch('cluster/request', { url: `${ url }/${ NAMESPACE }s` }),
           images:       this.$store.dispatch('cluster/request', { url: `${ url }/${ HCI.IMAGE }s` }),
-          configMaps:   this.$store.dispatch('cluster/request', { url: `${ url }/${ CONFIG_MAP }s` }),
+          configMaps:   this.$store.dispatch('cluster/request', { url: configMapsUrl }),
           networks:     this.$store.dispatch('cluster/request', { url: `${ url }/k8s.cni.cncf.io.network-attachment-definitions` }),
           storageClass: this.$store.dispatch('cluster/request', { url: `${ url }/${ STORAGE_CLASS }es` }),
           settings:     this.$store.dispatch('cluster/request', { url: `${ url }/${ MANAGEMENT.SETTING }s` })
@@ -296,6 +315,8 @@ export default {
       this.networksObj = JSON.parse(this.value.networkInfo);
       this.networksHistoric = this.value.networkInfo;
 
+      this.getEnabledVGpuDevices();
+
       this.update();
     } catch (e) {
       this.errors = exceptionToErrorsArray(e);
@@ -321,6 +342,7 @@ export default {
 
     vmAffinity = { affinity: clone(vmAffinityObj) };
 
+    let vGpus = [];
     let networkData = '';
     let userData = '';
     let installAgent;
@@ -348,6 +370,12 @@ export default {
         networkDataIsBase64 = false;
         networkData = this.value.networkData;
       }
+    }
+
+    if (this.value.vgpuInfo) {
+      const vGPURequests = JSON.parse(this.value.vgpuInfo)?.vGPURequests;
+
+      vGpus = vGPURequests?.map((r) => r?.name).filter((r) => r) || [];
     }
 
     return {
@@ -378,7 +406,9 @@ export default {
       userDataIsBase64,
       networkDataIsBase64,
       vmAffinityIsBase64,
-      SOURCE_TYPE
+      SOURCE_TYPE,
+      vGpuEnabledDevices: {},
+      vGpus,
     };
   },
 
@@ -448,6 +478,36 @@ export default {
         topologyKeyPlaceholder: this.t('harvesterManager.affinity.topologyKey.placeholder')
       };
     },
+
+    vGpusAllocatable() {
+      const allocatable = this.allNodeObjects.reduce((acc, node) => [
+        ...acc,
+        ...Object.keys(node.status.allocatable || {}).filter((k) => k.startsWith(VGPU_PREFIX.NVIDIA)),
+      ], []);
+
+      return allocatable.reduce((acc, v) => {
+        let available = 0;
+
+        this.allNodeObjects.forEach((n) => {
+          if (n.status.allocatable[v]) {
+            available += Number(n.status.allocatable[v]);
+          }
+        });
+
+        if (available > 0) {
+          return {
+            ...acc,
+            [v]: available
+          };
+        }
+
+        return acc;
+      }, {});
+    },
+
+    vGpuOptions() {
+      return Object.keys(this.vGpuEnabledDevices).filter((x) => !this.vGpus.includes(x));
+    }
   },
 
   watch: {
@@ -566,6 +626,8 @@ export default {
 
       this.validatorDiskAndNetowrk(errors);
 
+      this.validatorVGpus(errors);
+
       podAffinityValidator(this.vmAffinity.affinity, this.$store.getters, errors);
 
       return { errors };
@@ -633,6 +695,21 @@ export default {
       }
     },
 
+    validatorVGpus(errors) {
+      const notAllocatable = this.vGpus
+        .map((id) => this.vGpuEnabledDevices[id])
+        .filter((vGpu) => this.vGpusAllocatable[vGpu?.type] < this.machinePools[this.poolIndex]?.pool?.quantity);
+
+      notAllocatable.forEach((vGpu) => {
+        const message = this.$store.getters['i18n/t']('cluster.credential.harvester.vGpus.errors.notAllocatable', {
+          vGpus: vGpu?.type,
+          pool:  this.machinePools[this.poolIndex]?.pool?.name || '',
+        });
+
+        errors.push(message);
+      });
+    },
+
     valuesChanged(value, type) {
       this.value[type] = base64Encode(value);
     },
@@ -644,15 +721,34 @@ export default {
     async getVmImage() {
       try {
         const clusterId = get(this.credential, 'decodedData.clusterId');
-        const url = `/k8s/clusters/${ clusterId }/v1`;
 
-        if (url) {
+        if (clusterId) {
+          const url = `/k8s/clusters/${ clusterId }/v1`;
           const res = await this.$store.dispatch('cluster/request', { url: `${ url }/${ HCI.IMAGE }s` });
 
           this.images = res?.data;
         }
       } catch (e) {
         this.errors = exceptionToErrorsArray(e);
+      }
+    },
+
+    async getEnabledVGpuDevices() {
+      const clusterId = get(this.credential, 'decodedData.clusterId');
+
+      if (clusterId) {
+        const url = `/k8s/clusters/${ clusterId }/v1`;
+        const res = await this.$store.dispatch('cluster/request', { url: `${ url }/${ HCI.VGPU_DEVICE }s` });
+
+        this.vGpuEnabledDevices = (res?.data || [])
+          .filter((v) => v.spec.enabled)
+          .reduce((acc, v) => ({
+            ...acc,
+            [v.id]: {
+              type: VGPU_PREFIX.NVIDIA + v.spec.vGPUTypeName?.replace(' ', '_'),
+              id:   v.id
+            },
+          }), {});
       }
     },
 
@@ -810,6 +906,19 @@ export default {
           message: this.t('harvesterManager.rke.templateError')
         }, { root: true });
       }
+    },
+
+    updateVGpu() {
+      const vGPURequests = this.vGpus?.filter((name) => name).reduce((acc, name, i) => ([
+        ...acc,
+        {
+          name,
+          deviceName: this.vGpuEnabledDevices[name]?.type,
+        }
+      ])
+      , []);
+
+      this.value.vgpuInfo = vGPURequests.length > 0 ? JSON.stringify({ vGPURequests }) : '';
     },
 
     addCloudConfigComment(value) {
@@ -1006,6 +1115,12 @@ export default {
       this.$refs.userDataYamlEditor.updateValue(userDataYaml);
       this.$set(this, 'userData', userDataYaml);
     },
+
+    vGpuOptionLabel(opt) {
+      const vGpu = this.vGpuEnabledDevices[opt];
+
+      return `${ vGpu?.type?.replace(VGPU_PREFIX.NVIDIA, '') } - ${ vGpu?.id } (allocatable: ${ this.vGpusAllocatable[vGpu?.type] })`;
+    }
   }
 };
 </script>
@@ -1262,6 +1377,30 @@ export default {
       </button>
 
       <portal :to="'advanced-'+uuid">
+        <h3 class="mt-20">
+          {{ t("harvesterManager.vGpu.title") }}
+        </h3>
+        <div>
+          <ArrayListSelect
+            v-model="vGpus"
+            class="mt-20"
+            :array-list-props="{
+              addAllowed: true,
+              addDisabled: vGpus.length > 0,
+              mode,
+              disabled
+            }"
+            :select-props="{
+              mode,
+              disabled,
+              getOptionLabel: vGpuOptionLabel
+            }"
+            :options="vGpuOptions"
+            label-key="harvesterManager.vGpu.label"
+            @input="updateVGpu"
+          />
+        </div>
+
         <h3 class="mt-20">
           {{ t("cluster.credential.harvester.userData.title") }}
         </h3>

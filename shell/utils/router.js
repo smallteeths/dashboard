@@ -75,6 +75,29 @@ export const getResourceFromRoute = (to) => {
   return resource;
 };
 
+/**
+ * Given a route it will look through the matching parent routes to see if any match the fn (predicate) criteria
+ *
+ * @param {*} to a VueRouter Route object
+ * @param {*} fn fn is a predicate which is passed a matched route. It will return true to indicate there was a matching route and false otherwise
+ * @returns true if a matching route was found, false otherwise
+ */
+export const routeMatched = (to, fn) => {
+  const matched = to?.matched || [];
+
+  return !!matched.find(fn);
+};
+
+/**
+ * Checks to see if the route requires authentication by taking a look at the route and it's parents 'meta' to see if it
+ * contains { requiresAuthentication: true }
+ * @param {*} to a VueRouter Route object
+ * @returns true if the route requires authentication, false otherwise
+ */
+export const routeRequiresAuthentication = (to) => {
+  return routeMatched(to, (matched) => matched.meta?.requiresAuthentication);
+};
+
 function findMeta(route, key) {
   if (route?.meta) {
     const meta = Array.isArray(route.meta) ? route.meta : [route.meta];

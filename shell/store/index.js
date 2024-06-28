@@ -37,6 +37,7 @@ import { addParam } from '@shell/utils/url';
 import semver from 'semver';
 import { STORE, BLANK_CLUSTER } from '@shell/store/store-types';
 import { isDevBuild } from '@shell/utils/version';
+import { markRaw } from 'vue';
 
 // Disables strict mode for all store instances to prevent warning about changing state outside of mutations
 // because it's more efficient to do that sometimes.
@@ -146,7 +147,7 @@ const getReadOnlyActiveNamespaces = (namespaces, activeNamespaces) => {
 };
 
 /**
- * Collect all the namespaces grouped by category, project or single pick
+ * Collect all the namespaces for the current cluster grouped by category, project or single pick
  * @returns Record<string, true>
  */
 const getActiveNamespaces = (state, getters, readonly = false) => {
@@ -247,6 +248,9 @@ export const state = () => {
     isRancherInHarvester:    false,
     targetRoute:             null,
     rootProduct:             undefined,
+    $router:                 markRaw(undefined),
+    $route:                  markRaw(undefined),
+    $plugin:                 markRaw(undefined),
   };
 };
 
@@ -401,6 +405,9 @@ export const getters = {
     return !filters[0].startsWith(NAMESPACE_FILTER_NS_FULL_PREFIX);
   },
 
+  /**
+   * Namespace/Project filter for the current cluster
+   */
   namespaceFilters(state) {
     const filters = state.namespaceFilters.filter((x) => !!x && !`${ x }`.startsWith(NAMESPACED_PREFIX));
 
@@ -453,6 +460,9 @@ export const getters = {
     return state.namespaceFilters;
   },
 
+  /**
+   * All namespaces in the current cluster
+   */
   allNamespaces(state) {
     return state.allNamespaces;
   },
@@ -619,6 +629,9 @@ export const mutations = {
     state.isRancherInHarvester = neu;
   },
 
+  /**
+   * Updates cluster specific ns settings, including the selected ns cache `activeNamespaceCache`
+   */
   updateNamespaces(state, { filters, all, getters: optGetters }) {
     state.namespaceFilters = filters.filter((x) => !!x);
 
@@ -713,6 +726,18 @@ export const mutations = {
 
   targetRoute(state, route) {
     state.targetRoute = route;
+  },
+
+  setRouter(state, router) {
+    state.$router = markRaw(router);
+  },
+
+  setRoute(state, route) {
+    state.$route = markRaw(route);
+  },
+
+  setPlugin(state, pluginDefinition) {
+    state.$plugin = markRaw(pluginDefinition);
   }
 };
 
@@ -744,13 +769,23 @@ export const actions = {
       rancherSchemas: dispatch('rancher/loadSchemas', true),
     });
 
+    // Note - why aren't we watching anything fetched in the `promises` object?
+    // To watch we need feature flags to know that the vai cache is enabled.
+    // So to work around this we won't watch anything initially... and then watch once we have feature flags
+    // The alternative is simpler (fetch features up front) but would add another blocking request in
+
     const promises = {
       // Clusters guaranteed always available or your money back
-      clusters: dispatch('management/findAll', { type: MANAGEMENT.CLUSTER }),
+      clusters: dispatch('management/findAll', { type: MANAGEMENT.CLUSTER, opt: { watch: false } }),
 
       // Features checks on its own if they are available
       features: dispatch('features/loadServer'),
     };
+
+    const toWatch = [
+      MANAGEMENT.CLUSTER,
+      MANAGEMENT.FEATURE,
+    ];
 
     const isRancher = res.rancherSchemas.status === 'fulfilled' && !!getters['management/schemaFor'](MANAGEMENT.PROJECT);
 
@@ -760,21 +795,25 @@ export const actions = {
     }
 
     if ( getters['management/schemaFor'](COUNT) ) {
-      promises['counts'] = dispatch('management/findAll', { type: COUNT });
+      promises['counts'] = dispatch('management/findAll', { type: COUNT, opt: { watch: false } });
+      toWatch.push(COUNT);
     }
 
     if ( getters['management/canList'](MANAGEMENT.SETTING) ) {
-      promises['settings'] = dispatch('management/findAll', { type: MANAGEMENT.SETTING });
+      promises['settings'] = dispatch('management/findAll', { type: MANAGEMENT.SETTING, opt: { watch: false } });
+      toWatch.push(MANAGEMENT.SETTING);
     }
 
     if ( getters['management/schemaFor'](NAMESPACE) ) {
-      promises['namespaces'] = dispatch('management/findAll', { type: NAMESPACE });
+      promises['namespaces'] = dispatch('management/findAll', { type: NAMESPACE, opt: { watch: false } });
+      toWatch.push(NAMESPACE);
     }
 
     const fleetSchema = getters['management/schemaFor'](FLEET.WORKSPACE);
 
     if (fleetSchema?.links?.collection) {
-      promises['workspaces'] = dispatch('management/findAll', { type: FLEET.WORKSPACE });
+      promises['workspaces'] = dispatch('management/findAll', { type: FLEET.WORKSPACE, opt: { watch: false } });
+      toWatch.push(FLEET.WORKSPACE);
     }
 
     if ( getters['management/schemaFor'](MANAGEMENT.GLOBAL_ROLE_BINDING) ) {
@@ -782,7 +821,12 @@ export const actions = {
     }
 
     res = await allHash(promises);
-    dispatch('i18n/init');
+
+    // See comment above. Now that we have feature flags we can watch resources
+    toWatch.forEach((type) => {
+      dispatch('management/watch', { type });
+    });
+
     const isMultiCluster = getters['isMultiCluster'];
 
     // If the local cluster is a Harvester cluster and 'rancher-manager-support' is true, it means that the embedded Rancher is being used.
@@ -954,6 +998,13 @@ export const actions = {
 
       // Use a pseudo cluster ID to pretend we have a cluster... to ensure some screens that don't care about a cluster but 'require' one to show
       if (id === BLANK_CLUSTER) {
+        // Remove previous cluster context from cached namespaces
+        commit('updateNamespaces', {
+          filters: [],
+          all:     [],
+          getters
+        });
+
         commit('clusterReady', true);
 
         return;
@@ -1161,22 +1212,18 @@ export const actions = {
       // adds IS_SSO query param to login route if logout came with an auth provider enabled
       QUERY += (IS_SSO in route.query) ? `&${ IS_SSO }` : '';
 
-      router.replace(`/auth/login?${ QUERY }`);
+      // Go back to login and force a full page reload, this ensures we unload any dangling resources the user is no longer authorized to use (like extensions).
+      // We use document instead of router because router does a clunky job of visiting a new page and reloading. In this case it would cause the login page to flash before actually reloading.
+      const base = process.env.routerBase || '/';
+
+      document.location.href = `${ base }auth/login?${ QUERY }`;
     }
   },
 
-  nuxtServerInit({ dispatch, rootState }, nuxt) {
-    // Models in SSR server mode have no way to get to the route or router, so hack one in...
-    Object.defineProperty(rootState, '$router', { value: nuxt.app.router });
-    Object.defineProperty(rootState, '$route', { value: nuxt.route });
-    dispatch('prefs/loadCookies');
-  },
-
-  nuxtClientInit({ dispatch, rootState }, nuxt) {
-    Object.defineProperty(rootState, '$router', { value: nuxt.app.router });
-    Object.defineProperty(rootState, '$route', { value: nuxt.route });
-    Object.defineProperty(rootState, '$plugin', { value: nuxt.app.$plugin });
-    Object.defineProperty(this, '$plugin', { value: nuxt.app.$plugin });
+  nuxtClientInit({ dispatch, commit, rootState }, nuxt) {
+    commit('setRouter', nuxt.app.router);
+    commit('setRoute', nuxt.route);
+    commit('setPlugin', nuxt.app.$plugin);
 
     dispatch('management/rehydrateSubscribe');
     dispatch('cluster/rehydrateSubscribe');

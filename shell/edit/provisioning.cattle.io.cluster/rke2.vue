@@ -26,6 +26,7 @@ import {
 } from '@shell/utils/object';
 import { allHash } from '@shell/utils/promise';
 import { sortBy } from '@shell/utils/sort';
+import { vspherePoolConfigMerge } from '@shell/machine-config/vmwarevsphere-pool-config-merge';
 
 import { compare, sortable } from '@shell/utils/version';
 import { isHarvesterSatisfiesVersion } from '@shell/utils/cluster';
@@ -66,6 +67,8 @@ import CustomContainerdConfig from './CustomContainerdConfig.vue';
 const HARVESTER = 'harvester';
 const HARVESTER_CLOUD_PROVIDER = 'harvester-cloud-provider';
 const NETBIOS_TRUNCATION_LENGTH = 15;
+
+const VMWARE_VSPHERE = 'vmwarevsphere';
 
 /**
  * Classes to be adopted by the node badges in Machine pools
@@ -167,6 +170,14 @@ export default {
         controlPlaneDrainOptions: {},
         workerConcurrency:        '1',
         workerDrainOptions:       {},
+      });
+    }
+
+    if (!this.value.spec.rkeConfig.dataDirectories) {
+      set(this.value.spec.rkeConfig, 'dataDirectories', {
+        systemAgent:  '',
+        provisioning: '',
+        k8sDistro:    '',
       });
     }
 
@@ -733,8 +744,8 @@ export default {
           return;
         }
 
-        if (this.mode === _EDIT) {
-          return;
+        if (Object.keys(neu.badge).length <= 0) {
+          return { ...this.value };
         }
 
         const obj = {
@@ -1112,7 +1123,7 @@ export default {
         },
       };
 
-      if (this.provider === 'vmwarevsphere') {
+      if (this.provider === VMWARE_VSPHERE) {
         pool.pool.machineOS = 'linux';
       }
 
@@ -1157,7 +1168,12 @@ export default {
         // We don't allow the user to edit any of the fields in metadata from the UI so it's safe to override it with the
         // metadata defined by the latest backend value. This is primarily used to ensure the resourceVersion is up to date.
         delete clonedCurrentConfig.metadata;
-        machinePool.config = merge(clonedLatestConfig, clonedCurrentConfig);
+
+        if (this.provider === VMWARE_VSPHERE) {
+          machinePool.config = vspherePoolConfigMerge(clonedLatestConfig, clonedCurrentConfig);
+        } else {
+          machinePool.config = merge(clonedLatestConfig, clonedCurrentConfig);
+        }
       }
     },
 
@@ -1376,7 +1392,9 @@ export default {
             set(this.chartValues, `${ HARVESTER_CLOUD_PROVIDER }.global.cattle.clusterName`, this.value.metadata.name);
           }
 
-          set(this.chartValues, `${ HARVESTER_CLOUD_PROVIDER }.cloudConfigPath`, '/var/lib/rancher/rke2/etc/config-files/cloud-provider-config');
+          const distroRoot = this.value?.spec?.rkeConfig?.dataDirectories?.k8sDistro?.length ? this.value?.spec?.rkeConfig?.dataDirectories?.k8sDistro : '/var/lib/rancher/rke2';
+
+          set(this.chartValues, `${ HARVESTER_CLOUD_PROVIDER }.cloudConfigPath`, `${ distroRoot }/etc/config-files/cloud-provider-config`);
         }
       } catch (err) {
         this.errors.push(err);
@@ -2089,7 +2107,6 @@ export default {
         :rules="{ name: fvGetAndReportPathRules('metadata.name') }"
       >
         <template
-          v-if="showClusterAppearance"
           slot="customize"
         >
           <ClusterAppearance

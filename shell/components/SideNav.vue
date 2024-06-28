@@ -13,7 +13,7 @@ import {
 import { sortBy } from '@shell/utils/sort';
 import { ucFirst } from '@shell/utils/string';
 
-import { HCI, CATALOG, UI, SCHEMA } from '@shell/config/types';
+import { HCI, UI, SCHEMA } from '@shell/config/types';
 import { HARVESTER_NAME as HARVESTER } from '@shell/config/features';
 import { NAME as EXPLORER } from '@shell/config/product/explorer';
 import { TYPE_MODES } from '@shell/store/type-map';
@@ -134,12 +134,6 @@ export default {
     },
 
     favoriteTypes: mapPref(FAVORITE_TYPES),
-
-    showClusterTools() {
-      return this.isExplorer &&
-             this.$store.getters['cluster/canList'](CATALOG.CLUSTER_REPO) &&
-             this.$store.getters['cluster/canList'](CATALOG.APP);
-    },
 
     supportLink() {
       const product = this.rootProduct;
@@ -447,21 +441,6 @@ export default {
         />
       </template>
     </div>
-    <!-- Cluster tools -->
-    <router-link
-      v-if="showClusterTools"
-      tag="div"
-      class="tools"
-      :to="{name: 'c-cluster-explorer-tools', params: {cluster: clusterId}}"
-    >
-      <a
-        class="tools-button"
-        @click="collapseAll()"
-      >
-        <i class="icon icon-gear" />
-        <span>{{ t('nav.clusterTools') }}</span>
-      </a>
-    </router-link>
     <!-- SideNav footer area (seems to be tied to harvester) -->
     <div
       v-if="showProductFooter"
@@ -526,7 +505,6 @@ export default {
         {{ displayVersion }}
       </router-link>
       <template v-else>
-        <span>{{ displayVersion }}</span>
         <span
           v-if="isVirtualCluster && isExplorer"
           v-tooltip="{content: harvesterVersion, placement: 'top'}"

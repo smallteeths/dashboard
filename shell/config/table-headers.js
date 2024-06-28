@@ -1,6 +1,6 @@
 import { CATTLE_PUBLIC_ENDPOINTS } from '@shell/config/labels-annotations';
 import { NODE as NODE_TYPE } from '@shell/config/types';
-import { COLUMN_BREAKPOINTS } from '@shell/components/SortableTable/index.vue';
+import { COLUMN_BREAKPOINTS } from '@shell/types/store/type-map';
 
 // Note: 'id' is always the last sort, so you don't have to specify it here.
 
@@ -403,6 +403,33 @@ export const USER_PROVIDER = {
   value:       'providerDisplay',
   dashIfEmpty: true,
   sort:        'providerDisplay',
+};
+
+export const USER_LAST_LOGIN = {
+  name:          'user-last-login',
+  labelKey:      'tableHeaders.userLastLogin',
+  value:         'userLastLogin',
+  formatter:     'LiveDate',
+  formatterOpts: { addSuffix: true },
+  sort:          'userLastLogin',
+};
+
+export const USER_DISABLED_IN = {
+  name:          'user-disabled-in',
+  labelKey:      'tableHeaders.userDisabledIn',
+  value:         'userDisabledInDisplay',
+  formatter:     'LiveDate',
+  formatterOpts: { isCountdown: true },
+  sort:          'userDisabledIn',
+};
+
+export const USER_DELETED_IN = {
+  name:          'user-deleted-in',
+  labelKey:      'tableHeaders.userDeletedIn',
+  value:         'userDeletedIn',
+  formatter:     'LiveDate',
+  formatterOpts: { isCountdown: true },
+  sort:          'userDeletedIn',
 };
 
 export const USER_ID = {

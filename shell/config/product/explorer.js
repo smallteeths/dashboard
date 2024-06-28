@@ -1,9 +1,9 @@
 import {
+  CATALOG,
   CONFIG_MAP,
   EVENT,
   NODE, SECRET, INGRESS,
   WORKLOAD, WORKLOAD_TYPES, SERVICE, HPA, NETWORK_POLICY, PV, PVC, STORAGE_CLASS, POD, POD_DISRUPTION_BUDGET, LIMIT_RANGE, RESOURCE_QUOTA,
-  RBAC,
   MANAGEMENT,
   NAMESPACE,
   NORMAN,
@@ -15,17 +15,21 @@ import {
   STATE, NAME as NAME_COL, NAMESPACE as NAMESPACE_COL, AGE, KEYS,
   INGRESS_DEFAULT_BACKEND, INGRESS_TARGET, INGRESS_CLASS,
   SPEC_TYPE, TARGET_PORT, SELECTOR, NODE as NODE_COL, TYPE, WORKLOAD_IMAGES, POD_IMAGES,
-  USER_ID, USERNAME, USER_DISPLAY_NAME, USER_PROVIDER, WORKLOAD_ENDPOINTS, STORAGE_CLASS_DEFAULT,
+  USER_ID, USERNAME, USER_DISPLAY_NAME, USER_PROVIDER, USER_LAST_LOGIN, USER_DISABLED_IN, USER_DELETED_IN, WORKLOAD_ENDPOINTS, STORAGE_CLASS_DEFAULT,
   STORAGE_CLASS_PROVISIONER, PERSISTENT_VOLUME_SOURCE,
   HPA_REFERENCE, MIN_REPLICA, MAX_REPLICA, CURRENT_REPLICA,
   ACCESS_KEY, DESCRIPTION, EXPIRES, EXPIRY_STATE, SUB_TYPE, AGE_NORMAN, SCOPE_NORMAN, PERSISTENT_VOLUME_CLAIM, RECLAIM_POLICY, PV_REASON, WORKLOAD_HEALTH_SCALE, POD_RESTARTS,
-  DURATION, MESSAGE, REASON, LAST_SEEN_TIME, EVENT_TYPE, OBJECT, ROLE, SECRET_DATA, CLUSTER_IP
+  DURATION, MESSAGE, REASON, LAST_SEEN_TIME, EVENT_TYPE, OBJECT, ROLE, ROLES, VERSION, INTERNAL_EXTERNAL_IP, KUBE_NODE_OS, CPU, RAM, SECRET_DATA, CLUSTER_IP
 } from '@shell/config/table-headers';
 
 import { DSL } from '@shell/store/type-map';
 import {
   STEVE_AGE_COL, STEVE_LIST_GROUPS, STEVE_NAMESPACE_COL, STEVE_NAME_COL, STEVE_STATE_COL
 } from '@shell/config/pagination-table-headers';
+
+import { COLUMN_BREAKPOINTS } from '@shell/types/store/type-map';
+import { STEVE_CACHE } from '@shell/store/features';
+import { configureConditionalDepaginate } from '@shell/store/type-map.utils';
 
 export const NAME = 'explorer';
 
@@ -53,7 +57,9 @@ export function init(store) {
     typeStoreMap:        {
       [MANAGEMENT.PROJECT]:                       'management',
       [MANAGEMENT.CLUSTER_ROLE_TEMPLATE_BINDING]: 'management',
-      [MANAGEMENT.PROJECT_ROLE_TEMPLATE_BINDING]: 'management'
+      [MANAGEMENT.PROJECT_ROLE_TEMPLATE_BINDING]: 'management',
+      [NORMAN.CLUSTER_ROLE_TEMPLATE_BINDING]:     'rancher',
+      [NORMAN.PROJECT_ROLE_TEMPLATE_BINDING]:     'rancher',
     }
   });
 
@@ -65,6 +71,7 @@ export function init(store) {
     NODE,
     VIRTUAL_TYPES.CLUSTER_MEMBERS,
     EVENT,
+    'c-cluster-explorer-tools'
   ], 'cluster');
   basicType([
     LIMIT_RANGE,
@@ -160,12 +167,16 @@ export function init(store) {
   mapGroup(/^(.*\.)?cluster\.x-k8s\.io$/, 'clusterProvisioning');
   mapGroup(/^(aks|eks|gke|rke|rke-machine-config|rke-machine|provisioning)\.cattle\.io$/, 'clusterProvisioning');
 
+  const dePaginateBindings = configureConditionalDepaginate({ maxResourceCount: 5000 });
+  const dePaginateNormanBindings = configureConditionalDepaginate({ maxResourceCount: 5000, isNorman: true }) ;
+
   configureType(NODE, { isCreatable: false, isEditable: true });
   configureType(WORKLOAD_TYPES.JOB, { isEditable: false, match: WORKLOAD_TYPES.JOB });
-  configureType(MANAGEMENT.CLUSTER_ROLE_TEMPLATE_BINDING, { isEditable: false });
-  configureType(MANAGEMENT.PROJECT_ROLE_TEMPLATE_BINDING, { isEditable: false, depaginate: true });
+  configureType(MANAGEMENT.CLUSTER_ROLE_TEMPLATE_BINDING, { isEditable: false, depaginate: dePaginateBindings });
+  configureType(MANAGEMENT.PROJECT_ROLE_TEMPLATE_BINDING, { isEditable: false, depaginate: dePaginateBindings });
   configureType(MANAGEMENT.PROJECT, { displayName: store.getters['i18n/t']('namespace.project.label') });
-  configureType(NORMAN.PROJECT_ROLE_TEMPLATE_BINDING, { depaginate: true });
+  configureType(NORMAN.CLUSTER_ROLE_TEMPLATE_BINDING, { depaginate: dePaginateNormanBindings });
+  configureType(NORMAN.PROJECT_ROLE_TEMPLATE_BINDING, { depaginate: dePaginateNormanBindings });
   configureType(SNAPSHOT, { depaginate: true });
   configureType(NORMAN.ETCD_BACKUP, { depaginate: true });
 
@@ -233,8 +244,11 @@ export function init(store) {
       value:  'metadata.fields.1',
       sort:   'metadata.fields.1',
       search: 'metadata.fields.1',
+    }, {
+      ...SECRET_DATA,
+      sort:   false,
+      search: false,
     },
-    SECRET_DATA,
     STEVE_AGE_COL
   ]);
 
@@ -267,24 +281,71 @@ export function init(store) {
       STEVE_AGE_COL
     ]);
 
+  headers(NODE,
+    [
+      STATE,
+      NAME_COL,
+      ROLES,
+      VERSION,
+      INTERNAL_EXTERNAL_IP,
+      {
+        ...KUBE_NODE_OS,
+        breakpoint: COLUMN_BREAKPOINTS.LAPTOP,
+        getValue:   (row) => row.status?.nodeInfo?.operatingSystem
+      },
+      {
+        ...CPU,
+        breakpoint: COLUMN_BREAKPOINTS.LAPTOP,
+        getValue:   (row) => row.cpuUsagePercentage
+      }, {
+        ...RAM,
+        breakpoint: COLUMN_BREAKPOINTS.LAPTOP,
+        getValue:   (row) => row.ramUsagePercentage
+      },
+      AGE
+    ],
+    [
+      STEVE_STATE_COL,
+      STEVE_NAME_COL,
+      {
+        ...ROLES,
+        sort:   false,
+        search: false
+      },
+      {
+        ...VERSION,
+        value:    'status.nodeInfo.kubeletVersion',
+        getValue: undefined,
+        sort:     ['status.nodeInfo.kubeletVersion'],
+        search:   'status.nodeInfo.kubeletVersion'
+      }, {
+        ...INTERNAL_EXTERNAL_IP,
+        sort:   false,
+        search: false,
+      }, {
+        ...KUBE_NODE_OS,
+        breakpoint: COLUMN_BREAKPOINTS.LAPTOP,
+        getValue:   undefined
+      }, {
+        ...CPU,
+        breakpoint: COLUMN_BREAKPOINTS.LAPTOP,
+        getValue:   (row) => row.cpuUsagePercentage,
+        sort:       false,
+        search:     false,
+      }, {
+        ...RAM,
+        breakpoint: COLUMN_BREAKPOINTS.LAPTOP,
+        sort:       false,
+        search:     false,
+      },
+      STEVE_AGE_COL
+    ]);
+
   headers(MANAGEMENT.PSA, [STATE, NAME_COL, {
     ...DESCRIPTION,
     width: undefined
   }, AGE]);
   headers(STORAGE_CLASS, [STATE, NAME_COL, STORAGE_CLASS_PROVISIONER, STORAGE_CLASS_DEFAULT, AGE]);
-
-  headers(RBAC.ROLE, [
-    STATE,
-    NAME_COL,
-    NAMESPACE_COL,
-    AGE
-  ]);
-
-  headers(RBAC.CLUSTER_ROLE, [
-    STATE,
-    NAME_COL,
-    AGE,
-  ]);
 
   configureType(MANAGEMENT.CLUSTER_ROLE_TEMPLATE_BINDING, {
     listGroups: [
@@ -304,6 +365,9 @@ export function init(store) {
     USER_DISPLAY_NAME,
     USER_PROVIDER,
     USERNAME,
+    USER_LAST_LOGIN,
+    USER_DISABLED_IN,
+    USER_DELETED_IN,
     AGE
   ]);
 
@@ -328,15 +392,16 @@ export function init(store) {
   });
 
   virtualType({
-    labelKey:   'members.clusterAndProject',
-    group:      'cluster',
-    namespaced: false,
-    name:       VIRTUAL_TYPES.CLUSTER_MEMBERS,
-    icon:       'globe',
-    weight:     -1,
-    route:      { name: 'c-cluster-product-members' },
-    exact:      true,
-    ifHaveType: {
+    labelKey:     'members.clusterAndProject',
+    group:        'cluster',
+    namespaced:   false,
+    name:         VIRTUAL_TYPES.CLUSTER_MEMBERS,
+    icon:         'globe',
+    weight:       -1,
+    route:        { name: 'c-cluster-product-members' },
+    exact:        false,
+    'exact-path': true,
+    ifHaveType:   {
       type:  MANAGEMENT.CLUSTER_ROLE_TEMPLATE_BINDING,
       store: 'management'
     }
@@ -349,6 +414,8 @@ export function init(store) {
     name:           WORKLOAD,
     weight:         99,
     icon:           'folder',
+    // Workloads fetch ALL resources of ALL resource types... which scales badly. Until this is replaced by an overview page disable entirely
+    ifFeature:      `!${ STEVE_CACHE }`,
     ifHaveSubTypes: Object.values(WORKLOAD_TYPES),
     route:          {
       name:   'c-cluster-product-resource',
@@ -367,6 +434,18 @@ export function init(store) {
     weight:           98,
     route:            { name: 'c-cluster-product-projectsnamespaces' },
     exact:            true,
+  });
+
+  virtualType({
+    labelKey:   'nav.tools',
+    group:      'cluster',
+    icon:       'globe',
+    namespaced: false,
+    name:       'c-cluster-explorer-tools',
+    weight:     -2,
+    route:      { name: 'c-cluster-explorer-tools' },
+    exact:      true,
+    ifHaveType: [CATALOG.CLUSTER_REPO, CATALOG.APP],
   });
 
   virtualType({

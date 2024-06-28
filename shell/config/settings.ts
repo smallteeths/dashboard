@@ -3,6 +3,7 @@
 import { MANAGEMENT } from './types';
 import { Store } from 'vuex';
 import { GC_DEFAULTS, GC_PREFERENCES } from '@shell/utils/gc/gc-types';
+import { PaginationSettings } from '@shell/types/resources/settings';
 
 interface GlobalSettingRuleset {
   name: string,
@@ -227,6 +228,7 @@ export interface PerfSettings {
   forceNsFilterV2: any;
   advancedWorker: {};
   kubeAPI: PerfSettingsKubeApi;
+  serverPagination: PaginationSettings;
 }
 
 export const DEFAULT_PERF_SETTING: PerfSettings = {
@@ -262,7 +264,22 @@ export const DEFAULT_PERF_SETTING: PerfSettings = {
        */
       notificationBlockList: ['299 - unknown field']
     }
+  },
+  serverPagination: {
+    enabled: false,
+    stores:  {
+      cluster: {
+        resources: {
+          enableAll:  false,
+          enableSome: {
+            enabled: ['configmap', 'secret', 'pod', 'node'],
+            generic: true,
+          }
+        }
+      }
+    }
   }
+
 };
 
 export const DEFAULT_GMV2_SETTING = {

@@ -2,8 +2,8 @@ import { MANAGEMENT } from '@shell/config/types';
 
 const definitions = {};
 
-export const create = function(name, def) {
-  definitions[name] = { def };
+export const create = function(name, defaultValue) {
+  definitions[name] = { def: defaultValue };
 
   return name;
 };
@@ -35,6 +35,8 @@ export const VIRTAITECH_GPU_SERVICE_UI = create('virtaitech-gpu-service-ui', fal
 export const EXPLORER_HARVESTER_CLUSTER = create('explorer-harvester-cluster', false);
 export const HARVESTER_CONTAINER = create('harvester-baremetal-container-workload', false);
 export const FLEET_WORKSPACE_BACK = create('provisioningv2-fleet-workspace-back-population', false);
+export const STEVE_CACHE = create('ui-sql-cache', false);
+export const UIEXTENSION = create('uiextension', true);
 
 // Not currently used.. no point defining ones we don't use
 // export const EMBEDDED_CLUSTER_API = create('embedded-cluster-api', true);
@@ -63,9 +65,9 @@ export const getters = {
 };
 
 export const actions = {
-  loadServer({ rootGetters, dispatch }) {
+  async loadServer({ rootGetters, dispatch }) {
     if ( rootGetters['management/canList'](MANAGEMENT.FEATURE) ) {
-      return dispatch('management/findAll', { type: MANAGEMENT.FEATURE }, { root: true });
+      return await dispatch('management/findAll', { type: MANAGEMENT.FEATURE, opt: { watch: false } }, { root: true });
     }
   },
 };
