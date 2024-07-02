@@ -2203,6 +2203,8 @@ drivers:
     title: Cluster Drivers
   node:
     title: Node Drivers
+  operatorsetting:
+    title: Operator Configuration
   add:
     title: Add Driver
     name:
