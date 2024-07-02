@@ -1,0 +1,63 @@
+<script>
+import CreateEditView from '@shell/mixins/create-edit-view';
+import CruResource from '@shell/components/CruResource.vue';
+import FormValidation from '@shell/mixins/form-validation';
+import OperatorSettingCreate from '@shell/components/OperatorSettingCreate';
+import { _CREATE } from '@shell/config/query-params';
+
+export default {
+  name: 'OperatorSettingEdit',
+
+  components: {
+    CruResource,
+    OperatorSettingCreate
+  },
+
+  mixins: [CreateEditView, FormValidation],
+
+  data() {
+    return {
+      fvFormRuleSets: [
+        { path: 'url', rules: ['required'] },
+        { path: 'whitelistDomains', rules: ['wildcardHostname'] }
+      ]
+    };
+  },
+  props: {
+    value: {
+      type:     Object,
+      required: true,
+      default:  () => {}
+    },
+    mode: {
+      type:    String,
+      default: _CREATE,
+    },
+  },
+};
+</script>
+
+<template>
+  <CruResource
+    :mode="mode"
+    :show-as-form="true"
+    :can-yaml="false"
+    :resource="value"
+    :errors="fvUnreportedValidationErrors"
+    :validation-passed="fvFormIsValid"
+    :cancel-event="true"
+    :done-route="doneRoute"
+    :apply-hooks="applyHooks"
+    component-testid="node-driver-edit"
+    @done="done"
+    @error="e=>errors = e"
+    @finish="save"
+    @cancel="done"
+  >
+    <OperatorSettingCreate
+      :mode="mode"
+      :value="value"
+      :rules="{url:fvGetAndReportPathRules('url'), uiUrl:fvGetAndReportPathRules('uiUrl'), checksum:fvGetAndReportPathRules('checksum'), whitelistDomains:fvGetAndReportPathRules('whitelistDomains')}"
+    />
+  </CruResource>
+</template>

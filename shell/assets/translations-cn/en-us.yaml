@@ -8617,6 +8617,8 @@ drivers:
     title: Cluster Drivers
   node:
     title: Node Drivers
+  operatorsetting:
+    title: Operator Configuration
 jwt:
   actions:
     activate: Enable
