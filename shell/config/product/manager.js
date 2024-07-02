@@ -46,6 +46,7 @@ export function init(store) {
       cloudCredential:           'rancher',
       [NORMAN.KONTAINER_DRIVER]: 'rancher',
       [NORMAN.NODE_DRIVER]:      'rancher',
+      [NORMAN.OPERATOR_SETTING]: 'rancher',
     }
   });
 
@@ -99,6 +100,15 @@ export function init(store) {
     route:      { name: 'c-cluster-manager-driver-nodedriver' },
     exact:      true
   });
+  virtualType({
+    labelKey:   'drivers.operatorsetting.title',
+    name:       'operator-setting',
+    group:      'Root',
+    namespaced: false,
+    icon:       'globe',
+    route:      { name: 'c-cluster-manager-driver-operatorsetting' },
+    exact:      true
+  });
 
   virtualType({
     ifFeature:  RKE1_UI,
@@ -124,6 +134,7 @@ export function init(store) {
   basicType([
     'rke-kontainer-drivers',
     'rke-node-drivers',
+    'operator-setting',
   ], 'drivers');
 
   basicType([

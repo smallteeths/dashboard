@@ -37,6 +37,7 @@ export const NORMAN = {
   KONTAINER_DRIVER:              'kontainerDriver',
   NODE_DRIVER:                   'nodeDriver',
   OPERATOR_SETTINGS:             'operatorsettings',
+  OPERATOR_SETTING:              'operatorSetting',
 };
 
 // Public (via Norman)

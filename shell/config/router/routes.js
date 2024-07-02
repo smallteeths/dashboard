@@ -327,6 +327,10 @@ export default [
         component: () => interopDefault(import('@shell/pages/c/_cluster/manager/drivers/nodeDriver/index.vue')),
         name:      'c-cluster-manager-driver-nodedriver'
       }, {
+        path:      '/c/:cluster/manager/operatorsetting',
+        component: () => interopDefault(import('@shell/pages/c/_cluster/manager/drivers/operatorsetting/index.vue')),
+        name:      'c-cluster-manager-driver-operatorsetting'
+      }, {
         path:      '/c/:cluster/manager/globalMonitoring',
         component: () => interopDefault(import('@shell/pages/c/_cluster/manager/globalMonitoring/index.vue')),
         name:      'c-cluster-manager-globalMonitoring'
@@ -391,6 +395,10 @@ export default [
         component: () => interopDefault(import('@shell/pages/c/_cluster/manager/drivers/nodeDriver/create.vue')),
         name:      'c-cluster-manager-driver-nodedriver-create'
       }, {
+        path:      '/c/:cluster/manager/operatorsetting/create',
+        component: () => interopDefault(import('@shell/pages/c/_cluster/manager/drivers/operatorsetting/create.vue')),
+        name:      'c-cluster-manager-driver-operatorsetting-create'
+      }, {
         path:      '/c/:cluster/monitoring/monitor/create',
         component: () => interopDefault(import('@shell/pages/c/_cluster/monitoring/monitor/create.vue')),
         name:      'c-cluster-monitoring-monitor-create'
@@ -430,6 +438,10 @@ export default [
         path:      '/c/:cluster/manager/nodeDriver/:id',
         component: () => interopDefault(import('@shell/pages/c/_cluster/manager/drivers/nodeDriver/_id.vue')),
         name:      'c-cluster-manager-driver-nodedriver-id'
+      }, {
+        path:      '/c/:cluster/manager/operatorsetting/:id',
+        component: () => interopDefault(import('@shell/pages/c/_cluster/manager/drivers/operatorsetting/_id.vue')),
+        name:      'c-cluster-manager-driver-operatorsetting-id'
       }, {
         path:      '/c/:cluster/manager/pages/:page?',
         component: () => interopDefault(import('@shell/pages/c/_cluster/manager/pages/_page.vue')),
