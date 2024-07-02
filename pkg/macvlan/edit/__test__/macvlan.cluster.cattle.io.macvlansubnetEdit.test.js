@@ -46,7 +46,8 @@ describe('macvlansubnet: edit', () => {
             'macvlan/emptyForm':          emptyForm,
             'management/all':             () => [],
             currentProduct:               { name: 'explorer' }
-          }
+          },
+          dispatch: jest.fn()
         }
       }
     });

@@ -13,13 +13,14 @@ describe('test navlink name nowrap', () => {
             'type-map/labelFor':   () => 'navlink',
             'type-map/optionsFor': () => {},
             'i18n/t':              (t) => t,
+            'i18n/withFallback':   jest.fn((key, args, fallback) => fallback),
             currentProduct:        { name: 'explorer' }
           }
         }
       }
     });
 
-    const inputWraps = wrapper.findAll('[class="name-display"]');
+    const inputWraps = wrapper.findAll('[class="mastehead-resource-title"]');
 
     expect(inputWraps).toHaveLength(1);
   });

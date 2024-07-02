@@ -50,8 +50,14 @@ describe('page: auth/setup', () => {
     expect(encryptPasswordMock).toHaveBeenCalledTimes(2);
   });
 
+  const mockedRoute = { query: {} };
+
   it('should contian PasswordStrength component', () => {
     const wrapper = shallowMount(setup, {
+      mocks: {
+        $fetchState: { pending: false },
+        $route:      mockedRoute,
+      },
       data() {
         return {
           mustChangePassword: true,

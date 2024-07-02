@@ -3,6 +3,9 @@ import Dashboard from '@shell/pages/c/_cluster/explorer/index.vue';
 import { shallowMount } from '@vue/test-utils';
 import { STATES_ENUM } from '@shell/plugins/dashboard-store/resource-class';
 import { NODE_ARCHITECTURE } from '@shell/config/labels-annotations';
+import { CAPI } from '@shell/config/types';
+
+const outputSchema = { [CAPI.RANCHER_CLUSTER]: [] };
 
 describe('page: cluster dashboard', () => {
   const mountOptions = {
@@ -30,7 +33,7 @@ describe('page: cluster dashboard', () => {
           'cluster/canList':   jest.fn(),
           'cluster/all':       jest.fn(),
           'i18n/exists':       jest.fn(),
-          'management/all':    jest.fn(),
+          'management/all':    () => [outputSchema],
           'i18n/t':            (label: string) => label === 'generic.provisioning' ? '—' : jest.fn()(),
         }
       }
