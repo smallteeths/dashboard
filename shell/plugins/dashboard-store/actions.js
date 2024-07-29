@@ -9,6 +9,7 @@ import { normalizeType } from './normalize';
 import garbageCollect from '@shell/utils/gc/gc';
 import { addSchemaIndexFields } from '@shell/plugins/steve/schema.utils';
 import { addParam } from '@shell/utils/url';
+import { conditionalDepaginate } from '@shell/store/type-map.utils';
 
 export const _ALL = 'all';
 export const _MERGE = 'merge';
@@ -189,7 +190,7 @@ export default {
     opt = opt || {};
     opt.url = getters.urlFor(type, null, opt);
     opt.stream = opt.stream !== false && load !== _NONE;
-    opt.depaginate = typeOptions?.depaginate;
+    opt.depaginate = conditionalDepaginate(typeOptions?.depaginate, { ctx, args: { type, opt } });
 
     let skipHaveAll = false;
 
@@ -368,7 +369,7 @@ export default {
     opt = opt || {};
     opt.labelSelector = selector;
     opt.url = getters.urlFor(type, null, opt);
-    opt.depaginate = typeOptions?.depaginate;
+    opt.depaginate = conditionalDepaginate(typeOptions?.depaginate, { ctx, args: { type, opt } });
 
     const res = await dispatch('request', { opt, type });
 
