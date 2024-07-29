@@ -5770,6 +5770,41 @@ user:
     active: Enabled
     inactive: Disabled
     unknown: Unknown
+  retention:
+    button:
+      label: User retention settings
+    edit:
+      form:
+        cron:
+          errorMessage: User retention process schedule must be a valid cron expression
+          label: User retention process schedule
+          subLabel: The user retention process runs as a cron job (required)
+        defaultLastLogin:
+          label: Default last login (ms)
+          placeholder: Unix timestamp
+          subLabel: Accounts without a registered last login timestamp will get this as a default
+        deleteAfter:
+          checkbox: Delete user accounts after an inactivity period (duration since last login)
+          input:
+            label: Inactivity period
+            subLabel: This value must be larger than the Disable period, if it's active
+            tooltip: Uses duration units (e.g. use 30h for 30 hours)
+        disableAfter:
+          checkbox: Disable user accounts after an inactivity period (duration since last login)
+          input:
+            label: Inactivity period
+            tooltip: Uses duration units (e.g. use 30h for 30 hours)
+        dryRun:
+          label: Run the user retention process in DRY mode (no changes will be applied)
+          subLabel: You can check the logs to see which accounts would be affected
+      title:
+        header: 'Users: Settings'
+        post: Settings
+        pre: 'Users:'
+        subTitle: User retention
+    growl:
+      message: User retention settings have been updated successfully
+      title: Save user retention settings
 validation:
   noUpperCase: 'Alphanumeric characters in "{key}" must be lowercase'
   arrayLength:
