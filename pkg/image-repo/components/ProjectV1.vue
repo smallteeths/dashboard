@@ -4,6 +4,7 @@
       <h1>{{ t('nav.imageRepo.projects') }}</h1>
       <div class="right-buttons">
         <button
+          v-if="!harborServerError"
           class="btn role-primary"
           @click="showDialog"
         >
@@ -11,7 +12,14 @@
         </button>
       </div>
     </div>
+    <div
+      v-if="harborServerError"
+      class="ml-10 mt-10"
+    >
+      {{ t('harborConfig.errorInfo') }}
+    </div>
     <HarborTable
+      v-else
       ref="harborTableRef"
       rowSelection
       search
@@ -118,7 +126,15 @@ export default {
     }
   },
   async fetch() {
-    await this.fetchCurrentUser();
+    try {
+      await this.fetchCurrentUser();
+      this.harborServerError = false;
+    } catch (err) {
+      this.loading = false;
+      this.harborServerError = true;
+
+      return;
+    }
     await this.getProject();
   },
   data() {
@@ -180,8 +196,9 @@ export default {
           }
         ]
       },
-      errors:    [],
-      sortValue: '',
+      errors:            [],
+      sortValue:         '',
+      harborServerError: false,
     };
   },
   computed: {
@@ -279,12 +296,10 @@ export default {
   },
   methods: {
     async fetchCurrentUser() {
-      try {
-        this.loading = true;
-        const currentUser = await this.apiRequest.fetchCurrentHarborUser();
+      this.loading = true;
+      const currentUser = await this.apiRequest.fetchCurrentHarborUser();
 
-        this.currentUser = currentUser;
-      } catch (e) {}
+      this.currentUser = currentUser;
     },
     async getProject() {
       const params = {};

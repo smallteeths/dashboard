@@ -412,7 +412,7 @@ export default {
             this.harborAccount = harborAccount;
           }
         } catch (err) {
-          if (err.status === 410) {
+          if (err?.status === 410 || err?.code === 'UNAUTHORIZED' || err?.message === 'unauthorized' ) {
             this.requiredAuth = true;
           }
         }

@@ -6,7 +6,14 @@
     <div class="title">
       <t k="harborConfig.log" />
     </div>
+    <div
+      v-if="harborServerError"
+      class="ml-10 mt-10"
+    >
+      {{ t('harborConfig.errorInfo') }}
+    </div>
     <HarborTable
+      v-else
       ref="harborTableRef"
       hideSelect
       search
@@ -61,7 +68,8 @@ export default {
       inputFilter:       [],
       logs:              [],
       sortValue:         '',
-      extraSearchFields: 'username'
+      extraSearchFields: 'username',
+      harborServerError: false,
     };
   },
   watch: {
@@ -143,7 +151,9 @@ export default {
         this.logs = logs;
         this.totalCount = this.getTotalCount(logs) || 0;
         this.loading = false;
+        this.harborServerError = false;
       } catch (e) {
+        this.harborServerError = true;
         this.loading = false;
       }
     },

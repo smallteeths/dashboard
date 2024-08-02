@@ -1,6 +1,16 @@
 <template>
   <div>
+    <div class="title">
+      <t k="harborConfig.log" />
+    </div>
+    <div
+      v-if="harborServerError"
+      class="ml-10 mt-10"
+    >
+      {{ t('harborConfig.errorInfo') }}
+    </div>
     <HarborTable
+      v-else
       search
       paging
       :loading="loading"
@@ -81,6 +91,7 @@ export default {
           title: 'Timestamp',
         },
       ],
+      harborServerError: false,
     };
   },
   computed: {
@@ -155,8 +166,10 @@ export default {
 
         this.totalCount = this.getTotalCount(data);
         this.data = data;
+        this.harborServerError = false;
       } catch (err) {
         this.errors = [err];
+        this.harborServerError = true;
       }
       this.loading = false;
     },
@@ -179,7 +192,8 @@ export default {
     grid-template-columns: 1fr auto;
   }
   .title {
-    grid-area: title;
+    padding: 10px;
+    font-size: 1.5em;
   }
   .sub-title {
     grid-area: sub-title;
