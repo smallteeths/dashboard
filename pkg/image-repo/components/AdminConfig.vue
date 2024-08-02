@@ -29,6 +29,13 @@
         >
           <t k="imageRepoSection.action.edit" />
         </button>
+        <button
+          v-show="harborAccountValid && currentView === 'view'"
+          class="btn bg-error"
+          @click="removeHarborAccount"
+        >
+          <t k="imageRepoSection.adminConfigPage.removeHarborConfig" />
+        </button>
       </div>
     </div>
     <Banner
@@ -130,19 +137,19 @@
     >
       <button
         class="btn role-secondary"
+        :disabled="loading"
         @click="showView()"
       >
+        <i
+          v-if="loading"
+          :class="{icon: true, 'icon-lg': true, ['icon-spinner icon-spin']: loading}"
+        />
         <t k="generic.cancel" />
       </button>
       <AsyncButton
         :mode="mode"
         :disabled="loading"
         @click="save"
-      />
-      <AsyncButton
-        mode="delete"
-        class="btn bg-error"
-        @click="removeHarborAccount"
       />
     </div>
     <div
@@ -151,8 +158,13 @@
     >
       <button
         class="btn role-secondary"
+        :disabled="loading"
         @click="showView()"
       >
+        <i
+          v-if="loading"
+          :class="{icon: true, 'icon-lg': true, ['icon-spinner']: loading}"
+        />
         <t k="generic.cancel" />
       </button>
       <AsyncButton
@@ -192,6 +204,13 @@
         :api-request="harborAPIRequest"
       />
     </div>
+    <PromptRemove
+      :show="removeHarborConfigDialogVisible"
+      :removeCallback="removeHarborConfig"
+      :resources="[]"
+      type="HarborConfig"
+      @close="closeRemoveDialog"
+    />
   </div>
 </template>
 <script>
@@ -208,6 +227,7 @@ import LabelsV1 from './LabelsV1.vue';
 import { stringify } from '@shell/utils/error';
 import Schema from 'async-validator';
 import { mapGetters } from 'vuex';
+import PromptRemove from '@pkg/image-repo/components/PromptRemove.vue';
 
 const supportAccountSyncAuthModes = [
   {
@@ -261,7 +281,8 @@ export default {
     Checkbox,
     Banner,
     Loading,
-    LabelsV1
+    LabelsV1,
+    PromptRemove
   },
 
   async fetch() {
@@ -325,6 +346,7 @@ export default {
       insecureSkipVerifySetting: null,
       harborSysntemInfo:         null,
       currentView:               'view', // view, edit, changePwd
+      removeHarborConfigDialogVisible: false,
     };
   },
   computed: {
@@ -354,6 +376,7 @@ export default {
     },
     async initForm() {
       this.harborAccountValid = false;
+      this.loading = true;
       const harborAPIRequest = harborAPI({ store: this.$store });
 
       const versionP = harborAPIRequest.fetchHarborVersion();
@@ -388,7 +411,7 @@ export default {
           this.mode = 'edit';
           this.currentView = 'edit';
           this.errors = [this.t('harborConfig.validate.unableAccess')];
-
+          this.loading = false;
           return;
         }
         try {
@@ -400,24 +423,39 @@ export default {
           this.currentView = 'edit';
           this.errors = [err];
         }
-
+        this.loading = false;
         return;
       }
 
+      this.loading = false;
       this.mode = 'edit';
       this.currentView = 'edit';
     },
-    async removeHarborAccount(cb) {
+    clearForm() {
+      this.mode = 'edit';
+      this.currentView = 'edit';
+      this.harborConfig.url = '';
+      this.harborConfig.username = '';
+      this.harborConfig.password = '';
+      this.harborConfig.version = 'v1';
+    },
+    removeHarborAccount(cb) {
+      this.removeHarborConfigDialogVisible = true;
+    },
+    async removeHarborConfig() {
       this.loading = true;
       try {
         await this.harborAPIRequest.removeHarborAccount();
-        cb(true);
       } catch (err) {
         this.errors = [stringify(err)];
-        cb(false);
       }
       this.loading = false;
-      await this.initForm();
+      this.removeHarborConfigDialogVisible = false;
+      await this.clearForm();
+    },
+    closeRemoveDialog() {
+      this.removeHarborConfigDialogVisible = false;
+      this.loading = false;
     },
     async save(cb) {
       this.loading = true;
@@ -517,11 +555,16 @@ export default {
       this.currentView = 'changePwd';
       this.mode = 'view';
     },
-    showView() {
-      this.currentView = 'view';
-      this.mode = 'view';
+    async showView() {
+      await this.initForm();
+      this.changePwdForm.confirmPwd = ''
+      this.changePwdForm.newPwd = ''
+      this.changePwdForm.oldPwd = ''
     },
     showEditView() {
+      if (this.harborConfig?.password) {
+        this.harborConfig.password = ''
+      }
       this.currentView = 'edit';
       this.mode = 'edit';
     },
@@ -548,7 +591,7 @@ export default {
 
       try {
         await this.harborAPIRequest.updateHarborPwd(userId, { newPassword, oldPassword });
-        this.showView();
+        await this.showView();
         cb(true);
         this.loading = false;
       } catch (err) {
@@ -594,7 +637,7 @@ export default {
   .actions {
     display: flex;
     gap: 20px;
-    justify-content: center;
+    justify-content: right;
   }
   .header {
     display: grid;
