@@ -221,7 +221,7 @@ export default {
     action(action, record) {
       if (action.action === 'delete' && record.name) {
         this.$customConfrim({
-          type:           'Image Store',
+          type:           this.t('harborConfig.tab.store'),
           resources:      [record],
           propKey:        'name',
           store:          this.$store,
@@ -242,7 +242,7 @@ export default {
     },
     bulkRemove(record) {
       this.$customConfrim({
-        type:           'Image Store',
+        type:           this.t('harborConfig.tab.store'),
         resources:      record,
         propKey:        'name',
         store:          this.$store,

@@ -8,6 +8,7 @@
     </div>
     <Tab
       :tabs="tabs"
+      :initialTab="initialTab"
     >
       <template v-slot:summary>
         <Summary
@@ -109,6 +110,7 @@ export default {
       project:           {},
       currentUser:       {},
       harborSysntemInfo: {},
+      initialTab:        0,
     };
   },
   computed: {
@@ -212,6 +214,10 @@ export default {
           await new Promise((resolve) => setTimeout(resolve, 1000));
         }
       }
+      console.log(this?.$route?.params?.tabIndex);
+      if (this?.$route?.params?.tabIndex) {
+        this.initialTab = this.$route.params.tabIndex;
+      }
       this.loading = false;
     },
     async refresh() {
@@ -225,6 +231,10 @@ export default {
     .title {
       padding: 10px;
       font-size: 1.5em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 500px;
     }
   }
 </style>

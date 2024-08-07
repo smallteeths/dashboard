@@ -39,5 +39,49 @@ export default {
         return -1;
       }
     },
+    getRequestErrorMessage(error) {
+      if (typeof error === 'object') {
+        if (error?.message) {
+          const errorMessage = error.message;
+
+          return [errorMessage];
+        }
+        if (error?.errors?.length > 0) {
+          const errorMessage = error.errors[0].message;
+
+          return [errorMessage];
+        }
+
+        return ['unknown error'];
+      }
+      if (!error?.message) {
+        return [error.message];
+      }
+      if (typeof error === 'string') {
+        const jsonMatch = error.message.match(/{.*}/);
+
+        if (jsonMatch) {
+          const jsonString = jsonMatch[0];
+
+          try {
+            const errorObject = JSON.parse(jsonString);
+
+            if (errorObject.errors && errorObject.errors.length > 0) {
+              const errorMessage = errorObject.errors[0].message;
+
+              return [errorMessage];
+            }
+
+            return ['unknown error'];
+          } catch (e) {
+            return ['unknown error'];
+          }
+        } else {
+          return ['unknown error'];
+        }
+      }
+
+      return ['unknown error'];
+    }
   },
 };

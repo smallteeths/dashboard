@@ -225,6 +225,10 @@ export default {
     .title {
       padding: 10px;
       font-size: 1.5em;
+      max-width: 500px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   }
 </style>

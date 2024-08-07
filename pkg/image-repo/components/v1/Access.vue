@@ -35,7 +35,7 @@
   </div>
 </template>
 <script>
-import { Banner } from '@components/Banner';
+import Banner from '@pkg/image-repo/components/Banner';
 import access from '../../mixins/access.js';
 
 export default {

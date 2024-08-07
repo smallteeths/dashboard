@@ -8,7 +8,7 @@
         <t k="harborConfig.formTag.btn.add" />
       </button>
     </div>
-    <LabelsV1
+    <LabelsV2
       ref="labelRef"
       :subtractHeight="320"
       :api-request="apiRequest"
@@ -19,10 +19,10 @@
   </div>
 </template>
 <script>
-import LabelsV1 from '../LabelsV1.vue';
+import LabelsV2 from '../LabelsV2.vue';
 
 export default {
-  components: { LabelsV1 },
+  components: { LabelsV2 },
   props:      {
     apiRequest: {
       type:     Object,

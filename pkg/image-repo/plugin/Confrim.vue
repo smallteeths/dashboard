@@ -133,6 +133,9 @@ export default {
     }
     .dialog-body {
       padding: 10px;
+      span {
+        word-wrap: break-word;
+      }
     }
     .dialog-footer {
       display: flex;

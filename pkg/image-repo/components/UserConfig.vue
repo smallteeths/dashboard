@@ -226,7 +226,7 @@ import { LabeledInput } from '@components/Form/LabeledInput';
 import AsyncButton from '@shell/components/AsyncButton';
 import Password from '@shell/components/form/Password';
 import { harborAPI } from '../api/image-repo.js';
-import { Banner } from '@components/Banner';
+import Banner from '@pkg/image-repo/components/Banner';
 import { stringify } from '@shell/utils/error';
 import Schema from 'async-validator';
 import { mapGetters } from 'vuex';

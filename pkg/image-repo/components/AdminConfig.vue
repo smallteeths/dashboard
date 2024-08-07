@@ -200,6 +200,12 @@
         </div>
       </div>
       <LabelsV1
+        v-if="harborConfig.version === 'v1'"
+        ref="labelRef"
+        :api-request="harborAPIRequest"
+      />
+      <LabelsV2
+        v-else
         ref="labelRef"
         :api-request="harborAPIRequest"
       />
@@ -208,7 +214,7 @@
       :show="removeHarborConfigDialogVisible"
       :removeCallback="removeHarborConfig"
       :resources="[]"
-      type="HarborConfig"
+      :type="t('harborConfig.title')"
       @close="closeRemoveDialog"
     />
   </div>
@@ -222,9 +228,11 @@ import Password from '@shell/components/form/Password';
 import { RadioGroup } from '@components/Form/Radio';
 import { Checkbox } from '@components/Form/Checkbox';
 import { harborAPI } from '../api/image-repo.js';
-import { Banner } from '@components/Banner';
+import Banner from '@pkg/image-repo/components/Banner';
 import LabelsV1 from './LabelsV1.vue';
+import LabelsV2 from './LabelsV2.vue';
 import { stringify } from '@shell/utils/error';
+import util from '../mixins/util.js';
 import Schema from 'async-validator';
 import { mapGetters } from 'vuex';
 import PromptRemove from '@pkg/image-repo/components/PromptRemove.vue';
@@ -282,8 +290,11 @@ export default {
     Banner,
     Loading,
     LabelsV1,
+    LabelsV2,
     PromptRemove
   },
+
+  mixins:     [util],
 
   async fetch() {
     await this.initForm();
@@ -438,6 +449,9 @@ export default {
       this.harborConfig.username = '';
       this.harborConfig.password = '';
       this.harborConfig.version = 'v1';
+      this.changePwdForm.confirmPwd = ''
+      this.changePwdForm.newPwd = ''
+      this.changePwdForm.oldPwd = ''
     },
     removeHarborAccount(cb) {
       this.removeHarborConfigDialogVisible = true;
@@ -451,7 +465,7 @@ export default {
       }
       this.loading = false;
       this.removeHarborConfigDialogVisible = false;
-      await this.clearForm();
+      this.clearForm();
     },
     closeRemoveDialog() {
       this.removeHarborConfigDialogVisible = false;
@@ -487,10 +501,12 @@ export default {
         } catch (err) {
           const info = await this.testHarborVersion(url, ['v2.0']);
 
-          if (info.harbor_version) {
+          if (info?.harbor_version) {
             this.errors = [this.t('harborConfig.validate.harborInfoVersionError')];
+          } else if ( err && (err.status > 500 || err._status > 500)) {
+            this.errors = [this.t('harborConfig.validate.unableAccess')];
           } else {
-            this.errors = [stringify(err)];
+            this.errors = this.getRequestErrorMessage(err);
           }
           this.loading = false;
 
@@ -504,7 +520,7 @@ export default {
       } catch (err) {
         if (typeof err === 'string') {
           this.errors = [err];
-        } else if ( err && err.status > 500) {
+        } else if ( err && (err.status > 500 || err._status > 500)) {
           this.errors = [this.t('harborConfig.validate.unableAccess')];
         } else {
           this.errors = [this.t('harborConfig.validate.harborInfoError')];
@@ -556,10 +572,8 @@ export default {
       this.mode = 'view';
     },
     async showView() {
+      this.clearForm()
       await this.initForm();
-      this.changePwdForm.confirmPwd = ''
-      this.changePwdForm.newPwd = ''
-      this.changePwdForm.oldPwd = ''
     },
     showEditView() {
       if (this.harborConfig?.password) {
@@ -602,7 +616,7 @@ export default {
         } else if (status === 400) {
           this.errors = [this.t('harborConfig.validate.errorOldPwdSameAsNew')];
         } else {
-          this.errors = [stringify(err && err.body)];
+          this.errors = this.getRequestErrorMessage(err);
         }
         this.loading = false;
         cb(false);

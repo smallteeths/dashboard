@@ -103,7 +103,7 @@ import Dialog from '@pkg/image-repo/components/Dialog.vue';
 import SwitchCheckbox from '@pkg/image-repo/components/form/SwitchCheckbox.vue';
 import { LabeledInput } from '@components/Form/LabeledInput';
 import InputWithSelect from '@shell/components/form/InputWithSelect';
-import { Banner } from '@components/Banner';
+import Banner from '@pkg/image-repo/components/Banner';
 import util from '../mixins/util.js';
 import { mapGetters } from 'vuex';
 import { PRODUCT_NAME } from '../config/image-repo.js';
@@ -179,19 +179,19 @@ export default {
         size:             -1,
         count:            -1,
         storageLimit:     -1,
-        storageUnitValue: 'mb',
+        storageUnitValue: 'gb',
         checked:          false,
         operation:        [
           {
-            label: 'MB',
+            label: 'MiB',
             value: 'mb'
           },
           {
-            label: 'GB',
+            label: 'GiB',
             value: 'gb'
           },
           {
-            label: 'TB',
+            label: 'TiB',
             value: 'tb'
           }
         ]
@@ -338,7 +338,7 @@ export default {
     action(action, record) {
       if (action.action === 'delete' && record.project_id) {
         this.$customConfrim({
-          type:           'Image Management',
+          type:           this.t('harborConfig.image'),
           resources:      [record],
           propKey:        'name',
           store:          this.$store,
@@ -380,7 +380,7 @@ export default {
       });
 
       this.$customConfrim({
-        type:           'Image Management',
+        type:           this.t('harborConfig.image'),
         resources:      record,
         propKey:        'name',
         store:          this.$store,
@@ -405,11 +405,14 @@ export default {
     },
     async createProject() {
       this.createProjectLoading = true;
+      this.errors = [];
       try {
         await this.validate();
       } catch (err) {
         this.errors = err.errors.map((e) => e.message);
         this.createProjectLoading = false;
+
+        return;
       }
       const size = parseInt(this.form.size, 10) !== -1 ? this.changeToBytes(this.form.size, this.form.storageUnitValue) : -1;
       const data = {
@@ -427,11 +430,7 @@ export default {
         this.clearSelect();
         this.getProject();
       } catch (err) {
-        if (err?.message) {
-          this.errors = [err?.message];
-        } else {
-          this.errors = [this.t('harborConfig.validate.unknownError')];
-        }
+        this.errors = this.getRequestErrorMessage(err);
         this.createProjectLoading = false;
       }
     },
@@ -469,6 +468,7 @@ export default {
       this.form.count = -1;
       this.form.storageUnitValue = 'mb';
       this.form.checked = false;
+      this.errors = [];
     },
     clearSelect() {
       this.$refs.harborTableRef?.clearSearch();

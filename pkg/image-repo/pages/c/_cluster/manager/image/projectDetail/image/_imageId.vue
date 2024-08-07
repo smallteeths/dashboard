@@ -350,6 +350,13 @@ export default {
           const project = await this.harborAPIRequest.getProjectDetail(this.projectId);
 
           this.project = project;
+          this.backTo = {
+            name:   `${ PRODUCT_NAME }-c-cluster-manager-project-detail`,
+            params: {
+              id:       project.project_id,
+              tabIndex: 1,
+            }
+          };
           break;
         } catch (e) {
           retries++;
@@ -437,7 +444,7 @@ export default {
     },
     bulkRemove(record) {
       this.$customConfrim({
-        type:           'Artifacts',
+        type:           this.t('harborConfig.table.artifacts'),
         resources:      record,
         store:          this.$store,
         propKey:        'artifacts',
@@ -459,7 +466,7 @@ export default {
         return;
       case 'remove':
         this.$customConfrim({
-          type:           'Artifacts',
+          type:           this.t('harborConfig.table.artifacts'),
           resources:      [row],
           propKey:        'artifacts',
           store:          this.$store,

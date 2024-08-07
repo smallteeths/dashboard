@@ -6,7 +6,7 @@
     <div class="member-add">
       <button
         class="btn role-primary"
-        disabled="!isProjectAdmin"
+        :disabled="!isProjectAdmin"
         @click="showAddModal"
       >
         <t k="harborConfig.table.addUser" />
@@ -104,10 +104,11 @@ import HarborTable from '@pkg/image-repo/components/table/HarborTable.vue';
 import DropDownMenu from '@pkg/image-repo/components/DropDownMenu.vue';
 import Dialog from '@pkg/image-repo/components/Dialog.vue';
 import { LabeledInput } from '@components/Form/LabeledInput';
-import { Banner } from '@components/Banner';
+import Banner from '@pkg/image-repo/components/Banner';
 import util from '../../mixins/util.js';
 import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
 import Schema from 'async-validator';
+import access from '@pkg/image-repo/mixins/access.js';
 
 export default {
   components: {
@@ -118,7 +119,7 @@ export default {
     Banner,
     LabeledSelect
   },
-  mixins: [util],
+  mixins: [util, access],
   props:  {
     apiRequest: {
       type:     Object,
@@ -305,7 +306,7 @@ export default {
     bulkRemove(records) {
       if (records?.length > 0) {
         this.$customConfrim({
-          type:           'member',
+          type:           this.t('harborConfig.tab.member'),
           resources:      records,
           propKey:        'entity_name',
           store:          this.$store,
@@ -381,7 +382,7 @@ export default {
           }
         });
       } catch (err) {
-        this.errors = [JSON.stringify(err)];
+        this.errors = this.getRequestErrorMessage(err);
       }
       if (this.errors.length > 0 ) {
         return;
@@ -400,7 +401,7 @@ export default {
           this.addDialogVisible = false;
         });
       } catch (err) {
-        this.errors = [JSON.stringify(err)];
+        this.errors = this.getRequestErrorMessage(err);
       }
       this.saveUserLoading = false;
       await this.fetchMember();
