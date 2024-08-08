@@ -65,11 +65,14 @@
           v-if="errors.length > 0"
           class="actions"
         >
-          <AsyncButton
-            :action-label="t('imageRepoSection.userConfigPage.reSyncAccount')"
+          <button
+            type="button"
+            class="btn bg-primary"
             :disabled="loading"
             @click="reSyncAccount"
-          />
+          >
+            {{ t('imageRepoSection.userConfigPage.reSyncAccount') }}
+          </button>
         </div>
       </div>
       <div v-else-if="currentHarborAccountState === harborAccountState.sync && !methodNotSupported">
@@ -209,6 +212,14 @@
           />
         </div>
         <div class="actions">
+          <button
+            type="button"
+            class="btn bg-primary"
+            :disabled="loading"
+            @click="cancelChangePwd"
+          >
+            {{ t('generic.cancel') }}
+          </button>
           <AsyncButton
             :disabled="loading"
             @click="confirmChangePwd"
@@ -412,9 +423,19 @@ export default {
             this.harborAccount = harborAccount;
           }
         } catch (err) {
-          if (err?.status === 410 || err?.code === 'UNAUTHORIZED' || err?.message === 'unauthorized' ) {
-            this.requiredAuth = true;
+          console.log(err)
+          const isUnauthorizedError = (err) => {
+            return err?.status === 410 ||
+                  err?.code === 'UNAUTHORIZED' ||
+                  err?.code === '401' ||
+                  err?.message === 'unauthorized';
+          };
+
+          if (isUnauthorizedError(err)) {
+              this.requiredAuth = true;
           }
+
+          this.errors = [err?.message || this.t('harborConfig.validate.addressError')];
         }
       }
     }
@@ -436,7 +457,7 @@ export default {
         opt:  { url: '/v3/principals', force: true }
       });
     },
-    reSyncAccount() {
+    reSyncAccount(cb) {
       this.requiredAuth = true;
     },
     async syncAccount(cb) {
@@ -561,6 +582,9 @@ export default {
       this.changePwdForm.oldPassword = '';
       this.changePwdForm.confirmPassword = '';
       this.email = this.userAccount.email;
+    },
+    cancelChangePwd() {
+      this.changeHarborPwd = false;
     },
     validateNewPwd() {
       const pwdReg = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?!.*\s).{8,20}$/;

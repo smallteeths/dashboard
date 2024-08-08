@@ -216,10 +216,11 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
 
   const removeHarborAccount = async() => { // for store.getters['auth/isAdmin'] user
     checkBaseUrl();
-    const [serverSetting, authSetting, authModeSetting] = await Promise.all([
+    const [serverSetting, authSetting, authModeSetting, insecureSkipVerify] = await Promise.all([
       store.dispatch('management/find', { type: MANAGEMENT.SETTING, id: 'harbor-server-url' }),
       store.dispatch('management/find', { type: MANAGEMENT.SETTING, id: 'harbor-admin-auth' }),
-      store.dispatch('management/find', { type: MANAGEMENT.SETTING, id: 'harbor-auth-mode' })
+      store.dispatch('management/find', { type: MANAGEMENT.SETTING, id: 'harbor-auth-mode' }),
+      store.dispatch('management/find', { type: MANAGEMENT.SETTING, id: 'harbor-insecure-skip-verify' }),
     ]);
     let versionSetting;
 
@@ -235,8 +236,9 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
     authSetting.value = '';
     authModeSetting.value = '';
     versionSetting.value = '';
+    insecureSkipVerify.value = 'false';
 
-    return Promise.all([serverSetting.save(), authSetting.save(), authModeSetting.save(), versionSetting.save()]);
+    return Promise.all([serverSetting.save(), authSetting.save(), authModeSetting.save(), versionSetting.save(), insecureSkipVerify.save()]);
   };
 
   const syncHarborAccount = (params) => {

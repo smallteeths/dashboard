@@ -1,2 +1,4 @@
 BUILD_HOSTED_DIR=dist/release-2.8.6-cn-harbor-fix
 BUILD_HOSTED_LOCATION=release-2.8.6-cn-harbor-fix
+BUILD_HOSTED_DIR=dist/release-2.8.6-cn-harbor-fix2
+BUILD_HOSTED_LOCATION=release-2.8.6-cn-harbor-fix2

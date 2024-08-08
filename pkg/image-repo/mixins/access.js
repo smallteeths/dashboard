@@ -1,12 +1,9 @@
 export default {
   computed: {
     isSystemAdmin() {
-      console.log(this.currentUser);
-
       return this?.currentUser?.sysadmin_flag || this?.currentUser?.has_admin_role;
     },
     isProjectAdmin() {
-      console.log(this.project);
       if (this.isSystemAdmin) {
         return true;
       }

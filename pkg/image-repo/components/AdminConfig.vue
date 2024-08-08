@@ -452,6 +452,7 @@ export default {
       this.changePwdForm.confirmPwd = ''
       this.changePwdForm.newPwd = ''
       this.changePwdForm.oldPwd = ''
+      this.harborConfig.insecureSkipVerify = 'false'
     },
     removeHarborAccount(cb) {
       this.removeHarborConfigDialogVisible = true;
