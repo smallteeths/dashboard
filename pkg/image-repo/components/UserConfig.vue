@@ -423,19 +423,20 @@ export default {
             this.harborAccount = harborAccount;
           }
         } catch (err) {
-          console.log(err)
           const isUnauthorizedError = (err) => {
             return err?.status === 410 ||
+                  err?._status === 401 ||
                   err?.code === 'UNAUTHORIZED' ||
                   err?.code === '401' ||
                   err?.message === 'unauthorized';
           };
 
           if (isUnauthorizedError(err)) {
-              this.requiredAuth = true;
+            this.errors = [this.t('harborConfig.validate.accountUnavailable')]
+            return
           }
 
-          this.errors = [err?.message || this.t('harborConfig.validate.addressError')];
+          this.errors = [err?.message || this.t('harborConfig.validate.unknownError')];
         }
       }
     }
