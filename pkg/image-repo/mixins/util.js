@@ -29,6 +29,7 @@ export default {
     changeToBytes(size, unit) {
       const u = unit?.toUpperCase();
 
+      console.log(u);
       if (u === 'MB') {
         return size * 1024 * 1024;
       } else if (u === 'GB') {

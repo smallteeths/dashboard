@@ -22,6 +22,17 @@ function proxyMetaOpts(target) {
     onProxyReqWs,
     onError,
     onProxyRes,
+    pathRewrite(path, req) {
+      const matches = /^(\/meta\/[a-zA-Z]+\/)(https?:\/\/?([a-zA-Z.0-9]+)[^?]+)([?].*)?$/.exec(path);
+
+      if (matches) {
+        path = `${ matches[1] }${ encodeURIComponent(matches[2]) }${ matches[4] ? matches[4] : '' }`;
+        console.log('************');
+        console.log(path);
+      }
+
+      return path;
+    },
   };
 }
 

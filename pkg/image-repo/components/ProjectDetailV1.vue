@@ -11,6 +11,7 @@
     >
       <template v-slot:summary>
         <Summary
+          :currentUser="currentUser"
           :apiRequest="apiRequest"
           :project="project"
         />

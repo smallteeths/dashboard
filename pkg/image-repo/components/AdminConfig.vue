@@ -500,7 +500,8 @@ export default {
         try {
           sysntemInfo = await this.harborAPIRequest.fetchSystemInfoToTest(url, version);
         } catch (err) {
-          const info = await this.testHarborVersion(url, ['v2.0']);
+          let testVersion = version === 'v2.0' ? 'v1' : 'v2.0'
+          const info = await this.testHarborVersion(url, [testVersion]);
 
           if (info?.harbor_version) {
             this.errors = [this.t('harborConfig.validate.harborInfoVersionError')];

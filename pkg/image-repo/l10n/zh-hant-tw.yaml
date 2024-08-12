@@ -1,4 +1,7 @@
 harborConfig:
+  labelTableAction:
+    edit: 编辑
+    delete: 删除
   access:
     subtitle: 對郵箱和訪問密碼進行設定
     title: Harbor 訪問配置

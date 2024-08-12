@@ -17,6 +17,7 @@
       search
       paging
       hideSelect
+      :enableFrontendPagination="true"
       :loading="loading"
       :rows="rows"
       :columns="columns"
@@ -44,52 +45,6 @@
             <div>
               Copy to Clipboard
             </div>
-          </template>
-        </v-popover>
-      </template>
-      <template #tags="{row}">
-        <v-popover
-          trigger="click"
-          placement="top"
-        >
-          <slot name="default">
-            <div>
-              <a
-                className="guideLink"
-                style="cursor: pointer"
-              >
-                {{ row.tags }}
-              </a>
-            </div>
-          </slot>
-          <template slot="popover">
-            <table
-              class="sortable-table"
-            >
-              <thead>
-                <tr style="border-bottom: 1px solid #fff">
-                  <td>
-                    {{ t('harborConfig.table.tags') }}
-                  </td>
-                  <td>
-                    {{ t('harborConfig.table.pullTime') }}
-                  </td>
-                  <td>
-                    {{ t('harborConfig.table.pushTime') }}
-                  </td>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="tt in row.tagsTooltipModel"
-                  :key="tt.name"
-                >
-                  <td>{{ tt.name }}</td>
-                  <td>{{ tt.pullTime }}</td>
-                  <td>{{ tt.pushTime }}</td>
-                </tr>
-              </tbody>
-            </table>
           </template>
         </v-popover>
       </template>
@@ -395,11 +350,7 @@ export default {
       }
       try {
         this.loading = true;
-        const imageTags = await this.harborAPIRequest.fetchImageTags(this.project.name, this.imageName, {
-          page_size: this.page_size,
-          page:      this.page,
-          ...params,
-        });
+        const imageTags = await this.harborAPIRequest.fetchTags(this?.project?.project_id, `${ this?.project?.name }/${ this.imageName }`);
 
         this.totalCount = this.getTotalCount(imageTags) || 0;
         this.imageTags = imageTags;
@@ -433,7 +384,7 @@ export default {
     async removeTabs(record) {
       this.loading = true;
       try {
-        await this.harborAPIRequest.removeTagsV2(this.project.name, this.imageName, record);
+        await this.harborAPIRequest.removeTags(`${ this?.project?.name }/${ this.imageName }`, record);
       } catch (e) {
         this.loading = false;
       }
@@ -450,12 +401,12 @@ export default {
     },
     bulkRemove(record) {
       this.$customConfrim({
-        type:           this.t('harborConfig.table.artifacts'),
+        type:           this.t('harborConfig.table.tag'),
         resources:      record,
         store:          this.$store,
-        propKey:        'artifacts',
+        propKey:        'name',
         removeCallback: async() => {
-          await this.removeTabs(record.map((item) => item.digest));
+          await this.removeTabs(record.map((item) => item.name));
         }
       });
     },
@@ -472,12 +423,12 @@ export default {
         return;
       case 'remove':
         this.$customConfrim({
-          type:           this.t('harborConfig.table.artifacts'),
+          type:           this.t('harborConfig.table.tag'),
           resources:      [row],
-          propKey:        'artifacts',
+          propKey:        'name',
           store:          this.$store,
           removeCallback: async() => {
-            await this.removeTabs([row].map((item) => item.digest));
+            await this.removeTabs([row].map((item) => item.name));
           }
         });
       }
@@ -490,15 +441,27 @@ export default {
       this.selectedRows = record;
     },
     sortChange({ field, order }) {
-      if (order) {
-        if (order === 'desc') {
-          field = `-${ field }`;
-        }
-        this.sortValue = field;
-      } else {
-        this.sortValue = '';
+      if (!order) {
+        this.fetchImage();
+
+        return;
       }
-      this.fetchImage();
+      const key = field;
+
+      this.imageTags.sort((a, b) => {
+        const fieldA = a[key];
+        const fieldB = b[key];
+
+        let comparison = 0;
+
+        if (fieldA > fieldB) {
+          comparison = 1;
+        } else if (fieldA < fieldB) {
+          comparison = -1;
+        }
+
+        return order === 'asc' ? comparison : -comparison;
+      });
     },
     sizeTransform(tagSize) {
       const size = Number.parseInt(tagSize);
@@ -548,15 +511,6 @@ export default {
         };
       }) : null;
     },
-    tagsTooltipModelFunc(tags) {
-      return tags && tags.length > 0 ? tags?.map((item) => {
-        return {
-          name:     item.name,
-          pullTime: item.pull_time !== this.time ? this.liveUpdate(item.pull_time) : '',
-          pushTime: item.push_time !== this.time ? this.liveUpdate(item.push_time) : '',
-        };
-      }) : [];
-    },
     copy(value) {
       const input = document.createElement('input');
 
@@ -576,7 +530,7 @@ export default {
           this.currentRow?.labels
             .filter((item) => !this.selectedLabels.some((ele) => ele.id === item.id))
             .map(async(item) => {
-              await this.harborAPIRequest.removeTagLabelsV2(this.project.name, this.imageName, this.currentRow.digest, [item.id]);
+              await this.harborAPIRequest.removeTagLabels(`${ this.project.name }/${ this.imageName }`, this?.currentRow?.name, [item.id]);
             })
         );
       }
@@ -585,7 +539,7 @@ export default {
         this.selectedLabels
           .filter((item) => !this.currentRow?.labels?.some((ele) => ele.id === item.id))
           .map(async(item) => {
-            await this.harborAPIRequest.addTagLabelsV2(this.project.name, this.imageName, this.currentRow.digest, [item]);
+            await this.harborAPIRequest.addTagLabels(`${ this.project.name }/${ this.imageName }`, this?.currentRow?.name, [item.id]);
           })
       );
 
@@ -626,8 +580,14 @@ export default {
 
       return [
         {
-          field: 'artifacts',
-          title: this.t('harborConfig.table.artifacts'),
+          field:    'name',
+          sortable: true,
+          title:    this.t('harborConfig.table.imageTag'),
+        },
+        {
+          field:    'size',
+          sortable: true,
+          title:    this.t('harborConfig.table.size'),
         },
         {
           field: 'pullCommand',
@@ -635,31 +595,23 @@ export default {
           title: this.t('harborConfig.table.pullCommand'),
         },
         {
-          field:  'formartTags',
-          slot:   true,
-          title:  this.t('harborConfig.table.tags'),
-          search: 'tags',
+          field:    'author',
+          sortable: true,
+          title:    this.t('harborConfig.table.author'),
         },
         {
-          field: 'size',
-          title: this.t('harborConfig.table.size'),
+          field:    'created',
+          sortable: true,
+          title:    this.t('generic.created'),
+        },
+        {
+          field: 'docker_version',
+          title: this.t('harborConfig.table.dockerVersion'),
         },
         {
           field: 'labels',
           slot:  true,
-          title: this.t('harborConfig.table.labels'),
-        },
-        {
-          field: 'annotations',
-          title: this.t('harborConfig.table.annotations'),
-        },
-        {
-          field: 'pushTime',
-          title: this.t('harborConfig.table.pushTime'),
-        },
-        {
-          field: 'pullTime',
-          title: this.t('harborConfig.table.pullTime'),
+          title: this.t('harborConfig.table.label'),
         },
         {
           field:  'action',
@@ -673,27 +625,15 @@ export default {
       const deepCopiedImageTags = cloneDeep(this.imageTags);
 
       return deepCopiedImageTags?.map((tag) => {
-        const digest = tag.digest ? tag.digest.slice(0, 15) : '';
         const pullCommand = this.pullCommand(tag.digest);
-        const tagsTooltipModel = this.tagsTooltipModelFunc(tag.tags);
         const formartLables = this.formatLabels(tag.labels);
-        let formartTags = '';
 
-        tag.pull_time === this.time ? tag.pull_time = '' : tag.pull_time = this.liveUpdate(tag.pull_time);
-        tag.push_time === this.time ? tag.push_time = '' : tag.push_time = this.liveUpdate(tag.push_time);
-        if (tag?.tags?.length > 0) {
-          formartTags = `${ tag.tags[0].name } (${ tag.tags.length })`;
-        }
+        tag.created = tag.created ? this.liveUpdate(tag.created) : '';
         tag.size = this.sizeTransform(tag.size);
 
         return {
           pullCommand,
-          artifacts: digest,
-          tagsTooltipModel,
-          pushTime:  tag.push_time,
-          pullTime:  tag.pull_time,
           formartLables,
-          formartTags,
           ...tag,
         };
       });

@@ -1,6 +1,13 @@
 import { ROWS_PER_PAGE } from '@shell/store/prefs';
 
 export default {
+  props: {
+    page: {
+      type:     Number,
+      default:  1,
+      required: true,
+    },
+  },
   computed: {
     indexFrom() {
       return Math.max(0, 1 + this.perPage * (this.page - 1));
@@ -45,7 +52,7 @@ export default {
   data() {
     const perPage = this.getPerPage();
 
-    return { page: 1, perPage };
+    return { perPage };
   },
 
   watch: {
@@ -83,7 +90,6 @@ export default {
         return;
       }
 
-      this.page = num;
       this.$emit('page-change', this.page);
     },
 

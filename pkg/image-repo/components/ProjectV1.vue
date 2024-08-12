@@ -58,17 +58,19 @@
       <div>
         <LabeledInput
           v-model.trim="form.name"
+          class="mb-10"
           :label="t('harborConfig.form.projectName.label')"
           required
         />
         <LabeledInput
+          v-if="isSystemAdmin"
           v-model.number="form.count"
-          class="mt-10 mb-10"
+          class="mb-10"
           type="number"
           :label="t('harborConfig.form.count.label')"
           required
         />
-        <div class="harbor-project-unit">
+        <div v-if="isSystemAdmin">
           <InputWithSelect
             :text-value="form.size"
             :select-before-text="false"
@@ -76,7 +78,7 @@
             :select-value="form.storageUnitValue"
             :text-label="t('harborConfig.form.storage.label')"
             type="number"
-            @input="form.size = $event?.text"
+            @input="inputWithSelectChange($event)"
           />
         </div>
 
@@ -105,6 +107,7 @@ import { LabeledInput } from '@components/Form/LabeledInput';
 import InputWithSelect from '@shell/components/form/InputWithSelect';
 import Banner from '@pkg/image-repo/components/Banner';
 import util from '../mixins/util.js';
+import access from '@pkg/image-repo/mixins/access.js';
 import { mapGetters } from 'vuex';
 import { PRODUCT_NAME } from '../config/image-repo.js';
 import Schema from 'async-validator';
@@ -118,7 +121,7 @@ export default {
     InputWithSelect,
     SwitchCheckbox
   },
-  mixins: [util],
+  mixins: [util, access],
   props:  {
     apiRequest: {
       type:     Object,
@@ -151,7 +154,7 @@ export default {
           validator: (rule, value, callback, source, options) => {
             const errors = [];
 
-            if (!nameReg.test(value)) {
+            if (!nameReg.test(value) && value !== '') {
               errors.push(this.t('harborConfig.validate.projectNameFormatError'));
             }
 
@@ -252,17 +255,20 @@ export default {
           slot:     true,
         },
         {
-          field: 'access',
-          title: this.t('harborConfig.table.level'),
+          field:    'access',
+          sortable: true,
+          title:    this.t('harborConfig.table.level'),
         },
         {
-          field: 'role',
-          title: this.t('harborConfig.table.role'),
+          field:    'role',
+          sortable: true,
+          title:    this.t('harborConfig.table.role'),
         },
         {
-          field: 'repo_count',
-          title: this.t('harborConfig.table.count'),
-          width: 200,
+          field:    'repo_count',
+          sortable: true,
+          title:    this.t('harborConfig.table.count'),
+          width:    200,
         },
         {
           field:    'creation',
@@ -335,6 +341,10 @@ export default {
     selectChange(record) {
       this.selectedRows = record;
     },
+    inputWithSelectChange({ text, selected }) {
+      this.form.storageUnitValue = selected;
+      this.form.size = text;
+    },
     action(action, record) {
       if (action.action === 'delete' && record.project_id) {
         this.$customConfrim({
@@ -361,18 +371,34 @@ export default {
       this.getProject();
     },
     sortChange({ field, order }) {
-      if (order) {
-        if (field === 'creation') {
-          field = 'creation_time';
-        }
-        if (order === 'desc') {
-          field = `-${ field }`;
-        }
-        this.sortValue = field;
-      } else {
-        this.sortValue = '';
+      if (!order) {
+        this.getProject();
+
+        return;
       }
-      this.getProject();
+      let key = field;
+
+      if (field === 'creation') {
+        key = 'creation_time';
+      }
+      this.projects.sort((a, b) => {
+        let fieldA = a[key];
+        let fieldB = b[key];
+
+        if (field === 'access') {
+          fieldA = a?.metadata?.public;
+          fieldB = b?.metadata?.public;
+        }
+        let comparison = 0;
+
+        if (fieldA > fieldB) {
+          comparison = 1;
+        } else if (fieldA < fieldB) {
+          comparison = -1;
+        }
+
+        return order === 'asc' ? comparison : -comparison;
+      });
     },
     bulkRemove(record) {
       const projectIDs = record.map((project) => {
@@ -499,9 +525,6 @@ export default {
     display: flex;
     justify-content: left;
     align-items: center;
-  }
-  .harbor-project-unit {
-    margin: 10px 0px;
   }
   .acc-label {
     color: #4a4b52;

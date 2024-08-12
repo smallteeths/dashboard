@@ -58,10 +58,14 @@
       <div>
         <LabeledInput
           v-model.trim="form.name"
+          class="mb-10"
           :label="t('harborConfig.form.projectName.label')"
           required
         />
-        <div class="harbor-project-unit">
+        <div
+          v-if="isSystemAdmin"
+          class="mb-10"
+        >
           <InputWithSelect
             :text-value="form.size"
             :select-before-text="false"
@@ -69,7 +73,7 @@
             :select-value="form.storageUnitValue"
             :text-label="t('harborConfig.form.storage.label')"
             type="number"
-            @input="form.size = $event?.text"
+            @input="inputWithSelectChange($event)"
           />
         </div>
         <SwitchCheckbox
@@ -97,6 +101,7 @@ import { LabeledInput } from '@components/Form/LabeledInput';
 import InputWithSelect from '@shell/components/form/InputWithSelect';
 import Banner from '@pkg/image-repo/components/Banner';
 import util from '../mixins/util.js';
+import access from '@pkg/image-repo/mixins/access.js';
 import { mapGetters } from 'vuex';
 import { PRODUCT_NAME } from '../config/image-repo.js';
 import Schema from 'async-validator';
@@ -110,7 +115,7 @@ export default {
     InputWithSelect,
     SwitchCheckbox
   },
-  mixins: [util],
+  mixins: [util, access],
   props:  {
     apiRequest: {
       type:     Object,
@@ -143,7 +148,7 @@ export default {
           validator: (rule, value, callback, source, options) => {
             const errors = [];
 
-            if (!nameReg.test(value)) {
+            if (!nameReg.test(value) && value !== '') {
               errors.push(this.t('harborConfig.validate.projectNameFormatError'));
             }
 
@@ -325,6 +330,10 @@ export default {
     selectChange(record) {
       this.selectedRows = record;
     },
+    inputWithSelectChange({ text, selected }) {
+      this.form.storageUnitValue = selected;
+      this.form.size = text;
+    },
     action(action, record) {
       if (action.action === 'delete' && record.project_id) {
         this.$customConfrim({
@@ -487,9 +496,6 @@ export default {
     display: flex;
     justify-content: left;
     align-items: center;
-  }
-  .harbor-project-unit {
-    margin: 10px 0px;
   }
   .acc-label {
     color: #4a4b52;

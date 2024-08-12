@@ -397,10 +397,10 @@ export default {
           action: {
             options: [
               {
-                label: 'Edit',
+                label: this.t('harborConfig.labelTableAction.edit'),
                 value: 'edit'
               }, {
-                label: 'Detete',
+                label: this.t('harborConfig.labelTableAction.delete'),
                 value: 'delete'
               }
             ],
