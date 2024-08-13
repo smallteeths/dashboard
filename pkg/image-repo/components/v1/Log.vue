@@ -8,8 +8,9 @@
       search
       paging
       hideSelect
+      :page="page"
       :loading="loading"
-      :rows="logs"
+      :rows="rows"
       :columns="columns"
       :totalCount="totalCount"
       :subtractHeight="320"
@@ -20,6 +21,7 @@
   </div>
 </template>
 <script>
+import { mapGetters } from 'vuex';
 import HarborTable from '@pkg/image-repo/components/table/HarborTable.vue';
 import util from '../../mixins/util.js';
 
@@ -56,6 +58,7 @@ export default {
     }
   },
   computed: {
+    ...mapGetters({ t: 'i18n/t' }),
     columns() {
       return [
         {
@@ -65,23 +68,31 @@ export default {
           width:  160,
         },
         {
-          field: 'resource',
+          field: 'repo_name',
           title: this.t('harborConfig.table.imagename'),
         },
         {
-          field: 'resource_type',
-          title: this.t('harborConfig.table.type'),
+          field: 'repo_tag',
+          title: this.t('harborConfig.table.tag'),
         },
         {
           field: 'operation',
           title: this.t('harborConfig.table.operation'),
         },
         {
-          field: 'op_time',
+          field: 'creation',
           title: this.t('harborConfig.table.timestamp'),
         },
       ];
-    }
+    },
+    rows() {
+      return this?.logs?.map((d) => {
+        return {
+          ...d,
+          creation: this.liveUpdate(d.op_time),
+        };
+      });
+    },
   },
   methods: {
     async fetchLogs() {

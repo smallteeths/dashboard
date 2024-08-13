@@ -17,6 +17,7 @@
       search
       paging
       hideSelect
+      :page="page"
       :loading="loading"
       :rows="rows"
       :columns="columns"
@@ -332,7 +333,8 @@ export default {
           if (
             parseInt(this.project?.current_user_role_id, 10) === 1 ||
             this?.currentUser?.sysadmin_flag ||
-            parseInt(this?.project?.current_user_role_id, 10) === 4
+            parseInt(this?.project?.current_user_role_id, 10) === 4 ||
+            parseInt(this?.project?.current_user_role_id, 10) === 2
           ) {
             await this.fetchLabels();
           }
@@ -535,7 +537,8 @@ export default {
             border:          '1px solid rgb(161, 161, 161)',
             borderRadius:    '2px',
             backgroundColor: color,
-            color:           font && font.textColor
+            color:           font && font.textColor,
+            marginRight:     '2px',
           },
           iconCssStyle: {
             marginRight: '10px',
@@ -699,7 +702,9 @@ export default {
       });
     },
     disableActionButton() {
-      return parseInt(this?.project?.current_user_role_id, 10) !== 1 && !this?.currentUser?.sysadmin_flag;
+      return parseInt(this?.project?.current_user_role_id, 10) !== 1 &&
+        !this?.currentUser?.sysadmin_flag &&
+        parseInt(this?.project?.current_user_role_id, 10) !== 4;
     }
   }
 };

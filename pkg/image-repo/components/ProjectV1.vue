@@ -24,6 +24,7 @@
       rowSelection
       search
       paging
+      :page="page"
       :loading="loading"
       :rows="rows"
       :columns="columns"
@@ -463,6 +464,7 @@ export default {
     getRole(project) {
       let roleText;
 
+      console.log(project);
       switch (project.current_user_role_id) {
       case 0:
         roleText = '';

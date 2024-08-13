@@ -17,6 +17,7 @@
       search
       paging
       hideSelect
+      :page="page"
       :enableFrontendPagination="true"
       :loading="loading"
       :rows="rows"
@@ -287,7 +288,8 @@ export default {
           if (
             parseInt(this.project?.current_user_role_id, 10) === 1 ||
             this?.currentUser?.sysadmin_flag ||
-            parseInt(this?.project?.current_user_role_id, 10) === 4
+            parseInt(this?.project?.current_user_role_id, 10) === 4 ||
+            parseInt(this?.project?.current_user_role_id, 10) === 2
           ) {
             await this.fetchLabels();
           }
@@ -498,7 +500,8 @@ export default {
             border:          '1px solid rgb(161, 161, 161)',
             borderRadius:    '2px',
             backgroundColor: color,
-            color:           font && font.textColor
+            color:           font && font.textColor,
+            marginRight:     '2px',
           },
           iconCssStyle: {
             marginRight: '10px',
@@ -581,6 +584,7 @@ export default {
       return [
         {
           field:    'name',
+          search:   'name',
           sortable: true,
           title:    this.t('harborConfig.table.imageTag'),
         },
@@ -639,7 +643,9 @@ export default {
       });
     },
     disableActionButton() {
-      return parseInt(this?.project?.current_user_role_id, 10) !== 1 && !this?.currentUser?.sysadmin_flag;
+      return parseInt(this?.project?.current_user_role_id, 10) !== 1 &&
+        !this?.currentUser?.sysadmin_flag &&
+        parseInt(this?.project?.current_user_role_id, 10) !== 4;
     }
   }
 };

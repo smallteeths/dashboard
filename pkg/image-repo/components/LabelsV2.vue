@@ -4,6 +4,8 @@
       search
       rowSelection
       paging
+      hideSelect
+      :page="page"
       :loading="loading"
       :rows="rows"
       :columns="columns"

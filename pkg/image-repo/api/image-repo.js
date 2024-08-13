@@ -376,7 +376,7 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
       redirectUnauthorized: false,
     });
 
-    return factoryNewPromise(res, true);
+    return factoryNewPromise(res);
   };
 
   const fetchRepo = (param) => {

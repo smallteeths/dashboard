@@ -24,6 +24,7 @@
       rowSelection
       search
       paging
+      :page="page"
       :loading="loading"
       :rows="rows"
       :columns="columns"

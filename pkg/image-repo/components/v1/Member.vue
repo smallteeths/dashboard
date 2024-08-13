@@ -16,8 +16,9 @@
       ref="harborTableRef"
       rowSelection
       search
-      paging
       hideSelect
+      enableFrontendPagination
+      :page="page"
       :loading="loading"
       :rows="rows"
       :columns="columns"

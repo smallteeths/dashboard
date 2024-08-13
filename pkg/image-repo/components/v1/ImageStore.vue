@@ -8,6 +8,7 @@
       rowSelection
       search
       paging
+      :page="page"
       :loading="loading"
       :rows="rows"
       :columns="columns"
@@ -187,7 +188,7 @@ export default {
       if (this.project?.project_id) {
         if (this.inputFilter?.length > 0 ) {
           this.inputFilter.forEach((item) => {
-            params.q = encodeURIComponent(`${ item.field }%3D~${ item.value }`);
+            params.q = encodeURIComponent(`${ item.value }`);
           });
         }
         if (this.sortValue !== '') {

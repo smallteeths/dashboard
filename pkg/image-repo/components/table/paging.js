@@ -21,7 +21,11 @@ export default {
 
     totalPages() {
       if (!this.enableFrontendPagination) {
-        return Math.ceil(this.totalCount / this.perPage );
+        if (this.totalCount) {
+          return Math.ceil(this.totalCount / this.perPage );
+        }
+
+        return 1;
       }
 
       return Math.ceil(this.filteredRows.length / this.perPage );
@@ -34,7 +38,7 @@ export default {
         count: this.enableFrontendPagination ? this.filteredRows.length : this.totalCount,
         pages: this.totalPages,
         from:  this.indexFrom,
-        to:    this.indexTo,
+        to:    this.paging ? this.indexTo : this.filteredRows.length,
       };
 
       return this.$store.getters['i18n/t'](this.pagingLabel, opt);
@@ -90,7 +94,7 @@ export default {
         return;
       }
 
-      this.$emit('page-change', this.page);
+      this.$emit('page-change', num);
     },
 
     goToPage(which) {

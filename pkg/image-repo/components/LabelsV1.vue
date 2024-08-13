@@ -4,6 +4,8 @@
       search
       rowSelection
       paging
+      hideSelect
+      :page="page"
       :loading="loading"
       :rows="rows"
       :columns="columns"
@@ -13,6 +15,7 @@
       :sortConfig="{remote: false}"
       :subtractHeight="subtractHeight"
       :autoHide="autoHide"
+      @page-change="pageChange"
       @action="action"
       @input-search="inputSearch"
       @bulk-remove="bulkRemove"
@@ -333,6 +336,7 @@ export default {
       totalCount:        0,
       newForm:           {},
       editForm:          {},
+      page:              1,
     };
   },
   computed: {
@@ -451,7 +455,10 @@ export default {
       };
       this.addDialogVisible = true;
     },
-
+    pageChange(page) {
+      console.log(page);
+      this.page = page;
+    },
     async action(action, record) {
       if (action.value === 'delete' && record.id) {
         this.$customConfrim({
