@@ -65,11 +65,14 @@
           v-if="errors.length > 0"
           class="actions"
         >
-          <AsyncButton
-            :action-label="t('imageRepoSection.userConfigPage.reSyncAccount')"
+          <button
+            type="button"
+            class="btn bg-primary"
             :disabled="loading"
             @click="reSyncAccount"
-          />
+          >
+            {{ t('imageRepoSection.userConfigPage.reSyncAccount') }}
+          </button>
         </div>
       </div>
       <div v-else-if="currentHarborAccountState === harborAccountState.sync && !methodNotSupported">
@@ -209,6 +212,14 @@
           />
         </div>
         <div class="actions">
+          <button
+            type="button"
+            class="btn bg-primary"
+            :disabled="loading"
+            @click="cancelChangePwd"
+          >
+            {{ t('generic.cancel') }}
+          </button>
           <AsyncButton
             :disabled="loading"
             @click="confirmChangePwd"
@@ -226,7 +237,7 @@ import { LabeledInput } from '@components/Form/LabeledInput';
 import AsyncButton from '@shell/components/AsyncButton';
 import Password from '@shell/components/form/Password';
 import { harborAPI } from '../api/image-repo.js';
-import { Banner } from '@components/Banner';
+import Banner from '@pkg/image-repo/components/Banner';
 import { stringify } from '@shell/utils/error';
 import Schema from 'async-validator';
 import { mapGetters } from 'vuex';
@@ -412,9 +423,20 @@ export default {
             this.harborAccount = harborAccount;
           }
         } catch (err) {
-          if (err?.status === 410 || err?.code === 'UNAUTHORIZED' || err?.message === 'unauthorized' ) {
-            this.requiredAuth = true;
+          const isUnauthorizedError = (err) => {
+            return err?.status === 410 ||
+                  err?._status === 401 ||
+                  err?.code === 'UNAUTHORIZED' ||
+                  err?.code === '401' ||
+                  err?.message === 'unauthorized';
+          };
+
+          if (isUnauthorizedError(err)) {
+            this.errors = [this.t('harborConfig.validate.accountUnavailable')]
+            return
           }
+
+          this.errors = [err?.message || this.t('harborConfig.validate.unknownError')];
         }
       }
     }
@@ -436,7 +458,7 @@ export default {
         opt:  { url: '/v3/principals', force: true }
       });
     },
-    reSyncAccount() {
+    reSyncAccount(cb) {
       this.requiredAuth = true;
     },
     async syncAccount(cb) {
@@ -561,6 +583,9 @@ export default {
       this.changePwdForm.oldPassword = '';
       this.changePwdForm.confirmPassword = '';
       this.email = this.userAccount.email;
+    },
+    cancelChangePwd() {
+      this.changeHarborPwd = false;
     },
     validateNewPwd() {
       const pwdReg = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?!.*\s).{8,20}$/;

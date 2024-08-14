@@ -55,7 +55,7 @@ export default {
       return options.length !== undefined ? options.length : Object.keys(options).length > 0;
     },
     execute(action, event, args) {
-      if (action.disabled) return;
+      if (action.disabled || (action?.disableActions && action?.disableActions(args))) return;
       this.$emit('custom-event', {
         ...action,
         event,
@@ -95,7 +95,7 @@ export default {
             :disabled="opt.disabled || (opt?.disableActions && opt?.disableActions(currentRow))"
             :class="{divider: opt.divider}"
             :data-testid="componentTestid + '-' + i + '-item'"
-            @click="execute(opt, $event)"
+            @click="execute(opt, $event, currentRow)"
           >
             <IconOrSvg
               v-if="opt.icon || opt.svg"

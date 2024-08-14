@@ -24,6 +24,7 @@
       rowSelection
       search
       paging
+      :page="page"
       :loading="loading"
       :rows="rows"
       :columns="columns"
@@ -58,17 +59,19 @@
       <div>
         <LabeledInput
           v-model.trim="form.name"
+          class="mb-10"
           :label="t('harborConfig.form.projectName.label')"
           required
         />
         <LabeledInput
+          v-if="isSystemAdmin"
           v-model.number="form.count"
-          class="mt-10 mb-10"
+          class="mb-10"
           type="number"
           :label="t('harborConfig.form.count.label')"
           required
         />
-        <div class="harbor-project-unit">
+        <div v-if="isSystemAdmin">
           <InputWithSelect
             :text-value="form.size"
             :select-before-text="false"
@@ -76,7 +79,7 @@
             :select-value="form.storageUnitValue"
             :text-label="t('harborConfig.form.storage.label')"
             type="number"
-            @input="form.size = $event?.text"
+            @input="inputWithSelectChange($event)"
           />
         </div>
 
@@ -103,8 +106,9 @@ import Dialog from '@pkg/image-repo/components/Dialog.vue';
 import SwitchCheckbox from '@pkg/image-repo/components/form/SwitchCheckbox.vue';
 import { LabeledInput } from '@components/Form/LabeledInput';
 import InputWithSelect from '@shell/components/form/InputWithSelect';
-import { Banner } from '@components/Banner';
+import Banner from '@pkg/image-repo/components/Banner';
 import util from '../mixins/util.js';
+import access from '@pkg/image-repo/mixins/access.js';
 import { mapGetters } from 'vuex';
 import { PRODUCT_NAME } from '../config/image-repo.js';
 import Schema from 'async-validator';
@@ -118,7 +122,7 @@ export default {
     InputWithSelect,
     SwitchCheckbox
   },
-  mixins: [util],
+  mixins: [util, access],
   props:  {
     apiRequest: {
       type:     Object,
@@ -151,7 +155,7 @@ export default {
           validator: (rule, value, callback, source, options) => {
             const errors = [];
 
-            if (!nameReg.test(value)) {
+            if (!nameReg.test(value) && value !== '') {
               errors.push(this.t('harborConfig.validate.projectNameFormatError'));
             }
 
@@ -179,19 +183,19 @@ export default {
         size:             -1,
         count:            -1,
         storageLimit:     -1,
-        storageUnitValue: 'mb',
+        storageUnitValue: 'gb',
         checked:          false,
         operation:        [
           {
-            label: 'MB',
+            label: 'MiB',
             value: 'mb'
           },
           {
-            label: 'GB',
+            label: 'GiB',
             value: 'gb'
           },
           {
-            label: 'TB',
+            label: 'TiB',
             value: 'tb'
           }
         ]
@@ -252,17 +256,20 @@ export default {
           slot:     true,
         },
         {
-          field: 'access',
-          title: this.t('harborConfig.table.level'),
+          field:    'access',
+          sortable: true,
+          title:    this.t('harborConfig.table.level'),
         },
         {
-          field: 'role',
-          title: this.t('harborConfig.table.role'),
+          field:    'role',
+          sortable: true,
+          title:    this.t('harborConfig.table.role'),
         },
         {
-          field: 'repo_count',
-          title: this.t('harborConfig.table.count'),
-          width: 200,
+          field:    'repo_count',
+          sortable: true,
+          title:    this.t('harborConfig.table.count'),
+          width:    200,
         },
         {
           field:    'creation',
@@ -280,7 +287,7 @@ export default {
                 label:          this.t('action.remove'),
                 icon:           'icon-trash',
                 disableActions: (record) => {
-                  return parseInt(record?.current_user_role_id, 10) !== 1 && !this?.currentUser?.sysadmin_flag;
+                  return parseInt(record?.current_user_role_id, 10) !== 1 && !this?.currentUser?.sysadmin_flag && !this?.currentUser?.has_admin_role;
                 }
               },
             ],
@@ -291,7 +298,7 @@ export default {
     disableActionButton() {
       return this.selectedRows?.some((item) => {
         return parseInt(item?.current_user_role_id, 10) !== 1;
-      }) && !this?.currentUser?.sysadmin_flag;
+      }) && !this?.currentUser?.sysadmin_flag && !this?.currentUser?.has_admin_role;
     },
   },
   methods: {
@@ -321,7 +328,7 @@ export default {
         });
 
         this.totalCount = this.getTotalCount(projects) || 0;
-        this.projects = projects;
+        this.projects = projects.length ? projects : [];
         this.loading = false;
       } catch (err) {
         this.loading = false;
@@ -335,10 +342,14 @@ export default {
     selectChange(record) {
       this.selectedRows = record;
     },
+    inputWithSelectChange({ text, selected }) {
+      this.form.storageUnitValue = selected;
+      this.form.size = text;
+    },
     action(action, record) {
       if (action.action === 'delete' && record.project_id) {
         this.$customConfrim({
-          type:           'Image Management',
+          type:           this.t('harborConfig.image'),
           resources:      [record],
           propKey:        'name',
           store:          this.$store,
@@ -361,18 +372,37 @@ export default {
       this.getProject();
     },
     sortChange({ field, order }) {
-      if (order) {
-        if (field === 'creation') {
-          field = 'creation_time';
-        }
-        if (order === 'desc') {
-          field = `-${ field }`;
-        }
-        this.sortValue = field;
-      } else {
-        this.sortValue = '';
+      if (!order) {
+        this.getProject();
+
+        return;
       }
-      this.getProject();
+      let key = field;
+
+      if (field === 'creation') {
+        key = 'creation_time';
+      }
+      if (field === 'role') {
+        key = 'current_user_role_id';
+      }
+      this.projects.sort((a, b) => {
+        let fieldA = a[key];
+        let fieldB = b[key];
+
+        if (field === 'access') {
+          fieldA = a?.metadata?.public;
+          fieldB = b?.metadata?.public;
+        }
+        let comparison = 0;
+
+        if (fieldA > fieldB) {
+          comparison = 1;
+        } else if (fieldA < fieldB) {
+          comparison = -1;
+        }
+
+        return order === 'asc' ? comparison : -comparison;
+      });
     },
     bulkRemove(record) {
       const projectIDs = record.map((project) => {
@@ -380,7 +410,7 @@ export default {
       });
 
       this.$customConfrim({
-        type:           'Image Management',
+        type:           this.t('harborConfig.image'),
         resources:      record,
         propKey:        'name',
         store:          this.$store,
@@ -405,11 +435,14 @@ export default {
     },
     async createProject() {
       this.createProjectLoading = true;
+      this.errors = [];
       try {
         await this.validate();
       } catch (err) {
         this.errors = err.errors.map((e) => e.message);
         this.createProjectLoading = false;
+
+        return;
       }
       const size = parseInt(this.form.size, 10) !== -1 ? this.changeToBytes(this.form.size, this.form.storageUnitValue) : -1;
       const data = {
@@ -427,11 +460,7 @@ export default {
         this.clearSelect();
         this.getProject();
       } catch (err) {
-        if (err?.message) {
-          this.errors = [err?.message];
-        } else {
-          this.errors = [this.t('harborConfig.validate.unknownError')];
-        }
+        this.errors = this.getRequestErrorMessage(err);
         this.createProjectLoading = false;
       }
     },
@@ -469,6 +498,7 @@ export default {
       this.form.count = -1;
       this.form.storageUnitValue = 'mb';
       this.form.checked = false;
+      this.errors = [];
     },
     clearSelect() {
       this.$refs.harborTableRef?.clearSearch();
@@ -499,9 +529,6 @@ export default {
     display: flex;
     justify-content: left;
     align-items: center;
-  }
-  .harbor-project-unit {
-    margin: 10px 0px;
   }
   .acc-label {
     color: #4a4b52;

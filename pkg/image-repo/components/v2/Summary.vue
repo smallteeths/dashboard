@@ -21,7 +21,10 @@
           {{ count }}
         </span>
       </div>
-      <div class="quotas">
+      <div
+        v-if="(isSystemAdmin || isMember)"
+        class="quotas"
+      >
         <div class="title">
           <span>{{ t('harborConfig.summary.projectQuota') }}</span>
         </div>
@@ -42,7 +45,10 @@
         </div>
       </div>
     </div>
-    <div class="summary-member">
+    <div
+      v-if="(isSystemAdmin || isMember) && !isLimitedGuest"
+      class="summary-member"
+    >
       <ul
         class="member-list"
         style="list-style-type: none"
@@ -74,6 +80,7 @@
 
 <script>
 import ProgressBarMulti from '@shell/components/ProgressBarMulti';
+import access from '@pkg/image-repo/mixins/access.js';
 
 export default {
   components: { ProgressBarMulti },
@@ -86,7 +93,12 @@ export default {
       type:     Object,
       required: true
     },
+    currentUser: {
+      type:     Object,
+      required: true
+    },
   },
+  mixins: [access],
   data() {
     return {
       value:       0,

@@ -35,7 +35,7 @@
   </div>
 </template>
 <script>
-import { Banner } from '@components/Banner';
+import Banner from '@pkg/image-repo/components/Banner';
 import access from '../../mixins/access.js';
 
 export default {
@@ -75,7 +75,7 @@ export default {
   },
   computed: {
     disableActionButton() {
-      return parseInt(this?.project?.current_user_role_id, 10) !== 1 && !this?.currentUser?.sysadmin_flag;
+      return parseInt(this?.project?.current_user_role_id, 10) !== 1 && !this?.currentUser?.sysadmin_flag && !this?.currentUser?.has_admin_role;
     }
   },
   methods: {

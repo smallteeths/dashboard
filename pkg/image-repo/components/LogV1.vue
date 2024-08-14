@@ -13,15 +13,29 @@
       v-else
       search
       paging
+      hideSelect
+      :page="page"
       :loading="loading"
       :rows="rows"
       :columns="columns"
       :total-count="totalCount"
-      :default-select-option="filterKeyOptions"
+      :defaultSelectOption="defaultSelectOption"
       :enableFrontendPagination="false"
+      :subtractHeight="262"
       @input-search="inputSearch"
       @page-change="pageChange"
     >
+      <select
+        v-model="extraSearchFields"
+      >
+        <option
+          v-for="t in defaultSelectOption"
+          :key="t.label"
+          :value="t.value"
+        >
+          {{ t.label }}
+        </option>
+      </select>
       <template #name="{row}">
         <LabelItem
           :color="row.color"
@@ -54,48 +68,50 @@ export default {
       type:    Number,
       default: -1
     }
-
   },
 
   data() {
     return {
-      errors:      [],
-      loading:     false,
-      data:        [],
-      inputFilter: [],
-      sort:        '',
-      totalCount:  0,
-      columns:     [
-        {
-          field:  'username',
-          title:  'Username',
-          search: 'username'
-        },
-        {
-          field:  'repo_name',
-          title:  'Repository Name',
-          serach: 'repository'
-        },
-        {
-          field:  'repo_tag',
-          title:  'Tags',
-          serach: 'tag'
-        },
-        {
-          field:  'operation',
-          title:  'Operation',
-          serach: 'operation'
-        },
-        {
-          field: 'op_time',
-          title: 'Timestamp',
-        },
-      ],
+      errors:            [],
+      loading:           false,
+      data:              [],
+      inputFilter:       [],
+      sort:              '',
+      totalCount:        0,
+      page:              1,
+      page_size:         10,
+      extraSearchFields: 'username',
       harborServerError: false,
     };
   },
   computed: {
     ...mapGetters({ t: 'i18n/t' }),
+    columns() {
+      return [
+        {
+          field:  'username',
+          title:  this.t('harborConfig.table.username'),
+          search: 'username',
+          width:  160,
+        },
+        {
+          field: 'repo_name',
+          title: this.t('harborConfig.table.imagename'),
+        },
+        {
+          field: 'repo_tag',
+          title: this.t('harborConfig.table.tag'),
+        },
+        {
+          field: 'operation',
+          title: this.t('harborConfig.table.operation'),
+        },
+        {
+          field: 'op_time',
+          title: this.t('harborConfig.table.timestamp'),
+        },
+      ];
+    },
     params() {
       const filter = this.inputFilter.reduce((t, c) => {
         t[c.field] = c.value;
@@ -105,7 +121,7 @@ export default {
 
       return filter;
     },
-    filterKeyOptions() {
+    defaultSelectOption() {
       return [
         {
           label: this.t('harborConfig.form.search.username'),
@@ -145,6 +161,7 @@ export default {
   methods: {
     pageChange(record) {
       this.page = record;
+      this.loadData();
     },
     fetchLogs(p) {
       if (this.projectId > -1) {
@@ -162,10 +179,14 @@ export default {
       this.loading = true;
       this.errors = [];
       try {
-        const data = await this.fetchLogs(this.params);
+        const data = await this.fetchLogs({
+          page_size: this.page_size,
+          page:      this.page,
+          ...this.params
+        });
 
         this.totalCount = this.getTotalCount(data);
-        this.data = data;
+        this.data = data?.length ? data : [];
         this.harborServerError = false;
       } catch (err) {
         this.errors = [err];
@@ -177,9 +198,12 @@ export default {
       this.resetParams();
       this.loadData();
     },
-    inputSearch(f) {
+    inputSearch(record) {
       this.page = 1;
-      this.inputFilter = f;
+      if (record.length > 0) {
+        record[0].field = this.extraSearchFields;
+      }
+      this.inputFilter = record;
     },
   }
 };

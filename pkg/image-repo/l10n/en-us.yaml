@@ -1,4 +1,7 @@
 harborConfig:
+  labelTableAction:
+    edit: Edit
+    delete: Delete
   access:
     subtitle: Set up the Harbor visiting address and account.
     title: Harbor Access Configuration
