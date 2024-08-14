@@ -12,20 +12,32 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
     }
   };
 
-  const factoryNewPromise = async(promise) => {
+  const factoryNewPromise = async(promise, interceptRequest) => {
     try {
       const resp = await promise;
 
       return resp;
     } catch (error) {
-      if (error?.errors?.length > 0 && error.errors[0]) {
-        const errMessage = error.errors[0];
+      // Uniformly intercept 500 errors
+      if (interceptRequest) {
+        // v1 error message
+        if (error?.message) {
+          const errMessage = error.message;
 
-        store.dispatch('growl/warning', {
-          title:   errMessage?.code,
-          message: errMessage?.message
-        }, { root: true });
-        throw errMessage;
+          store.dispatch('growl/warning', {
+            title:   error?.code,
+            message: errMessage
+          }, { root: true });
+        }
+        // v2 error message
+        if (error?.errors?.length > 0 && error.errors[0]) {
+          const errMessage = error.errors[0];
+
+          store.dispatch('growl/warning', {
+            title:   errMessage?.code,
+            message: errMessage?.message
+          }, { root: true });
+        }
       }
       throw error;
     }
@@ -139,7 +151,7 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
         redirectUnauthorized: false,
       });
 
-      return factoryNewPromise(res);
+      return factoryNewPromise(res, true);
     });
 
     return Promise.all(promises);
@@ -162,23 +174,27 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
   const fetchProject = (id) => {
     checkBaseUrl();
 
-    return store.dispatch('management/request', {
+    const res = store.dispatch('management/request', {
       url:                  `${ baseUrl }/projects/${ id }`,
       headers:              { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
       method:               'GET',
       redirectUnauthorized: false,
     });
+
+    return factoryNewPromise(res, true);
   };
 
   const fetchAdminConfig = () => {
     checkBaseUrl();
 
-    return store.dispatch('management/request', {
+    const res = store.dispatch('management/request', {
       url:                  `${ baseUrl }/configurations`,
       headers:              { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
       method:               'GET',
       redirectUnauthorized: false,
     });
+
+    return factoryNewPromise(res);
   };
 
   const fetchHarborUserInfo = () => {
@@ -200,10 +216,11 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
 
   const removeHarborAccount = async() => { // for store.getters['auth/isAdmin'] user
     checkBaseUrl();
-    const [serverSetting, authSetting, authModeSetting] = await Promise.all([
+    const [serverSetting, authSetting, authModeSetting, insecureSkipVerify] = await Promise.all([
       store.dispatch('management/find', { type: MANAGEMENT.SETTING, id: 'harbor-server-url' }),
       store.dispatch('management/find', { type: MANAGEMENT.SETTING, id: 'harbor-admin-auth' }),
-      store.dispatch('management/find', { type: MANAGEMENT.SETTING, id: 'harbor-auth-mode' })
+      store.dispatch('management/find', { type: MANAGEMENT.SETTING, id: 'harbor-auth-mode' }),
+      store.dispatch('management/find', { type: MANAGEMENT.SETTING, id: 'harbor-insecure-skip-verify' }),
     ]);
     let versionSetting;
 
@@ -219,8 +236,9 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
     authSetting.value = '';
     authModeSetting.value = '';
     versionSetting.value = '';
+    insecureSkipVerify.value = 'false';
 
-    return Promise.all([serverSetting.save(), authSetting.save(), authModeSetting.save(), versionSetting.save()]);
+    return Promise.all([serverSetting.save(), authSetting.save(), authModeSetting.save(), versionSetting.save(), insecureSkipVerify.save()]);
   };
 
   const syncHarborAccount = (params) => {
@@ -243,25 +261,29 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
   const testEmailServer = (config) => {
     checkBaseUrl();
 
-    return store.dispatch('management/request', {
+    const res = store.dispatch('management/request', {
       url:                  `${ baseUrl }/email/ping`,
       headers:              { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
       method:               'POST',
       data:                 config,
       redirectUnauthorized: false,
     });
+
+    return factoryNewPromise(res);
   };
 
   const updateAdminConfig = (config) => {
     checkBaseUrl();
 
-    return store.dispatch('management/request', {
+    const res = store.dispatch('management/request', {
       url:                  `${ baseUrl }/configurations`,
       headers:              { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
       method:               'PUT',
       data:                 config,
       redirectUnauthorized: false,
     });
+
+    return factoryNewPromise(res);
   };
 
   const fetchLabels = (param) => {
@@ -274,41 +296,49 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
       redirectUnauthorized: false,
     });
 
-    return factoryNewPromise(res);
+    return factoryNewPromise(res, true);
   };
 
   const updateLabel = (label) => {
     checkBaseUrl();
 
-    return store.dispatch('management/request', {
+    const res = store.dispatch('management/request', {
       url:                  `${ baseUrl }/labels/${ label.id }`,
       headers:              { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
       method:               'PUT',
       data:                 label,
       redirectUnauthorized: false,
     });
+
+    return factoryNewPromise(res);
   };
 
   const createLabel = (label) => {
     checkBaseUrl();
 
-    return store.dispatch('management/request', {
+    const res = store.dispatch('management/request', {
       url:                  `${ baseUrl }/labels`,
       headers:              { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
       method:               'POST',
       data:                 label,
       redirectUnauthorized: false,
     });
+
+    return factoryNewPromise(res);
   };
 
   const removeLabels = (labelIds) => {
     checkBaseUrl();
-    const promises = labelIds.map((id) => store.dispatch('management/request', {
-      url:                  `${ baseUrl }/labels/${ id }`,
-      headers:              { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
-      method:               'DELETE',
-      redirectUnauthorized: false,
-    }));
+    const promises = labelIds.map((id) => {
+      const res = store.dispatch('management/request', {
+        url:                  `${ baseUrl }/labels/${ id }`,
+        headers:              { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
+        method:               'DELETE',
+        redirectUnauthorized: false,
+      });
+
+      return factoryNewPromise(res, true);
+    });
 
     return Promise.all(promises);
   };
@@ -353,12 +383,14 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
     checkBaseUrl();
     const p = Object.entries(param).map((item) => `${ item[0] }=${ item[1] }`).join('&');
 
-    return store.dispatch('management/request', {
+    const res = store.dispatch('management/request', {
       url:                  `${ baseUrl }/repositories?${ p }`,
       headers:              { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
       method:               'GET',
       redirectUnauthorized: false,
     });
+
+    return factoryNewPromise(res, true);
   };
 
   const deleteRepos = (names) => {
@@ -374,7 +406,7 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
           redirectUnauthorized: false,
         });
 
-        return factoryNewPromise(res);
+        return factoryNewPromise(res, true);
       }
 
       return new Promise();
@@ -383,25 +415,47 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
     return Promise.all(promises);
   };
 
+  const deleteReposV1 = (names) => {
+    checkBaseUrl();
+    const promises = names.map((n) => {
+      const res = store.dispatch('management/request', {
+        url:                  `${ baseUrl }/repositories/${ n }`,
+        headers:              { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
+        method:               'DELETE',
+        redirectUnauthorized: false,
+      });
+
+      return factoryNewPromise(res, true);
+    });
+
+    return Promise.all(promises);
+  };
+
   const fetchTags = (projectId, name) => {
     checkBaseUrl();
 
-    return store.dispatch('management/request', {
+    const res = store.dispatch('management/request', {
       url:                  `${ baseUrl }/repositories/${ name }/tags?detail=${ projectId }`,
       headers:              { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
       method:               'GET',
       redirectUnauthorized: false,
     });
+
+    return factoryNewPromise(res, true);
   };
 
   const removeTags = (repo, tags) => {
     checkBaseUrl();
-    const promises = tags.map((tag) => store.dispatch('management/request', {
-      url:                  `${ baseUrl }/repositories/${ repo }/tags/${ tag }`,
-      headers:              { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
-      method:               'DELETE',
-      redirectUnauthorized: false,
-    }));
+    const promises = tags.map((tag) => {
+      const res = store.dispatch('management/request', {
+        url:                  `${ baseUrl }/repositories/${ repo }/tags/${ tag }`,
+        headers:              { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
+        method:               'DELETE',
+        redirectUnauthorized: false,
+      });
+
+      return factoryNewPromise(res, true);
+    });
 
     return Promise.all(promises);
   };
@@ -418,7 +472,7 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
         redirectUnauthorized: false,
       });
 
-      return factoryNewPromise(res);
+      return factoryNewPromise(res, true);
     });
 
     return Promise.all(promises);
@@ -438,12 +492,16 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
 
   const removeTagLabels = (repo, tag, labelIds) => {
     checkBaseUrl();
-    const promises = labelIds.map((labelId) => store.dispatch('management/request', {
-      url:                  `${ baseUrl }/repositories/${ repo }/tags/${ tag }/labels/${ labelId }`,
-      headers:              { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
-      method:               'DELETE',
-      redirectUnauthorized: false,
-    }));
+    const promises = labelIds.map((labelId) => {
+      const res = store.dispatch('management/request', {
+        url:                  `${ baseUrl }/repositories/${ repo }/tags/${ tag }/labels/${ labelId }`,
+        headers:              { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
+        method:               'DELETE',
+        redirectUnauthorized: false,
+      });
+
+      return factoryNewPromise(res, true);
+    });
 
     return Promise.all(promises);
   };
@@ -477,7 +535,7 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
         redirectUnauthorized: false,
       });
 
-      return factoryNewPromise(res);
+      return factoryNewPromise(res, true);
     });
 
     return Promise.all(promises);
@@ -500,24 +558,28 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
   const fetchProjectsAndImages = (q) => {
     checkBaseUrl();
 
-    return store.dispatch('management/request', {
+    const res = store.dispatch('management/request', {
       url:                  `${ baseUrl }/search?q=${ encodeURIComponent(q) }`,
       headers:              { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
       method:               'GET',
       redirectUnauthorized: false,
     });
+
+    return factoryNewPromise(res, true);
   };
 
   const addProjectUser = (params, id) => {
     checkBaseUrl();
 
-    return store.dispatch('management/request', {
+    const res = store.dispatch('management/request', {
       url:                  `${ baseUrl }/projects/${ id }/members`,
       headers:              { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
       method:               'POST',
       data:                 params,
       redirectUnauthorized: false,
     });
+
+    return factoryNewPromise(res);
   };
 
   const projectChangeRole = (id, memeberIds, params) => {
@@ -547,7 +609,7 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
         redirectUnauthorized: false,
       });
 
-      return factoryNewPromise(res);
+      return factoryNewPromise(res, true);
     });
 
     return Promise.all(promises);
@@ -586,12 +648,14 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
       }
     }).join('&');
 
-    return store.dispatch('management/request', {
+    const res = store.dispatch('management/request', {
       headers:              { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
       url:                  `${ baseUrl }/audit-logs?${ params }`,
       method:               'GET',
       redirectUnauthorized: false,
     });
+
+    return factoryNewPromise(res, true);
   };
 
   const fetchProjectSummary = (projectId) => {
@@ -604,7 +668,7 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
       redirectUnauthorized: false,
     });
 
-    return factoryNewPromise(res);
+    return factoryNewPromise(res, true);
   };
 
   const fetchProjectImages = (param) => {
@@ -618,7 +682,7 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
       redirectUnauthorized: false,
     });
 
-    return factoryNewPromise(res);
+    return factoryNewPromise(res, true);
   };
 
   const fetchProjectImagesV2 = (projectName, param) => {
@@ -632,31 +696,35 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
       redirectUnauthorized: false,
     });
 
-    return factoryNewPromise(res);
+    return factoryNewPromise(res, true);
   };
 
   const fetchProjectMembersList = (projectId, p) => {
     checkBaseUrl();
     const params = Object.entries(p).map((p) => `${ p[0] }=${ p[1] }`).join('&');
 
-    return store.dispatch('management/request', {
+    const res = store.dispatch('management/request', {
       url:                  `${ baseUrl }/projects/${ projectId }/members?${ params }`,
       headers:              { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
       method:               'GET',
       redirectUnauthorized: false,
     });
+
+    return factoryNewPromise(res, true);
   };
 
   const fetchProjectLogs = (projectId, p) => {
     checkBaseUrl();
     const params = Object.entries(p).map((p) => `${ p[0] }=${ p[1] }`).join('&');
 
-    return store.dispatch('management/request', {
+    const res = store.dispatch('management/request', {
       url:                  `${ baseUrl }/projects/${ projectId }/logs?${ params }`,
       headers:              { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
       method:               'GET',
       redirectUnauthorized: false,
     });
+
+    return factoryNewPromise(res, true);
   };
 
   const fetchProjectLogsV2 = (projectId, p) => {
@@ -675,7 +743,7 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
       redirectUnauthorized: false,
     });
 
-    return factoryNewPromise(res);
+    return factoryNewPromise(res, true);
   };
 
   const updateHarborPwd = (userId, params) => {
@@ -686,12 +754,14 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
       oldPassword: disabledEncryption?.value === 'true' ? params.oldPassword : AESEncrypt(params.oldPassword.trim())
     };
 
-    return store.dispatch('management/request', {
+    const res = store.dispatch('management/request', {
       url:     `/v1/management.cattle.io.users/${ userId }?action=updateharborauth`,
       headers: { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
       method:  'POST',
       data
     });
+
+    return factoryNewPromise(res);
   };
   const fetchCurrentHarborUser = () => {
     checkBaseUrl();
@@ -703,7 +773,7 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
       redirectUnauthorized: false,
     });
 
-    return factoryNewPromise(res);
+    return factoryNewPromise(res, true);
   };
 
   const fetchProjectMembers = (projectId, entityName) => {
@@ -716,7 +786,7 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
       redirectUnauthorized: false,
     });
 
-    return factoryNewPromise(res);
+    return factoryNewPromise(res, true);
   };
 
   const fetchImageTags = (projectName, repositoryName, p) => {
@@ -737,7 +807,7 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
       redirectUnauthorized: false,
     });
 
-    return factoryNewPromise(res);
+    return factoryNewPromise(res, true);
   };
 
   const syncHarborUser = async(data) => {
@@ -747,22 +817,26 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
       return;
     }
 
-    return store.dispatch('management/request', {
+    const res = store.dispatch('management/request', {
       url:    `/v1/management.cattle.io.users?action=syncharboruser`,
       method: 'POST',
       data:   { ...data },
     });
+
+    return factoryNewPromise(res);
   };
 
   const fetchSystemInfoToTest = (url, version) => {
     const baseUrl = `/meta/harbor/${ url.replace('//', '/').replace(/\/+$/, '') }/api${ version === 'v1' || !version ? '' : `/${ version }` }`;
 
-    return store.dispatch('management/request', {
+    const res = store.dispatch('management/request', {
       url:                  `${ baseUrl }/systeminfo`,
       headers:              { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
       method:               'GET',
       redirectUnauthorized: false,
     });
+
+    return factoryNewPromise(res);
   };
 
   const saveHarborAccount = async(url, u, p, v, systeminfo = {}) => {
@@ -870,6 +944,7 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
   request.getBaseUrl = getBaseUrl;
   request.updateBaseUrl = updateBaseUrl;
   request.getHarborServerIp = getHarborServerIp;
+  request.deleteReposV1 = deleteReposV1;
 
   return request;
 };

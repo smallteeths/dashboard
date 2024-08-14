@@ -73,6 +73,9 @@ export default {
   IMG {
     margin-right: 3px
   }
+  span {
+    word-wrap:break-word;
+  }
 }
 
 .active {

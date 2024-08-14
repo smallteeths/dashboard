@@ -11,14 +11,14 @@
       :columns="columns"
       :total-count="totalCount"
       :default-select-option="filterKeyOptions"
-      :enableFrontendPagination="true"
+      :enableFrontendPagination="false"
       :sortConfig="{remote: false}"
       :subtractHeight="subtractHeight"
       :autoHide="autoHide"
-      @page-change="pageChange"
       @action="action"
       @input-search="inputSearch"
       @bulk-remove="bulkRemove"
+      @page-change="pageChange"
     >
       <template #name="{row}">
         <LabelItem
@@ -337,6 +337,7 @@ export default {
       newForm:           {},
       editForm:          {},
       page:              1,
+      page_size:         10,
     };
   },
   computed: {
@@ -349,7 +350,9 @@ export default {
       }, {});
 
       const p = {
-        scope: this.scope,
+        scope:     this.scope,
+        page_size: this.page_size,
+        page:      this.page,
         ...filter,
       };
 
@@ -423,11 +426,9 @@ export default {
     }
   },
   methods: {
-    resetParams() {
-      this.page = 1;
-      this.page_size = 10;
-      this.sort = '';
-      this.inputFilter = [];
+    pageChange(record) {
+      this.page = record;
+      this.loadData();
     },
     async loadData() {
       this.loading = true;
@@ -438,12 +439,11 @@ export default {
         this.totalCount = this.getTotalCount(data);
         this.data = data?.length ? data : [];
       } catch (err) {
-        this.errors = [err];
+        this.errors = this.getRequestErrorMessage(err);
       }
       this.loading = false;
     },
     reloadData() {
-      this.resetParams();
       this.loadData();
     },
     showAddModal() {
@@ -455,9 +455,7 @@ export default {
       };
       this.addDialogVisible = true;
     },
-    pageChange(page) {
-      this.page = page;
-    },
+
     async action(action, record) {
       if (action.value === 'delete' && record.id) {
         this.$customConfrim({

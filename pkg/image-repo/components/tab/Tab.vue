@@ -40,6 +40,11 @@ export default {
   data() {
     return { activeTab: this.initialTab };
   },
+  watch: {
+    initialTab(index) {
+      this.activeTab = index;
+    }
+  },
   methods: {
     changeTab(index) {
       this.activeTab = index;

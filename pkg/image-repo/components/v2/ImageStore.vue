@@ -8,6 +8,7 @@
       rowSelection
       search
       paging
+      :page="page"
       :loading="loading"
       :rows="rows"
       :columns="columns"
@@ -137,7 +138,7 @@ export default {
                 label:          this.t('action.remove'),
                 icon:           'icon-trash',
                 disableActions: () => {
-                  return parseInt(this.project?.current_user_role_id, 10) !== 1 && !this?.currentUser?.sysadmin_flag;
+                  return parseInt(this?.project?.current_user_role_id, 10) !== 4 && parseInt(this?.project?.current_user_role_id, 10) !== 1 && !this?.currentUser?.sysadmin_flag && !this?.currentUser?.has_admin_role;
                 }
               },
             ],
@@ -169,7 +170,7 @@ export default {
       return `docker push ${ this.apiRequest.getHarborServerIp() }/${ this.project?.name }/IMAGE[:TAG]`;
     },
     disableActionButton() {
-      return parseInt(this?.project?.current_user_role_id, 10) !== 1 && !this?.currentUser?.sysadmin_flag;
+      return parseInt(this?.project?.current_user_role_id, 10) !== 4 && parseInt(this?.project?.current_user_role_id, 10) !== 1 && !this?.currentUser?.sysadmin_flag && !this?.currentUser?.has_admin_role;
     },
   },
   watch: {
@@ -201,7 +202,7 @@ export default {
             ...params
           });
 
-          this.images = images;
+          this.images = images?.length ? images : [];
           this.totalCount = this.getTotalCount(images) || 0;
           this.loading = false;
         } catch (e) {
@@ -209,19 +210,19 @@ export default {
         }
       }
     },
-    removeImages(names) {
+    async removeImages(names) {
       this.loading = true;
-      this.apiRequest.deleteRepos(names).then(() => {
-        this.fetchImage();
-      }).catch(() => {
-        this.loading = false;
-        this.fetchImage();
-      });
+      try {
+        await this.apiRequest.deleteRepos(names);
+        await this.fetchImage();
+      } catch (e) {
+        await this.fetchImage();
+      }
     },
     action(action, record) {
       if (action.action === 'delete' && record.name) {
         this.$customConfrim({
-          type:           'Image Store',
+          type:           this.t('harborConfig.tab.store'),
           resources:      [record],
           propKey:        'name',
           store:          this.$store,
@@ -242,7 +243,7 @@ export default {
     },
     bulkRemove(record) {
       this.$customConfrim({
-        type:           'Image Store',
+        type:           this.t('harborConfig.tab.store'),
         resources:      record,
         propKey:        'name',
         store:          this.$store,

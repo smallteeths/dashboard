@@ -8,6 +8,7 @@
       rowSelection
       search
       paging
+      :page="page"
       :loading="loading"
       :rows="rows"
       :columns="columns"
@@ -119,8 +120,8 @@ export default {
           slot:     true,
         },
         {
-          field: 'artifact_count',
-          title: this.t('harborConfig.table.artifacts'),
+          field: 'tags_count',
+          title: this.t('harborConfig.table.tagCount'),
         },
         {
           field: 'pull_count',
@@ -137,7 +138,7 @@ export default {
                 label:          this.t('action.remove'),
                 icon:           'icon-trash',
                 disableActions: () => {
-                  return parseInt(this.project?.current_user_role_id, 10) !== 1 && !this?.currentUser?.sysadmin_flag;
+                  return parseInt(this?.project?.current_user_role_id, 10) !== 4 && parseInt(this.project?.current_user_role_id, 10) !== 1 && !this?.currentUser?.sysadmin_flag && !this?.currentUser?.has_admin_role;
                 }
               },
             ],
@@ -148,7 +149,7 @@ export default {
     rows() {
       return this.images.map((image) => {
         const to = {
-          name:   `${ PRODUCT_NAME }-c-cluster-manager-project-detail-image`,
+          name:   `${ PRODUCT_NAME }-c-cluster-manager-project-detail-image-v1`,
           params: {
             id:        this.project.project_id,
             roleId:    this.project.current_user_role_id,
@@ -169,7 +170,10 @@ export default {
       return `docker push ${ this.apiRequest.getHarborServerIp() }/${ this.project?.name }/IMAGE[:TAG]`;
     },
     disableActionButton() {
-      return parseInt(this?.project?.current_user_role_id, 10) !== 1 && !this?.currentUser?.sysadmin_flag;
+      return parseInt(this?.project?.current_user_role_id, 10) !== 4 &&
+        parseInt(this?.project?.current_user_role_id, 10) !== 1 &&
+        !this?.currentUser?.sysadmin_flag &&
+        !this?.currentUser?.has_admin_role;
     },
   },
   watch: {
@@ -187,7 +191,7 @@ export default {
       if (this.project?.project_id) {
         if (this.inputFilter?.length > 0 ) {
           this.inputFilter.forEach((item) => {
-            params.q = encodeURIComponent(`${ item.field }%3D~${ item.value }`);
+            params.q = encodeURIComponent(`${ item.value }`);
           });
         }
         if (this.sortValue !== '') {
@@ -201,7 +205,7 @@ export default {
             ...params
           });
 
-          this.images = images;
+          this.images = images?.length ? images : [];
           this.totalCount = this.getTotalCount(images) || 0;
           this.loading = false;
         } catch (e) {
@@ -209,19 +213,19 @@ export default {
         }
       }
     },
-    removeImages(names) {
+    async removeImages(names) {
       this.loading = true;
-      this.apiRequest.deleteRepos(names).then(() => {
-        this.fetchImage();
-      }).catch(() => {
-        this.loading = false;
-        this.fetchImage();
-      });
+      try {
+        await this.apiRequest.deleteReposV1(names);
+        await this.fetchImage();
+      } catch (e) {
+        await this.fetchImage();
+      }
     },
     action(action, record) {
       if (action.action === 'delete' && record.name) {
         this.$customConfrim({
-          type:           'Image Store',
+          type:           this.t('harborConfig.tab.store'),
           resources:      [record],
           propKey:        'name',
           store:          this.$store,
@@ -242,7 +246,7 @@ export default {
     },
     bulkRemove(record) {
       this.$customConfrim({
-        type:           'Image Store',
+        type:           this.t('harborConfig.tab.store'),
         resources:      record,
         propKey:        'name',
         store:          this.$store,

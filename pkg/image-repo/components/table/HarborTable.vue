@@ -371,6 +371,14 @@ export default {
           <i class="icon icon-chevron-end" />
         </button>
       </div>
+      <div
+        v-else
+        class="paging"
+      >
+        <span>
+          {{ pagingDisplay }}
+        </span>
+      </div>
     </div>
   </div>
 </template>

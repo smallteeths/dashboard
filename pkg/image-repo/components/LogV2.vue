@@ -18,6 +18,7 @@
       hideSelect
       search
       paging
+      :page="page"
       :defaultSelectOption="defaultSelectOption"
       :loading="loading"
       :rows="logs"
@@ -148,7 +149,7 @@ export default {
           ...params
         });
 
-        this.logs = logs;
+        this.logs = logs?.length ? logs : [];
         this.totalCount = this.getTotalCount(logs) || 0;
         this.loading = false;
         this.harborServerError = false;
@@ -161,7 +162,7 @@ export default {
       this.page = record;
       this.fetchLogs();
     },
-    inputSearch(record, selectChange) {
+    inputSearch(record) {
       this.page = 1;
       if (record.length > 0) {
         record[0].field = this.extraSearchFields;

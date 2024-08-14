@@ -1,6 +1,13 @@
 import { ROWS_PER_PAGE } from '@shell/store/prefs';
 
 export default {
+  props: {
+    page: {
+      type:     Number,
+      default:  1,
+      required: true,
+    },
+  },
   computed: {
     indexFrom() {
       return Math.max(0, 1 + this.perPage * (this.page - 1));
@@ -14,7 +21,11 @@ export default {
 
     totalPages() {
       if (!this.enableFrontendPagination) {
-        return Math.ceil(this.totalCount / this.perPage );
+        if (this.totalCount) {
+          return Math.ceil(this.totalCount / this.perPage );
+        }
+
+        return 1;
       }
 
       return Math.ceil(this.filteredRows.length / this.perPage );
@@ -27,7 +38,7 @@ export default {
         count: this.enableFrontendPagination ? this.filteredRows.length : this.totalCount,
         pages: this.totalPages,
         from:  this.indexFrom,
-        to:    this.indexTo,
+        to:    this.paging ? this.indexTo : this.filteredRows.length,
       };
 
       return this.$store.getters['i18n/t'](this.pagingLabel, opt);
@@ -45,7 +56,7 @@ export default {
   data() {
     const perPage = this.getPerPage();
 
-    return { page: 1, perPage };
+    return { perPage };
   },
 
   watch: {
@@ -83,8 +94,7 @@ export default {
         return;
       }
 
-      this.page = num;
-      this.$emit('page-change', this.page);
+      this.$emit('page-change', num);
     },
 
     goToPage(which) {
