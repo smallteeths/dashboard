@@ -1381,6 +1381,7 @@ cluster:
       vGpus:
         errors:
           notAllocatable: '"VGPUs" not allocatable. There are not enough [{vGpus}] devices to be allocated to each node in machine pool [{pool}]'
+      tokenExpirationWarning: 'Warning: Harvester Cloud Credentials use an underlying authentication token that may have an expiry time - please see the following <a href="https://harvesterhci.io/kb/renew_harvester_cloud_credentials" target="_blank" rel="noopener nofollow">knowledge base article</a> for possible implications on management operations.'
     pnap:
       clientIdentifier:
         label: Client ID
@@ -7313,6 +7314,7 @@ advancedSettings:
     restricted-default-admin: "Whether the initialization administrator role uses restricted administrator permissions. Please see the permission description <a href=\"http://docs.rancher.cn/docs/rancher2.5/admin-settings/rbac/global-permissions/_index/#%E5%8F%97%E9%99%90%E7%AE%A1%E7%90%86%E5%91%98\" target=\"_blank\">here</a>."
     rotate-certs-if-expiring-in-days: Set the time for the rancher server to rotate certificates in advance（in days）.
     system-catalog: Configure Rancher to use System Chart Repo.
+    agent-tls-mode: Rancher Certificate Verification. In `strict` mode the agents (system, cluster, fleet, etc) will only trust Rancher installations which are using a certificate signed by the CABundle in the `cacerts` setting. When the mode is system-store, the agents will trust any certificate signed by a CABundle in the operating system’s trust store.
   editHelp:
     'ui-banners': This setting takes a JSON object containing 3 root parameters; <code>banner</code>, <code>showHeader</code>, <code>showFooter</code>. <code>banner</code> is an object containing; <code>textColor</code>, <code>background</code>, and <code>text</code>, where <code>textColor</code> and <code>background</code> are any valid CSS color value.
   enum:
@@ -7342,7 +7344,12 @@ advancedSettings:
       harden: 'Harden'
       true: 'Enable'
       false: 'Close'
+    agent-tls-mode:
+      strict: Strict
+      system-store: System Store
   modified: Modified
+  warnings:
+    agent-tls-mode: Changing this setting will cause all agents to be redeployed.
 featureFlags:
   label: Feature Flags
   warning: |-
@@ -8353,7 +8360,7 @@ mfa:
     rebindApp: Re-bind The App
     cancelRebindApp: Cancel Re-bind The App
     title: Scanning the QR code
-    tips: 
+    tips:
       1: 1. Scanning with authenticator apps or browser extensions
       2: 2. Verify the code from the app
     label: Authentication code
