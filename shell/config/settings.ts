@@ -22,8 +22,9 @@ interface GlobalSetting {
     /**
      * Function used from the form validation
      */
-     ruleSet?: GlobalSettingRuleset[],
-     unit?: string
+    ruleSet?: GlobalSettingRuleset[],
+    warning?: string,
+    unit?: string
   };
 }
 
@@ -112,8 +113,9 @@ export const SETTING = {
   FLEET_AGENT_DEFAULT_AFFINITY:         'fleet-agent-default-affinity',
   /**
    * manage rancher repositories in extensions (official, partners repos)
-   */
+  */
   ADD_EXTENSION_REPOS_BANNER_DISPLAY:   'display-add-extension-repos-banner',
+  AGENT_TLS_MODE:                       'agent-tls-mode',
   /**
    * User retention settings
    */
@@ -176,6 +178,11 @@ export const ALLOWED_SETTINGS: GlobalSetting = {
     options: ['prompt', 'in', 'out']
   },
   [SETTING.HIDE_LOCAL_CLUSTER]: { kind: 'boolean' },
+  [SETTING.AGENT_TLS_MODE]:     {
+    kind:    'enum',
+    options: ['strict', 'system-store'],
+    warning: 'agent-tls-mode'
+  },
 
   [SETTING.UI_SESSION_LOGOUT_MINUTES]: {},
   [SETTING.FOOTER_TEXT]:               {},
