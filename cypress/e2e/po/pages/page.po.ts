@@ -85,7 +85,15 @@ export default class PagePo extends ComponentPo {
     nav.navToSideMenuEntryByLabel(label);
   }
 
+  productNav(): ProductNavPo {
+    return new ProductNavPo();
+  }
+
   header() {
     return new HeaderPo();
+  }
+
+  extensionScriptImport(name: string) {
+    return this.self().get(`[data-purpose="extension"]`).get(`[id*="${ name }"]`);
   }
 }

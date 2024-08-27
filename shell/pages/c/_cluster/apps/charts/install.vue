@@ -37,6 +37,7 @@ import { findBy, insertAt } from '@shell/utils/array';
 import Vue from 'vue';
 import { saferDump } from '@shell/utils/create-yaml';
 import { LINUX, WINDOWS } from '@shell/store/catalog';
+import { SETTING } from '@shell/config/settings';
 
 const VALUES_STATE = {
   FORM: 'FORM',
@@ -126,7 +127,7 @@ export default {
     try {
       this.serverUrlSetting = await this.$store.dispatch('management/find', {
         type: MANAGEMENT.SETTING,
-        id:   'server-url'
+        id:   SETTING.SERVER_URL,
       });
     } catch (e) {
       console.error('Unable to fetch `server-url` setting: ', e); // eslint-disable-line no-console
@@ -248,7 +249,7 @@ export default {
       return;
     }
 
-    if ( this.version && process.client ) {
+    if ( this.version ) {
       /*
         Check if the Helm chart has provided the name
         of a Vue component to use for configuring
@@ -477,7 +478,7 @@ export default {
      * Return list of variables to filter chart questions
      */
     ignoreVariables() {
-      return ignoreVariables(this.currentCluster, this.versionInfo);
+      return ignoreVariables(this.versionInfo);
     },
 
     namespaceIsNew() {
@@ -861,11 +862,9 @@ export default {
         }
 
         if (provCluster?.isRke2) { // isRke2 returns true for both RKE2 and K3s clusters.
-          const agentConfig = provCluster.spec?.rkeConfig?.machineSelectorConfig?.find((x) => !x.machineLabelSelector).config;
-
           // If a cluster scoped registry exists,
           // it should be used by default.
-          const clusterRegistry = agentConfig?.['system-default-registry'] || '';
+          const clusterRegistry = provCluster.agentConfig?.['system-default-registry'] || '';
 
           if (clusterRegistry) {
             return clusterRegistry;
@@ -894,7 +893,7 @@ export default {
       // runtime will pull images from docker.io.
       const globalRegistry = await this.$store.dispatch('management/find', {
         type: MANAGEMENT.SETTING,
-        id:   'system-default-registry'
+        id:   SETTING.SYSTEM_DEFAULT_REGISTRY,
       });
 
       return globalRegistry.value;
@@ -1608,6 +1607,7 @@ export default {
                 v-if="componentHasTabs"
                 ref="tabs"
                 :side-tabs="true"
+                :hide-single-tab="true"
                 :class="{'with-name': showNameEditor}"
                 class="step__values__content"
                 @changed="tabChanged($event)"
@@ -1652,6 +1652,7 @@ export default {
               v-else-if="hasQuestions && showQuestions"
               ref="tabs"
               :side-tabs="true"
+              :hide-single-tab="true"
               :class="{'with-name': showNameEditor}"
               class="step__values__content"
               @changed="tabChanged($event)"
@@ -1858,17 +1859,17 @@ export default {
         </span>
         <template v-if="!legacyEnabled">
           <span v-clean-html="t('catalog.install.error.legacy.enableLegacy.prompt', true)" />
-          <nuxt-link :to="legacyFeatureRoute">
+          <router-link :to="legacyFeatureRoute">
             {{ t('catalog.install.error.legacy.enableLegacy.goto') }}
-          </nuxt-link>
+          </router-link>
         </template>
         <template v-else-if="mcapp">
           <span v-clean-html="t('catalog.install.error.legacy.mcmNotSupported')" />
         </template>
         <template v-else>
-          <nuxt-link :to="legacyAppRoute">
+          <router-link :to="legacyAppRoute">
             <span v-clean-html="t('catalog.install.error.legacy.navigate')" />
-          </nuxt-link>
+          </router-link>
         </template>
       </Banner>
     </div>

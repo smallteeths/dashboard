@@ -1,7 +1,7 @@
 <script>
 import { mapGetters } from 'vuex';
 import Loading from '@shell/components/Loading';
-import { _FLAGGED, DEPRECATED, HIDDEN, FROM_TOOLS } from '@shell/config/query-params';
+import { _FLAGGED, DEPRECATED as DEPRECATED_QUERY, HIDDEN, FROM_TOOLS } from '@shell/config/query-params';
 import { filterAndArrangeCharts } from '@shell/store/catalog';
 import { CATALOG, NORMAN } from '@shell/config/types';
 import { CATALOG as CATALOG_ANNOTATIONS } from '@shell/config/labels-annotations';
@@ -9,10 +9,11 @@ import LazyImage from '@shell/components/LazyImage';
 import { isAlternate } from '@shell/utils/platform';
 import IconMessage from '@shell/components/IconMessage';
 import TypeDescription from '@shell/components/TypeDescription';
+import TabTitle from '@shell/components/TabTitle';
 
 export default {
   components: {
-    LazyImage, Loading, IconMessage, TypeDescription
+    LazyImage, Loading, IconMessage, TypeDescription, TabTitle
   },
 
   async fetch() {
@@ -21,7 +22,7 @@ export default {
     await this.loadRepoCharts();
     const query = this.$route.query;
 
-    this.showDeprecated = query[DEPRECATED] === _FLAGGED;
+    this.showDeprecated = query[DEPRECATED_QUERY] === 'true' || query[DEPRECATED_QUERY] === _FLAGGED;
     this.showHidden = query[HIDDEN] === _FLAGGED;
 
     this.allInstalled = await this.$store.dispatch('cluster/findAll', { type: CATALOG.APP });
@@ -63,7 +64,7 @@ export default {
     installedAppForChart() {
       const out = {};
 
-      for ( const app of this.installedApps ) {
+      for (const app of (this.installedApps || [])) {
         const matching = app.matchingChart();
 
         if ( !matching ) {
@@ -104,7 +105,7 @@ export default {
   watch: {
     namespaces() {
       // When the namespaces change, check the v1 apps - might indicate add or removal of a v1 app
-      if (this.legacyEnabled && this.systemProject) {
+      if (this.systemProject) {
         this.$store.dispatch('rancher/findAll', {
           type: NORMAN.APP,
           opt:  { url: `/v3/project/${ this.systemProject }/apps`, force: true }
@@ -300,7 +301,9 @@ export default {
 <template>
   <Loading v-if="$fetchState.pending" />
   <div v-else-if="options.length">
-    <h1 v-clean-html="t('catalog.tools.header')" />
+    <h1>
+      <TabTitle>{{ t('catalog.tools.header') }}</TabTitle>
+    </h1>
     <TypeDescription
       resource="chart"
     />
@@ -310,6 +313,7 @@ export default {
         v-for="opt in options"
         :key="opt.chart.id"
         class="item"
+        :data-testid="`cluster-tools-app-${opt.chart.id}`"
       >
         <div
           class="logo"

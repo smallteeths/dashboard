@@ -4,10 +4,9 @@ import { Banner } from '@components/Banner';
 import { Checkbox } from '@components/Form/Checkbox';
 import Password from '@shell/components/form/Password';
 import PasswordStrength from '@shell/components/PasswordStrength';
-import { NORMAN, MANAGEMENT } from '@shell/config/types';
+import { NORMAN } from '@shell/config/types';
 import { _CREATE, _EDIT } from '@shell/config/query-params';
-import { SETTING } from '@shell/config/settings';
-import AESEncrypt from '@shell/utils/aes-encrypt';
+import { encryptPassword } from '@shell/utils/auth';
 
 // Component handles three use cases
 // 1) isChange - Current user is changing their own password
@@ -39,10 +38,6 @@ export default {
       this.username = user?.username;
     }
     this.userChangeOnLogin = this.mustChangePassword;
-
-    const disabledEncryption = this.$store.getters['management/byId'](MANAGEMENT.SETTING, SETTING.DISABLE_PASSWORD_ENCRYPT);
-
-    this.disabledEncryption = disabledEncryption;
   },
   data(ctx) {
     return {
@@ -58,8 +53,7 @@ export default {
         confirmP:          '',
         userChangeOnLogin: false,
       },
-      disabledEncryption: null,
-      passwordStrength:   0,
+      passwordStrength: 0,
     };
   },
   computed: {
@@ -305,11 +299,7 @@ export default {
     },
 
     encryptPassword(password) {
-      if (this.disabledEncryption?.value === 'true') {
-        return password;
-      }
-
-      return AESEncrypt(password.trim());
+      return encryptPassword(this.$store, password);
     },
 
     handlePasswordStrength(v) {

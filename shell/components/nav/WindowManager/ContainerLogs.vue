@@ -341,6 +341,7 @@ export default {
 
           return;
         }
+
         let d;
 
         // If the logBuffer is not empty,
@@ -360,6 +361,7 @@ export default {
           data = `${ truncatedLog }${ d }`;
           truncatedLog = '';
         }
+
         if (!d.endsWith('\n')) {
           const lines = data.split(/\n/);
 
@@ -371,34 +373,34 @@ export default {
           data = lines.slice(0, -1).join('\n');
           truncatedLog = lines.slice(-1);
         }
-        data.split(/\n/).filter((line) => line)
-          .forEach((line) => {
-            let msg = line;
-            let time = null;
+        // Websocket message may contain multiple lines - loop through each line, one by one
+        data.split('\n').filter((line) => line).forEach((line) => {
+          let msg = line;
+          let time = null;
 
-            const idx = line.indexOf(' ');
+          const idx = line.indexOf(' ');
 
-            if ( idx > 0 ) {
-              const timeStr = line.substr(0, idx);
-              const date = new Date(timeStr);
+          if ( idx > 0 ) {
+            const timeStr = line.substr(0, idx);
+            const date = new Date(timeStr);
 
-              if ( !isNaN(date.getSeconds()) ) {
-                time = date.toISOString();
-                msg = line.substr(idx + 1);
-              }
+            if ( !isNaN(date.getSeconds()) ) {
+              time = date.toISOString();
+              msg = line.substr(idx + 1);
             }
+          }
 
-            const parsedLine = {
-              id:     lastId++,
-              msg:    ansiup.ansi_to_html(msg),
-              rawMsg: msg,
-              time,
-            };
+          const parsedLine = {
+            id:     lastId++,
+            msg:    ansiup.ansi_to_html(msg),
+            rawMsg: msg,
+            time,
+          };
 
-            Object.freeze(parsedLine);
+          Object.freeze(parsedLine);
 
-            this.backlog.push(parsedLine);
-          });
+          this.backlog.push(parsedLine);
+        });
       });
 
       this.socket.connect();

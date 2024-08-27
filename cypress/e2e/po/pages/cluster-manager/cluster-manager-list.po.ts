@@ -22,6 +22,23 @@ export default class ClusterManagerListPagePo extends PagePo {
     BurgerMenuPo.burgerMenuNavToMenubyLabel('Cluster Management');
   }
 
+  goToClusterListAndGetClusterDetails(clusterName: string): Cypress.Chainable<{ id: string }> {
+    let clusterDetails = [];
+
+    cy.intercept({
+      method: 'GET',
+      path:   '/v3/clusters',
+    }, (req) => {
+      req.continue((res) => {
+        clusterDetails = res.body.data;
+      });
+    }).as('request');
+
+    super.goTo();
+
+    return cy.wait('@request', { timeout: 10000 }).then(() => clusterDetails.find((c) => c.name === clusterName));
+  }
+
   list(): ProvClusterListPo {
     return new ProvClusterListPo('[data-testid="cluster-list"]');
   }
@@ -41,5 +58,13 @@ export default class ClusterManagerListPagePo extends PagePo {
   createCluster() {
     return this.list().masthead().actions().eq(1)
       .click();
+  }
+
+  editCluster(name: string) {
+    this.sortableTable().rowActionMenuOpen(name).getMenuItem('Edit Config').click();
+  }
+
+  clickOnClusterName(name: string) {
+    this.sortableTable().rowWithClusterName(name).click();
   }
 }

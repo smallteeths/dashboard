@@ -7,8 +7,7 @@ import { filterOnlyKubernetesClusters, filterHiddenLocalCluster } from '@shell/u
 import { sortBy } from '@shell/utils/sort';
 
 export default {
-  name:   'Diagnostic',
-  layout: 'plain',
+  name: 'Diagnostic',
 
   components: { AsyncButton, PromptModal },
 
@@ -216,6 +215,7 @@ export default {
         'digitalocean',
         'linode',
         'targetRoute', // contains circular references, isn't useful (added later to store)
+        '$router', // also contains a circular reference to $store, not useful for diagnostics
       ];
 
       const clearListsKeys = [

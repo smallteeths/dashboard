@@ -87,6 +87,10 @@ export class WorkloadsListPageBasePo extends PagePo {
     return this.resourcesList().resourceTable().sortableTable();
   }
 
+  details(name: string, index: number) {
+    return this.sortableTable().rowWithName(name).column(index);
+  }
+
   deleteItemWithUI(name: string) {
     this.sortableTable().rowActionMenuOpen(name).getMenuItem('Delete').click();
 
@@ -105,6 +109,10 @@ export class WorkloadsListPageBasePo extends PagePo {
 
   goToDetailsPage(elemName: string) {
     return this.sortableTable().detailsPageLinkWithName(elemName).click();
+  }
+
+  goToEditYamlPage(elemName: string) {
+    return this.sortableTable().rowActionMenuOpen(elemName).getMenuItem('Edit YAML').click();
   }
 
   private workload() {
@@ -175,8 +183,4 @@ export class WorkloadsCreatePageBasePo extends PagePo {
   createWithKubectl(blueprintJson: string | Object, wait = 6000) {
     this.workload().createWithKubectl(blueprintJson, wait);
   }
-
-  // waitForCreate() {
-  //   cy.interceptAny
-  // }
 }

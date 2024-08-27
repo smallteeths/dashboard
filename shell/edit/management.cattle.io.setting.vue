@@ -2,6 +2,7 @@
 import CruResource from '@shell/components/CruResource';
 import { LabeledInput } from '@components/Form/LabeledInput';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
+import { Banner } from '@components/Banner';
 import CreateEditView from '@shell/mixins/create-edit-view';
 import { TextAreaAutoGrow } from '@components/Form/TextArea';
 import formRulesGenerator from '@shell/utils/validators/formRules/index';
@@ -12,6 +13,7 @@ import FormValidation from '@shell/mixins/form-validation';
 import { setBrand } from '@shell/config/private-label';
 import { keyBy, mapValues } from 'lodash';
 import { MANAGEMENT } from '@shell/config/types';
+import { isLocalhost, isServerUrl } from '@shell/utils/validators/setting';
 
 const URL_DOMAIN_REG = /[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\.?/;
 
@@ -21,7 +23,8 @@ export default {
     LabeledInput,
     LabeledSelect,
     RadioGroup,
-    TextAreaAutoGrow
+    TextAreaAutoGrow,
+    Banner
   },
 
   mixins: [CreateEditView, FormValidation],
@@ -45,6 +48,7 @@ export default {
   created() {
     this.value.value = this.value.value || this.value.default;
     this.enumOptions = this.setting?.kind === 'enum' ? this.setting.options.map((id) => ({
+      // i18n-uses advancedSettings.enum.*
       label: `advancedSettings.enum.${ this.value.id }.${ id }`,
       value: id,
     })) : [];
@@ -53,6 +57,12 @@ export default {
       path:  'value',
       rules: this.setting.ruleSet.map(({ name }) => name)
     }] : [];
+
+    // Don't allow the user to reset the server URL if there is no default
+    // helps to ensure that a value is always set
+    if (isServerUrl(this.value.id) && !this.value.default) {
+      this.canReset = false;
+    }
 
     if (this.registerBeforeHook) {
       this.registerBeforeHook(this.willSave, 'willSave');
@@ -72,6 +82,18 @@ export default {
 
           return factoryArg ? rule(factoryArg) : rule;
         }) : {};
+    },
+
+    showLocalhostWarning() {
+      return isServerUrl(this.value.id) && isLocalhost(this.value.value);
+    },
+
+    showWarningBanner() {
+      return this.setting?.warning;
+    },
+
+    validationPassed() {
+      return this.fvFormIsValid && this.fvGetPathErrors(['value']).length === 0;
     }
   },
 
@@ -107,6 +129,11 @@ export default {
       if (ev && ev.srcElement) {
         ev.srcElement.blur();
       }
+
+      if (isServerUrl(this.value.id) && !this.value.default) {
+        return;
+      }
+
       this.value.value = this.value.default;
     },
 
@@ -158,11 +185,18 @@ export default {
     :resource="value"
     :subtypes="[]"
     :can-yaml="false"
-    :validation-passed="fvFormIsValid"
+    :validation-passed="validationPassed"
     @error="e=>errors = e"
     @finish="saveSettings"
     @cancel="done"
   >
+    <Banner
+      v-if="showWarningBanner"
+      color="warning"
+      :label="t(`advancedSettings.warnings.${ setting.warning }`)"
+      data-testid="advanced_settings_warning_banner"
+    />
+
     <h4 v-clean-html="description" />
 
     <h5
@@ -174,6 +208,7 @@ export default {
     <div class="edit-change mt-20">
       <h5 v-t="'advancedSettings.edit.changeSetting'" />
       <button
+        data-testid="advanced_settings_use_default"
         :disabled="!canReset"
         type="button"
         class="btn role-primary"
@@ -182,6 +217,21 @@ export default {
         {{ t('advancedSettings.edit.useDefault') }}
       </button>
     </div>
+
+    <Banner
+      v-if="showLocalhostWarning"
+      color="warning"
+      :label="t('validation.setting.serverUrl.localhost')"
+      data-testid="setting-serverurl-localhost-warning"
+    />
+
+    <Banner
+      v-for="(err, i) in fvGetPathErrors(['value'])"
+      :key="i"
+      color="error"
+      :label="err"
+      data-testid="setting-error-banner"
+    />
 
     <div class="mt-20">
       <div v-if="setting.kind === 'enum'">

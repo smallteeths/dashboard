@@ -32,8 +32,9 @@ import { escapeHtml } from '@shell/utils/string';
 import { keyForSubscribe } from '@shell/plugins/steve/resourceWatcher';
 import { waitFor } from '@shell/utils/async';
 import { WORKER_MODES } from './worker';
-import pAndNFiltering from '@shell/utils/projectAndNamespaceFiltering.utils';
+import acceptOrRejectSocketMessage from './accept-or-reject-socket-message';
 import { BLANK_CLUSTER, STORE } from '@shell/store/store-types.js';
+import paginationUtils from '@shell/utils/pagination-utils';
 
 // minimum length of time a disconnect notification is shown
 const MINIMUM_TIME_NOTIFIED = 3000;
@@ -185,7 +186,7 @@ export async function createWorker(store, ctx) {
       }
     },
     batchChanges: (batch) => {
-      dispatch('batchChanges', namespaceHandler.validateBatchChange(ctx, batch));
+      dispatch('batchChanges', acceptOrRejectSocketMessage.validateBatchChange(ctx, batch));
     },
     dispatch: (msg) => {
       dispatch(`ws.${ msg.name }`, msg);
@@ -259,66 +260,6 @@ export function equivalentWatch(a, b) {
   return true;
 }
 
-/**
- * Sockets will not be able to subscribe to more than one namespace. If this is requested we pretend to handle it
- * - Changes to all resources are monitored (no namespace provided in sub)
- * - We ignore any events not from a required namespace (we have the conversion of project --> namespaces already)
- */
-const namespaceHandler = {
-  /**
-   * Note - namespace can be a list of projects or namespaces
-   */
-  subscribeNamespace: (namespace) => {
-    if (pAndNFiltering.isApplicable({ namespaced: namespace }) && namespace.length) {
-      return undefined; // AKA sub to everything
-    }
-
-    return namespace;
-  },
-
-  validChange: ({ getters, rootGetters }, type, data) => {
-    const haveNamespace = getters.haveNamespace(type);
-
-    if (haveNamespace?.length) {
-      const namespaces = rootGetters.activeNamespaceCache;
-
-      if (!namespaces[data.metadata.namespace]) {
-        return false;
-      }
-    }
-
-    return true;
-  },
-
-  validateBatchChange: ({ getters, rootGetters }, batch) => {
-    const namespaces = rootGetters.activeNamespaceCache;
-
-    Object.entries(batch).forEach(([type, entries]) => {
-      const haveNamespace = getters.haveNamespace(type);
-
-      if (!haveNamespace?.length) {
-        return;
-      }
-
-      const schema = getters.schemaFor(type);
-
-      if (!schema?.attributes?.namespaced) {
-        return;
-      }
-
-      Object.keys(entries).forEach((id) => {
-        const namespace = id.split('/')[0];
-
-        if (!namespace || !namespaces[namespace]) {
-          delete entries[id];
-        }
-      });
-    });
-
-    return batch;
-  }
-};
-
 function queueChange({ getters, state, rootGetters }, { data, revision }, load, label) {
   const type = getters.normalizeType(data.type);
 
@@ -332,7 +273,7 @@ function queueChange({ getters, state, rootGetters }, { data, revision }, load, 
 
   // console.log(`${ label } Event [${ state.config.namespace }]`, data.type, data.id); // eslint-disable-line no-console
 
-  if (!namespaceHandler.validChange({ getters, rootGetters }, type, data)) {
+  if (!acceptOrRejectSocketMessage.validChange({ getters, rootGetters }, type, data)) {
     return;
   }
 
@@ -386,10 +327,6 @@ const sharedActions = {
     let socket = state.socket;
 
     commit('setWantSocket', true);
-
-    if ( process.server ) {
-      return;
-    }
 
     state.debugSocket && console.info(`Subscribe [${ getters.storeName }]`); // eslint-disable-line no-console
 
@@ -480,7 +417,7 @@ const sharedActions = {
       type, selector, id, revision, namespace, stop, force
     } = params;
 
-    namespace = namespaceHandler.subscribeNamespace(namespace);
+    namespace = acceptOrRejectSocketMessage.subscribeNamespace(namespace);
     type = getters.normalizeType(type);
 
     if (rootGetters['type-map/isSpoofed'](type)) {
@@ -520,7 +457,13 @@ const sharedActions = {
       return;
     }
 
-    if ( typeof revision === 'undefined' ) {
+    // isSteveCacheEnabled check is temporary and will be removed once Part 3 of https://github.com/rancher/dashboard/pull/10349 is resolved by backend
+    // Steve cache backed api does not return a revision, so `revision` here is always undefined
+    // Which means we find a revision within a resource itself and use it in the watch
+    // That revision is probably too old and results in a watch error
+    // Watch errors mean we make a http request to get latest revision (which is still missing) and try to re-watch with it...
+    // etc
+    if (typeof revision === 'undefined' && !paginationUtils.isSteveCacheEnabled({ rootGetters })) {
       revision = getters.nextResourceVersion(type, id);
     }
 
@@ -567,7 +510,7 @@ const sharedActions = {
     const { commit, getters, dispatch } = ctx;
 
     if (getters['schemaFor'](type)) {
-      namespace = namespaceHandler.subscribeNamespace(namespace);
+      namespace = acceptOrRejectSocketMessage.subscribeNamespace(namespace);
 
       const obj = {
         type,
@@ -664,7 +607,7 @@ const defaultActions = {
   },
 
   rehydrateSubscribe({ state, dispatch }) {
-    if ( process.client && state.wantSocket && !state.socket ) {
+    if ( state.wantSocket && !state.socket ) {
       dispatch('subscribe');
     }
   },
@@ -795,11 +738,9 @@ const defaultActions = {
     }
 
     // Try resending any frames that were attempted to be sent while the socket was down, once.
-    if ( !process.server ) {
-      for ( const obj of state.pendingFrames.slice() ) {
-        commit('dequeuePendingFrame', obj);
-        dispatch('sendImmediate', obj);
-      }
+    for ( const obj of state.pendingFrames.slice() ) {
+      commit('dequeuePendingFrame', obj);
+      dispatch('sendImmediate', obj);
     }
   },
 

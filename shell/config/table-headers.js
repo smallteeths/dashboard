@@ -1,6 +1,6 @@
 import { CATTLE_PUBLIC_ENDPOINTS } from '@shell/config/labels-annotations';
 import { NODE as NODE_TYPE } from '@shell/config/types';
-import { COLUMN_BREAKPOINTS } from '@shell/components/SortableTable/index.vue';
+import { COLUMN_BREAKPOINTS } from '@shell/types/store/type-map';
 
 // Note: 'id' is always the last sort, so you don't have to specify it here.
 
@@ -11,6 +11,17 @@ export const STATE = {
   value:     'stateDisplay',
   getValue:  (row) => row.stateDisplay,
   width:     100,
+  default:   'unknown',
+  formatter: 'BadgeStateFormatter',
+};
+
+export const USER_STATE = {
+  name:      'user-state',
+  labelKey:  'tableHeaders.userState',
+  sort:      ['stateSort', 'nameSort'],
+  value:     'stateDisplay',
+  getValue:  (row) => row.stateDisplay,
+  width:     72,
   default:   'unknown',
   formatter: 'BadgeStateFormatter',
 };
@@ -359,6 +370,13 @@ export const KEYS = {
   labelKey: 'tableHeaders.keys',
   sort:     false,
   value:    'keysDisplay',
+};
+
+export const SECRET_DATA = {
+  name:      'data',
+  labelKey:  'tableHeaders.data',
+  value:     'dataPreview',
+  formatter: 'SecretData'
 };
 
 export const TARGET_KIND = {
@@ -733,6 +751,29 @@ export const FLEET_SUMMARY = {
   width:     100,
 };
 
+export const FLEET_REPO_CLUSTER_SUMMARY = {
+  name:      'clusterSummary',
+  labelKey:  'tableHeaders.clusterResources',
+  value:     'status.resourceCounts',
+  sort:      false,
+  search:    false,
+  formatter: 'FleetClusterSummaryGraph',
+  align:     'center',
+  width:     100,
+};
+
+export const FLEET_REPO_PER_CLUSTER_STATE = {
+  name:          'perClusterState',
+  labelKey:      'tableHeaders.repoPerClusterState',
+  tooltip:       'tableHeaders.repoPerClusterStateTooltip',
+  sort:          ['stateSort', 'nameSort'],
+  width:         100,
+  default:       'unknown',
+  formatter:     'BadgeStateFormatter',
+  formatterOpts: { arbitrary: true }
+
+};
+
 export const APP_SUMMARY = {
   name:      'summary',
   labelKey:  'tableHeaders.resources',
@@ -996,6 +1037,30 @@ export const FLEET_BUNDLE_TYPE = {
   value:    'bundleType',
   sort:     ['bundleType'],
   width:    100,
+};
+
+export const FLEET_REPO_CLUSTERS_READY = {
+  name:     'clustersReady',
+  labelKey: 'tableHeaders.clustersReady',
+  value:    'status.readyClusters',
+  sort:     'status.readyClusters',
+  search:   false,
+};
+
+export const FLEET_REPO_TARGET = {
+  name:     'target',
+  labelKey: 'tableHeaders.target',
+  value:    'targetInfo.modeDisplay',
+  sort:     ['targetInfo.modeDisplay', 'targetInfo.cluster', 'targetInfo.clusterGroup'],
+
+};
+
+export const FLEET_REPO = {
+  name:     'repo',
+  labelKey: 'tableHeaders.repo',
+  value:    'repoDisplay',
+  sort:     'repoDisplay',
+  search:   ['spec.repo', 'status.commit'],
 };
 
 export const UI_PLUGIN_CATALOG = [

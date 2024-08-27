@@ -4,9 +4,11 @@ import {
   CATALOG,
   NORMAN,
   HCI,
-  MANAGEMENT
+  MANAGEMENT,
+  SNAPSHOT,
+  VIRTUAL_TYPES
 } from '@shell/config/types';
-import { MULTI_CLUSTER } from '@shell/store/features';
+import { MULTI_CLUSTER, RKE1_UI } from '@shell/store/features';
 import { DSL } from '@shell/store/type-map';
 import { BLANK_CLUSTER } from '@shell/store/store-types.js';
 import { getGlobalMonitoringV2Setting } from '@shell/config/settings';
@@ -31,6 +33,7 @@ export function init(store) {
     icon:                'cluster-management',
     removable:           false,
     showClusterSwitcher: false,
+    weight:              -1, // Place at the top
     to:                  {
       name:   'c-cluster-product-resource',
       params: {
@@ -40,8 +43,11 @@ export function init(store) {
       }
     },
     typeStoreMap: {
-      [NORMAN.CLOUD_CREDENTIAL]: 'rancher',
-      cloudCredential:           'rancher',
+      [NORMAN.CLOUD_CREDENTIAL]:          'rancher',
+      cloudCredential:                    'rancher',
+      [NORMAN.KONTAINER_DRIVER]:          'rancher',
+      [NORMAN.NODE_DRIVER]:               'rancher',
+      [VIRTUAL_TYPES.JWT_AUTHENTICATION]: 'management',
     }
   });
 
@@ -55,23 +61,14 @@ export function init(store) {
     route:      { name: 'c-cluster-manager-cloudCredential' },
   });
 
-  virtualType({
-    labelKey:   'legacy.psps',
-    name:       'pod-security-policies',
-    group:      'Root',
-    namespaced: false,
-    weight:     5,
-    icon:       'folder',
-    route:      { name: 'c-cluster-manager-pages-page', params: { cluster: 'local', page: 'pod-security-policies' } },
-    exact:      true
-  });
-
   basicType([
     CAPI.RANCHER_CLUSTER,
     'cloud-credentials',
     'drivers',
-    'pod-security-policies',
   ]);
+
+  configureType(SNAPSHOT, { depaginate: true });
+  configureType(NORMAN.ETCD_BACKUP, { depaginate: true });
 
   configureType(CAPI.RANCHER_CLUSTER, {
     showListMasthead: false, namespaced: false, alias: [HCI.CLUSTER]
@@ -87,16 +84,26 @@ export function init(store) {
   });
 
   virtualType({
-    labelKey:   'manager.drivers.label',
-    name:       'drivers',
+    labelKey:   'drivers.kontainer.title',
+    name:       'rke-kontainer-drivers',
     group:      'Root',
     namespaced: false,
     icon:       'globe',
-    route:      { name: 'c-cluster-manager-pages-page', params: { cluster: 'local', page: 'rke-drivers' } },
+    route:      { name: 'c-cluster-manager-driver-kontainerdriver' },
+    exact:      true
+  });
+  virtualType({
+    labelKey:   'drivers.node.title',
+    name:       'rke-node-drivers',
+    group:      'Root',
+    namespaced: false,
+    icon:       'globe',
+    route:      { name: 'c-cluster-manager-driver-nodedriver' },
     exact:      true
   });
 
   virtualType({
+    ifFeature:  RKE1_UI,
     labelKey:   'manager.rkeTemplates.label',
     name:       'rke-templates',
     group:      'Root',
@@ -107,6 +114,7 @@ export function init(store) {
   });
 
   virtualType({
+    ifFeature:  RKE1_UI,
     labelKey:   'manager.nodeTemplates.label',
     name:       'rke-node-templates',
     group:      'Root',
@@ -116,60 +124,25 @@ export function init(store) {
     exact:      true
   });
 
+  virtualType({
+    labelKey:   'manager.jwtAuthentication.label',
+    name:       VIRTUAL_TYPES.JWT_AUTHENTICATION,
+    group:      'Root',
+    namespaced: false,
+    icon:       'globe',
+    route:      { name: 'c-cluster-manager-jwt-authentication' },
+    exact:      true
+  });
+
+  basicType([
+    'rke-kontainer-drivers',
+    'rke-node-drivers',
+  ], 'drivers');
+
   basicType([
     'rke-templates',
     'rke-node-templates'
   ], 'RKE1Configuration');
-
-  // image repo start
-  // virtualType({
-  //   label:      'Configuration',
-  //   labelKey:   'nav.imageRepo.config',
-  //   name:       'image-repo-config',
-  //   group:      'Root',
-  //   namespaced: false,
-  //   icon:       'globe',
-  //   route:      { name: 'c-cluster-manager-pages-page', params: { cluster: 'local', page: 'image-repo-config' } },
-  //   exact:      false,
-  //   weight:     100,
-  // });
-
-  // virtualType({
-  //   showMenuFun(state, getters, rootState, rootGetters) {
-  //     return rootState.auth?.isAdmin || rootState.auth?.me?.annotations?.['management.harbor.pandaria.io/synccomplete'] === 'true';
-  //   },
-  //   label:      'Image Management',
-  //   labelKey:   'nav.imageRepo.projects',
-  //   name:       'image-repo-projects',
-  //   group:      'Root',
-  //   namespaced: false,
-  //   icon:       'globe',
-  //   route:      { name: 'c-cluster-manager-pages-page', params: { cluster: 'local', page: 'image-repo-projects' } },
-  //   exact:      false,
-  //   weight:     99,
-  // });
-
-  // virtualType({
-  //   showMenuFun(state, getters, rootState, rootGetters) {
-  //     return rootState.auth?.isAdmin || rootState.auth?.me?.annotations?.['management.harbor.pandaria.io/synccomplete'] === 'true';
-  //   },
-  //   label:      'Logs',
-  //   labelKey:   'nam.imageRepo.logs',
-  //   name:       'image-repo-logs',
-  //   group:      'Root',
-  //   namespaced: false,
-  //   icon:       'globe',
-  //   route:      { name: 'c-cluster-manager-pages-page', params: { cluster: 'local', page: 'image-repo-logs' } },
-  //   exact:      false,
-  //   weight:     98,
-  // });
-
-  // basicType([
-  //   'image-repo-config',
-  //   'image-repo-projects',
-  //   'image-repo-logs',
-  // ], 'imageRepo');
-  // image repo end
 
   virtualType({
     showMenuFun(state, getters, rootState, rootGetters) {
@@ -211,19 +184,20 @@ export function init(store) {
     'global-monitoring-dasboard',
   ], 'globalMonitoring');
 
-  weightType(CAPI.MACHINE_DEPLOYMENT, 3, true);
-  weightType(CAPI.MACHINE_SET, 2, true);
-  weightType(CAPI.MACHINE, 1, true);
-  weightType(CATALOG.CLUSTER_REPO, 0, true);
+  weightType(CAPI.MACHINE_DEPLOYMENT, 4, true);
+  weightType(CAPI.MACHINE_SET, 3, true);
+  weightType(CAPI.MACHINE, 2, true);
+  weightType(CATALOG.CLUSTER_REPO, 1, true);
   weightType(MANAGEMENT.PSA, 5, true);
+  weightType(VIRTUAL_TYPES.JWT_AUTHENTICATION, 0, true);
 
   basicType([
     CAPI.MACHINE_DEPLOYMENT,
     CAPI.MACHINE_SET,
     CAPI.MACHINE,
     CATALOG.CLUSTER_REPO,
-    'pod-security-policies',
-    MANAGEMENT.PSA
+    MANAGEMENT.PSA,
+    VIRTUAL_TYPES.JWT_AUTHENTICATION
   ], 'advanced');
 
   weightGroup('advanced', -1, true);
@@ -251,6 +225,7 @@ export function init(store) {
     {
       name:     'kubernetesVersion',
       labelKey: 'tableHeaders.version',
+      subLabel: 'Architecture',
       value:    'kubernetesVersion',
       sort:     'kubernetesVersion',
       search:   'kubernetesVersion',
@@ -258,6 +233,7 @@ export function init(store) {
     {
       name:      'provider',
       labelKey:  'tableHeaders.provider',
+      subLabel:  'Distro',
       value:     'machineProvider',
       sort:      ['machineProvider', 'provisioner'],
       formatter: 'ClusterProvider',

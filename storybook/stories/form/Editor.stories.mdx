@@ -108,30 +108,8 @@ Code Mirror is used mainly as YAML editor for all the K8S configurations.
       value: editorValueExample,
       mode: 'edit',
       options: {},
-      asTextArea: false
-    }}>
-    {Template.bind({})}
-  </Story>
-</Canvas>
-
-#### Options example
-
-This is an adopted case were we use CodeMirror to display a function with highlight syntax.
-
-<Canvas>
-  <Story
-    name="Options"
-    args={{
-      value: `
-      (arg) => {
-        if ('test this') {
-          return true;
-        }
-      }
-      `,
-      mode: 'edit',
-      options: {mode:{name:'javascript', json:true}, lineNumbers:false, foldGutter:false, readOnly:true},
-      asTextArea: false
+      asTextArea: false,
+      showKeyMapBox: true,
     }}>
     {Template.bind({})}
   </Story>
@@ -152,7 +130,8 @@ values
       `,
       mode: 'edit',
       options: {},
-      asTextArea: true
+      asTextArea: true,
+      showKeyMapBox: true,
     }}>
     {Template.bind({})}
   </Story>

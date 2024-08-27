@@ -8,14 +8,15 @@ import { SETTING } from '@shell/config/settings';
 import { addParam } from '@shell/utils/url';
 import { isRancherPrime } from '@shell/config/version';
 import { hasCspAdapter } from '@shell/mixins/brand';
+import TabTitle from '@shell/components/TabTitle';
 
 export default {
-  layout: 'home',
 
   components: {
     BannerGraphic,
     IndentedPanel,
-    CommunityLinks
+    CommunityLinks,
+    TabTitle
   },
 
   async fetch() {
@@ -57,6 +58,11 @@ export default {
       brandSetting:    null,
       uiIssuesSetting: null,
       serverSetting:   null,
+      settings:        null,
+      // i18n-uses support.promos.one.*
+      // i18n-uses support.promos.two.*
+      // i18n-uses support.promos.three.*
+      // i18n-uses support.promos.four.*
       promos:          [
         'support.promos.one',
         'support.promos.two',
@@ -80,13 +86,8 @@ export default {
     },
 
     serverUrl() {
-      if (process.client) {
-        // Client-side rendered: use the current window location
-        return window.location.origin;
-      }
-
-      // Server-side rendered
-      return this.serverSetting?.value || '';
+      // Client-side rendered: use the current window location
+      return window.location.origin;
     },
 
     supportConfigLink() {
@@ -122,7 +123,11 @@ export default {
       <div class="content mt-20">
         <div class="promo col main-panel">
           <div class="box mb-20 box-primary">
-            <h2>{{ t('support.suse.access.title') }}</h2>
+            <h2>
+              <TabTitle breadcrumb="vendor-only">
+                {{ t('support.suse.access.title') }}
+              </TabTitle>
+            </h2>
             <div
               v-if="!hasSupport"
               class="external support-links mt-20"

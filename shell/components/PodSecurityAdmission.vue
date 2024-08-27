@@ -1,10 +1,10 @@
 <script lang="ts">
-import Vue from 'vue';
+import { defineComponent } from 'vue';
 import { _VIEW, _CREATE } from '@shell/config/query-params';
 import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
 import Checkbox from '@components/Form/Checkbox/Checkbox.vue';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
-import { PSADimension, PSAMode } from '@shell/types/pod-security-admission';
+import { PSADimension, PSAMode } from '@shell/types/resources/pod-security-admission';
 import {
   PSADefaultLevel,
   PSADefaultVersion, PSADimensions, PSALevels, PSAModes
@@ -25,7 +25,7 @@ const getExemptionControl = (): PSAExemptionControl => ({
   value:  ''
 });
 
-export default Vue.extend({
+export default defineComponent({
   components: {
     Checkbox, LabeledSelect, LabeledInput
   },

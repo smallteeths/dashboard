@@ -1,5 +1,5 @@
 import {
-  CAPI, MANAGEMENT, NORMAN, SNAPSHOT, HCI
+  CAPI, MANAGEMENT, NAMESPACE, NORMAN, SNAPSHOT, HCI, LOCAL_CLUSTER
 } from '@shell/config/types';
 import SteveModel from '@shell/plugins/steve/steve-class';
 import { findBy } from '@shell/utils/array';
@@ -9,7 +9,8 @@ import { ucFirst } from '@shell/utils/string';
 import { compare } from '@shell/utils/version';
 import { AS, MODE, _VIEW, _YAML } from '@shell/config/query-params';
 import { HARVESTER_NAME as HARVESTER } from '@shell/config/features';
-import { CAPI as CAPI_ANNOTATIONS } from '@shell/config/labels-annotations';
+import { CAPI as CAPI_ANNOTATIONS, NODE_ARCHITECTURE } from '@shell/config/labels-annotations';
+import capitalize from 'lodash/capitalize';
 
 /**
  * Class representing Cluster resource.
@@ -198,6 +199,16 @@ export default class ProvCluster extends SteveModel {
     return out;
   }
 
+  async findNormanCluster() {
+    const name = this.status?.clusterName;
+
+    if ( !name ) {
+      return null;
+    }
+
+    return await this.$dispatch('rancher/find', { type: NORMAN.CLUSTER, id: name }, { root: true });
+  }
+
   explore() {
     const location = {
       name:   'c-cluster',
@@ -257,10 +268,39 @@ export default class ProvCluster extends SteveModel {
     return providers.includes(this.provisioner);
   }
 
+  get isPrivateHostedProvider() {
+    if (this.isHostedKubernetesProvider && this.mgmt && this.provisioner) {
+      switch (this.provisioner.toLowerCase()) {
+      case 'gke':
+        return this.mgmt.spec?.gkeConfig?.privateClusterConfig?.enablePrivateEndpoint;
+      case 'eks':
+        return this.mgmt.spec?.eksConfig?.privateAccess;
+      case 'aks':
+        return this.mgmt.spec?.aksConfig?.privateCluster;
+      }
+    }
+
+    return false;
+  }
+
+  get isLocal() {
+    return this.mgmt?.isLocal;
+  }
+
   get isImported() {
     // As of Rancher v2.6.7, this returns false for imported K3s clusters,
     // in which this.provisioner is `k3s`.
-    return this.provisioner === 'imported';
+
+    const isImportedProvisioner = this.provisioner === 'imported';
+    const isImportedSpecialCases = this.mgmt?.providerForEmberParam === 'import' ||
+      // when imported cluster is GKE
+      !!this.mgmt?.spec?.gkeConfig?.imported ||
+      // or AKS
+      !!this.mgmt?.spec?.aksConfig?.imported ||
+      // or EKS
+      !!this.mgmt?.spec?.eksConfig?.imported;
+
+    return !this.isLocal && (isImportedProvisioner || (!this.isRke2 && !this.mgmt?.machineProvider && isImportedSpecialCases));
   }
 
   get isCustom() {
@@ -280,8 +320,6 @@ export default class ProvCluster extends SteveModel {
   }
 
   get isImportedK3s() {
-    // As of Rancher v2.6.7, this returns false for imported K3s clusters,
-    // in which this.provisioner is `k3s`.
     return this.isImported && this.isK3s;
   }
 
@@ -290,7 +328,7 @@ export default class ProvCluster extends SteveModel {
   }
 
   get isK3s() {
-    return this.mgmt?.status?.provider === 'k3s';
+    return this.mgmt?.status ? this.mgmt?.status.provider === 'k3s' : (this.spec?.kubernetesVersion || '').includes('k3s') ;
   }
 
   get isRke2() {
@@ -298,7 +336,7 @@ export default class ProvCluster extends SteveModel {
   }
 
   get isRke1() {
-    return !!this.mgmt?.spec?.rancherKubernetesEngineConfig;
+    return !!this.mgmt?.spec?.rancherKubernetesEngineConfig || this.labels['provider.cattle.io'] === 'rke';
   }
 
   get isHarvester() {
@@ -382,6 +420,38 @@ export default class ProvCluster extends SteveModel {
 
   get providerLogo() {
     return this.mgmt?.providerLogo;
+  }
+
+  get nodesArchitecture() {
+    const obj = {};
+
+    this.nodes?.forEach((node) => {
+      if (!node.metadata?.state?.transitioning) {
+        const architecture = node.status?.nodeLabels?.[NODE_ARCHITECTURE];
+
+        const key = architecture ? capitalize(architecture) : this.t('cluster.architecture.label.unknown');
+
+        obj[key] = (obj[key] || 0) + 1;
+      }
+    });
+
+    return obj;
+  }
+
+  get architecture() {
+    const keys = Object.keys(this.nodesArchitecture);
+
+    switch (keys.length) {
+    case 0:
+      return { label: this.t('generic.provisioning') };
+    case 1:
+      return { label: keys[0] };
+    default:
+      return {
+        label:   this.t('cluster.architecture.label.mixed'),
+        tooltip: keys.reduce((acc, k) => `${ acc }${ k }: ${ this.nodesArchitecture[k] }<br>`, '')
+      };
+    }
   }
 
   get kubernetesVersion() {
@@ -833,11 +903,11 @@ export default class ProvCluster extends SteveModel {
   get agentConfig() {
     // The one we want is the first one with no selector.
     // If there are multiple with no selector, that will fall under the unsupported message below.
-    return this.spec.rkeConfig.machineSelectorConfig.find((x) => !x.machineLabelSelector).config;
+    return this.spec.rkeConfig.machineSelectorConfig.find((x) => !x.machineLabelSelector)?.config;
   }
 
   get cloudProvider() {
-    return this.agentConfig['cloud-provider-name'];
+    return this.agentConfig?.['cloud-provider-name'];
   }
 
   get canClone() {
@@ -894,7 +964,52 @@ export default class ProvCluster extends SteveModel {
   }
 
   get hasError() {
-    return this.status?.conditions?.some((condition) => condition.error === true);
+    // Before we were just checking for this.status?.conditions?.some((condition) => condition.error === true)
+    // but this is wrong as an error might exist but it might not be meaningful in the context of readiness of a cluster
+    // which is what this 'hasError' is used for.
+    // We now check if there's a ready condition after an error, which helps dictate the readiness of a cluster
+    // Based on the findings in https://github.com/rancher/dashboard/issues/10043
+    if (this.status?.conditions && this.status?.conditions.length) {
+      // if there are errors, we compare with how recent the "Ready" condition is compared to that error, otherwise we just move on
+      if (this.status?.conditions.some((c) => c.error === true)) {
+        // there's no ready condition and has an error, mark it
+        if (!this.status?.conditions.some((c) => c.type === 'Ready')) {
+          return true;
+        }
+
+        const filteredConditions = this.status?.conditions.filter((c) => c.error === true || c.type === 'Ready');
+        const mostRecentCondition = filteredConditions.reduce((a, b) => ((a.lastUpdateTime > b.lastUpdateTime) ? a : b));
+
+        return mostRecentCondition.error;
+      }
+    }
+
+    return false;
+  }
+
+  get namespaceLocation() {
+    const localCluster = this.$rootGetters['management/byId'](MANAGEMENT.CLUSTER, LOCAL_CLUSTER);
+
+    if (localCluster) {
+      return {
+        name:   'c-cluster-product-resource-id',
+        params: {
+          cluster:  localCluster.id,
+          product:  this.$rootGetters['productId'],
+          resource: NAMESPACE,
+          id:       this.namespace
+        }
+      };
+    }
+
+    return null;
+  }
+
+  // JSON Paths that should be folded in the YAML editor by default
+  get yamlFolding() {
+    return [
+      'spec.rkeConfig.machinePools.dynamicSchemaSpec',
+    ];
   }
 
   suspend() {

@@ -253,7 +253,7 @@ export default {
                   <div class="col span-6">
                     <LabeledSelect
                       v-model="imagePullSecrets"
-                      :label="t('workload.container.imagePullSecrets')"
+                      :label="t('workload.container.imagePullSecrets.label')"
                       :multiple="true"
                       :taggable="true"
                       :options="imagePullNamespacedSecrets"
@@ -261,6 +261,7 @@ export default {
                       option-label="metadata.name"
                       :reduce="service=>service.metadata.name"
                       :create-option="createOption"
+                      :tooltip="t('workload.container.imagePullSecrets.tooltip')"
                     />
                   </div>
                 </div>

@@ -3,6 +3,7 @@ import ProgressBarMulti from '@shell/components/ProgressBarMulti';
 import { ucFirst } from '@shell/utils/string';
 import { colorForState, stateSort } from '@shell/plugins/dashboard-store/resource-class';
 import { sortBy } from '@shell/utils/sort';
+import { FLEET } from '@shell/config/types';
 
 export default {
   components: { ProgressBarMulti },
@@ -12,15 +13,27 @@ export default {
       type:     Object,
       required: true
     },
+
+    clusterLabel: {
+      type:     String,
+      required: false,
+      default:  null,
+    }
   },
 
   computed: {
     summary() {
+      if (this.clusterLabel) {
+        return this.row.clusterResourceStatus.find((x) => {
+          return x.clusterLabel === this.clusterLabel;
+        })?.status.resourceCounts || {};
+      }
+
       return this.row.status?.resourceCounts || {};
     },
 
     show() {
-      return this.stateParts.length > 0 && this.row.targetClusters?.length;
+      return this.stateParts.length > 0 && (this.row.type === FLEET.CLUSTER || this.row.targetClusters?.length);
     },
 
     stateParts() {
@@ -73,7 +86,7 @@ export default {
           >
             <td
               class="text-left pr-20"
-              :class="{[obj.textColor]: true}"
+              :class="{ [obj.textColor]: true }"
             >
               {{ obj.label }}
             </td>
@@ -94,17 +107,17 @@ export default {
 </template>
 
 <style lang="scss">
-  .col-scale {
-    position: relative;
+.col-scale {
+  position: relative;
 
-    .trigger {
-      width: 100%;
-    }
+  .trigger {
+    width: 100%;
   }
+}
 
-  .scale {
-    margin: 0;
-    padding: 0;
-    line-height: initial;
-  }
+.scale {
+  margin: 0;
+  padding: 0;
+  line-height: initial;
+}
 </style>

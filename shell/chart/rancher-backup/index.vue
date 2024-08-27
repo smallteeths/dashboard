@@ -7,10 +7,9 @@ import { LabeledInput } from '@components/Form/LabeledInput';
 import { Banner } from '@components/Banner';
 import { get } from '@shell/utils/object';
 import { allHash } from '@shell/utils/promise';
-import { STORAGE_CLASS, SECRET, PV } from '@shell/config/types';
+import { STORAGE_CLASS, PV } from '@shell/config/types';
 import { mapGetters } from 'vuex';
 import { STORAGE } from '@shell/config/labels-annotations';
-import ChartPsp from '@shell/components/ChartPsp';
 
 export default {
   components: {
@@ -19,8 +18,7 @@ export default {
     S3,
     LabeledInput,
     LabeledSelect,
-    Banner,
-    ChartPsp
+    Banner
   },
 
   hasTabs: true,
@@ -43,10 +41,8 @@ export default {
     const hash = await allHash({
       storageClasses:    this.$store.dispatch('cluster/findAll', { type: STORAGE_CLASS }),
       persistentVolumes: this.$store.dispatch('cluster/findAll', { type: PV }),
-      secrets:           this.$store.dispatch('cluster/findAll', { type: SECRET }),
     });
 
-    this.secrets = hash.secrets;
     this.storageClasses = hash.storageClasses;
     this.persistentVolumes = hash.persistentVolumes;
 
@@ -67,7 +63,7 @@ export default {
 
   computed: {
     defaultStorageClass() {
-      return this.storageClasses.filter((sc) => sc.metadata.annotations[STORAGE.DEFAULT_STORAGE_CLASS] && sc.metadata.annotations[STORAGE.DEFAULT_STORAGE_CLASS] !== 'false' )[0] || '';
+      return this.storageClasses.filter((sc) => sc.metadata.annotations?.[STORAGE.DEFAULT_STORAGE_CLASS] && sc.metadata.annotations[STORAGE.DEFAULT_STORAGE_CLASS] !== 'false' )[0] || '';
     },
 
     availablePVs() {
@@ -91,10 +87,23 @@ export default {
 
   watch: {
     storageSource(neu) {
+      if (!this.value.persistence) {
+        this.value.persistence = {};
+      }
+      if (!this.value.s3) {
+        this.value.s3 = {};
+      }
       switch (neu) {
       case 'pickSC':
         this.value.persistence.enabled = true;
         this.value.s3.enabled = false;
+        if (this.value.persistence.storageClass) {
+          const matchedStorageClass = this.storageClasses.find((sc) => sc.id === this.value.persistence.storageClass);
+
+          if (matchedStorageClass) {
+            this.storageClass = matchedStorageClass;
+          }
+        }
         if (this.defaultStorageClass && (!this.value.persistence.storageClass || this.value.persistence.storageClass === '-' )) {
           this.value.persistence.storageClass = this.defaultStorageClass.id;
           this.storageClass = this.defaultStorageClass;
@@ -157,7 +166,7 @@ export default {
     },
     updatePageValid(update) {
       this.$emit('valid', update);
-    }
+    },
   },
   get
 };
@@ -169,12 +178,6 @@ export default {
       label="Chart Options"
       name="chartOptions"
     >
-      <!-- Conditionally display PSP checkbox -->
-      <ChartPsp
-        :value="value"
-        :cluster="currentCluster"
-      />
-
       <Banner
         color="info"
         :label="t('backupRestoreOperator.deployment.storage.tip')"
@@ -190,7 +193,6 @@ export default {
       <S3
         v-if="storageSource==='s3'"
         :value="value.s3"
-        :secrets="secrets"
         :mode="mode"
         @valid="updatePageValid($event)"
       />
@@ -208,6 +210,7 @@ export default {
                 :status="reclaimWarning ? 'warning' : null"
                 :options="storageClasses"
                 :hover-tooltip="true"
+                data-testid="backup-chart-select-existing-storage-class"
               />
             </div>
             <div class="col span-6">

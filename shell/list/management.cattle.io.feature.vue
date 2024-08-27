@@ -1,6 +1,7 @@
 <script>
 import { mapState, mapGetters } from 'vuex';
 import AsyncButton from '@shell/components/AsyncButton';
+import AppModal from '@shell/components/AppModal';
 import { Card } from '@components/Card';
 import ResourceTable from '@shell/components/ResourceTable';
 import { Banner } from '@components/Banner';
@@ -15,7 +16,8 @@ export default {
     Banner,
     Card,
     ResourceTable,
-    LabeledInput
+    LabeledInput,
+    AppModal,
   },
   mixins: [ResourceFetch],
   props:  {
@@ -44,13 +46,7 @@ export default {
       this.serverUrl = this.serverUrlSetting.value;
     } else {
       this.noUrlSet = true;
-      if ( process.server ) {
-        const { req } = this.$nuxt.context;
-
-        this.serverUrl = req.headers.host;
-      } else {
-        this.serverUrl = window.location.origin;
-      }
+      this.serverUrl = window.location.origin;
     }
   },
 
@@ -66,6 +62,7 @@ export default {
       serverUrlSetting: {},
       serverUrl:        '',
       noUrlSet:         false,
+      showModal:        false,
     };
   },
 
@@ -98,9 +95,9 @@ export default {
   watch: {
     showPromptUpdate(show) {
       if (show) {
-        this.$modal.show('toggleFlag');
+        this.showModal = true;
       } else {
-        this.$modal.hide('toggleFlag');
+        this.showModal = false;
       }
     },
 
@@ -168,15 +165,17 @@ export default {
           const response = await this.$axios.get(url, { timeout: 5000 });
 
           if (response?.status === 200) {
-            this.rows = await this.$store.dispatch('management/findAll', { type: this.resource, opt: { force: true } });
+            await this.$store.dispatch('management/findAll', { type: this.resource, opt: { force: true } });
             btnCB(true);
             this.close();
             this.waiting = false;
           }
         } catch (e) {}
 
-        this.waitForBackend(btnCB, id);
-      }, 2500);
+        if (this.waiting) {
+          this.waitForBackend(btnCB, id);
+        }
+      }, 5000);
     },
 
     async saveUrl(btnCB) {
@@ -216,14 +215,15 @@ export default {
         </div>
       </template>
     </ResourceTable>
-    <modal
+    <app-modal
+      v-if="showModal"
       class="update-modal"
       name="toggleFlag"
       :width="350"
       height="auto"
       styles="max-height: 100vh;"
       :click-to-close="!restart || !waiting"
-      @closed="close"
+      @close="close"
     >
       <Card
         v-if="!waiting"
@@ -321,7 +321,7 @@ export default {
           </button>
         </template>
       </Card>
-    </modal>
+    </app-modal>
   </div>
 </template>
 

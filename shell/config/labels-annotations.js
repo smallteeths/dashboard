@@ -14,6 +14,7 @@ export const CREATOR_ID = 'field.cattle.io/creatorId';
 export const RESOURCE_QUOTA = 'field.cattle.io/resourceQuota';
 export const AZURE_MIGRATED = 'auth.cattle.io/azuread-endpoint-migrated';
 export const WORKSPACE_ANNOTATION = 'objectset.rio.cattle.io/id';
+export const NODE_ARCHITECTURE = 'kubernetes.io/arch';
 
 export const KUBERNETES = {
   SERVICE_ACCOUNT_UID:  'kubernetes.io/service-account.uid',
@@ -154,7 +155,7 @@ export const CLUSTER_BADGE = {
   TEXT:      'ui.rancher/badge-text',
   // Badge color - as a hex color - e.g. #ff00ff
   COLOR:     'ui.rancher/badge-color',
-  // Custom icon text - max 2 characters
+  // Custom icon text - max 3 characters
   ICON_TEXT: 'ui.rancher/badge-icon-text',
 };
 

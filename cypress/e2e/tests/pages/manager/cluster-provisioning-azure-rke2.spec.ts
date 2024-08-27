@@ -4,9 +4,10 @@ import ClusterManagerCreateRke2AzurePagePo from '@/cypress/e2e/po/edit/provision
 import ClusterManagerDetailRke2AzurePagePo from '@/cypress/e2e/po/detail/provisioning.cattle.io.cluster/cluster-detail-rke2-azure.po';
 import PromptRemove from '@/cypress/e2e/po/prompts/promptRemove.po';
 import LoadingPo from '@/cypress/e2e/po/components/loading.po';
+import TabbedPo from '~/cypress/e2e/po/components/tabbed.po';
 
 // will only run this in jenkins pipeline where cloud credentials are stored
-describe('Provision Node driver RKE2 cluster with Azure', { testIsolation: 'off', tags: ['@manager', '@adminUser', '@jenkins'] }, () => {
+describe('Provision Node driver RKE2 cluster with Azure', { testIsolation: 'off', tags: ['@manager', '@adminUser', '@standardUser', '@jenkins'] }, () => {
   const clusterList = new ClusterManagerListPagePo();
   let removeCloudCred = false;
   let cloudcredentialId = '';
@@ -14,6 +15,23 @@ describe('Provision Node driver RKE2 cluster with Azure', { testIsolation: 'off'
   before(() => {
     cy.login();
     HomePagePo.goTo();
+
+    // clean up azure cloud credentials
+    cy.getRancherResource('v3', 'cloudcredentials', null, null).then((resp: Cypress.Response<any>) => {
+      const body = resp.body;
+
+      if (body.pagination['total'] > 0) {
+        body.data.forEach((item: any) => {
+          if (item.azurecredentialConfig) {
+            const id = item.id;
+
+            cy.deleteRancherResource('v3', 'cloudcredentials', id);
+          } else {
+            cy.log('There are no existing azure cloud credentials to delete');
+          }
+        });
+      }
+    });
   });
 
   beforeEach(() => {
@@ -25,6 +43,7 @@ describe('Provision Node driver RKE2 cluster with Azure', { testIsolation: 'off'
     const createRKE2ClusterPage = new ClusterManagerCreateRke2AzurePagePo();
     const cloudCredForm = createRKE2ClusterPage.cloudCredentialsForm();
     const clusterDetails = new ClusterManagerDetailRke2AzurePagePo(undefined, this.rke2AzureClusterName);
+    const tabbedPo = new TabbedPo('[data-testid="tabbed-block"]');
 
     // create cluster
     ClusterManagerListPagePo.navTo();
@@ -33,15 +52,17 @@ describe('Provision Node driver RKE2 cluster with Azure', { testIsolation: 'off'
     createRKE2ClusterPage.rkeToggle().set('RKE2/K3s');
     createRKE2ClusterPage.selectCreate(1);
     createRKE2ClusterPage.rke2PageTitle().should('include', 'Create Azure');
-    createRKE2ClusterPage.waitForPage('type=azure');
+    createRKE2ClusterPage.waitForPage('type=azure&rkeType=rke2');
 
     // create Azure cloud credential
+    cloudCredForm.saveButton().expectToBeDisabled();
     cloudCredForm.nameNsDescription().name().set(this.azureCloudCredentialName);
     cloudCredForm.environment().toggle();
     cloudCredForm.environment().clickOptionWithLabel('AzurePublicCloud');
     cloudCredForm.subscriptionId().set(Cypress.env('azureSubscriptionId'));
     cloudCredForm.clientId().set(Cypress.env('azureClientId'), true);
     cloudCredForm.clientSecret().set(Cypress.env('azureClientSecret'), true);
+    cloudCredForm.saveButton().expectToBeEnabled();
     cloudCredForm.saveCreateForm().cruResource().saveAndWaitForRequests('POST', '/v3/cloudcredentials').then((req) => {
       expect(req.response?.statusCode).to.equal(201);
       cloudcredentialId = req.response?.body.id;
@@ -51,7 +72,7 @@ describe('Provision Node driver RKE2 cluster with Azure', { testIsolation: 'off'
     const loadingPo = new LoadingPo('.loading-indicator');
 
     loadingPo.checkNotExists();
-    createRKE2ClusterPage.waitForPage('type=azure', 'basic');
+    createRKE2ClusterPage.waitForPage('type=azure&rkeType=rke2', 'basic');
     createRKE2ClusterPage.nameNsDescription().name().set(this.rke2AzureClusterName);
     createRKE2ClusterPage.nameNsDescription().description().set(`${ this.rke2AzureClusterName }-description`);
 
@@ -95,6 +116,34 @@ describe('Provision Node driver RKE2 cluster with Azure', { testIsolation: 'off'
     clusterDetails.waitForPage(null, 'machine-pools');
     clusterDetails.resourceDetail().title().should('contain', this.rke2AzureClusterName);
     clusterDetails.machinePoolsList().details(`${ this.rke2AzureClusterName }-pool1-`, 1).should('contain', 'Running');
+
+    // check cluster details page > recent events
+    ClusterManagerListPagePo.navTo();
+    clusterList.waitForPage();
+    clusterList.clickOnClusterName(this.rke2AzureClusterName);
+    clusterDetails.selectTab(tabbedPo, '[data-testid="btn-events"');
+    clusterDetails.recentEventsList().checkTableIsEmpty();
+
+    // check cluster details page > snapshots
+    ClusterManagerListPagePo.navTo();
+    clusterList.waitForPage();
+    clusterList.clickOnClusterName(this.rke2AzureClusterName);
+    clusterDetails.selectTab(tabbedPo, '[data-testid="btn-snapshots"');
+    clusterDetails.snapshotsList().checkTableIsEmpty();
+
+    // create on demand snapshot
+    clusterDetails.snapshotsList().clickOnSnapshotNow();
+
+    // wait for cluster to be active
+    ClusterManagerListPagePo.navTo();
+    clusterList.waitForPage();
+    clusterList.list().state(this.rke2AzureClusterName).should('contain', 'Updating');
+    clusterList.list().state(this.rke2AzureClusterName).contains('Active', { timeout: 700000 });
+
+    // check snapshot exist
+    clusterList.clickOnClusterName(this.rke2AzureClusterName);
+    clusterDetails.selectTab(tabbedPo, '[data-testid="btn-snapshots"');
+    clusterDetails.snapshotsList().checkSnapshotExist(`on-demand-${ this.rke2AzureClusterName }`);
   });
 
   it('can delete a Azure  RKE2 cluster', function() {

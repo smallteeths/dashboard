@@ -110,6 +110,20 @@ export function remove(obj, path) {
   return obj;
 }
 
+/**
+ * `delete` a property at the given path.
+ *
+ * This is similar to `remove` but doesn't need any fancy kube obj path splitting
+ * and doesn't use `Vue.set` (avoids reactivity)
+ */
+export function deleteProperty(obj, path) {
+  const pathAr = path.split('.');
+  const propToDelete = pathAr.pop();
+
+  // Walk down path until final prop, then delete final prop
+  delete pathAr.reduce((o, k) => o[k] || {}, obj)[propToDelete];
+}
+
 export function getter(path) {
   return function(obj) {
     return get(obj, path);
@@ -411,3 +425,13 @@ export function pickBy(obj = {}, predicate = (value, key) => false) {
 export const toDictionary = (array, callback) => Object.assign(
   {}, ...array.map((item) => ({ [item]: callback(item) }))
 );
+
+export function dropKeys(obj, keys) {
+  if ( !obj ) {
+    return;
+  }
+
+  for ( const k of keys ) {
+    delete obj[k];
+  }
+}

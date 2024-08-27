@@ -30,7 +30,7 @@ export default {
   },
 
   async fetch() {
-    this.$store.dispatch('catalog/load', { force: true, reset: true });
+    this.$store.dispatch('catalog/load');
 
     this.allOperations = await this.$store.dispatch('cluster/findAll', { type: CATALOG.OPERATION });
   },

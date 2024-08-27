@@ -22,7 +22,7 @@ Rancher publishes two npm packages to help bootstrap the creation of the app and
 Create a new folder and run:
 
 ```sh
-yarn create @rancher/app my-app
+yarn create @rancher/app my-app [OPTIONS]
 cd my-app
 ```
 
@@ -32,14 +32,56 @@ This will create a new folder `my-app` and populate it with the minimum files ne
 
 > Note: The skeleton application references the Rancher dashboard code via the `@rancher/shell` npm module.
 
+### Installing Rancher
+
+See <https://ranchermanager.docs.rancher.com/getting-started/installation-and-upgrade>. Note: Not all Linux distros and versions are supported. To make sure your OS is compatible with Rancher, see the support maintenance terms for the specific Rancher version that you are using: https://www.suse.com/suse-rancher/support-matrix/all-supported-versions
+
+The above linked installation docs cover two methods confirmed to work with the Dashboard:
+
+- [Single Docker Container](https://ranchermanager.docs.rancher.com/getting-started/installation-and-upgrade/other-installation-methods/rancher-on-a-single-node-with-docker)
+- [Kube Cluster (via Helm)](https://ranchermanager.docs.rancher.com/getting-started/installation-and-upgrade/install-upgrade-on-a-kubernetes-cluster)
+
+To use the most recent version of Rancher that is actively in development, use the version tag `v2.6-head` when installing Rancher. For example, the Docker installation command would look like this:
+
+```bash
+sudo docker run -d --restart=unless-stopped -p 80:80 -p 443:443 --privileged -e CATTLE_BOOTSTRAP_PASSWORD=OPTIONAL_PASSWORD_HERE rancher/rancher:v2.6-head
+```
+
+Dashboard provides convenience methods to start and stop Rancher in a single docker container
+
+```bash
+yarn run docker:local:start
+yarn run docker:local:stop  // default user password as "password"
+```
+
+Note that for Rancher to provision and manage downstream clusters, the Rancher server URL must be accessible from the Internet. If you’re running Rancher in Docker Desktop, the Rancher server URL is `https://localhost`. To make Rancher accessible to downstream clusters for development, you can:
+
+- Use ngrok to test provisioning with a local rancher server
+- Install Rancher on a virtual machine in Digital Ocean or Amazon EC2
+- Change the Rancher server URL using `<dashboard url>c/local/settings/management.cattle.io.setting`
+
+Also for consideration:
+
+- [K3d](https://k3d.io/v4.4.8/#installation) lets you immediately install a Kubernetes cluster in a Docker container and interact with it with kubectl for development and testing purposes.
+
+You should be able to reach the older Ember UI by navigating to the Rancher API url. This same API Url will be used later when starting up the Dashboard.
+
+#### ___Extension Options___
+
+There is one option available to be passed as an argument to the `@rancher/app` script:
+
+| Option | Description |
+| :---: | ------ |
+| `-l` | This will automatically add the [`.gitlab-ci.yml`](https://github.com/rancher/dashboard/blob/master/shell/creators/app/files/.gitlab-ci.yml) pipeline file for integration with GitLab |
+
+---
+
 You can run the app with:
 
 ```sh
 yarn install
 API=<Rancher Backend URL> yarn dev
 ```
-
-> Note: You will need to have a Rancher backend available and the `API` environment variable above set correctly to reference it. Setup instructions can be found [here](../getting-started/development_environment/#installing-rancher).
 
 You should be able to open a browser at https://127.0.0.1:8005 and you'll get the Rancher Dashboard UI. Your skeleton application is a full Rancher UI - but referenced via `npm`.
 
@@ -60,11 +102,14 @@ yarn create @rancher/pkg test [OPTIONS]
 
 This will create a new UI Package in the `./pkg/test` folder.
 
-#### ___Extension Options___
+#### ___Extension Package Options___
 
 There are two options that can be passed to the `@rancher/pkg` script:
-- `-t`: Creates additional boilerplate directories for types, including: 'l10n', 'models', 'edit', 'list', and 'detail'
-- `-w`: Creates a workflow file ('build-extension.yml') to be used as a Github action. This will automatically build your extension and release a Helm chart.
+
+| Option | Description |
+| :---: | ------ |
+| `-t` | Creates additional boilerplate directories for types, including: 'l10n', 'models', 'edit', 'list', and 'detail'. |
+| `-w` | Creates the workflow files [`build-extension-catalog.yml`, `build-extension-charts.yml`](https://github.com/rancher/dashboard/tree/master/shell/creators/pkg/files/.github/workflows) to be used as Github actions. This will automatically build your extension and release a Helm chart and Extension Catalog Image. |
 
 > Note: Using the `-w` option to create an automated workflow will require additonal prequesites, see the [Release](#creating-a-release) section.
 
@@ -259,9 +304,11 @@ You'll notice that if you reload the Rancher UI, the extension is not persistent
 
 Creating a Release for your extension is the official avenue for loading extensions into any Rancher instance. As mentioned in the [Introduction](./introduction.md), the extension can be packaged into a Helm chart and added as a Helm repository to be easily accessible from your Rancher Manager.
 
-We have created [a workflow](https://github.com/rancher/dashboard/tree/master/shell/creators/pkg/files/.github/workflows) for [Github Actions](https://docs.github.com/en/actions) which will automatically build, package, and release your extension as a Helm chart for use within your Github repository, and an [Extension Catalog Image](./advanced/air-gapped-environments) (ECI) which is published into a specified container registry (`ghcr.io` by default). Depending on the use case, you can utilize the Github repository as a [Helm repository](https://helm.sh/docs/topics/chart_repository/) endpoint which we can use to consume the chart in Rancher, or you can import the ECI into the Extension Catalog list and serve the Helm charts locally.
+We have created [workflows](https://github.com/rancher/dashboard/tree/master/shell/creators/pkg/files/.github/workflows) for [Github Actions](https://docs.github.com/en/actions) which will automatically build, package, and release your extension as a Helm chart for use within your Github repository, and an [Extension Catalog Image](./advanced/air-gapped-environments) (ECI) which is published into a specified container registry (`ghcr.io` by default). Depending on the use case, you can utilize the Github repository as a [Helm repository](https://helm.sh/docs/topics/chart_repository/) endpoint which we can use to consume the chart in Rancher, or you can import the ECI into the Extension Catalog list and serve the Helm charts locally.
 
-> Note: If you wish to build and publish the Helm chart or the ECI manually or with specific configurations, you can follow the steps listed in the [Publishing an Extension](./publishing) section.
+> **Note:** GitLab support is offered through leverging the ECI build. For configuration instructions, follow the setps in the [Gitlab Integration](./publishing#gitlab-integration) section.
+
+> **Note:** If you wish to build and publish the Helm chart or the ECI manually or with specific configurations, you can follow the steps listed in the [Publishing an Extension](./publishing) section.
 
 ### Release Prerequisites
 

@@ -59,6 +59,11 @@ export default {
       required: false
     },
 
+    altLoading: {
+      type:     Boolean,
+      required: false
+    },
+
     keyField: {
       // Field that is unique for each row.
       type:    String,
@@ -95,6 +100,14 @@ export default {
     pagingLabel: {
       type:    String,
       default: 'sortableTable.paging.resource',
+    },
+
+    /**
+     * Additional params to pass to the pagingLabel translation
+     */
+    pagingParams: {
+      type:    Object,
+      default: null,
     },
 
     rowActions: {
@@ -158,6 +171,16 @@ export default {
     forceUpdateLiveAndDelayed: {
       type:    Number,
       default: 0
+    },
+
+    externalPaginationEnabled: {
+      type:    Boolean,
+      default: false
+    },
+
+    externalPaginationResult: {
+      type:    Object,
+      default: null
     }
   },
 
@@ -176,24 +199,31 @@ export default {
   },
 
   data() {
-    const options = this.$store.getters[`type-map/optionsFor`](this.schema);
-    const listGroups = options?.listGroups || [];
-    const listGroupMapped = listGroups.reduce((acc, grp) => {
-      acc[grp.value] = grp;
-
-      return acc;
-    }, {});
-
     // Confirm which store we're in, if schema isn't available we're probably showing a list with different types
     const inStore = this.schema?.id ? this.$store.getters['currentStore'](this.schema.id) : undefined;
 
-    return {
-      listGroups, listGroupMapped, inStore
-    };
+    return { inStore };
   },
 
   computed: {
+    options() {
+      return this.$store.getters[`type-map/optionsFor`](this.schema, this.externalPaginationEnabled);
+    },
+
+    _listGroupMapped() {
+      return this.options?.listGroups?.reduce((acc, grp) => {
+        acc[grp.value] = grp;
+
+        return acc;
+      }, {});
+    },
+
+    _mandatorySort() {
+      return this.options?.listMandatorySort;
+    },
+
     ...mapGetters(['currentProduct']),
+
     isNamespaced() {
       if ( this.namespaced !== null ) {
         return this.namespaced;
@@ -228,7 +258,7 @@ export default {
       if ( this.headers ) {
         headers = this.headers.slice();
       } else {
-        headers = this.$store.getters['type-map/headersFor'](this.schema);
+        headers = this.$store.getters['type-map/headersFor'](this.schema, this.externalPaginationEnabled);
       }
 
       // add custom table columns provided by the extensions ExtensionPoint.TABLE_COL hook
@@ -275,7 +305,7 @@ export default {
       }
 
       // If we are grouping by a custom group, it may specify that we hide a specific column
-      const custom = this.listGroupMapped[this.group];
+      const custom = this._listGroupMapped?.[this.group];
 
       if (custom?.hideColumn) {
         const idx = headers.findIndex((header) => header.name === custom.hideColumn);
@@ -288,6 +318,9 @@ export default {
       return headers;
     },
 
+    /**
+     * Take rows and filter out entries given the namespace filter
+     */
     filteredRows() {
       const isAll = this.$store.getters['isAllNamespaces'];
 
@@ -295,6 +328,7 @@ export default {
       if (
         !this.isNamespaced || // Resource type isn't namespaced
         this.ignoreFilter || // Component owner strictly states no filtering
+        this.externalPaginationEnabled ||
         (isAll && !this.currentProduct?.hideSystemResources) || // Need all
         (this.inStore ? this.$store.getters[`${ this.inStore }/haveNamespace`](this.schema.id)?.length : false)// Store reports type has namespace filter, so rows already contain the correctly filtered resources
       ) {
@@ -336,7 +370,14 @@ export default {
         const exists = this.groupOptions.find((g) => g.value === this._group);
 
         if (!exists) {
-          return DEFAULT_GROUP;
+          // Attempt to find the default option in available options...
+          // if not use the first value in the options collection...
+          // and if not that just fall back to the default
+          if (this.groupOptions.find((g) => g.value === DEFAULT_GROUP)) {
+            return DEFAULT_GROUP;
+          }
+
+          return this.groupOptions[0]?.value || DEFAULT_GROUP;
         }
 
         return this._group;
@@ -349,7 +390,7 @@ export default {
     showGrouping() {
       if ( this.groupable === null ) {
         const namespaceGroupable = this.$store.getters['isMultipleNamespaces'] && this.isNamespaced;
-        const customGroupable = this.listGroups.length > 0;
+        const customGroupable = !!this.options?.listGroups?.length;
 
         return namespaceGroupable || customGroupable;
       }
@@ -359,16 +400,19 @@ export default {
 
     computedGroupBy() {
       if ( this.groupBy ) {
+        // This probably comes from the type-map config for the resource (see ResourceList)
         return this.groupBy;
       }
 
       if ( this.group === 'namespace' && this.showGrouping ) {
+        // This switches to group rows by a key which is the label for the group (??)
         return 'groupByLabel';
       }
 
-      const custom = this.listGroupMapped[this.group];
+      const custom = this._listGroupMapped?.[this.group];
 
-      if (custom && custom.field) {
+      if (custom?.field) {
+        // Override the normal filtering
         return custom.field;
       }
 
@@ -376,6 +420,12 @@ export default {
     },
 
     groupOptions() {
+      // Ignore the defaults below, we have an override set of groups
+      // REPLACE (instead of SUPPLEMENT) defaults with listGroups (given listGroupsWillOverride is true)
+      if (this.options?.listGroupsWillOverride && !!this.options?.listGroups?.length) {
+        return this.options?.listGroups;
+      }
+
       const standard = [
         {
           tooltipKey: 'resourceTable.groupBy.none',
@@ -389,10 +439,19 @@ export default {
         },
       ];
 
-      return standard.concat(this.listGroups);
+      // SUPPLEMENT (instead of REPLACE) defaults with listGroups (given listGroupsWillOverride is false)
+      if (!!this.options?.listGroups?.length) {
+        return standard.concat(this.options.listGroups);
+      }
+
+      return standard;
     },
 
-    pagingParams() {
+    parsedPagingParams() {
+      if (this.pagingParams) {
+        return this.pagingParams;
+      }
+
       if ( !this.schema ) {
         return {
           singularLabel: '',
@@ -405,6 +464,7 @@ export default {
         pluralLabel:   this.$store.getters['type-map/labelFor'](this.schema, 99),
       };
     },
+
   },
 
   methods: {
@@ -466,7 +526,7 @@ export default {
         this.keyAction('detail');
       }
     }
-  }
+  },
 };
 </script>
 
@@ -477,12 +537,13 @@ export default {
     :headers="_headers"
     :rows="filteredRows"
     :loading="loading"
+    :alt-loading="altLoading"
     :group-by="computedGroupBy"
     :group="group"
     :group-options="groupOptions"
     :search="search"
     :paging="true"
-    :paging-params="pagingParams"
+    :paging-params="parsedPagingParams"
     :paging-label="pagingLabel"
     :row-actions="rowActions"
     :table-actions="_showBulkActions"
@@ -496,8 +557,12 @@ export default {
     :sort-generation-fn="safeSortGenerationFn"
     :use-query-params-for-simple-filtering="useQueryParamsForSimpleFiltering"
     :force-update-live-and-delayed="forceUpdateLiveAndDelayed"
+    :external-pagination-enabled="externalPaginationEnabled"
+    :external-pagination-result="externalPaginationResult"
+    :mandatory-sort="_mandatorySort"
     @clickedActionButton="handleActionButtonClick"
     @group-value-change="group = $event"
+
     v-on="$listeners"
   >
     <template
@@ -505,6 +570,7 @@ export default {
       #header-middle
     >
       <slot name="more-header-middle" />
+
       <ButtonGroup
         v-model="group"
         :options="groupOptions"

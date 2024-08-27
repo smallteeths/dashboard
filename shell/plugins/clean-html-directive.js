@@ -1,34 +1,9 @@
 import Vue from 'vue';
-import DOMPurify from 'dompurify';
+import cleanHtmlDirective from '@shell/directives/clean-html';
 
-const ALLOWED_TAGS = [
-  'code',
-  'li',
-  'a',
-  'p',
-  'b',
-  'br',
-  'ul',
-  'pre',
-  'span',
-  'div',
-  'i',
-  'em',
-  'strong',
-];
+export default cleanHtmlDirective;
 
-export const purifyHTML = (value) => DOMPurify.sanitize(value, { ALLOWED_TAGS });
-
-export const cleanHtmlDirective = {
-  inserted(el, binding) {
-    el.innerHTML = purifyHTML(binding.value);
-  },
-  componentUpdated(el, binding) {
-    el.innerHTML = purifyHTML(binding.value);
-  },
-  unbind(el) {
-    el.innerHTML = '';
-  }
-};
-
+/* eslint-disable-next-line no-console */
+console.warn(`Importing cleanHtmlDirective from plugins has been deprecated, use shell/directives/clean-html.js instead.  
+Make sure to invoke Vue.directive('clean-html', cleanHtmlDirective) to maintain compatibility.`);
 Vue.directive('clean-html', cleanHtmlDirective);

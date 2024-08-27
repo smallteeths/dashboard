@@ -298,18 +298,18 @@ export default {
     <Tabbed>
       <Tab
         name="cluster-membership"
-        :label="t('members.clusterMemebership')"
+        :label="t('members.clusterMembership')"
       >
         <div
           v-if="canEditClusterMembers"
           class="row mb-10 cluster-add"
         >
-          <n-link
+          <router-link
             :to="createLocation"
             class="btn role-primary pull-right"
           >
             {{ t('members.createActionLabel') }}
-          </n-link>
+          </router-link>
         </div>
         <ResourceTable
           :schema="schema"

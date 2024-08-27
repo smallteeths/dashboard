@@ -3,6 +3,7 @@
 import { MANAGEMENT } from './types';
 import { Store } from 'vuex';
 import { GC_DEFAULTS, GC_PREFERENCES } from '@shell/utils/gc/gc-types';
+import { PaginationSettings } from '@shell/types/resources/settings';
 
 interface GlobalSettingRuleset {
   name: string,
@@ -22,8 +23,9 @@ interface GlobalSetting {
     /**
      * Function used from the form validation
      */
-     ruleSet?: GlobalSettingRuleset[],
-     unit?: string
+    ruleSet?: GlobalSettingRuleset[],
+    warning?: string,
+    unit?: string
   };
 }
 
@@ -75,12 +77,17 @@ export const SETTING = {
   BRAND:                                'ui-brand',
   LOGO_LIGHT:                           'ui-logo-light',
   LOGO_DARK:                            'ui-logo-dark',
+  BANNER_LIGHT:                         'ui-banner-light',
+  BANNER_DARK:                          'ui-banner-dark',
+  LOGIN_BACKGROUND_LIGHT:               'ui-login-background-light',
+  LOGIN_BACKGROUND_DARK:                'ui-login-background-dark',
   PRIMARY_COLOR:                        'ui-primary-color',
   LINK_COLOR:                           'ui-link-color',
   COMMUNITY_LINKS:                      'ui-community-links',
   FAVICON:                              'ui-favicon',
   UI_PERFORMANCE:                       'ui-performance',
   UI_CUSTOM_LINKS:                      'ui-custom-links',
+  UI_SUPPORTED_K8S_VERSIONS:            'ui-k8s-supported-versions-range',
   /**
    * Allow the backend to force a light/dark theme. Used in non-rancher world and results in the theme used
    * both pre and post log in. If not present defaults to the usual process
@@ -112,8 +119,9 @@ export const SETTING = {
   FLEET_AGENT_DEFAULT_AFFINITY:         'fleet-agent-default-affinity',
   /**
    * manage rancher repositories in extensions (official, partners repos)
-   */
+  */
   ADD_EXTENSION_REPOS_BANNER_DISPLAY:   'display-add-extension-repos-banner',
+  AGENT_TLS_MODE:                       'agent-tls-mode',
   /**
    * User retention settings
    */
@@ -176,6 +184,11 @@ export const ALLOWED_SETTINGS: GlobalSetting = {
     options: ['prompt', 'in', 'out']
   },
   [SETTING.HIDE_LOCAL_CLUSTER]: { kind: 'boolean' },
+  [SETTING.AGENT_TLS_MODE]:     {
+    kind:    'enum',
+    options: ['strict', 'system-store'],
+    warning: 'agent-tls-mode'
+  },
 
   [SETTING.UI_SESSION_LOGOUT_MINUTES]: {},
   [SETTING.FOOTER_TEXT]:               {},
@@ -197,7 +210,7 @@ export const ALLOWED_SETTINGS: GlobalSetting = {
     kind:    'enum',
     options: ['harden', 'true', 'false']
   },
-  [SETTING.AUTH_USER_OPT_SESSION_TTL_MINUTES]: {}
+  [SETTING.AUTH_USER_OPT_SESSION_TTL_MINUTES]: {},
 };
 
 /**
@@ -238,6 +251,7 @@ export interface PerfSettings {
   forceNsFilterV2: any;
   advancedWorker: {};
   kubeAPI: PerfSettingsKubeApi;
+  serverPagination: PaginationSettings;
 }
 
 export const DEFAULT_PERF_SETTING: PerfSettings = {
@@ -273,7 +287,22 @@ export const DEFAULT_PERF_SETTING: PerfSettings = {
        */
       notificationBlockList: ['299 - unknown field']
     }
+  },
+  serverPagination: {
+    enabled: false,
+    stores:  {
+      cluster: {
+        resources: {
+          enableAll:  false,
+          enableSome: {
+            enabled: ['configmap', 'secret', 'pod', 'node'],
+            generic: true,
+          }
+        }
+      }
+    }
   }
+
 };
 
 export const DEFAULT_GMV2_SETTING = {

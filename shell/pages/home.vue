@@ -19,6 +19,7 @@ import { getVendor } from '@shell/config/private-label';
 import { mapFeature, MULTI_CLUSTER } from '@shell/store/features';
 import { BLANK_CLUSTER } from '@shell/store/store-types.js';
 import { filterOnlyKubernetesClusters, filterHiddenLocalCluster } from '@shell/utils/cluster';
+import TabTitle from '@shell/components/TabTitle';
 
 import { RESET_CARDS_ACTION, SET_LOGIN_ACTION } from '@shell/config/page-actions';
 
@@ -33,6 +34,7 @@ export default {
     BadgeState,
     CommunityLinks,
     SingleClusterInfo,
+    TabTitle
   },
 
   mixins: [PageHeaderActions],
@@ -88,6 +90,10 @@ export default {
     ...mapState(['managementReady']),
     ...mapGetters(['currentCluster', 'defaultClusterId', 'releaseNotesUrl']),
     mcm: mapFeature(MULTI_CLUSTER),
+
+    mgmtClusters() {
+      return this.$store.getters['management/all'](MANAGEMENT.CLUSTER);
+    },
 
     provClusters() {
       return this.$store.getters['management/all'](CAPI.RANCHER_CLUSTER);
@@ -164,15 +170,16 @@ export default {
         },
         {
           label:     this.t('landing.clusters.provider'),
+          subLabel:  this.t('landing.clusters.distro'),
           value:     'mgmt.status.provider',
           name:      'Provider',
           sort:      ['mgmt.status.provider'],
           formatter: 'ClusterProvider'
         },
         {
-          label: this.t('landing.clusters.kubernetesVersion'),
-          value: 'kubernetesVersion',
-          name:  'Kubernetes Version'
+          label:    this.t('landing.clusters.kubernetesVersion'),
+          subLabel: this.t('landing.clusters.architecture'),
+          name:     'kubernetesVersion',
         },
         {
           label: this.t('tableHeaders.cpu'),
@@ -204,7 +211,15 @@ export default {
     },
 
     kubeClusters() {
-      return filterHiddenLocalCluster(filterOnlyKubernetesClusters(this.provClusters || [], this.$store), this.$store);
+      const filteredClusters = filterHiddenLocalCluster(filterOnlyKubernetesClusters(this.provClusters || [], this.$store), this.$store);
+
+      return filteredClusters.map((provCluster) => {
+        const mgmtCluster = this.mgmtClusters?.find((c) => provCluster.mgmt?.id === c.id);
+
+        provCluster.description = provCluster.description || mgmtCluster?.description;
+
+        return provCluster;
+      });
     }
   },
 
@@ -298,6 +313,12 @@ export default {
     v-if="managementReady"
     class="home-page"
   >
+    <TabTitle
+      :show-child="false"
+      :breadcrumb="false"
+    >
+      {{ vendor }}
+    </TabTitle>
     <BannerGraphic
       :small="true"
       :title="t('landing.welcomeToRancher', {vendor})"
@@ -382,49 +403,71 @@ export default {
                   #header-middle
                 >
                   <div class="table-heading">
-                    <n-link
+                    <router-link
                       v-if="canManageClusters"
                       :to="manageLocation"
                       class="btn btn-sm role-secondary"
                       data-testid="cluster-management-manage-button"
                     >
                       {{ t('cluster.manageAction') }}
-                    </n-link>
-                    <n-link
+                    </router-link>
+                    <router-link
                       v-if="canCreateCluster"
                       :to="importLocation"
                       class="btn btn-sm role-primary"
                       data-testid="cluster-create-import-button"
                     >
                       {{ t('cluster.importAction') }}
-                    </n-link>
-                    <n-link
+                    </router-link>
+                    <router-link
                       v-if="canCreateCluster"
                       :to="createLocation"
                       class="btn btn-sm role-primary"
                       data-testid="cluster-create-button"
                     >
                       {{ t('generic.create') }}
-                    </n-link>
+                    </router-link>
                   </div>
                 </template>
                 <template #col:name="{row}">
-                  <td>
+                  <td class="col-name">
                     <div class="list-cluster-name">
-                      <span v-if="row.mgmt">
-                        <n-link
+                      <p
+                        v-if="row.mgmt"
+                        class="cluster-name"
+                      >
+                        <router-link
                           v-if="row.mgmt.isReady && !row.hasError"
                           :to="{ name: 'c-cluster-explorer', params: { cluster: row.mgmt.id }}"
                         >
                           {{ row.nameDisplay }}
-                        </n-link>
+                        </router-link>
                         <span v-else>{{ row.nameDisplay }}</span>
-                      </span>
-                      <i
-                        v-if="row.unavailableMachines"
-                        v-clean-tooltip="row.unavailableMachines"
-                        class="conditions-alert-icon icon-alert icon"
-                      />
+                        <i
+                          v-if="row.unavailableMachines"
+                          v-clean-tooltip="row.unavailableMachines"
+                          class="conditions-alert-icon icon-alert icon"
+                        />
+                      </p>
+                      <p
+                        v-if="row.description"
+                        class="cluster-description"
+                      >
+                        {{ row.description }}
+                      </p>
+                    </div>
+                  </td>
+                </template>
+                <template #col:kubernetesVersion="{row}">
+                  <td class="col-name">
+                    <span>
+                      {{ row.kubernetesVersion }}
+                    </span>
+                    <div
+                      v-clean-tooltip="{content: row.architecture.tooltip, placement: 'left'}"
+                      class="text-muted"
+                    >
+                      {{ row.architecture.label }}
                     </div>
                   </td>
                 </template>
@@ -445,9 +488,9 @@ export default {
                   </td>
                 </template>
                 <!-- <template #cell:explorer="{row}">
-                  <n-link v-if="row && row.isReady" class="btn btn-sm role-primary" :to="{name: 'c-cluster', params: {cluster: row.id}}">
+                  <router-link v-if="row && row.isReady" class="btn btn-sm role-primary" :to="{name: 'c-cluster', params: {cluster: row.id}}">
                     {{ t('landing.clusters.explore') }}
-                  </n-link>
+                  </router-link>
                   <button v-else :disabled="true" class="btn btn-sm role-primary">
                     {{ t('landing.clusters.explore') }}
                   </button>
@@ -525,9 +568,23 @@ export default {
     white-space: nowrap;
   }
 
+  .col-name {
+    max-width: 280px;
+  }
+
   .list-cluster-name {
-    align-items: center;
-    display: flex;
+
+    .cluster-name {
+      display: flex;
+      align-items: center;
+    }
+
+    .cluster-description {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--muted);
+    }
 
     .conditions-alert-icon {
       color: var(--error);

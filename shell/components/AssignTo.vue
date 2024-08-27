@@ -4,6 +4,7 @@ import { FLEET, NORMAN } from '@shell/config/types';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 import KeyValue from '@shell/components/form/KeyValue';
 import AsyncButton from '@shell/components/AsyncButton';
+import AppModal from '@shell/components/AppModal.vue';
 import { Card } from '@components/Card';
 import { Banner } from '@components/Banner';
 import { exceptionToErrorsArray } from '@shell/utils/error';
@@ -16,6 +17,7 @@ export default {
     KeyValue,
     AsyncButton,
     Banner,
+    AppModal
   },
 
   data() {
@@ -25,6 +27,7 @@ export default {
       moveTo:        this.workspace,
       loaded:        false,
       allWorkspaces: [],
+      showModal:     false,
     };
   },
 
@@ -51,9 +54,9 @@ export default {
         this.allWorkspaces = await this.$store.dispatch('management/findAll', { type: FLEET.WORKSPACE });
         this.moveTo = this.workspace;
         this.loaded = true;
-        this.$modal.show('assignTo');
+        this.showModal = true;
       } else {
-        this.$modal.hide('assignTo');
+        this.showModal = false;
       }
     }
   },
@@ -105,12 +108,14 @@ export default {
 </script>
 
 <template>
-  <modal
+  <app-modal
+    v-if="showModal"
     class="assign-modal"
     name="assignTo"
     styles="background-color: var(--nav-bg); border-radius: var(--border-radius); max-height: 100vh;"
     height="auto"
     :scrollable="true"
+    @close="close"
   >
     <Card
       v-if="loaded"
@@ -165,7 +170,7 @@ export default {
         />
       </div>
     </Card>
-  </modal>
+  </app-modal>
 </template>
 
 <style lang='scss'>

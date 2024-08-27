@@ -1,10 +1,12 @@
 <script>
 import AsyncButton from '@shell/components/AsyncButton';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
+import AppModal from '@shell/components/AppModal.vue';
 import { CATALOG, MANAGEMENT } from '@shell/config/types';
 import { CATALOG as CATALOG_ANNOTATIONS } from '@shell/config/labels-annotations';
 import { UI_PLUGIN_NAMESPACE } from '@shell/config/uiplugins';
 import Banner from '@components/Banner/Banner.vue';
+import { SETTING } from '@shell/config/settings';
 
 // Note: This dialog handles installation and update of a plugin
 
@@ -13,12 +15,13 @@ export default {
     AsyncButton,
     Banner,
     LabeledSelect,
+    AppModal,
   },
 
   async fetch() {
     this.defaultRegistrySetting = await this.$store.dispatch('management/find', {
       type: MANAGEMENT.SETTING,
-      id:   'system-default-registry'
+      id:   SETTING.SYSTEM_DEFAULT_REGISTRY,
     });
   },
 
@@ -31,6 +34,8 @@ export default {
       version:                '',
       update:                 false,
       mode:                   '',
+      showModal:              false,
+      chartVersionInfo:       null
     };
   },
 
@@ -63,6 +68,10 @@ export default {
 
     buttonMode() {
       return this.update ? 'update' : 'install';
+    },
+
+    chartVersionLoadsWithoutAuth() {
+      return this.chartVersionInfo?.values?.plugin?.noAuth;
     }
   },
 
@@ -101,11 +110,37 @@ export default {
 
       this.busy = false;
       this.update = mode !== 'install';
-      this.$modal.show('installPluginDialog');
+      this.showModal = true;
+    },
+
+    async loadVersionInfo() {
+      try {
+        this.busy = true;
+        const plugin = this.plugin;
+
+        // Find the version that the user wants to install
+        const version = plugin.versions?.find((v) => v.version === this.version);
+
+        if (!version) {
+          this.busy = false;
+
+          return;
+        }
+
+        this.chartVersionInfo = await this.$store.dispatch('catalog/getVersionInfo', {
+          repoType:    version.repoType,
+          repoName:    version.repoName,
+          chartName:   plugin.chart.chartName,
+          versionName: this.version,
+        });
+      } catch (e) {
+      } finally {
+        this.busy = false;
+      }
     },
 
     closeDialog(result) {
-      this.$modal.hide('installPluginDialog');
+      this.showModal = false;
       this.$emit('closed', result);
     },
 
@@ -125,21 +160,9 @@ export default {
         return;
       }
 
+      const image = this.chartVersionInfo?.values?.image?.repository || '';
       // is the image used by the chart in the rancher org?
-      let isRancherImage = false;
-
-      try {
-        const chartVersionInfo = await this.$store.dispatch('catalog/getVersionInfo', {
-          repoType:    version.repoType,
-          repoName:    version.repoName,
-          chartName:   plugin.chart.chartName,
-          versionName: this.version,
-        });
-
-        const image = chartVersionInfo?.values?.image?.repository || '';
-
-        isRancherImage = image.startsWith('rancher/');
-      } catch (e) {}
+      const isRancherImage = image.startsWith('rancher/');
 
       // See if there is already a plugin with this name
       let exists = false;
@@ -210,15 +233,23 @@ export default {
         this.closeDialog(plugin);
       }
     }
+  },
+  watch: {
+    version() {
+      this.chartVersionInfo = null;
+      this.loadVersionInfo();
+    }
   }
 };
 </script>
 
 <template>
-  <modal
+  <app-modal
+    v-if="showModal"
     name="installPluginDialog"
     height="auto"
     :scrollable="true"
+    @close="closeDialog(false)"
   >
     <div
       v-if="plugin"
@@ -232,6 +263,11 @@ export default {
           <p>
             {{ t(`plugins.${ mode }.prompt`) }}
           </p>
+          <Banner
+            v-if="chartVersionLoadsWithoutAuth"
+            color="warning"
+            :label="t('plugins.warnNoAuth')"
+          />
           <Banner
             v-if="!plugin.certified"
             color="warning"
@@ -266,7 +302,7 @@ export default {
         </div>
       </div>
     </div>
-  </modal>
+  </app-modal>
 </template>
 
 <style lang="scss" scoped>

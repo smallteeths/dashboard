@@ -4,9 +4,10 @@ import ClusterManagerListPagePo from '@/cypress/e2e/po/pages/cluster-manager/clu
 import ClusterManagerDetailRke2AmazonEc2PagePo from '@/cypress/e2e/po/detail/provisioning.cattle.io.cluster/cluster-detail-rke2-amazon.po';
 import PromptRemove from '@/cypress/e2e/po/prompts/promptRemove.po';
 import LoadingPo from '@/cypress/e2e/po/components/loading.po';
+import TabbedPo from '~/cypress/e2e/po/components/tabbed.po';
 
 // will only run this in jenkins pipeline where cloud credentials are stored
-describe('Provision Node driver RKE2 cluster', { testIsolation: 'off', tags: ['@manager', '@adminUser', '@jenkins'] }, () => {
+describe('Provision Node driver RKE2 cluster', { testIsolation: 'off', tags: ['@manager', '@adminUser', '@standardUser', '@jenkins'] }, () => {
   const clusterList = new ClusterManagerListPagePo();
   let removeCloudCred = false;
   let cloudcredentialId = '';
@@ -15,18 +16,20 @@ describe('Provision Node driver RKE2 cluster', { testIsolation: 'off', tags: ['@
     cy.login();
     HomePagePo.goTo();
 
-    // clean up cloud credentials
+    // clean up amazon cloud credentials
     cy.getRancherResource('v3', 'cloudcredentials', null, null).then((resp: Cypress.Response<any>) => {
       const body = resp.body;
 
       if (body.pagination['total'] > 0) {
-        for (const i in body.data) {
-          const id = body.data[i]['id'];
+        body.data.forEach((item: any) => {
+          if (item.amazonec2credentialConfig) {
+            const id = item.id;
 
-          cy.deleteRancherResource('v3', 'cloudcredentials', id);
-        }
-      } else {
-        cy.log('There are no existing cloud credentials to delete');
+            cy.deleteRancherResource('v3', 'cloudcredentials', id);
+          } else {
+            cy.log('There are no existing amazon cloud credentials to delete');
+          }
+        });
       }
     });
   });
@@ -40,6 +43,7 @@ describe('Provision Node driver RKE2 cluster', { testIsolation: 'off', tags: ['@
     const createRKE2ClusterPage = new ClusterManagerCreateRke2AmazonPagePo();
     const cloudCredForm = createRKE2ClusterPage.cloudCredentialsForm();
     const clusterDetails = new ClusterManagerDetailRke2AmazonEc2PagePo(undefined, this.rke2Ec2ClusterName);
+    const tabbedPo = new TabbedPo('[data-testid="tabbed-block"]');
 
     // create cluster
     ClusterManagerListPagePo.navTo();
@@ -48,14 +52,16 @@ describe('Provision Node driver RKE2 cluster', { testIsolation: 'off', tags: ['@
     createRKE2ClusterPage.rkeToggle().set('RKE2/K3s');
     createRKE2ClusterPage.selectCreate(0);
     createRKE2ClusterPage.rke2PageTitle().should('include', 'Create Amazon EC2');
-    createRKE2ClusterPage.waitForPage('type=amazonec2');
+    createRKE2ClusterPage.waitForPage('type=amazonec2&rkeType=rke2');
 
     // create amazon ec2 cloud credential
+    cloudCredForm.saveButton().expectToBeDisabled();
     cloudCredForm.nameNsDescription().name().set(this.ec2CloudCredentialName);
     cloudCredForm.accessKey().set(Cypress.env('awsAccessKey'));
     cloudCredForm.secretKey().set(Cypress.env('awsSecretKey'), true);
     cloudCredForm.defaultRegion().toggle();
     cloudCredForm.defaultRegion().clickOptionWithLabel('us-west-1');
+    cloudCredForm.saveButton().expectToBeEnabled();
 
     cy.intercept('GET', '/v1/management.cattle.io.users?exclude=metadata.managedFields').as('pageLoad');
     cloudCredForm.saveCreateForm().cruResource().saveAndWaitForRequests('POST', '/v3/cloudcredentials').then((req) => {
@@ -68,7 +74,7 @@ describe('Provision Node driver RKE2 cluster', { testIsolation: 'off', tags: ['@
 
     cy.wait('@pageLoad').its('response.statusCode').should('eq', 200);
     loadingPo.checkNotExists();
-    createRKE2ClusterPage.waitForPage('type=amazonec2', 'basic');
+    createRKE2ClusterPage.waitForPage('type=amazonec2&rkeType=rke2', 'basic');
     createRKE2ClusterPage.nameNsDescription().name().set(this.rke2Ec2ClusterName);
     createRKE2ClusterPage.nameNsDescription().description().set(`${ this.rke2Ec2ClusterName }-description`);
 
@@ -76,8 +82,10 @@ describe('Provision Node driver RKE2 cluster', { testIsolation: 'off', tags: ['@
     createRKE2ClusterPage.basicsTab().kubernetesVersions().toggle();
     createRKE2ClusterPage.basicsTab().kubernetesVersions().getOptions().each((el, index) => {
       cy.wrap(el.text().trim()).as(`k8sVersion${ index }`);
-    });
-    createRKE2ClusterPage.basicsTab().kubernetesVersions().clickOption(1);
+    })
+      .then(function() {
+        createRKE2ClusterPage.basicsTab().kubernetesVersions().clickOptionWithLabel(this.k8sVersion1);
+      });
 
     createRKE2ClusterPage.machinePoolTab().networks().toggle();
     createRKE2ClusterPage.machinePoolTab().networks().clickOptionWithLabel('maxdualstack-vpc');
@@ -91,6 +99,10 @@ describe('Provision Node driver RKE2 cluster', { testIsolation: 'off', tags: ['@
       expect(response?.body.spec).to.have.property('kubernetesVersion', this.k8sVersion1);
     });
     clusterList.waitForPage();
+
+    // check Architecture
+    // testing https://github.com/rancher/dashboard/issues/10831
+    clusterList.list().version(this.rke2Ec2ClusterName).should('contain', '—').and('not.contain', 'Mixed');
 
     // check states
     clusterList.list().state(this.rke2Ec2ClusterName).should('contain', 'Reconciling');
@@ -113,6 +125,34 @@ describe('Provision Node driver RKE2 cluster', { testIsolation: 'off', tags: ['@
     clusterDetails.waitForPage(null, 'machine-pools');
     clusterDetails.resourceDetail().title().should('contain', this.rke2Ec2ClusterName);
     clusterDetails.machinePoolsList().details(`${ this.rke2Ec2ClusterName }-pool1-`, 1).should('contain', 'Running');
+
+    // check cluster details page > recent events
+    ClusterManagerListPagePo.navTo();
+    clusterList.waitForPage();
+    clusterList.clickOnClusterName(this.rke2Ec2ClusterName);
+    clusterDetails.selectTab(tabbedPo, '[data-testid="btn-events"');
+    clusterDetails.recentEventsList().checkTableIsEmpty();
+
+    // check cluster details page > snapshots
+    ClusterManagerListPagePo.navTo();
+    clusterList.waitForPage();
+    clusterList.clickOnClusterName(this.rke2Ec2ClusterName);
+    clusterDetails.selectTab(tabbedPo, '[data-testid="btn-snapshots"');
+    clusterDetails.snapshotsList().checkTableIsEmpty();
+
+    // create on demand snapshot
+    clusterDetails.snapshotsList().clickOnSnapshotNow();
+
+    // wait for cluster to be active
+    ClusterManagerListPagePo.navTo();
+    clusterList.waitForPage();
+    clusterList.list().state(this.rke2Ec2ClusterName).should('contain', 'Updating');
+    clusterList.list().state(this.rke2Ec2ClusterName).contains('Active', { timeout: 700000 });
+
+    // check snapshot exist
+    clusterList.clickOnClusterName(this.rke2Ec2ClusterName);
+    clusterDetails.selectTab(tabbedPo, '[data-testid="btn-snapshots"');
+    clusterDetails.snapshotsList().checkSnapshotExist(`on-demand-${ this.rke2Ec2ClusterName }`);
   });
 
   it('can delete a Amazon EC2 RKE2 cluster', function() {

@@ -46,7 +46,20 @@ export default {
     return {
       selectedSeverityLabel: null,
       ignoredAnnotations:    IGNORED_ANNOTATIONS,
-      severitys:             ['critical', 'warning', 'none'],
+      severityOptions:       [
+        {
+          label: this.t('prometheusRule.alertingRules.labels.severity.choices.critical'),
+          value: 'critical'
+        },
+        {
+          label: this.t('prometheusRule.alertingRules.labels.severity.choices.warning'),
+          value: 'warning'
+        },
+        {
+          label: this.t('prometheusRule.alertingRules.labels.severity.choices.none'),
+          value: 'none'
+        },
+      ],
     };
   },
 
@@ -191,15 +204,6 @@ export default {
       return false;
     },
 
-    severityOptions() {
-      return this.severitys.map((severity) => {
-        return {
-          value: severity,
-          label: this.t(`prometheusRule.alertingRules.labels.severity.choices.${ severity }`)
-        };
-      });
-    },
-
     waitToFireFor: {
       get() {
         if (![null, undefined].includes(this.value.for)) {
@@ -281,6 +285,7 @@ export default {
           :label="t('prometheusRule.alertingRules.name')"
           :required="true"
           :mode="mode"
+          data-testid="v2-monitoring-alerting-rules-alert-name"
         />
       </div>
       <div class="col span-6">
@@ -310,6 +315,7 @@ export default {
                 foldGutter: false,
                 readOnly: mode === 'view',
               }"
+              data-testid="v2-monitoring-alerting-rules-promql"
               @onInput="queueUpdate"
             />
           </template>
@@ -349,6 +355,7 @@ export default {
             :label="t('prometheusRule.alertingRules.labels.severity.choices.label')"
             :localized-label="false"
             :options="severityOptions"
+            data-testid="v2-monitoring-alerting-rules-severity"
           />
         </div>
       </div>

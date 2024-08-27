@@ -19,6 +19,8 @@ import ClientCertAuth from './ClientCertAuth';
 import IngressGeneralSettings from './IngressGeneralSettings';
 import IngressCorsSettings from './IngressCorsSettings';
 import { Banner } from '@components/Banner';
+import Loading from '@shell/components/Loading';
+import { FilterArgs, PaginationParamFilter } from '@shell/types/store/pagination.types';
 
 export default {
   name:       'CRUIngress',
@@ -36,7 +38,8 @@ export default {
     ClientCertAuth,
     Banner,
     IngressGeneralSettings,
-    IngressCorsSettings
+    IngressCorsSettings,
+    Loading,
   },
   mixins: [CreateEditView, FormValidation],
   props:  {
@@ -51,22 +54,37 @@ export default {
       default: 'edit'
     }
   },
+
   async fetch() {
     this.ingressClassSchema = this.$store.getters[`cluster/schemaFor`](INGRESS_CLASS);
-    const hash = await allHash({
-      secrets:        this.$store.dispatch('cluster/findAll', { type: SECRET }),
-      services:       this.$store.dispatch('cluster/findAll', { type: SERVICE }),
-      ingressClasses: this.ingressClassSchema ? this.$store.dispatch('cluster/findAll', { type: INGRESS_CLASS }) : Promise.resolve([]),
-    });
+
+    const promises = {
+      services:              this.$store.dispatch('cluster/findAll', { type: SERVICE }),
+      ingressClasses:        this.ingressClassSchema ? this.$store.dispatch('cluster/findAll', { type: INGRESS_CLASS }) : Promise.resolve([]),
+      ingressResourceFields: this.schema.fetchResourceFields(),
+    };
+
+    this.filterByApi = this.$store.getters[`cluster/paginationEnabled`](SECRET);
+
+    if (this.filterByApi) {
+      promises.filteredSecrets = this.filterSecretsByApi();
+    } else {
+      promises.secrets = this.$store.dispatch('cluster/findAll', { type: SECRET });
+    }
+
+    const hash = await allHash(promises);
 
     this.allServices = hash.services;
     this.allSecrets = hash.secrets;
+    this.filteredSecrets = hash.filteredSecrets;
     this.allIngressClasses = hash.ingressClasses;
   },
   data() {
     return {
+      filterByApi:        null,
       ingressClassSchema: null,
-      allSecrets:         [],
+      allSecrets:         null,
+      filteredSecrets:    null,
       allServices:        [],
       allIngressClasses:  [],
       fvFormRuleSets:     [
@@ -98,6 +116,15 @@ export default {
       annotationError:           false
     };
   },
+
+  watch: {
+    async 'value.metadata.namespace'() {
+      if (this.filterByApi) {
+        this.filteredSecrets = await this.filterSecretsByApi();
+      }
+    }
+  },
+
   computed: {
     fvExtraRules() {
       const backEndOrRules = (spec) => {
@@ -153,7 +180,17 @@ export default {
       return this.isView ? this.t('ingress.rulesAndCertificates.title') : this.t('ingress.rules.title');
     },
     certificates() {
-      return this.filterByCurrentResourceNamespace(this.allSecrets.filter((secret) => secret._type === TYPES.TLS)).map((secret) => {
+      let filteredSecrets;
+
+      if (this.filteredSecrets) {
+        filteredSecrets = this.filteredSecrets;
+      } else if (this.allSecrets ) {
+        filteredSecrets = this.filterByCurrentResourceNamespace(this.allSecrets.filter((secret) => secret._type === TYPES.TLS));
+      } else {
+        return [];
+      }
+
+      return filteredSecrets.map((secret) => {
         const { id } = secret;
 
         return id.slice(id.indexOf('/') + 1);
@@ -169,6 +206,7 @@ export default {
       return this.filterByCurrentResourceNamespace(this.allSecrets);
     }
   },
+
   created() {
     this.$set(this.value, 'spec', this.value.spec || {});
     this.$set(this.value.spec, 'rules', this.value.spec.rules || [{}]);
@@ -180,7 +218,22 @@ export default {
 
     this.registerBeforeHook(this.willSave, 'willSave');
   },
+
   methods: {
+    filterSecretsByApi() {
+      const findPageArgs = { // Of type ActionFindPageArgs
+        namespaced: this.value.metadata.namespace,
+        pagination: new FilterArgs({
+          filters: PaginationParamFilter.createSingleField({
+            field: 'metadata.fields.1',
+            value: TYPES.TLS
+          })
+        }),
+      };
+
+      return this.$store.dispatch(`cluster/findPage`, { type: SECRET, opt: findPageArgs });
+    },
+
     filterByCurrentResourceNamespace(resources) {
       // When configuring an Ingress, the options for Secrets and
       // default backend Services are limited to the namespace of the Ingress.
@@ -188,6 +241,7 @@ export default {
         return resource.metadata.namespace === this.value.metadata.namespace;
       });
     },
+
     willSave() {
       const backend = get(this.value.spec, this.value.defaultBackendPath);
       const serviceName = get(backend, this.value.serviceNamePath);
@@ -222,7 +276,9 @@ export default {
 };
 </script>
 <template>
+  <Loading v-if="$fetchState.pending" />
   <CruResource
+    v-else
     :done-route="doneRoute"
     :mode="mode"
     :resource="value"

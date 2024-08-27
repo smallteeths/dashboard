@@ -24,18 +24,22 @@ export default {
     asTextArea: {
       type:    Boolean,
       default: false
-    }
+    },
+    showKeyMapBox: {
+      type:    Boolean,
+      default: false
+    },
   },
 
   data() {
     return {
-      codeMirrorRef: null,
-      loaded:        false
+      codeMirrorRef:   null,
+      loaded:          false,
+      removeKeyMapBox: false,
     };
   },
 
   computed: {
-
     isDisabled() {
       return this.mode === _VIEW;
     },
@@ -70,6 +74,20 @@ export default {
 
       return out;
     },
+
+    keyMapTooltip() {
+      if (this.combinedOptions?.keyMap) {
+        const name = this.t(`prefs.keymap.${ this.combinedOptions.keyMap }`);
+
+        return this.t('codeMirror.keymap.indicatorToolip', { name });
+      }
+
+      return null;
+    },
+
+    isNonDefaultKeyMap() {
+      return this.combinedOptions?.keyMap !== 'sublime';
+    }
   },
 
   created() {
@@ -124,19 +142,38 @@ export default {
       if ( this.$refs.codeMirrorRef ) {
         this.$refs.codeMirrorRef.codemirror.doc.setValue(value);
       }
-    }
+    },
+
+    closeKeyMapInfo() {
+      this.removeKeyMapBox = true;
+    },
   }
 };
 </script>
 
 <template>
-  <client-only placeholder=" Loading...">
-    <div
-      class="code-mirror"
-      :class="{['as-text-area']: asTextArea}"
-    >
+  <div
+    class="code-mirror"
+    :class="{['as-text-area']: asTextArea}"
+  >
+    <div v-if="loaded">
+      <div
+        v-if="showKeyMapBox && !removeKeyMapBox && keyMapTooltip && isNonDefaultKeyMap"
+        class="keymap overlay"
+      >
+        <div
+          v-clean-tooltip="keyMapTooltip"
+          class="keymap-indicator"
+          data-testid="code-mirror-keymap"
+          @click="closeKeyMapInfo"
+        >
+          <i class="icon icon-keyboard keymap-icon" />
+          <div class="close-indicator">
+            <i class="icon icon-close icon-sm" />
+          </div>
+        </div>
+      </div>
       <codemirror
-        v-if="loaded"
         ref="codeMirrorRef"
         :value="value"
         :options="combinedOptions"
@@ -147,16 +184,75 @@ export default {
         @focus="onFocus"
         @blur="onBlur"
       />
-      <div v-else>
-        Loading...
-      </div>
     </div>
-  </client-only>
+    <div v-else>
+      Loading...
+    </div>
+  </div>
 </template>
 
 <style lang="scss">
+  $code-mirror-animation-time: 0.1s;
+
   .code-mirror {
     z-index: 0;
+
+    // Keyboard mapping overlap
+    .keymap.overlay {
+      position: absolute;
+      display: flex;
+      top: 7px;
+      right: 7px;
+      z-index: 1;
+      cursor: pointer;
+
+      .keymap-indicator {
+        width: 48px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid transparent;
+        color: var(--darker);
+        background-color: var(--overlay-bg);
+        font-size: 12px;
+
+        .close-indicator {
+          width: 0;
+
+          .icon-close {
+            color: var(--primary);
+            opacity: 0;
+          }
+        }
+
+        .keymap-icon {
+          font-size: 24px;
+          opacity: 0.8;
+          transition: margin-right $code-mirror-animation-time ease-in-out;
+        }
+
+        &:hover {
+          border: 1px solid var(--primary);
+          border-radius: var(--border-radius);;
+
+          .close-indicator {
+            margin-left: -6px;
+            width: auto;
+
+            .icon-close {
+              opacity: 1;
+              transition: opacity $code-mirror-animation-time ease-in-out $code-mirror-animation-time; // Only animate when being shown
+            }
+          }
+
+          .keymap-icon {
+            opacity: 0.6;
+            margin-right: 10px;
+          }
+        }
+      }
+    }
 
     .vue-codemirror .CodeMirror {
       height: initial;
@@ -250,7 +346,5 @@ export default {
         background-color: var(--primary);
       }
     }
-
   }
-
 </style>

@@ -18,11 +18,11 @@ import LabeledSelect from '@shell/components/form/LabeledSelect';
 import { addObject } from '@shell/utils/array';
 import LocaleSelector from '@shell/components/LocaleSelector';
 import TwoFactorAuth from '@shell/components/TwoFactorAuth/index.vue';
+import TabTitle from '@shell/components/TabTitle';
 
 export default {
-  layout:     'plain',
   components: {
-    BackLink, ButtonGroup, LabeledSelect, Checkbox, LandingPagePreference, LocaleSelector, TwoFactorAuth
+    BackLink, ButtonGroup, LabeledSelect, Checkbox, LandingPagePreference, LocaleSelector, TabTitle, TwoFactorAuth
   },
   mixins: [BackRoute],
   data() {
@@ -194,9 +194,13 @@ export default {
   <div>
     <BackLink :link="backLink" />
     <h1
-      v-t="'prefs.title'"
       class="mb-20"
-    />
+    >
+      <TabTitle breadcrumb="vendor-only">
+        {{ t('prefs.title') }}
+      </TabTitle>
+    </h1>
+
     <!-- Language -->
     <div class="mt-10 mb-10">
       <h4 v-t="'prefs.language'" />

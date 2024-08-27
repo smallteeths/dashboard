@@ -1,8 +1,10 @@
+import { DOCS_BASE } from '@shell/config/private-label';
 import { MANAGEMENT } from '@shell/config/types';
 import { SETTING } from '@shell/config/settings';
 import { allHash } from '@shell/utils/promise';
 import { isRancherPrime } from '@shell/config/version';
 
+// i18n-uses customLinks.defaults.*
 const DEFAULT_LINKS = [
   {
     key:     'docs',
@@ -26,7 +28,7 @@ const DEFAULT_LINKS = [
   },
   {
     key:     'getStarted',
-    value:   'https://ranchermanager.docs.rancher.com/getting-started/overview',
+    value:   `${ DOCS_BASE }/getting-started/overview`,
     enabled: true,
   },
   {

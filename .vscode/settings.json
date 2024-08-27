@@ -1,7 +1,6 @@
 {
   "files.exclude": {
     ".eslintcache": true,
-    ".nuxt*": true,
     "yarn-error.log": true,
     "pkg/**/.shell": true,
     "pkg/**/node_modules": true
@@ -11,7 +10,7 @@
   "eslint.packageManager": "yarn",
   "eslint.validate": ["vue","html","javascript","typescript"],
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true
+    "source.fixAll.eslint": "explicit"
   },
   "eslint.workingDirectories": ["./", "./pkg/rancher-components/"],
   "javascript.preferences.importModuleSpecifier": "non-relative",
@@ -54,5 +53,6 @@
     "virtualmachine",
     "vuex",
     "whatsnew"
-  ]
+  ],
+  "typescript.tsdk": "node_modules/typescript/lib"
 }

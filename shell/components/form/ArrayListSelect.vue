@@ -24,6 +24,10 @@ export default {
     loading: {
       type:    Boolean,
       default: false
+    },
+    disabled: {
+      type:    Boolean,
+      default: true
     }
   },
   computed: {
@@ -71,6 +75,7 @@ export default {
     :add-allowed="addAllowed || loading"
     :loading="loading"
     :defaultAddValue="defaultAddValue"
+    :disabled="disabled"
     @input="$emit('input', $event)"
   >
     <template v-slot:columns="scope">

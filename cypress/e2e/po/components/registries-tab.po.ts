@@ -2,7 +2,6 @@ import ComponentPo from '@/cypress/e2e/po/components/component.po';
 import RegistyConfigsPo from '@/cypress/e2e/po/components/registry-configs.po';
 import CheckboxInputPo from '@/cypress/e2e/po/components/checkbox-input.po';
 import LabeledInputPo from '@/cypress/e2e/po/components/labeled-input.po';
-import TabbedPo from '@/cypress/e2e/po/components/tabbed.po';
 
 export default class RegistriesTabPo extends ComponentPo {
   constructor(selector = '.dashboard-root') {
@@ -27,9 +26,5 @@ export default class RegistriesTabPo extends ComponentPo {
 
   registryConfigs(): RegistyConfigsPo {
     return new RegistyConfigsPo(this.self());
-  }
-
-  clickTab(selector: string) {
-    new TabbedPo().clickTabWithSelector(selector);
   }
 }

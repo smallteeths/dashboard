@@ -11,15 +11,11 @@ export default {
 
     return {
       PAGES: {
-        'rke-drivers':           '/n/drivers/cluster',
-        'rke-templates':         '/g/rke-templates/index',
-        'cloud-credentials':     '/g/security/cloud-credentials',
-        'node-templates':        '/n/node-templates',
-        'pod-security-policies': '/g/security/policies',
+        'rke-drivers':       '/n/drivers/cluster',
+        'rke-templates':     '/g/rke-templates/index',
+        'cloud-credentials': '/g/security/cloud-credentials',
+        'node-templates':    '/n/node-templates',
 
-        'image-repo-config':     '/custom-extension/image-repo/image-router',
-        'image-repo-projects':   '/custom-extension/image-repo/projects-router',
-        'image-repo-logs':       '/custom-extension/image-repo/logs-router',
         'k8s-cluster-audit-log': `/meta/auditui/${ auditLogServerUrl?.replace('//', '/') }#/k8s-audit-log/${ this.$route.query.cluster }`
       }
     };

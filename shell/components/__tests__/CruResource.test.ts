@@ -1,7 +1,6 @@
 import { mount } from '@vue/test-utils';
 import CruResource from '@shell/components/CruResource.vue';
 import { _EDIT, _YAML } from '@shell/config/query-params';
-import { cleanHtmlDirective } from '@shell/plugins/clean-html-directive';
 import TextAreaAutoGrow from '@components/Form/TextArea/TextAreaAutoGrow.vue';
 
 describe('component: CruResource', () => {
@@ -20,7 +19,8 @@ describe('component: CruResource', () => {
             'current_store/all':       jest.fn(),
             'i18n/t':                  jest.fn(),
             'i18n/exists':             jest.fn(),
-          }
+          },
+          dispatch: jest.fn(),
         },
         $route:  { query: { AS: _YAML } },
         $router: { applyQuery: jest.fn() },
@@ -35,8 +35,7 @@ describe('component: CruResource', () => {
   it('should display multiple errors', () => {
     const errors = ['mistake!', 'BiG MiStAke11'];
     const wrapper = mount(CruResource, {
-      directives: { cleanHtmlDirective },
-      propsData:  {
+      propsData: {
         canYaml:  false,
         mode:     _EDIT,
         resource: {},
@@ -54,7 +53,8 @@ describe('component: CruResource', () => {
             'current_store/all':       jest.fn(),
             'i18n/t':                  jest.fn(),
             'i18n/exists':             jest.fn(),
-          }
+          },
+          dispatch: jest.fn(),
         },
         $route:  { query: { AS: _YAML } },
         $router: { applyQuery: jest.fn() },
@@ -87,7 +87,8 @@ describe('component: CruResource', () => {
             'current_store/all':       jest.fn(),
             'i18n/t':                  jest.fn(),
             'i18n/exists':             jest.fn(),
-          }
+          },
+          dispatch: jest.fn(),
         },
         $route:  { query: { AS: _YAML } },
         $router: { applyQuery: jest.fn() },
@@ -105,8 +106,7 @@ describe('component: CruResource', () => {
   it('should not prevent default events on keypress Enter', async() => {
     const event = { preventDefault: jest.fn() };
     const wrapper = mount(CruResource, {
-      directives: { cleanHtmlDirective },
-      propsData:  {
+      propsData: {
         canYaml:            false,
         mode:               _EDIT,
         resource:           {},
@@ -126,7 +126,8 @@ describe('component: CruResource', () => {
             'current_store/all':       jest.fn(),
             'i18n/t':                  jest.fn(),
             'i18n/exists':             jest.fn(),
-          }
+          },
+          dispatch: jest.fn(),
         },
         $route:  { query: { AS: _YAML } },
         $router: { applyQuery: jest.fn() },

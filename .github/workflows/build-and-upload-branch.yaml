@@ -2,7 +2,9 @@ name: Build Dashboard (Branch)
 on:
   push:
     branches:
-      - release-2.8.patch1
+      - master
+      - 'release-*'
+      - '*-dev'
 
 jobs:
   build-validation:

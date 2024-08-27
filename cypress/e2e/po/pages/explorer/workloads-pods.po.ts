@@ -1,4 +1,9 @@
 import PagePo from '@/cypress/e2e/po/pages/page.po';
+import PodsListPo from '@/cypress/e2e/po/lists/pods-list.po';
+import BurgerMenuPo from '@/cypress/e2e/po/side-bars/burger-side-menu.po';
+import ProductNavPo from '@/cypress/e2e/po/side-bars/product-side-nav.po';
+
+import { WorkloadsCreatePageBasePo } from '@/cypress/e2e/po/pages/explorer/workloads/workloads.po';
 
 export class WorkloadsPodsListPagePo extends PagePo {
   private static createPath(clusterId: string) {
@@ -11,6 +16,29 @@ export class WorkloadsPodsListPagePo extends PagePo {
 
   constructor(clusterId = 'local') {
     super(WorkloadsPodsListPagePo.createPath(clusterId));
+  }
+
+  static navTo(clusterId = 'local') {
+    const burgerMenu = new BurgerMenuPo();
+    const sideNav = new ProductNavPo();
+
+    BurgerMenuPo.toggle();
+    burgerMenu.clusters().contains(clusterId).click();
+    sideNav.navToSideMenuGroupByLabel('Workloads');
+    sideNav.navToSideMenuEntryByLabel('Pods');
+  }
+
+  list(): PodsListPo {
+    return new PodsListPo('[data-testid="sortable-table-list-container"]');
+  }
+
+  sortableTable() {
+    return this.list().resourceTable().sortableTable();
+  }
+
+  createPod() {
+    return this.list().masthead().actions().eq(0)
+      .click();
   }
 }
 
@@ -37,5 +65,10 @@ export class WorkLoadsPodDetailsPagePo extends PagePo {
     super(WorkLoadsPodDetailsPagePo.createPath(podId, clusterId, namespaceId, queryParams));
 
     WorkLoadsPodDetailsPagePo.url = WorkLoadsPodDetailsPagePo.createPath(podId, clusterId, namespaceId, queryParams);
+  }
+}
+export class WorkloadsPodsCreatePagePo extends WorkloadsCreatePageBasePo {
+  constructor(protected clusterId: string = 'local', workloadType = 'pod', queryParams?: Record<string, string>) {
+    super(clusterId, workloadType, queryParams);
   }
 }

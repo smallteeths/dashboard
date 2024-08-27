@@ -4,16 +4,14 @@ import { ucFirst, randomStr } from '@shell/utils/string';
 import {
   _EDIT, _CONFIG, _DETAIL, _LIST, _CREATE
 } from '@shell/config/query-params';
-import { getProductFromRoute } from '@shell/middleware/authenticated';
+import { getProductFromRoute } from '@shell/utils/router';
 import { isEqual } from '@shell/utils/object';
 
-function checkRouteProduct({ name, params, query }, locationConfigParam) {
-  const product = getProductFromRoute({
-    name, params, query
-  });
+function checkRouteProduct($route, locationConfigParam) {
+  const product = getProductFromRoute($route);
 
   // alias for the homepage
-  if (locationConfigParam === 'home' && name === 'home') {
+  if (locationConfigParam === 'home' && $route.name === 'home') {
     return true;
   } else if (locationConfigParam === product) {
     return true;

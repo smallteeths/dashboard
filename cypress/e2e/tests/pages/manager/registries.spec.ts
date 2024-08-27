@@ -4,14 +4,14 @@ import { machineSelectorConfigPayload, registriesWithSecretPayload } from '@/cyp
 
 const registryHost = 'docker.io';
 const registryAuthHost = 'a.registry.com';
-const clusterName = `test-cluster-${ Math.random().toString(36).substr(2, 6) }`;
 
 describe('Registries for RKE2', { tags: ['@manager', '@adminUser'] }, () => {
   beforeEach(() => {
     cy.login();
+    cy.createE2EResourceName('cluster').as('clusterName');
   });
 
-  it('Should send the correct payload to the server', () => {
+  it('Should send the correct payload to the server', function() {
     const clusterList = new ClusterManagerListPagePo();
     const createCustomClusterPage = new ClusterManagerCreateRke2CustomPagePo();
 
@@ -30,9 +30,9 @@ describe('Registries for RKE2', { tags: ['@manager', '@adminUser'] }, () => {
     cy.intercept('POST', 'v1/secrets/fleet-default').as('registrySecretCreation');
 
     // cluster name
-    createCustomClusterPage.nameNsDescription().name().set(clusterName);
+    createCustomClusterPage.nameNsDescription().name().set(this.clusterName);
     // navigate to Registries tab
-    createCustomClusterPage.registries().clickTab('#registry');
+    createCustomClusterPage.clusterConfigurationTabs().clickTabWithSelector('#registry');
     // enable registry
     createCustomClusterPage.registries().enableRegistryCheckbox().set();
     // add host
@@ -44,6 +44,9 @@ describe('Registries for RKE2', { tags: ['@manager', '@adminUser'] }, () => {
       .scrollIntoView();
     // add url
     createCustomClusterPage.registries().registryConfigs().addRegistryAuthHost(0, registryAuthHost);
+    // make sure it's not in loading state
+    createCustomClusterPage.registries().registryConfigs().registryAuthSelectOrCreate(0).loading()
+      .should('not.exist', { timeout: 1000 });
     // create basic secret
     createCustomClusterPage.registries().registryConfigs().registryAuthSelectOrCreate(0).createBasicAuth('test-user', 'test-pass');
     // save

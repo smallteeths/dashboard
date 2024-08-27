@@ -19,6 +19,11 @@ export default {
       default: false
     },
 
+    hideSingleTab: {
+      type:    Boolean,
+      default: false
+    },
+
     showTabsAddRemove: {
       type:    Boolean,
       default: false
@@ -86,6 +91,11 @@ export default {
     sortedTabs() {
       return sortBy(this.tabs, ['weight:desc', 'labelDisplay', 'name']);
     },
+
+    // hide tabs based on tab count IF flag is active
+    hideTabs() {
+      return this.hideSingleTab && this.sortedTabs.length === 1;
+    }
   },
 
   watch: {
@@ -223,13 +233,18 @@ export default {
 </script>
 
 <template>
-  <div :class="{'side-tabs': !!sideTabs, 'tabs-only': tabsOnly }">
+  <div
+    :class="{'side-tabs': !!sideTabs, 'tabs-only': tabsOnly }"
+    data-testid="tabbed"
+  >
     <ul
+      v-if="!hideTabs"
       ref="tablist"
       role="tablist"
       class="tabs"
       :class="{'clearfix':!sideTabs, 'vertical': sideTabs, 'horizontal': !sideTabs}"
       tabindex="0"
+      data-testid="tabbed-block"
       @keydown.right.prevent="selectNext(1)"
       @keydown.left.prevent="selectNext(-1)"
       @keydown.down.prevent="selectNext(1)"
@@ -279,6 +294,7 @@ export default {
           <button
             type="button"
             class="btn bg-transparent"
+            data-testid="tab-list-add"
             @click="tabAddClicked"
           >
             <i class="icon icon-plus" />
@@ -287,6 +303,7 @@ export default {
             type="button"
             class="btn bg-transparent"
             :disabled="!sortedTabs.length"
+            data-testid="tab-list-remove"
             @click="tabRemoveClicked"
           >
             <i class="icon icon-minus" />

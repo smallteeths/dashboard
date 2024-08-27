@@ -5,6 +5,8 @@ import jsyaml from 'js-yaml';
 import { cloneDeep, uniq } from 'lodash';
 import SteveModel from '@shell/plugins/steve/steve-class';
 
+// i18n-uses monitoringReceiver.slack.*, monitoringReceiver.email.*, monitoringReceiver.pagerduty.*
+// i18n-uses monitoringReceiver.opsgenie.*, monitoringReceiver.webhook.*, monitoringReceiver.custom.*
 export const RECEIVERS_TYPES = [
   {
     name:  'slack',
@@ -87,7 +89,7 @@ export default class Receiver extends SteveModel {
   }
 
   async save() {
-    const errors = await this.validationErrors(this);
+    const errors = this.validationErrors(this);
     const pandariaWebhookErrors = this.validationPandariaErrors();
 
     errors.push(...pandariaWebhookErrors);

@@ -1,13 +1,14 @@
 <script>
 import Favorite from '@shell/components/nav/Favorite';
-import { FAVORITE, USED } from '@shell/store/type-map';
-import { linkActiveClass } from '@shell/config/router';
+import { TYPE_MODES } from '@shell/store/type-map';
 
-const showFavoritesFor = [FAVORITE, USED];
+import TabTitle from '@shell/components/TabTitle';
+
+const showFavoritesFor = [TYPE_MODES.FAVORITE, TYPE_MODES.USED];
 
 export default {
 
-  components: { Favorite },
+  components: { Favorite, TabTitle },
 
   props: {
     type: {
@@ -27,90 +28,37 @@ export default {
   },
 
   data() {
-    return {
-      near:     false,
-      over:     false,
-      menuPath: this.type.route ? this.$router.resolve(this.type.route)?.route?.path : undefined,
-      linkActiveClass
-    };
+    return { near: false };
   },
 
   computed: {
-    isCurrent() {
-      // This is required to avoid scenarios where fragments break vue routers location matching
-      // For example, the following fails
-      // Curruent Path /c/c-m-hzqf4tqt/explorer/members#project-membership
-      // Menu Path /c/c-m-hzqf4tqt/explorer/members
-      // vue-router exact-path="true" fixes this (https://v3.router.vuejs.org/api/#exact-path),
-      // but fails when the the current path is a child (for instance a resource detail page)
-
-      // Scenarios to consider
-      // - Fragement world
-      //   Curruent Path /c/c-m-hzqf4tqt/explorer/members#project-membership
-      //   Menu Path /c/c-m-hzqf4tqt/explorer/members
-      // - Similar current paths
-      //   /c/c-m-hzqf4tqt/fleet/fleet.cattle.io.bundlenamespacemapping
-      //   /c/c-m-hzqf4tqt/fleet/fleet.cattle.io.bundle
-      // - Other menu items that appear in current menu item
-      //   /c/c-m-hzqf4tqt/fleet
-      //   /c/c-m-hzqf4tqt/fleet/management.cattle.io.fleetworkspace
-
-      // If there's no hash the n-link will determine it's linkActiveClass correctly, so avoid this faff
-      const invalidHash = !this.$route.hash;
-      // Lets be super safe
-      const invalidProps = !this.menuPath || !this.$route.path;
-
-      if (invalidHash || invalidProps) {
-        return false;
-      }
-
-      // We're kind of, but in a fixing way, copying n-link --> vue-router link see vue-router/src/components/link.js & vue-router/src/util/route.js
-      // We're only going to compare the path and ignore query and fragment
-
-      if (this.type.exact) {
-        return this.$route.path === this.menuPath;
-      }
-
-      const currentPath = this.$route.path.split('/');
-      const menuPath = this.menuPath.split('/');
-
-      if (menuPath.length > currentPath.length) {
-        return false;
-      }
-
-      for (let i = 0; i < menuPath.length; i++) {
-        if (menuPath[i] !== currentPath[i]) {
-          return false;
-        }
-      }
-
-      return true;
-    },
-
     showFavorite() {
       return ( this.type.mode && this.near && showFavoritesFor.includes(this.type.mode) );
     },
 
     showCount() {
-      return typeof this.type.count !== 'undefined';
+      return this.count !== undefined && this.count !== null;
     },
 
     namespaceIcon() {
       return this.type.namespaced;
     },
+
+    count() {
+      if (this.type.count !== undefined) {
+        return this.type.count;
+      }
+
+      const inStore = this.$store.getters['currentStore'](this.type.name);
+
+      return this.$store.getters[`${ inStore }/count`]({ name: this.type.name });
+    }
+
   },
 
   methods: {
     setNear(val) {
       this.near = val;
-    },
-
-    setOver(val) {
-      this.over = val;
-    },
-
-    removeFavorite() {
-      this.$store.dispatch('type-map/removeFavorite', this.type.name);
     },
 
     selectType() {
@@ -151,57 +99,74 @@ export default {
 </script>
 
 <template>
-  <n-link
+  <router-link
     v-if="type.route"
     :key="type.name"
+    v-slot="{ href, navigate, isActive, isExactActive }"
+    custom
     :to="type.route"
-    tag="li"
-    class="child nav-type"
-    :class="{'root': isRoot, [`depth-${depth}`]: true, [linkActiveClass]: isCurrent}"
     :exact="type.exact"
+    :exact-path="type['exact-path']"
   >
-    <a
-      @click="selectType"
-      @mouseenter="setNear(true)"
-      @mouseleave="setNear(false)"
+    <li
+      class="child nav-type"
+      :class="{'root': isRoot, [`depth-${depth}`]: true, 'router-link-active': isActive, 'router-link-exact-active': isExactActive}"
+      @click="navigate"
+      @keypress.enter="navigate"
     >
-      <span
-        v-if="type.labelKey"
-        class="label"
-      ><t :k="type.labelKey" /></span>
-      <span
-        v-else
-        v-clean-html="type.labelDisplay || type.label"
-        class="label"
-        :class="{'no-icon': !type.icon}"
-      />
-      <span
-        v-if="showFavorite || showCount"
-        class="count"
+      <TabTitle
+        v-if="isExactActive"
+        :show-child="false"
       >
-        <Favorite
-          v-if="showFavorite"
-          :resource="type.name"
+        {{ type.labelKey ? t(type.labelKey) : (type.labelDisplay || type.label) }}
+      </TabTitle>
+      <a
+        :href="href"
+        @click="selectType(); navigate($event);"
+        @mouseenter="setNear(true)"
+        @mouseleave="setNear(false)"
+      >
+        <span
+          v-if="type.labelKey"
+          class="label"
+        ><t :k="type.labelKey" /></span>
+        <span
+          v-else
+          v-clean-html="type.labelDisplay || type.label"
+          class="label"
+          :class="{'no-icon': !type.icon}"
         />
-        <i
-          v-if="namespaceIcon"
-          class="icon icon-namespace namespaced"
-        />
-        {{ type.count }}
-      </span>
-    </a>
-  </n-link>
+        <span
+          v-if="showFavorite || namespaceIcon || showCount"
+          class="count"
+        >
+          <Favorite
+            v-if="showFavorite"
+            :resource="type.name"
+          />
+          <i
+            v-if="namespaceIcon"
+            class="icon icon-namespace"
+            :class="{'ns-and-icon': showCount}"
+            data-testid="type-namespaced"
+          />
+          <span
+            v-if="showCount"
+            data-testid="type-count"
+          >{{ count }}</span>
+        </span>
+      </a>
+    </li>
+  </router-link>
   <li
     v-else-if="type.link"
     class="child nav-type"
+    data-testid="link-type"
   >
     <a
       :href="type.link"
       :target="type.target"
       rel="noopener noreferrer nofollow"
-      @click="selectType"
-      @mouseenter="setNear(true)"
-      @mouseleave="setNear(false)"
     >
       <span class="label">{{ type.label }}&nbsp;<i class="icon icon-external-link" /></span>
     </a>
@@ -212,7 +177,7 @@ export default {
 </template>
 
 <style lang="scss" scoped>
-  .namespaced {
+  .ns-and-icon {
     margin-right: 4px;
   }
 
