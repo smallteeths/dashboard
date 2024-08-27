@@ -14,7 +14,7 @@ import Tabbed from '@shell/components/Tabbed';
 import { ucFirst } from '@shell/utils/string';
 import SortableTable from '@shell/components/SortableTable';
 import { _CLONE, _DETAIL } from '@shell/config/query-params';
-import { SCOPED_RESOURCES } from '@shell/config/roles';
+import { SCOPED_RESOURCES, SCOPED_RESOURCE_GROUPS } from '@shell/config/roles';
 import { Banner } from '@components/Banner';
 
 import { SUBTYPE_MAPPING, VERBS } from '@shell/models/management.cattle.io.roletemplate';
@@ -195,16 +195,17 @@ export default {
       const scopes = Object.keys(this.scopedResources);
 
       scopes.forEach((scope) => {
-        if (scope === 'globalScopedApiGroups' && this.value.type !== MANAGEMENT.GLOBAL_ROLE) {
+        if (scope === SCOPED_RESOURCE_GROUPS.GLOBAL && this.value.type !== MANAGEMENT.GLOBAL_ROLE) {
           // If we are not in the global role creation form,
           // skip adding the global-scoped resources.
           return;
         }
-        if (scope === 'clusterScopedApiGroups' && (this.value.type === RBAC.ROLE || this.value.subtype === NAMESPACE)) {
+        if (scope === SCOPED_RESOURCE_GROUPS.CLUSTER && (this.value.type === RBAC.ROLE || this.value.subtype === NAMESPACE)) {
           // If we are in a project/namespace role creation form,
           // additionally skip adding the cluster-scoped resources.
           return;
         }
+
         const apiGroupsInScope = this.scopedResources[scope];
 
         const apiGroupNames = Object.keys(apiGroupsInScope);
@@ -237,7 +238,7 @@ export default {
             const labelForNamespaceScoped = this.t('rbac.roletemplate.tabs.grantResources.neuvector.labelNamespaceScoped');
 
             apiGroupLabel = scope.includes('cluster') ? labelForClusterScoped : labelForNamespaceScoped;
-            apiGroupValue = 'api.neuvector.com';
+            apiGroupValue = 'permission.neuvector.com';
           }
 
           options.push({

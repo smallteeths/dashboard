@@ -1012,6 +1012,10 @@ export default class ProvCluster extends SteveModel {
     ];
   }
 
+  get description() {
+    return super.description || this.mgmt?.description;
+  }
+
   suspend() {
     this.$dispatch('promptModal', {
       resources: [this],
