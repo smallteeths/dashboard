@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils';
-import RegistryMirrors from '@shell/edit/provisioning.cattle.io.cluster/RegistryMirrors.vue';
+import RegistryMirrors from '@shell/edit/provisioning.cattle.io.cluster/tabs/registries/RegistryMirrors.vue';
 
 describe('component: RegistryMirrors', () => {
   it('should set keyPlaceholder, value-placeholder and value-protip prop', () => {
