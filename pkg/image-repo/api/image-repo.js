@@ -251,6 +251,8 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
     }
     const userId = store.getters['auth/me']?.id;
 
+    data.userID = userId;
+
     return store.dispatch('management/request', {
       url:    `/v1/management.cattle.io.users/${ userId }?action=setharborauth`,
       method: 'POST',
@@ -751,7 +753,8 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
     const data = {
       ...params,
       newPassword: disabledEncryption?.value === 'true' ? params.newPassword : AESEncrypt(params.newPassword.trim()),
-      oldPassword: disabledEncryption?.value === 'true' ? params.oldPassword : AESEncrypt(params.oldPassword.trim())
+      oldPassword: disabledEncryption?.value === 'true' ? params.oldPassword : AESEncrypt(params.oldPassword.trim()),
+      userID:      userId,
     };
 
     const res = store.dispatch('management/request', {

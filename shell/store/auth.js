@@ -381,14 +381,26 @@ export const actions = {
         const harborServerUrlSetting = await dispatch('management/find', { type: MANAGEMENT.SETTING, id: 'harbor-server-url' }, { root: true });
 
         if (harborServerUrlSetting?.value) {
-          await dispatch('rancher/request', {
-            url:    '/v1/management.cattle.io.users?action=syncharboruser',
-            method: 'post',
-            data:   {
-              ...body,
-              provider,
-            },
+          const user = await dispatch('rancher/findAll', {
+            type: NORMAN.USER,
+            opt:  {
+              url:    '/v3/users',
+              filter: { me: true },
+              load:   _MULTI
+            }
           }, { root: true });
+
+          if (user?.length > 0 && user[0]?.id) {
+            await dispatch('rancher/request', {
+              url:    '/v1/management.cattle.io.users?action=syncharboruser',
+              method: 'post',
+              data:   {
+                ...body,
+                userID: user[0]?.id,
+                provider,
+              },
+            }, { root: true });
+          }
         }
       } catch (error) {
         // eslint-disable-next-line no-console
