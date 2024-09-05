@@ -70,7 +70,7 @@ export default class OperatorSetting extends Driver {
     this.$dispatch('promptModal', {
       componentProps: {
         urls,
-        name: names?.join(', '),
+        names,
       },
       component: 'DeactivateOperatorSettingDialog'
     });

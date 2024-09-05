@@ -2290,6 +2290,51 @@ cruResource:
   reviewYaml: "继续编辑 YAML"
   previewYaml: 以 YAML 文件编辑
   showYaml: 以 YAML 形式查看
+
+drivers:
+  kontainer:
+    title: Cluster Drivers
+  node:
+    title: Node Drivers
+  operatorsetting:
+    title: Operator Configuration
+  add:
+    title: Add Driver
+    name:
+      label: Driver name
+    downloadUrl:
+      label: Download URL
+      placeholder: https://test.com/driver
+      tooltip: 下载适用于 64 位 Linux 的机器驱动程序二进制文件的 URL。
+    customUiUrl:
+      label: Custom UI URL
+      placeholder: https://test.com/ui
+      tooltip: 加载此驱动程序的自定义添加节点界面的 URL。有关详细信息，请参阅 https://github.com/rancher/ui-driver-skel。
+    checksum:
+      label: Checksum
+      tooltip: 验和用于验证下载的驱动程序是否与预期的校验和匹配。
+    whitelist: Whitelist Domains
+  actions:
+    refresh: Refresh Kubernetes Metadata
+  deactivate:
+    title: 你确定吗？
+    andOthers: |-
+      {count, plural,
+      =0 {}
+      =1 { and <b>one other </b>}
+      other { and <b>{count} other </b>}
+      }
+    warningDrivers: |-
+      {count, plural,
+      =1 { 你将不再能够使用{names}驱动程序编辑集群配置。}
+      other { 你将不再能够使用{names}驱动程序编辑集群配置。}
+      }
+    warning: |-
+      {count, plural,
+      =1 { {warningDrivers}对应提供商中的资源将不会自动删除。}
+      other { {warningDrivers}对应提供商中的资源将不会自动删除。}
+      }
+
 detailText:
   collapse: 隐藏
   binary: '<二进制数据: {n, number} 字节>'
