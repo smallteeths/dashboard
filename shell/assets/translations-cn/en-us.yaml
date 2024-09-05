@@ -7339,6 +7339,11 @@ typeLabel:
       one { Node Driver }
       other { Node Drivers }
     }
+  operatorsetting: |-
+    {count, plural,
+      one { Operator Configuration }
+      other { Operator Configuration }
+    }
 action:
   clone: Clone
   disable: Disable

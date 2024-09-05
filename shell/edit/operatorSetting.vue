@@ -33,7 +33,7 @@ export default {
       type:    String,
       default: _CREATE,
     },
-  },
+  }
 };
 </script>
 
@@ -57,7 +57,7 @@ export default {
     <OperatorSettingCreate
       :mode="mode"
       :value="value"
-      :rules="{url:fvGetAndReportPathRules('url'), uiUrl:fvGetAndReportPathRules('uiUrl'), checksum:fvGetAndReportPathRules('checksum'), whitelistDomains:fvGetAndReportPathRules('whitelistDomains')}"
+      :rules="{url:fvGetAndReportPathRules('url'), whitelistDomains:fvGetAndReportPathRules('whitelistDomains')}"
     />
   </CruResource>
 </template>

@@ -3,6 +3,7 @@ import AsyncButton from '@shell/components/AsyncButton';
 import { Card } from '@components/Card';
 import { Banner } from '@components/Banner';
 import { exceptionToErrorsArray } from '@shell/utils/error';
+import { mapGetters } from 'vuex';
 
 export default {
   components: {
@@ -16,14 +17,24 @@ export default {
       type:    Array,
       default: null,
     },
-    name: {
-      type:    String,
-      default: null,
-    }
+    names: {
+      type:    Array,
+      default: () => [],
+    },
   },
 
   data() {
     return { errors: [] };
+  },
+  computed: {
+    formattedText() {
+      const names = this.names;
+      const count = this.names.length;
+      const warningDrivers = this.t('drivers.deactivate.warningDrivers', { names, count });
+
+      return this.t('drivers.deactivate.warning', { warningDrivers, count });
+    },
+    ...mapGetters({ t: 'i18n/t' }),
   },
   methods: {
     close(buttonDone) {
@@ -66,7 +77,7 @@ export default {
     <template #body>
       <div class="pl-10 pr-10">
         <div class="text info mb-10 mt-20">
-          <span v-clean-html="t('drivers.deactivate.warning', {name})" />
+          <span v-clean-html="formattedText" />
         </div>
         <Banner
           v-for="(err, i) in errors"
