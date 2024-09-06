@@ -62,7 +62,7 @@ describe('view: kontainerdriver should', () => {
 
   it('have "Create" button enabled and disabled depending on validation results', async() => {
     const urlField = wrapper.find('[data-testid="driver-create-url-field"]').find('input');
-    const uiurlField = wrapper.find('[data-testid="driver-create-uiurl-field"]').find('input');
+    // const uiurlField = wrapper.find('[data-testid="driver-create-uiurl-field"]').find('input');
     const checksumField = wrapper.find('[data-testid="driver-create-checksum-field"]').find('input');
     const saveButton = wrapper.find('[data-testid="kontainer-driver-edit-save"]').element as HTMLInputElement;
 
@@ -73,12 +73,12 @@ describe('view: kontainerdriver should', () => {
         checksum: 'aaaaaBBBBdddd',
         result:   true
       },
-      {
-        url:      'http://test.com',
-        uiurl:    '1111',
-        checksum: 'aaaaaBBBBdddd',
-        result:   true
-      },
+      // {
+      //   url:      'http://test.com',
+      //   uiurl:    '1111',
+      //   checksum: 'aaaaaBBBBdddd',
+      //   result:   true
+      // },
       {
         url:      'http://test.com',
         uiurl:    'http://test.com',
@@ -96,8 +96,10 @@ describe('view: kontainerdriver should', () => {
     for (const testCase of testCases) {
       urlField.setValue(testCase.url);
       await wrapper.vm.$nextTick();
-      uiurlField.setValue(testCase.uiurl);
-      await wrapper.vm.$nextTick();
+      // Pandaria: Due to legacy drivers (ACK, CCE, TKE) having UI URLs that do not conform to standard URL validation rules,
+      // the validation check has been removed to maintain backward compatibility and avoid blocking existing setups.
+      // uiurlField.setValue(testCase.uiurl);
+      // await wrapper.vm.$nextTick();
       checksumField.setValue(testCase.checksum);
       await wrapper.vm.$nextTick();
 
