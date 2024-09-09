@@ -13,13 +13,6 @@ const interopDefault = (promise) => promise.then((page) => page.default || page)
  */
 export default [
   {
-    path:      '/c/:cluster/legacy/resourceQuota/:page',
-    component: () => interopDefault(import('@shell/pages/c/_cluster/legacy/resourceQuota/_page.vue')),
-    name:      'c-cluster-legacy-resourceQuota-page',
-    params:    { product: 'explorer' },
-    meta:      { requiresAuthentication: true },
-  },
-  {
     path:      '/',
     component: () => interopDefault(import('@shell/components/templates/default.vue')),
     meta:      { requiresAuthentication: true },
@@ -537,6 +530,12 @@ export default [
         path:      '/c/:cluster/:product/:resource/:namespace/:id?',
         component: () => interopDefault(import('@shell/pages/c/_cluster/_product/_resource/_namespace/_id.vue')),
         name:      'c-cluster-product-resource-namespace-id'
+      }, {
+        path:      '/c/:cluster/legacy/resourceQuota/:page',
+        component: () => interopDefault(import('@shell/pages/c/_cluster/legacy/resourceQuota/_page.vue')),
+        name:      'c-cluster-legacy-resourceQuota-page',
+        params:    { product: 'explorer' },
+        meta:      { requiresAuthentication: true },
       }]
   },
   {
