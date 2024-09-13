@@ -30,7 +30,7 @@
           <t k="imageRepoSection.action.edit" />
         </button>
         <button
-          v-show="harborAccountValid && currentView === 'view'"
+          v-show="canRemoveHarborConfig"
           class="btn bg-error"
           @click="removeHarborAccount"
         >
@@ -339,6 +339,7 @@ export default {
       descriptor,
       loading:            false,
       harborAccountValid: false,
+      canRemoveHarborConfig: false,
       currentAccount:     null,
       harborConfig:       {
         url:                '',
@@ -387,6 +388,7 @@ export default {
     },
     async initForm() {
       this.harborAccountValid = false;
+      this.canRemoveHarborConfig = false;
       this.loading = true;
       const harborAPIRequest = harborAPI({ store: this.$store });
 
@@ -398,6 +400,9 @@ export default {
 
       const [version, harborServer, insecureSkipVerifySetting] = await Promise.all([versionP, harborServerP, insecureSkipVerifyP]);
 
+      if (version?.value != '' || harborServer?.value != '' || insecureSkipVerifySetting?.value != 'false') {
+        this.canRemoveHarborConfig = true
+      }
       if (harborServer.value) {
         await harborAPIRequest.initAPIRequest(version.value, harborServer.value);
         const harborUser = await harborAPIRequest.fetchHarborUserInfo();
@@ -453,6 +458,7 @@ export default {
       this.changePwdForm.newPwd = ''
       this.changePwdForm.oldPwd = ''
       this.harborConfig.insecureSkipVerify = 'false'
+      this.errors = [];
     },
     removeHarborAccount(cb) {
       this.removeHarborConfigDialogVisible = true;
@@ -461,6 +467,7 @@ export default {
       this.loading = true;
       try {
         await this.harborAPIRequest.removeHarborAccount();
+        this.canRemoveHarborConfig = false;
       } catch (err) {
         this.errors = [stringify(err)];
       }
@@ -499,6 +506,7 @@ export default {
 
         try {
           sysntemInfo = await this.harborAPIRequest.fetchSystemInfoToTest(url, version);
+          this.canRemoveHarborConfig = true
         } catch (err) {
           let testVersion = version === 'v2.0' ? 'v1' : 'v2.0'
           const info = await this.testHarborVersion(url, [testVersion]);
