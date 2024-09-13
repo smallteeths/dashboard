@@ -529,17 +529,15 @@ export default {
         this.requiredAuth = false;
         cb(true);
       } catch (err) {
-        if (err?.status === 500) {
-          this.requiredAuth = true;
-          const message = err?.message;
+        this.requiredAuth = true;
 
-          if (message?.indexOf('401') !== -1) {
-            this.errors = [this.t('harborConfig.validate.pwdError')];
-          } else {
-            this.errors = [stringify(err)];
-          }
+        const { status, message } = err || {};
+
+        if (status === 500 || status === 410) {
+          this.errors = status === 410 && message ? [message] : [stringify(err)];
         } else {
-          this.errors(stringify(err));
+          this.errors = this.errors || [];
+          this.errors.push(stringify(err));
         }
 
         cb(false);
