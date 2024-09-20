@@ -10,24 +10,28 @@ const IGNORED_ANNOTATIONS = [
   'deprecated.deployment.rollback.to',
 ];
 
+const replicasRegEx = /Replicas: (\d+)/;
+
 export default class Deployment extends Workload {
   get replicaSetId() {
-    const set = this.metadata?.relationships?.filter((relationship) => {
-      return relationship.rel === 'owner' &&
-            relationship.toType === WORKLOAD_TYPES.REPLICA_SET;
+    const relationships = this.metadata?.relationships || [];
+
+    // Find all relevant ReplicaSet relationships
+    const replicaSetRelationships = relationships.filter((relationship) => relationship.rel === 'owner' && relationship.toType === WORKLOAD_TYPES.REPLICA_SET
+    );
+
+    // Filter the ReplicaSets based on replicas > 0
+    const activeReplicaSet = replicaSetRelationships.find((relationship) => {
+      const replicasMatch = relationship.message?.match(replicasRegEx);
+      const replicas = replicasMatch ? parseInt(replicasMatch[1], 10) : 0;
+
+      return replicas > 0;
     });
 
-    if (set?.length === 1) {
-      return set[0]?.toId?.replace(`${ this.namespace }/`, '');
-    }
+    // If no active ReplicaSet is found, fall back to the first one from the list
+    const selectedReplicaSet = activeReplicaSet || replicaSetRelationships[0];
 
-    if (this.pods.length) {
-      return this.pods?.[0]?.ownersByType?.ReplicaSet?.[0]?.name;
-    } else {
-      const condition = this.status?.conditions?.find((condition) => condition.type === 'Progressing' && condition.message);
-
-      return condition ? condition.message?.match(/"(\S*)"/)[1] : set?.[0]?.toId?.replace(`${ this.namespace }/`, '');
-    }
+    return selectedReplicaSet?.toId?.replace(`${ this.namespace }/`, '');
   }
 
   async rollBack(cluster, deployment, revision) {

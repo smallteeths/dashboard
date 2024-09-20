@@ -171,6 +171,12 @@ export default defineComponent({
 
     availabilityZonesSupport() {
       return this.validAZ ? undefined : this.t('aks.errors.availabilityZones');
+    },
+
+    poolCountValidator() {
+      const canBeZero: boolean = this.pool.mode === 'User';
+
+      return (val: number) => this.validationRules?.count?.[0](val, canBeZero);
     }
   },
 });
@@ -301,9 +307,10 @@ export default defineComponent({
           type="number"
           :mode="mode"
           label-key="aks.nodePools.count.label"
-          :rules="validationRules.count"
-          :min="1"
-          :max="100"
+          :rules="[poolCountValidator()]"
+          :min="pool.mode === 'User' ? 0 : 1"
+          :max="1000"
+          data-testid="aks-pool-count-input"
         />
       </div>
       <div class="col span-3">
@@ -339,8 +346,8 @@ export default defineComponent({
             :mode="mode"
             label-key="aks.nodePools.minCount.label"
             :rules="validationRules.min"
-            :min="1"
-            :max="100"
+            :min="0"
+            :max="1000"
           />
         </div>
         <div class="col span-3">
@@ -350,8 +357,8 @@ export default defineComponent({
             :mode="mode"
             label-key="aks.nodePools.maxCount.label"
             :rules="validationRules.max"
-            :min="1"
-            :max="100"
+            :min="0"
+            :max="1000"
           />
         </div>
       </template>
