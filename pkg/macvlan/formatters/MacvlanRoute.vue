@@ -22,6 +22,9 @@ export default {
   computed: {
     routes() {
       return this.row?.spec?.routes || [];
+    },
+    isFlatNetworkSubnet() {
+      return this.row.kind === 'FlatNetworkSubnet';
     }
   }
 };
@@ -34,28 +37,41 @@ export default {
       class="pull-left macvlan-route-item"
       style="width: 150px;"
     >
-      <div class="text-small">
-        <span class="badge-state macvlan-route-tag dst">DST</span>
-        {{ routes[0].dst }}
+      <div v-if="isFlatNetworkSubnet">
+        <div
+          v-if="routes[0].dst"
+          class="text-small"
+        >
+          <span class="bg-success macvlan-route-tag">DST</span>
+          {{ routes[0].dst }}
+        </div>
+        <div
+          v-if="routes[0].via"
+          class="text-small"
+        >
+          <span class="bg-success badge-state macvlan-route-tag">VIA</span>
+          {{ routes[0].via }}
+        </div>
+        <div
+          v-if="routes[0].dev"
+          class="text-small"
+        >
+          <span class="bg-success badge-state macvlan-route-tag">DEV</span>
+          {{ routes[0].dev }}
+        </div>
+        <div
+          v-if="routes[0].src"
+          class="text-small"
+        >
+          <span class="bg-success badge-state macvlan-route-tag">SRC</span>
+          {{ routes[0].src }}
+        </div>
+        <div class="text-small">
+          <span class="bg-success badge-state macvlan-route-tag">PRIORITY</span>
+          {{ routes[0].priority ? routes[0].priority : 0 }}
+        </div>
       </div>
-      <div class="text-small">
-        <span class="bg-warning badge-state macvlan-route-tag">GW</span>
-        {{ routes[0].gw }}
-      </div>
-      <div class="text-small">
-        <span class="bg-primary badge-state macvlan-route-tag">Iface</span>
-        {{ routes[0].iface }}
-      </div>
-    </div>
-    <v-popover
-      v-else-if="routes.length > 1"
-      trigger="click"
-      placement="top"
-      :delay="{hide: 0}"
-      open-class="macvlan-route-popover"
-      :handle-resize="true"
-    >
-      <div class="pull-left macvlan-route-item cursor-pointer">
+      <div v-else>
         <div class="text-small">
           <span class="badge-state macvlan-route-tag dst">DST</span>
           {{ routes[0].dst }}
@@ -67,6 +83,65 @@ export default {
         <div class="text-small">
           <span class="bg-primary badge-state macvlan-route-tag">Iface</span>
           {{ routes[0].iface }}
+        </div>
+      </div>
+    </div>
+    <v-popover
+      v-else-if="routes.length > 1"
+      trigger="click"
+      placement="top"
+      :delay="{hide: 0}"
+      open-class="macvlan-route-popover"
+      :handle-resize="true"
+    >
+      <div class="pull-left macvlan-route-item cursor-pointer">
+        <div v-if="isFlatNetworkSubnet">
+          <div
+            v-if="routes[0].dst"
+            class="text-small"
+          >
+            <span class="bg-success macvlan-route-tag">DST</span>
+            {{ routes[0].dst }}
+          </div>
+          <div
+            v-if="routes[0].via"
+            class="text-small"
+          >
+            <span class="bg-success badge-state macvlan-route-tag">VIA</span>
+            {{ routes[0].via }}
+          </div>
+          <div
+            v-if="routes[0].dev"
+            class="text-small"
+          >
+            <span class="bg-success badge-state macvlan-route-tag">DEV</span>
+            {{ routes[0].dev }}
+          </div>
+          <div
+            v-if="routes[0].src"
+            class="text-small"
+          >
+            <span class="bg-success badge-state macvlan-route-tag">SRC</span>
+            {{ routes[0].src }}
+          </div>
+          <div class="text-small">
+            <span class="bg-success badge-state macvlan-route-tag">PRIORITY</span>
+            {{ routes[0].priority ? routes[0].priority : 0 }}
+          </div>
+        </div>
+        <div v-else>
+          <div class="text-small">
+            <span class="badge-state macvlan-route-tag dst">DST</span>
+            {{ routes[0].dst }}
+          </div>
+          <div class="text-small">
+            <span class="bg-warning badge-state macvlan-route-tag">GW</span>
+            {{ routes[0].gw }}
+          </div>
+          <div class="text-small">
+            <span class="bg-primary badge-state macvlan-route-tag">Iface</span>
+            {{ routes[0].iface }}
+          </div>
         </div>
       </div>
 
@@ -82,17 +157,53 @@ export default {
           :key="index"
           class="macvlan-route-item macvlan-route-item-popover "
         >
-          <div class="text-small">
-            <span class="badge-state macvlan-route-tag dst">DST</span>
-            {{ route.dst }}
+          <div v-if="isFlatNetworkSubnet">
+            <div
+              v-if="route.dst"
+              class="text-small"
+            >
+              <span class="bg-success macvlan-route-tag">DST</span>
+              {{ route.dst }}
+            </div>
+            <div
+              v-if="route.via"
+              class="text-small"
+            >
+              <span class="bg-success badge-state macvlan-route-tag">VIA</span>
+              {{ route.via }}
+            </div>
+            <div
+              v-if="route.dev"
+              class="text-small"
+            >
+              <span class="bg-success badge-state macvlan-route-tag">DEV</span>
+              {{ route.dev }}
+            </div>
+            <div
+              v-if="route.src"
+              class="text-small"
+            >
+              <span class="bg-success badge-state macvlan-route-tag">SRC</span>
+              {{ route.src }}
+            </div>
+            <div class="text-small">
+              <span class="bg-success badge-state macvlan-route-tag">PRIORITY</span>
+              {{ route.priority ? route.priority : 0 }}
+            </div>
           </div>
-          <div class="text-small">
-            <span class="bg-warning badge-state macvlan-route-tag">GW</span>
-            {{ route.gw }}
-          </div>
-          <div class="text-small">
-            <span class="bg-primary badge-state macvlan-route-tag">Iface</span>
-            {{ route.iface }}
+          <div v-else>
+            <div class="text-small">
+              <span class="badge-state macvlan-route-tag dst">DST</span>
+              {{ route.dst }}
+            </div>
+            <div class="text-small">
+              <span class="bg-warning badge-state macvlan-route-tag">GW</span>
+              {{ route.gw }}
+            </div>
+            <div class="text-small">
+              <span class="bg-primary badge-state macvlan-route-tag">Iface</span>
+              {{ route.iface }}
+            </div>
           </div>
         </div>
       </template>

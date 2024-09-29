@@ -1,12 +1,12 @@
 import { shallowMount } from '@vue/test-utils';
-import promptRemoveMacvlanDialog from '../promptRemoveMacvlanDialog.vue';
+import promptRemoveDialog from '../promptRemoveDialog.vue';
 import SortableTable from '@shell/components/SortableTable';
 
 describe('component: macvlan', () => {
   it('should load the headers for the macvlan', () => {
     const headerKeys = ['subnet', 'namespace', 'podName', 'ip'];
     const resource = 'macvlan.cluster.cattle.io.macvlansubnet';
-    const wrapper = shallowMount(promptRemoveMacvlanDialog, {
+    const wrapper = shallowMount(promptRemoveDialog, {
       propsData:  { resources: [{ metadata: { name: 'test' } }] },
       components: { SortableTable },
       mocks:      {

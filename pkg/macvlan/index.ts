@@ -3,6 +3,7 @@ import { importTypes } from '@rancher/auto-import';
 import { IPlugin } from '@shell/core/types';
 import macvlanRouting from './routing/macvlan-routing';
 import macvlanStore from './store/macvlan-store/index.js';
+import flatnetworkStore from './store/flatnetwork-store/index.js';
 
 // Init the package
 export default function($plugin: IPlugin) {
@@ -17,6 +18,7 @@ export default function($plugin: IPlugin) {
 
   // Add Vuex store
   $plugin.addDashboardStore(macvlanStore.config.namespace, macvlanStore.specifics, macvlanStore.config);
+  $plugin.addDashboardStore(flatnetworkStore.config.namespace, flatnetworkStore.specifics, flatnetworkStore.config);
 
   // Add Vue Routes
   $plugin.addRoutes(macvlanRouting);

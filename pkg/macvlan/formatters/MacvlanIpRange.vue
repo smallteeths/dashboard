@@ -22,7 +22,7 @@ export default {
   computed: {
     ranges() {
       return this.row?.spec?.ranges || [];
-    }
+    },
   }
 };
 </script>
@@ -34,7 +34,7 @@ export default {
       class="pull-left macvlan-range-item"
     >
       <span class="inline-block">
-        {{ ranges[0].rangeStart }}-{{ ranges[0].rangeEnd }}
+        {{ ranges[0].rangeStart ? ranges[0].rangeStart : ranges[0].from }}-{{ ranges[0].rangeEnd ? ranges[0].rangeEnd : ranges[0].to }}
       </span>
     </div>
 
@@ -48,7 +48,7 @@ export default {
     >
       <div class="pull-left macvlan-range-item cursor-pointer">
         <span class="inline-block">
-          {{ ranges[0].rangeStart }}-{{ ranges[0].rangeEnd }}
+          {{ ranges[0].rangeStart ? ranges[0].rangeStart : ranges[0].from }}-{{ ranges[0].rangeEnd ? ranges[0].rangeEnd : ranges[0].to }}
         </span>
         <span>
           ···
@@ -61,7 +61,7 @@ export default {
           class="macvlan-range-item macvlan-range-item-popover"
         >
           <div class="text-center">
-            {{ range.rangeStart }}-{{ range.rangeEnd }}
+            {{ range.rangeStart ? range.rangeStart : range.from }}-{{ range.rangeEnd ? range.rangeEnd : range.to }}
           </div>
         </div>
       </template>
