@@ -4,6 +4,13 @@ import { Card } from '@components/Card';
 import SortableTable from '@shell/components/SortableTable';
 import { exceptionToErrorsArray } from '@shell/utils/error';
 
+const v1TypeLabel = 'macvlan.panda.io/macvlanIpType';
+const v2TypeLabel = 'flatnetwork.pandaria.io/flatNetworkIPType';
+const v1IpLabel = 'macvlan.pandaria.cattle.io/selectedIp';
+const v2IpLabel = 'flatnetwork.pandaria.io/selectedIP';
+const v1Action = 'macvlan/loadMacvlanPods';
+const v2Action = 'flatnetwork/loadFlatnetworkPods';
+
 export default {
   props: {
     resources: {
@@ -65,15 +72,26 @@ export default {
         },
       ];
     },
+
+    getLabel() {
+      return {
+        type: this.resources[0]?.kind === 'FlatNetworkSubnet' ? v2TypeLabel : v1TypeLabel,
+        ip:   this.resources[0]?.kind === 'FlatNetworkSubnet' ? v2IpLabel : v1IpLabel,
+      };
+    },
+
+    getAction() {
+      return { action: this.resources[0]?.kind === 'FlatNetworkSubnet' ? v2Action : v1Action };
+    }
   },
   methods: {
-    removeMacvlans() {
+    removeFlatnetworks() {
       const resources = this.resources;
       const promises = [];
 
       for ( const resource of resources ) {
         try {
-          promises.push(this.$store.dispatch('macvlan/removeMacvlan', { cluster: this.currentCluster.id, resource }));
+          promises.push(this.$store.dispatch('flatnetwork/removeFlatnetwork', { cluster: this.currentCluster.id, resource }));
         } catch (e) {
           this.errors = exceptionToErrorsArray(e);
         }
@@ -94,17 +112,17 @@ export default {
         };
       });
     },
-    displayMacvlanIp(labels = {}) {
-      const type = labels['macvlan.panda.io/macvlanIpType'];
-      const ip = labels['macvlan.pandaria.cattle.io/selectedIp'];
+    displayFlatnetworkIp(labels = {}) {
+      const type = labels[this.getLabel.type];
+      const ip = labels[this.getLabel.ip];
 
       return `${ ip || '' }${ type ? ` (${ type })` : '' }`;
     },
     async getPods(name) {
-      let pods = await this.$store.dispatch('macvlan/loadMacvlanPods', {
+      let pods = await this.$store.dispatch(this.getAction.action, {
         cluster: this.currentCluster.id,
         query:   {
-          labelSelector: { 'macvlan.pandaria.cattle.io/subnet': name },
+          labelSelector: { 'flatnetwork.pandaria.io/subnet': name },
           limit:         -1,
         }
       });
@@ -112,12 +130,12 @@ export default {
       let more = false;
       let morePods = [];
 
-      pods = Array.from(pods).filter(({ metadata }) => metadata && metadata.annotations && this.displayMacvlanIp(metadata.labels)
+      pods = Array.from(pods).filter(({ metadata }) => metadata && metadata.annotations && this.displayFlatnetworkIp(metadata.labels)
       ).map(({ metadata }) => {
         return {
           namespace: metadata.namespace,
           podName:   metadata.name,
-          ip:        this.displayMacvlanIp(metadata.labels)
+          ip:        this.displayFlatnetworkIp(metadata.labels)
         };
       });
 
@@ -168,7 +186,7 @@ export default {
       </h4>
       <div
         slot="body"
-        class="pr-10 pl-10"
+        class="pr-10 pl-10 inner"
       >
         <SortableTable
           key-field="_key"
@@ -264,7 +282,7 @@ export default {
           </button>
           <button
             class="btn role-primary"
-            @click="removeMacvlans()"
+            @click="removeFlatnetworks()"
           >
             {{ t('clusterConnectMode.actions.yes') }}
           </button>
@@ -278,16 +296,16 @@ export default {
 .macvlan {
   margin: 0;
   .bottom {
-      display: block;
-      width: 100%;
+    display: block;
+    width: 100%;
   }
   .banner {
-      margin-top: 0
+    margin-top: 0
   }
   .buttons {
-      display: flex;
-      justify-content: flex-end;
-      width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
   }
   .border-bottom-none{
     border-bottom: none;

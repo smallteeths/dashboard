@@ -293,6 +293,16 @@ export const POD_IMAGES = {
   formatter: 'PodImages'
 };
 
+export const POD_IP = {
+  name:      'pod_ip',
+  label:     'IP',
+  value:     'ip',
+  getValue:  (row) => row.imageNames,
+  sort:      'status.podIP',
+  // search:    'imageNames',
+  formatter: 'PodIP'
+};
+
 export const POD_RESTARTS = {
   name:         'pod_restarts',
   labelKey:     'tableHeaders.podRestarts',

@@ -1,5 +1,5 @@
 <script>
-import { MACVLAN_IP_PRODUCT_NAME } from '../config/macvlan-types';
+import { MACVLAN_IP_PRODUCT_NAME, MACVLAN_IP_PRODUCT_NAME_V2 } from '../config/macvlan-types';
 
 export default {
   props: {
@@ -16,9 +16,11 @@ export default {
   },
 
   data() {
+    const name = this.row.kind === 'FlatNetworkSubnet' ? MACVLAN_IP_PRODUCT_NAME_V2 : MACVLAN_IP_PRODUCT_NAME;
+
     return {
       getStartedLink: {
-        name:   `${ MACVLAN_IP_PRODUCT_NAME }-c-cluster-resource-ip`,
+        name:   `${ name }-c-cluster-resource-ip`,
         params: { id: this.row.metadata.name }
       },
     };
@@ -26,7 +28,9 @@ export default {
 
   computed: {
     totalCount() {
-      return this.row?.metadata?.annotations?.macvlanipCount || 0;
+      const count = this.row.kind === 'FlatNetworkSubnet' ? this.row?.status?.usedIPCount : this.row?.metadata?.annotations?.macvlanipCount;
+
+      return count || 0;
     }
   }
 };

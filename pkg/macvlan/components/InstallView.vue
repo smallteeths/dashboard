@@ -2,7 +2,7 @@
 import { mapGetters } from 'vuex';
 import { CATALOG } from '@shell/config/types';
 import Loading from '@shell/components/Loading';
-import { MACVLAN_CHARTS } from '../config/macvlan-types';
+import { MACVLAN_CHARTS, MACVLAN_CHARTS_V2 } from '../config/macvlan-types';
 
 export default {
   props: {},
@@ -16,7 +16,14 @@ export default {
   },
 
   data() {
-    return { reloadReady: false };
+    return {
+      reloadReady: false,
+      version:     'v1'
+    };
+  },
+
+  mounted() {
+    this.version = this.$route.params.version;
   },
 
   computed: {
@@ -24,11 +31,21 @@ export default {
     ...mapGetters({ allRepos: 'catalog/repos' }),
 
     controllerChart() {
-      return this.$store.getters['catalog/chart']({ chartName: MACVLAN_CHARTS.APP_NAME });
+      const chartName = this.version === 'v1' ? MACVLAN_CHARTS.APP_NAME : MACVLAN_CHARTS_V2.APP_NAME;
+
+      return this.$store.getters['catalog/chart']({ chartName });
     },
 
     description() {
       return this.controllerChart?.versions?.[0]?.description || '';
+    },
+
+    macvlanTitle() {
+      return this.version === 'v1' ? this.t('macvlan.chart.title') : this.t('macvlan.chart.titleV2');
+    },
+
+    installButton() {
+      return this.version === 'v1' ? this.t('macvlan.chart.appInstall.button') : this.t('macvlan.chart.appInstall.buttonV2');
     }
   },
 
@@ -80,7 +97,7 @@ export default {
         >
       </div>
       <h1 class="mb-20">
-        {{ t("macvlan.chart.title") }}
+        {{ macvlanTitle }}
       </h1>
       <div class="description">
         {{ description }}
@@ -90,7 +107,7 @@ export default {
         :disabled="!controllerChart"
         @click.prevent="chartRoute"
       >
-        {{ t("macvlan.chart.appInstall.button") }}
+        {{ installButton }}
       </button>
     </div>
   </div>

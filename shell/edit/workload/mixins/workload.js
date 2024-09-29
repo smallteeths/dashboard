@@ -81,7 +81,11 @@ const MACVLAN_ANNOTATION_MAP = {
   network0: 'v1.multus-cni.io/default-network',
   ip:       'macvlan.pandaria.cattle.io/ip',
   mac:      'macvlan.pandaria.cattle.io/mac',
-  subnet:   'macvlan.pandaria.cattle.io/subnet'
+  subnet:   'macvlan.pandaria.cattle.io/subnet',
+  // v2 flatnetwork
+  ipV2:     'flatnetwork.pandaria.io/ip',
+  macV2:    'flatnetwork.pandaria.io/mac',
+  subnetV2: 'flatnetwork.pandaria.io/subnet'
 };
 const ID_KEY = Symbol('container-id');
 
@@ -1172,7 +1176,11 @@ export default {
             form[a] = annotations[a];
           }
         });
-        form[MACVLAN_SERVICE] = 'disable';
+        if (annotationsForm.isFlatNetworkV2 && !this.enforcesUseV1) {
+          delete form[MACVLAN_SERVICE];
+        } else {
+          form[MACVLAN_SERVICE] = 'disable';
+        }
 
         this.podAnnotations = Object.assign({}, form);
 
@@ -1184,26 +1192,52 @@ export default {
       if (annotationsForm?.allowVlansubnet && network && subnet) {
         const form = {};
 
-        Object.keys(annotationsForm).forEach((a) => {
-          if ( a === 'allowVlansubnet') {
-            return;
-          }
-
-          if (a === 'network') {
-            form[propMap[`${ annotationsForm[a] === DUAL_NETWORK_CARD ? a : `${ a }0` }`]] = annotationsForm[a];
-          } else if (a === 'ip' || a === 'mac') {
-            if (!annotationsForm[a]) {
-              form[propMap[a]] = 'auto';
-            } else {
-              const v = annotationsForm[a].split(/,|，/);
-
-              form[propMap[a]] = v.join('-');
+        if (annotationsForm.isFlatNetworkV2 && !this.enforcesUseV1) {
+          Object.keys(annotationsForm).forEach((a) => {
+            if (a === 'allowVlansubnet' || a === 'enforcesUseV1' || a === 'isFlatNetworkV2') {
+              return;
             }
-          } else {
-            form[propMap[a]] = annotationsForm[a];
-          }
-        });
 
+            if (a === 'ip' || a === 'mac') {
+              const key = a === 'ip' ? 'ipV2' : 'macV2';
+
+              if (!annotationsForm[a]) {
+                form[propMap[key]] = 'auto';
+              } else {
+                const v = annotationsForm[a].split(/,|，/);
+
+                form[propMap[key]] = v.join('-');
+              }
+            } else {
+              let key = a;
+
+              if (a === 'subnet') {
+                key = 'subnetV2';
+              }
+              form[propMap[key]] = annotationsForm[a];
+            }
+          });
+        } else {
+          Object.keys(annotationsForm).forEach((a) => {
+            if ( a === 'allowVlansubnet' || a === 'enforcesUseV1' || a === 'isFlatNetworkV2') {
+              return;
+            }
+
+            if (a === 'network') {
+              form[propMap[`${ annotationsForm[a] === DUAL_NETWORK_CARD ? a : `${ a }0` }`]] = annotationsForm[a];
+            } else if (a === 'ip' || a === 'mac') {
+              if (!annotationsForm[a]) {
+                form[propMap[a]] = 'auto';
+              } else {
+                const v = annotationsForm[a].split(/,|，/);
+
+                form[propMap[a]] = v.join('-');
+              }
+            } else {
+              form[propMap[a]] = annotationsForm[a];
+            }
+          });
+        }
         if (annotations) {
           delete annotations[MACVLAN_SERVICE];
           delete annotations[MACVLAN_ANNOTATION_MAP.network];
@@ -1216,8 +1250,19 @@ export default {
 
     initStaticPod(podTemplateSpec, podAnnotations) {
       const {
-        [MACVLAN_ANNOTATION_MAP.network]: network, [MACVLAN_ANNOTATION_MAP.network0]: network0, [MACVLAN_ANNOTATION_MAP.ip]:ip, [MACVLAN_ANNOTATION_MAP.subnet]:subnet, [MACVLAN_ANNOTATION_MAP.mac]:mac
+        [MACVLAN_ANNOTATION_MAP.network]: network,
+        [MACVLAN_ANNOTATION_MAP.network0]: network0,
+        [MACVLAN_ANNOTATION_MAP.ip]: ipV1,
+        [MACVLAN_ANNOTATION_MAP.subnet]: subnetV1,
+        [MACVLAN_ANNOTATION_MAP.mac]: macV1,
+        [MACVLAN_ANNOTATION_MAP.ipV2]: ipV2,
+        [MACVLAN_ANNOTATION_MAP.subnetV2]: subnetV2,
+        [MACVLAN_ANNOTATION_MAP.macV2]: macV2,
       } = podAnnotations || {};
+
+      const ip = ipV2 || ipV1;
+      const subnet = subnetV2 || subnetV1;
+      const mac = macV2 || macV1;
       let neu = {};
 
       if ((network || network0) && subnet) {

@@ -4,7 +4,7 @@ export default class extends SteveModel {
   promptRemove(resources = this) {
     this.$dispatch('promptModal', {
       resources,
-      component: 'promptRemoveMacvlanDialog'
+      component: 'promptRemoveDialog'
     });
   }
 

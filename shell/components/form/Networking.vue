@@ -13,6 +13,8 @@ const CLUSTER_FIRST = 'ClusterFirst';
 const CLUSTER_FIRST_HOST = 'ClusterFirstWithHostNet';
 const DUAL_NETWORK_CARD = '[{"name":"static-macvlan-cni-attach","interface":"eth1"}]';
 const SINGLE_NETWORK_CARD = '[{"name":"static-macvlan-cni-attach","interface":"eth0"}]';
+const DUAL_NETWORK_CARD_V2 = '[{"name":"rancher-flat-network","interface":"eth1"}]';
+const SINGLE_NETWORK_CARD_V2 = '[{"name":"rancher-flat-network","interface":"eth0"}]';
 
 export default {
   components: {
@@ -73,6 +75,13 @@ export default {
       vlansubnetName,
       vlansubnetChoices:   [],
       unsupportVlansubnet: true,
+      isFlatNetworkV2:     false,
+      /**
+      * Enforces the use of v1 macvlan annotations when editing a workload.
+      * If the workload is already configured with v1 macvlan annotations,
+      * the v2 annotations will not be used, and the original v1 annotations will be preserved.
+      */
+      enforcesUseV1:       false,
     };
 
     return out;
@@ -110,10 +119,10 @@ export default {
     vlansubnetNetworkChoices() {
       return [{
         label: 'eth1',
-        value: DUAL_NETWORK_CARD,
+        value: this.isFlatNetworkV2 && !this.enforcesUseV1 ? DUAL_NETWORK_CARD_V2 : DUAL_NETWORK_CARD,
       }, {
         label: 'eth0',
-        value: SINGLE_NETWORK_CARD,
+        value: this.isFlatNetworkV2 && !this.enforcesUseV1 ? SINGLE_NETWORK_CARD_V2 : SINGLE_NETWORK_CARD,
       }];
     },
 
@@ -176,15 +185,43 @@ export default {
         };
         const q = Object.entries(query).map((e) => `${ e[0] }=${ e[1] }`).join('&');
 
-        await this.$store.dispatch('management/request', { url: `/k8s/clusters/${ clusterId }/apis/macvlan.cluster.cattle.io/v1/namespaces/kube-system/macvlansubnets${ q ? `?${ q }` : '' }` }).then((resp) => {
-          const items = resp.items.map((item) => ({
-            label: `${ item.metadata.name }(${ item.spec.cidr })`,
-            value: item.metadata.name
-          }));
+        try {
+          await this.$store.dispatch('management/request', { url: `/k8s/clusters/${ clusterId }/apis/macvlan.cluster.cattle.io/v1/namespaces/kube-system/macvlansubnets${ q ? `?${ q }` : '' }` }).then((resp) => {
+            const items = resp.items.map((item) => ({
+              label: `${ item.metadata.name }(${ item.spec.cidr })`,
+              value: item.metadata.name
+            }));
 
-          this.vlansubnetChoices = items;
-          this.unsupportVlansubnet = false;
-        });
+            this.vlansubnetChoices = items;
+            this.unsupportVlansubnet = false;
+            if (this.mode === 'edit' && (this.vlansubnetNetwork === DUAL_NETWORK_CARD || this.vlansubnetNetwork === SINGLE_NETWORK_CARD)) {
+              this.enforcesUseV1 = true;
+            }
+          });
+        } catch (e) {
+          this.enforcesUseV1 = false;
+        }
+
+        if (!this.enforcesUseV1) {
+          let query = '';
+
+          if (projectId) {
+            query = `?filter=metadata.labels.project=${ projectId.replace(/[:]/g, '-') }`;
+          }
+          await this.$store.dispatch('management/request', { url: `/k8s/clusters/${ clusterId }/apis/flatnetwork.pandaria.io/v1/namespaces/cattle-flat-network/flatnetworksubnets${ query }` }).then((resp) => {
+            const items = resp.items.map((item) => ({
+              label: `${ item.metadata.name }(${ item.spec.cidr })`,
+              value: item.metadata.name
+            }));
+
+            this.vlansubnetChoices = items;
+            this.unsupportVlansubnet = false;
+            this.isFlatNetworkV2 = true;
+            if (this.vlansubnetNetwork === DUAL_NETWORK_CARD) {
+              this.vlansubnetNetwork = DUAL_NETWORK_CARD_V2;
+            }
+          });
+        }
       }
     },
 
@@ -209,6 +246,8 @@ export default {
           subnet:          this.vlansubnetName,
           network:         this.vlansubnetNetwork,
           allowVlansubnet: this.allowVlansubnet,
+          enforcesUseV1:   this.enforcesUseV1,
+          isFlatNetworkV2: this.isFlatNetworkV2,
         }
       };
 
