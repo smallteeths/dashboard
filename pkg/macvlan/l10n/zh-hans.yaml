@@ -1,17 +1,27 @@
 typeLabel:
   macvlan.cluster.cattle.io.macvlansubnet: |-
     {count, plural,
-      one { 扁平网络 }
-      other { 扁平网络 }
+      one { 扁平网络 (V1)}
+      other { 扁平网络 (V1)}
+    }
+  flatnetwork.pandaria.io.flatnetworksubnet: |-
+    {count, plural,
+      one { 扁平网络 (V2 实验性) }
+      other { 扁平网络 (V2 实验性) }
     }
 macvlan:
+  titleV2: 扁平网络子网 (实验性)
+  deprecated: Rancher Macvlan (V1) 已经废弃请按照官方文档迁移到 V2
   nav:
-    label: 扁平网络
+    label: 扁平网络 (V1)
+    labelV2: 扁平网络 (V2 实验性)
   chart:
-    title: Rancher Macvlan
+    title: 扁平网络 
+    titleV2: 扁平网络（实验性）
     description: 'Macvlan 是一种虚拟网络技术，它允许一个主机拥有多个 MAC 地址，允许在一个物理网络中创建虚拟网络。Macvlan 通过将一个普通的网络接口分割为多个虚拟接口来实现，这些虚拟接口拥有不同的 MAC 地址。Macvlan 的优势在于可以在网络中实现虚拟隔离，并且在同一物理网络中。'
     appInstall:
       button: 安装 Macvlan
+      buttonV2: 安装 FlatNetwork
   cidr:
     cidrFormatError: CIDR 格式错误
     cidrReq: CIDR 不能为空
@@ -28,8 +38,8 @@ macvlan:
       serviceCidrFormatError: ServiceCidr 格式错误
       serviceCidrReq: ServiceCidr 不能为空
   gateway:
-    gatewayFormatError: Gateway IP 格式错误
-    label: GATEWAY
+    gatewayFormatError: 网关 IP 格式错误
+    label: 网关
     placeholder: 例如：192.168.1.1
   ipRange:
     IPFormatError: IP 范围中，存在 IP 地址格式不正确的记录{info}
@@ -41,7 +51,7 @@ macvlan:
     end:
       label: 结束 IP
       placeholder: 例如：192.168.56.20
-    formInfoExist: Master 为 {master}, Vlan 为 {vlan}, CIDR 为 {cidr} 的记录已经存在
+    formInfoExist: 主网卡为 {master}, Vlan 为 {vlan}, CIDR 为 {cidr} 的记录已经存在
     label: IP 范围
     start:
       label: 开始 IP
@@ -53,11 +63,14 @@ macvlan:
     label: 自动 IP 延迟回收
     placeholder: 取值范围 1-3600 之间的整数
   master:
-    label: Master
-    masterReq: master 不能为空
+    label: 主网卡
+    masterReq: 主网卡不能为空
     placeholder: 例如：eth0
+  ipvlanFlag:
+    label: IPvlanFlag
   mode:
     label: 模式
+    flatMode: 扁平模式
   name:
     label: 名称
     nameFormatError: 项目名称由字母、数字、和._-组成，长度不超过 62 且至少有两个字符并以字母或数字开头
@@ -72,17 +85,33 @@ macvlan:
       label: Destination
       placeholder: 例如：192.168.0.0/16
     gw:
-      label: Gateway
+      label: 网关
       placeholder: 例如：192.168.1.1
     iface:
       eth0: eth0
       eth1: eth1
       label: Iface
+    via:
+      label: Via (Gateway)
+      placeholder: 例如：192.168.1.1
+    dev:
+      eth0: eth0
+      eth1: eth1
+      label: dev
+    src:
+      label: Src
+      placeholder: 例如：192.168.1.1
+    priority:
+      label: Priority (Metrics)
+      placeholder: 例如：0
     label: 自定义路由
     routeDstFormatError: 自定义路由中，Destination 存在格式错误的记录
     routeDstReq: 自定义路由中，Destination 存在为空的记录
-    routeGwFormatError: 自定义路由中，Gateway 存在格式错误的记录
-    routeGwInCidrError: 自定义路由中，Gateway 存在IP地址不在子网范围内的记录
+    routeGwFormatError: 自定义路由中，网关存在格式错误的记录
+    routeGwInCidrError: 自定义路由中，网关存在IP地址不在子网范围内的记录
+    routeViaFormatError: 自定义路由中，Via 存在格式错误的记录
+    routeSrcFormatError: 自定义路由中，Src 存在格式错误的记录
+    routePriorityFormatError: 自定义路由中，Priority 必须为0或大于100且小于2147483647的正整数
     remove: 移除
   vlan:
     label: VLAN
@@ -97,12 +126,15 @@ macvlan:
   tableHeaders:
     workload: 工作负载
     ip: IP
-    master: Master
+    master: 主网卡
     vlan: VLAN
     cidr: CIDR
     ipRange: IP 范围
     route: 自定义路由
-    gateway: GATEWAY
+    gateway: 网关
+    status: 状态
+    network: 网络
+    mode: 模式
   macvlanIp:
     count: "<div class='text-left'>{name}<br>共使用 IP 数：{total}</div>"
     totalCount: 共使用 IP 数
@@ -119,4 +151,14 @@ macvlan:
   promptRemove:
     pod: 0 个 Pod
     moreInfo: "{count} 条数据被隐藏，点击显示"
-
+  routeSettings:
+    addNodeCIDR: 添加 NodeCIDR 至 Pod 路由表
+    addPodIPToHost: 添加 Pod 扁平网络 IP 至节点主机路由表
+    flatNetworkDefaultGateway: 将 Pod 默认路由设备设置为扁平网络接口 (eth1)
+    addClusterCIDR: 添加 ClusterCIDR 至 Pod 路由表
+    addServiceCIDR: 添加 ServiceCIDR 至 Pod 路由表
+    title:
+      pod: Pod 路由表
+      node: 节点主机路由表
+      default: Pod 默认路由
+  more: 更多

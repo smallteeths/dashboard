@@ -1,17 +1,27 @@
 typeLabel:
   macvlan.cluster.cattle.io.macvlansubnet: |-
     {count, plural,
-      one { Flat Network }
-      other { Flat Networks }
+      one { Rancher Macvlan (V1) }
+      other { Rancher Macvlan (V1) }
+    }
+  flatnetwork.pandaria.io.flatnetworksubnet: |-
+    {count, plural,
+      one { Rancher Macvlan (V2 Experimental) }
+      other { Rancher Macvlan (V2 Experimental) }
     }
 macvlan:
+  titleV2: Rancher FlatNetwork Subnet (Experimental)
+  deprecated: Rancher Macvlan (V1) has been deprecated. Please migrate to V2 according to the official documentation
   nav:
-    label: Flat Network
+    label: Rancher Macvlan (V1)
+    labelV2: Rancher FlatNetwork (V2 Experimental)
   chart:
-    title: Rancher Macvlan
+    title: Rancher Macvlan (Deprecated)
+    titleV2: Rancher FlatNetwork (Experimental)
     description: 'Macvlan is a virtual networking technology that allows a host to have multiple MAC addresses and create virtual networks in a physical network. Macvlan is achieved by splitting a regular network interface into multiple virtual interfaces, each with a different MAC address. The advantage of Macvlan is that it can achieve virtual isolation in the network and in the same physical network.'
     appInstall:
       button: Install Macvlan
+      buttonV2: Install FlatNetwork
   cidr:
     cidrFormatError: "CIDR format error"
     cidrReq: "CIDR cannot be empty"
@@ -56,8 +66,11 @@ macvlan:
     label: Master
     masterReq: "master cannot be empty"
     placeholder: e.g. eth0
+  ipvlanFlag:
+    label: IPvlanFlag
   mode:
     label: MODE
+    flatMode: FlatMode
   name:
     label: Name
     nameFormatError: "name consists of alphanumeric and ._-, not more than 62 characters in length and beginning with a letter or number"
@@ -78,11 +91,27 @@ macvlan:
       eth0: eth0
       eth1: eth1
       label: Iface
+    via:
+      label: Via (Gateway)
+      placeholder: e.g. 192.168.1.1
+    dev:
+      eth0: eth0
+      eth1: eth1
+      label: dev
+    src:
+      label: Src
+      placeholder: e.g. 192.168.1.1
+    priority:
+      label: Priority (Metrics)
+      placeholder: e.g. 0
     label: Custom Route
     routeDstFormatError: "Custom Route: Destination format error"
     routeDstReq: "Custom Route: Destination cannot be empty"
     routeGwFormatError: "Custom Route: Gateway format error"
     routeGwInCidrError: "Custom Route: Gateway There are records of IP addresses that are not in the subnet scope"
+    routeViaFormatError: "Custom Route: Via format error"
+    routeSrcFormatError: "Custom Route: Src format error"
+    routePriorityFormatError: "Custom Route: Priority must be 0 or a positive integer greater than 100 and less than 2147483647."
     remove: Remove
   vlan:
     label: VLAN
@@ -91,7 +120,7 @@ macvlan:
   tabs:
     general: Basics
     advanced: Advanced
-    ipRange: Ip Range
+    ipRange: IP Range
     route: Custom Route
     defaultGateway: Set eth1 as the container default gateway
   tableHeaders:
@@ -100,9 +129,12 @@ macvlan:
     master: Master
     vlan: VLAN
     cidr: CIDR
-    ipRange: Ip Range
+    ipRange: IP Range
     route: Custom Route
     gateway: GATEWAY
+    status: Status
+    network: Network
+    mode: MODE
   macvlanIp:
     count: "<div class='text-left'>{name}<br>Total IP number：{total}</div>"
     totalCount: Total IP number
@@ -119,4 +151,15 @@ macvlan:
   promptRemove:
     pod: 0 Pods
     moreInfo: "{count} pieces of data are hidden, click to display"
+  routeSettings:
+    addNodeCIDR: Add NodeCIDR to Pod route table
+    addPodIPToHost: Add Pod Flat Network IP routes to node route table
+    flatNetworkDefaultGateway: Set default route device to Flat Network Interface (eth1)
+    addClusterCIDR: "Add ClusterCIDR to Pod route table"
+    addServiceCIDR: "Add ServiceCIDR to Pod route table"
+    title:
+      pod: Pod route table
+      node: Node route table
+      default: Pod default routes
+  more: more
 
