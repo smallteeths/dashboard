@@ -167,6 +167,7 @@ nav:
     RBAC: RBAC
     Rancher: Rancher
     legacy: 舊版
+    drivers: 驅動管理
   ns:
     all: 所有命名空間
     clusterLevel: 集羣資源
@@ -2294,15 +2295,17 @@ cruResource:
 
 drivers:
   kontainer:
-    title: Cluster Drivers
+    title: 集群驅動
   node:
-    title: Node Drivers
+    title: 主机驅動
   operatorsetting:
-    title: Operator Configuration
+    title: Operator 配置
   add:
     title: Add Driver
     name:
       label: Driver name
+    operatorName:
+      label: Operator提供商類型
     downloadUrl:
       label: Download URL
       placeholder: https://test.com/driver
@@ -2316,7 +2319,7 @@ drivers:
       tooltip: 校驗用於驗證下載的驅動程式是否與預期的校驗和匹配。
     whitelist: 白名單網域
   actions:
-    refresh: Refresh Kubernetes Metadata
+    refresh: 刷新Kubernetes元數據
   deactivate:
     title: 你確定嗎？
     andOthers: |-
@@ -7180,6 +7183,21 @@ typeLabel:
     {count, plural,
       one { 項目成員 }
       other { 項目成員 }
+    }
+  kontainerdriver: |-
+    {count, plural,
+      one { 集群驅動 }
+      other { 集群驅動 }
+    }
+  nodedriver: |-
+    {count, plural,
+      one { 主机驅動 }
+      other { 主机驅動 }
+    }
+  operatorsetting: |-
+    {count, plural,
+      one { Operator 配置 }
+      other { Operator配置 }
     }
 action:
   clone: 克隆

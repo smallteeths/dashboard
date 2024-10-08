@@ -64,7 +64,7 @@ export default {
       <LabeledSelect
         v-model="value.name"
         :options="providerChoices"
-        :label="t('drivers.add.name.label')"
+        :label="t('drivers.add.operatorName.label')"
         :mode="mode"
         :disabled="isEdit"
       />

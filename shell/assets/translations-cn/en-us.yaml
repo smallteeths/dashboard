@@ -8583,7 +8583,7 @@ codeMirror:
     tooltip: Key mapping preference.
 drivers:
   actions:
-    refresh: Refresh Kubernetes Metadata
+    refresh: 刷新 Kubernetes 元数据
   add:
     checksum:
       label: Checksum
@@ -8598,6 +8598,8 @@ drivers:
       tooltip: The URL to download the machine driver binary for 64-bit Linux.
     name:
       label: Driver name
+    operatorName:
+      label: Operator Provider
     title: Add Driver
     whitelist: Whitelist Domains
   deactivate:
