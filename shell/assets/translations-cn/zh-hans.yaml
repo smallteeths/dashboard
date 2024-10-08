@@ -167,6 +167,7 @@ nav:
     RBAC: RBAC
     Rancher: Rancher
     legacy: 旧版
+    drivers: 驱动管理
   ns:
     all: 所有命名空间
     clusterLevel: 集群资源
@@ -2293,29 +2294,31 @@ cruResource:
 
 drivers:
   kontainer:
-    title: Cluster Drivers
+    title: 集群驱动
   node:
-    title: Node Drivers
+    title: 主机驱动
   operatorsetting:
-    title: Operator Configuration
+    title: Operator 配置
   add:
     title: Add Driver
     name:
       label: Driver name
+    operatorName:
+      label: Operator提供商类型
     downloadUrl:
-      label: Download URL
+      label: 下载 URL
       placeholder: https://test.com/driver
       tooltip: 下载适用于 64 位 Linux 的机器驱动程序二进制文件的 URL。
     customUiUrl:
-      label: Custom UI URL
+      label: 自定义 UI URL
       placeholder: https://test.com/ui
       tooltip: 加载此驱动程序的自定义添加节点界面的 URL。有关详细信息，请参阅 https://github.com/rancher/ui-driver-skel。
     checksum:
-      label: Checksum
+      label: 校验和
       tooltip: 验和用于验证下载的驱动程序是否与预期的校验和匹配。
-    whitelist: Whitelist Domains
+    whitelist: 域名白名单
   actions:
-    refresh: Refresh Kubernetes Metadata
+    refresh: 刷新 Kubernetes 元数据
   deactivate:
     title: 你确定吗？
     andOthers: |-
@@ -7179,6 +7182,21 @@ typeLabel:
     {count, plural,
       one { 项目成员 }
       other { 项目成员 }
+    }
+  kontainerdriver: |-
+    {count, plural,
+      one { 集群驱动 }
+      other { 集群驱动 }
+    }
+  nodedriver: |-
+    {count, plural,
+      one { 主机驱动 }
+      other { 主机驱动 }
+    }
+  operatorsetting: |-
+    {count, plural,
+      one { Operator 配置 }
+      other { Operator配置 }
     }
 action:
   clone: 克隆
