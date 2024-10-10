@@ -10,7 +10,7 @@ export default class OperatorSetting extends Driver {
       {
         action:     'activate',
         bulkAction: 'activate',
-        label:      'Activate',
+        label:      this.t('action.activate'),
         icon:       'icon icon-play',
         bulkable:   true,
         enabled:    !!this.links.update && !this.active
@@ -18,7 +18,7 @@ export default class OperatorSetting extends Driver {
       {
         action:     'deactivate',
         bulkAction: 'deactivate',
-        label:      'Deactivate',
+        label:      this.t('action.deactivate'),
         icon:       'icon icon-pause',
         bulkable:   true,
         enabled:    !!this.links.update && !!this.active,
