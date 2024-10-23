@@ -360,8 +360,8 @@ addClusterMemberDialog:
   title: Add Cluster Member
 
 addonConfigConfirmation:
-  title: Add-On Config Reset
-  body: Changing the Kubernetes Version can reset the Add-On Config values. You should check that the values are as expected before continuing.
+  title: Add-On Reset
+  body: Changing the Kubernetes Version can reset Add-On values. You should check that the values are as expected before continuing.
 
 addProjectMemberDialog:
   title: Add Project Member
@@ -1186,17 +1186,39 @@ cluster:
     banner: "Service Account access with JWT authentication can be configured after cluster creation from <br>
       <code>Cluster Management > Advanced > JWT Authentication</code>"
   addonChart:
-    rancher-vsphere-cpi: vSphere CPI Configuration
-    rancher-vsphere-csi: vSphere CSI Configuration
-    rke2-calico: Calico Configuration
-    rke2-calico-crd: Calico Configuration
-    rke2-canal: Canal Configuration
-    rke2-cilium: Cilium Configuration
-    rke2-coredns: CoreDNS Configuration
-    rke2-ingress-nginx: NGINX Ingress Configuration
-    rke2-kube-proxy: Kube Proxy Configuration
-    rke2-metrics-server: Metrics Server Configuration
-    rke2-multus: Multus Configuration
+    rancher-vsphere-cpi:
+      label: "Add-on: vSphere CPI"
+      configuration: vSphere CPI
+    rancher-vsphere-csi:
+      label: "Add-on: vSphere CSI"
+      configuration: vSphere CSI
+    rke2-calico:
+      label: "Add-on: Calico"
+      configuration: Calico
+    rke2-calico-crd:
+      label:  "Add-on: Calico"
+      configuration: Calico
+    rke2-canal:
+      label: "Add-on: Canal"
+      configuration: Canal
+    rke2-cilium:
+      label: "Add-on: Cilium"
+      configuration: Cilium
+    rke2-coredns:
+      label: "Add-on: CoreDNS"
+      configuration: CoreDNS
+    rke2-ingress-nginx:
+      label: "Add-on: NGINX"
+      configuration: NGINX Ingress
+    rke2-kube-proxy:
+      label: "Add-on: Kube Proxy"
+      configuration: Kube Proxy
+    rke2-metrics-server:
+      label: "Add-on: Metrics Server"
+      configuration: Metrics Server
+    rke2-multus:
+      label: "Add-on: Multus"
+      configuration: Multus
   agentEnvVars:
     label: Agent Environment
     detail: Add additional environment variables to the agent container.  This is most commonly useful for configuring a HTTP proxy.
@@ -1212,7 +1234,7 @@ cluster:
       label: Google
     rancher-vsphere:
       label: vSphere
-      note: '<b>Important:</b> Configure the vSphere Cloud Provider and Storage Provider options in the Add-On Config tab.'
+      note: '<b>Important:</b> Configure the vSphere Cloud Provider and Storage Provider options in the Add-on tabs.'
     harvester:
       label: Harvester
   copyConfig: Copy KubeConfig to Clipboard
@@ -1358,8 +1380,10 @@ cluster:
         macAddress: Mac Address
         macFormat: 'Invalid MAC address format.'
       vGpus:
+        warnings:
+          minimumAllocatable: It's highly recommended to select a vGPU with a number of allocatable devices greater than the number of nodes (Machine Count) to avoid "un-schedulable" errors after cluster updates.
         errors:
-          notAllocatable: '"VGPUs" not allocatable. There are not enough [{vGpus}] devices to be allocated to each node in machine pool [{pool}]'
+          notAllocatable: '[{vGpu}] vGPU device is not allocatable; required: {allocated}, allocatable: {allocatable}'
       volume:
         title: Volumes
         volume: Volume
@@ -1723,7 +1747,7 @@ cluster:
       serverOs:
         label: OS
   addOns:
-    dependencyBanner: Add-On Configurations can vary between Kubernetes versions. Changing the Kubernetes version may reset the values below.
+    dependencyBanner: Add-On Configuration can vary between Kubernetes versions. Changing the Kubernetes version may reset the values below.
     additionalManifest:
       title: Additional Manifest
       tooltip: 'Additional Kubernetes Manifest YAML to be applied to the cluster on startup.'
@@ -1787,6 +1811,13 @@ cluster:
         other { {pool_name}: The provided values for {fields} were not found in the list of expected values. This can happen with clusters provisioned outside of Rancher or when options for the provider have changed. }
       }
   rkeTemplateUpgrade: Template revision {name} available for upgrade
+  cloudCredentials:
+    renew: Renew Cloud Credentials
+    expired: Cloud Credential expired, please Renew Cloud Credentials
+    expiring: Cloud Credential will expire on { expires }, please Renew Cloud Credentials
+    banners:
+      expiring: "{count} {count, plural, =1 { Cluster has a Cloud Credential that expires soon} other { Clusters have Cloud Credentials that expire soon}}, please Renew Cloud {count, plural, =1 { Credential} other { Credentials}}"
+      expired: "{count} {count, plural, =1 { Cluster has a Cloud Credential that has expired} other { Clusters have Cloud Credentials that have expired}}, please Renew Cloud {count, plural, =1 { Credential} other { Credentials}}"
 
   architecture:
     label:
@@ -1918,6 +1949,7 @@ cluster:
     oracleoke: Oracle OKE
     otc: Open Telekom Cloud
     other: Other
+    ovhcloudmks: OVHcloud MKS
     packet: Equinix Metal
     pinganyunecs: Pinganyun ECS
     pnap: phoenixNAP
@@ -2080,7 +2112,7 @@ cluster:
       s3: s3
   tabs:
     ace: Authorized Endpoint
-    addons: Add-On Config
+    addOnAdditionalManifest: Additional Manifest
     advanced: Advanced
     agentEnv: Agent Environment Vars
     basic: Basics
@@ -4250,8 +4282,10 @@ inactivity:
 
 # Rancher Extensions
 plugins:
-  incompatibleRancherVersion: "The latest version of this extension ({ version }) is not compatible with the current Rancher version ({ rancherVersion })."
-  incompatibleKubeVersion: "The latest version of this extension ({ version }) is not compatible with the current Kube version ({ kubeVersion })."
+  incompatibleRancherVersion: "The latest version of this extension ({ version }) is not compatible with the current Rancher version ({ required })."
+  incompatibleKubeVersion: "The latest version of this extension ({ version }) is not compatible with the current Kube version ({ required })."
+  incompatibleUiExtensionsApiVersion: "The latest version of this extension ({ version }) is not compatible with the current Extensions API version ({ required })."
+  incompatibleHost: 'The latest version of this extension ({ version }) has a host of "{ required }" which is not compatible with this application "{ mainHost }".'
   currentInstalledVersionBlockedByKubeVersion: "This version is not compatible with the current Kubernetes version ({ kubeVersion }  Vs  { kubeVersionToCheck })."
   labels:
     builtin: Built-in
@@ -4289,8 +4323,10 @@ plugins:
     detail: Detail
     versions: Versions
     versionError: Could not load version information
-    requiresRancherVersion: "Requires Rancher {version}"
-    requiresKubeVersion: "Requires Kube version {version}"
+    requiresRancherVersion: "Requires Rancher {required}"
+    requiresKubeVersion: "Requires Kube version {required}"
+    requiresExtensionApiVersion: "Requires Extensions API version {required}"
+    requiresHost: 'Requires a host that matches "{required}"'
   empty:
     all: Extensions are neither installed nor available
     available: No Extensions available
@@ -5599,7 +5635,6 @@ tableHeaders:
   createdAt: Created At
   customVerbs: Custom Verbs
   description: Description
-  expires: Expires
   cpu: CPU
   currentReplicas: Current Replicas
   date: Date
@@ -5616,6 +5651,7 @@ tableHeaders:
   distinguisherMethod: Distinguisher Method
   effect: Effect
   endpoints: Endpoints
+  expires: Expires
   firstSeen: First Seen
   fleetBundleType: Type
   flow: Flow
@@ -7694,6 +7730,11 @@ volumeClaimTemplate:
 manager:
   cloudCredentials:
     label: Cloud Credentials
+    renew: Renew
+    expired: Expired
+    banners:
+      expiring: "{count} Cloud {count, plural, =1 { Credential expires soon} other { Credentials expire soon}}, please Renew"
+      expired: "{count} Cloud {count, plural, =1 { Credential has expired} other { Credentials have expired}}, please Renew"
   drivers:
     label: Drivers
   rkeTemplates:

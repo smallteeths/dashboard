@@ -29,7 +29,7 @@ import { sortBy } from '@shell/utils/sort';
 import { vspherePoolConfigMerge } from '@shell/machine-config/vmwarevsphere-pool-config-merge';
 
 import { compare, sortable } from '@shell/utils/version';
-import { isHarvesterSatisfiesVersion } from '@shell/utils/cluster';
+import { isHarvesterSatisfiesVersion, labelForAddon } from '@shell/utils/cluster';
 
 import { BadgeState } from '@components/BadgeState';
 import { Banner } from '@components/Banner';
@@ -42,6 +42,7 @@ import Tabbed from '@shell/components/Tabbed';
 import { canViewClusterMembershipEditor } from '@shell/components/form/Members/ClusterMembershipEditor';
 import semver from 'semver';
 
+import { CLOUD_CREDENTIAL_OVERRIDE } from '@shell/models/nodedriver';
 import { SETTING } from '@shell/config/settings';
 import { base64Encode } from '@shell/utils/crypto';
 import { CAPI as CAPI_ANNOTATIONS, CLUSTER_BADGE } from '@shell/config/labels-annotations';
@@ -63,6 +64,8 @@ import AddOnConfig from '@shell/edit/provisioning.cattle.io.cluster/tabs/AddOnCo
 import Advanced from '@shell/edit/provisioning.cattle.io.cluster/tabs/Advanced';
 import ClusterAppearance from '@shell/components/form/ClusterAppearance';
 import CustomContainerdConfig from './CustomContainerdConfig.vue';
+import AddOnAdditionalManifest from '@shell/edit/provisioning.cattle.io.cluster/tabs/AddOnAdditionalManifest';
+import VsphereUtils from '@shell/utils/v-sphere';
 
 const HARVESTER = 'harvester';
 const HARVESTER_CLOUD_PROVIDER = 'harvester-cloud-provider';
@@ -115,7 +118,8 @@ export default {
     AddOnConfig,
     Advanced,
     ClusterAppearance,
-    CustomContainerdConfig
+    CustomContainerdConfig,
+    AddOnAdditionalManifest
   },
 
   mixins: [CreateEditView, FormValidation],
@@ -248,6 +252,7 @@ export default {
       machinePoolErrors:     {},
       allNamespaces:         [],
       extensionTabs:         getApplicableExtensionEnhancements(this, ExtensionPoint.TAB, TabLocation.CLUSTER_CREATE_RKE2, this.$route, this),
+      labelForAddon
     };
   },
 
@@ -409,11 +414,22 @@ export default {
     },
 
     needCredential() {
-      if (this.provider === 'custom' || this.provider === 'import' || this.isElementalCluster || this.mode === _VIEW || (this.providerConfig?.spec?.builtin === false && this.providerConfig?.spec?.addCloudCredential === false)) {
+      // Check non-provider specific config
+      if (
+        this.provider === 'custom' ||
+        this.provider === 'import' ||
+        this.isElementalCluster || // Elemental cluster can make use of `cloud-credential`: false
+        this.mode === _VIEW
+      ) {
         return false;
       }
 
-      if (this.customCredentialComponentRequired === false) {
+      // Check provider specific config
+      if (this.cloudCredentialsOverride === true || this.cloudCredentialsOverride === false) {
+        return this.cloudCredentialsOverride;
+      }
+
+      if (this.providerConfig?.spec?.builtin === false && this.providerConfig?.spec?.addCloudCredential === false) {
         return false;
       }
 
@@ -421,10 +437,21 @@ export default {
     },
 
     /**
-     * Only for extensions - extension can register a 'false' cloud credential to indicate that a cloud credential is not needed
+     * Override the native way of determining if cloud credentials are required (builtin ++ node driver spec.addCloudCredentials)
+     *
+     * 1) Override via extensions
+     *    - `true` or actual component - return true
+     *    - `false` - return false
+     * 2) Override via hardcoded setting
      */
-    customCredentialComponentRequired() {
-      return this.$plugin.getDynamic('cloud-credential', this.provider);
+    cloudCredentialsOverride() {
+      const cloudCredential = this.$plugin.getDynamic('cloud-credential', this.provider);
+
+      if (cloudCredential === undefined) {
+        return CLOUD_CREDENTIAL_OVERRIDE[this.provider];
+      }
+
+      return !!cloudCredential;
     },
 
     hasMachinePools() {
@@ -871,6 +898,8 @@ export default {
   created() {
     this.registerBeforeHook(this.saveMachinePools, 'save-machine-pools', 1);
     this.registerBeforeHook(this.setRegistryConfig, 'set-registry-config');
+    this.registerBeforeHook(this.handleVsphereCpiSecret, 'sync-vsphere-cpi');
+    this.registerBeforeHook(this.handleVsphereCsiSecret, 'sync-vsphere-csi');
     this.registerAfterHook(this.cleanupMachinePools, 'cleanup-machine-pools');
     this.registerAfterHook(this.saveRoleBindings, 'save-role-bindings');
 
@@ -883,6 +912,14 @@ export default {
   methods: {
     base64Encode,
     set,
+
+    async handleVsphereCpiSecret() {
+      return VsphereUtils.handleVsphereCpiSecret(this);
+    },
+
+    async handleVsphereCsiSecret() {
+      return VsphereUtils.handleVsphereCsiSecret(this);
+    },
 
     /**
      * Initialize all the cluster specs
@@ -1566,7 +1603,9 @@ export default {
     refreshComponentWithYamls(key) {
       const component = this.$refs[key];
 
-      if (component) {
+      if (Array.isArray(component) && component.length > 0) {
+        this.refreshYamls(component[0].$refs);
+      } else if (component) {
         this.refreshYamls(component.$refs);
       }
     },
@@ -2369,23 +2408,41 @@ export default {
           />
         </Tab>
 
-        <!-- Add-on Config -->
+        <!-- Add-on Configs -->
         <Tab
-          name="addons"
-          label-key="cluster.tabs.addons"
-          @active="showAddons('tab-addOnConfig')"
+          v-for="v in addonVersions"
+          :key="v.name"
+          :name="v.name"
+          :label="labelForAddon(v.name, false)"
+          :weight="9"
+          :showHeader="false"
+          @active="showAddons(v.name)"
         >
           <AddOnConfig
-            ref="tab-addOnConfig"
+            :ref="v.name"
             v-model="value"
             :mode="mode"
             :version-info="versionInfo"
-            :addon-versions="addonVersions"
+            :addon-version="v"
             :addons-rev="addonsRev"
             :user-chart-values-temp="userChartValuesTemp"
             :init-yaml-editor="initYamlEditor"
             @update-questions="syncChartValues"
             @update-values="updateValues"
+          />
+        </Tab>
+
+        <!-- Add-on Additional Manifest -->
+        <Tab
+          name="additionalmanifest"
+          label-key="cluster.tabs.addOnAdditionalManifest"
+          :showHeader="false"
+          @active="refreshComponentWithYamls('additionalmanifest')"
+        >
+          <AddOnAdditionalManifest
+            ref="additionalmanifest"
+            :value="value"
+            :mode="mode"
             @additional-manifest-changed="updateAdditionalManifest"
           />
         </Tab>
