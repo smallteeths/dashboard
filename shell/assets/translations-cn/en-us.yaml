@@ -364,8 +364,8 @@ accountAndKeys:
 addClusterMemberDialog:
   title: Add Cluster Member
 addonConfigConfirmation:
-  title: Add-On Config Reset
-  body: Changing the Kubernetes Version can reset the Add-On Config values. You should check that the values are as expected before continuing.
+  title: Add-On Reset
+  body: Changing the Kubernetes Version can reset Add-On values. You should check that the values are as expected before continuing.
 addProjectMemberDialog:
   title: Add Project Member
 authConfig:
@@ -1141,17 +1141,39 @@ cis:
   workerProfile: CIS Profile
 cluster:
   addonChart:
-    rancher-vsphere-cpi: vSphere CPI Configuration
-    rancher-vsphere-csi: vSphere CSI Configuration
-    rke2-calico: Calico Configuration
-    rke2-calico-crd: Calico Configuration
-    rke2-canal: Canal Configuration
-    rke2-cilium: Cilium Configuration
-    rke2-coredns: CoreDNS Configuration
-    rke2-ingress-nginx: NGINX Ingress Configuration
-    rke2-kube-proxy: Kube Proxy Configuration
-    rke2-metrics-server: Metrics Server Configuration
-    rke2-multus: Multus Configuration
+    rancher-vsphere-cpi:
+      configuration: vSphere CPI
+      label: 'Add-on: vSphere CPI'
+    rancher-vsphere-csi:
+      configuration: vSphere CSI
+      label: 'Add-on: vSphere CSI'
+    rke2-calico:
+      configuration: Calico
+      label: 'Add-on: Calico'
+    rke2-calico-crd:
+      configuration: Calico
+      label: 'Add-on: Calico'
+    rke2-canal:
+      configuration: Canal
+      label: 'Add-on: Canal'
+    rke2-cilium:
+      configuration: Cilium
+      label: 'Add-on: Cilium'
+    rke2-coredns:
+      configuration: CoreDNS
+      label: 'Add-on: CoreDNS'
+    rke2-ingress-nginx:
+      configuration: NGINX Ingress
+      label: 'Add-on: NGINX'
+    rke2-kube-proxy:
+      configuration: Kube Proxy
+      label: 'Add-on: Kube Proxy'
+    rke2-metrics-server:
+      configuration: Metrics Server
+      label: 'Add-on: Metrics Server'
+    rke2-multus:
+      configuration: Multus
+      label: 'Add-on: Multus'
   agentEnvVars:
     label: Agent Environment
     detail: Add additional environment variables to the agent container.  This is most commonly useful for configuring a HTTP proxy.
@@ -1168,7 +1190,7 @@ cluster:
       label: Google
     rancher-vsphere:
       label: vSphere
-      note: '<b>Important:</b> Configure the vSphere Cloud Provider and Storage Provider options in the Add-On Config tab.'
+      note: '<b>Important:</b> Configure the vSphere Cloud Provider and Storage Provider options in the Add-on tabs.'
     harvester:
       label: Harvester
   copyConfig: Copy KubeConfig to Clipboard
@@ -1380,7 +1402,9 @@ cluster:
       installGuestAgent: Install guest agent
       vGpus:
         errors:
-          notAllocatable: '"VGPUs" not allocatable. There are not enough [{vGpus}] devices to be allocated to each node in machine pool [{pool}]'
+          notAllocatable: '[{vGpu}] vGPU device is not allocatable; required: {allocated}, allocatable: {allocatable}'
+        warnings:
+          minimumAllocatable: It's highly recommended to select a vGPU with a number of allocatable devices greater than the number of nodes (Machine Count) to avoid "un-schedulable" errors after cluster updates.
       tokenExpirationWarning: 'Warning: Harvester Cloud Credentials use an underlying authentication token that may have an expiry time - please see the following <a href="https://harvesterhci.io/kb/renew_harvester_cloud_credentials" target="_blank" rel="noopener nofollow">knowledge base article</a> for possible implications on management operations.'
     pnap:
       clientIdentifier:
@@ -1827,7 +1851,7 @@ cluster:
       serverType:
         label: Type
   addOns:
-    dependencyBanner: Add-On Configurations can vary between Kubernetes versions. Changing the Kubernetes version may reset the values below.
+    dependencyBanner: Add-On Configuration can vary between Kubernetes versions. Changing the Kubernetes version may reset the values below.
     additionalManifest:
       title: Additional Manifest
       tooltip: 'Additional Kubernetes Manifest YAML to be applied to the cluster on startup.'
@@ -2016,6 +2040,7 @@ cluster:
     zstack: ZStack
     machineinventoryselectortemplate: Elemental Cluster
     huawei: Hua Wei
+    ovhcloudmks: OVHcloud MKS
   providerTag:
     rke2:
       harvester: '{tag}'
@@ -2193,6 +2218,7 @@ cluster:
     upgrade: Upgrade Strategy
     registration: Registration
     customContainerdConfig: Custom Containerd Config
+    addOnAdditionalManifest: Additional Manifest
   rotateCertificates:
     label: Rotate Certificates
     modalTitle: Rotate Cluster Certificates

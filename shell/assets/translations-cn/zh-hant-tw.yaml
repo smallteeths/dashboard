@@ -2006,6 +2006,7 @@ cluster:
     zstack: ZStack
     machineinventoryselectortemplate: Elemental 集群
     huawei: 華為雲
+    ovhcloudmks: OVHcloud MKS
   providerTag:
     rke2:
       harvester: '{tag}'
