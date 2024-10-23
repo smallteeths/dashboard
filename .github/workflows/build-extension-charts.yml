@@ -28,14 +28,36 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Setup Nodejs for corepack
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16'
+
+      - name: Enable Corepack
+        run: corepack enable
 
       - name: Configure Git
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.8.0
+
+      - name: Setup Nodejs with yarn caching
+        uses: actions/setup-node@v4
+        with:
+          cache: yarn
+          node-version: '16'
+
+      - name: Install dependencies
+        run: yarn
 
       - name: Parse Extension Name
         if: github.ref_type == 'tag'
@@ -44,28 +66,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           yarn parse-tag-name ${{ inputs.tagged_release }} ${{ github.run_id }} "charts"
-
-      - name: Setup Helm
-        uses: azure/setup-helm@v3
-        with:
-          version: v3.8.0
-
-      - name: Setup Nodejs and npm
-        uses: actions/setup-node@v3
-        with:
-          node-version: '16'
-
-      - name: Setup yarn
-        run: npm install -g yarn
-
-      - name: Setup Nodejs with yarn caching
-        uses: actions/setup-node@v3
-        with:
-          node-version: '16'
-          cache: yarn
-
-      - name: Install dependencies
-        run: yarn
 
       - name: Run build script
         shell: bash
@@ -76,7 +76,7 @@ jobs:
           if [[ -n "${{ inputs.tagged_release }}" ]]; then
             publish="$publish -t ${{ inputs.tagged_release }}"
           fi
-          
+
           $publish
 
       - name: Upload charts artifact
@@ -98,7 +98,7 @@ jobs:
       pages: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: "${{ inputs.target_branch }}"
 
@@ -123,6 +123,5 @@ jobs:
         with:
           charts_dir: ./charts/*
         env:
-          CR_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           CR_SKIP_EXISTING: true
-
