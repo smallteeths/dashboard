@@ -2007,6 +2007,7 @@ cluster:
     zstack: ZStack
     machineinventoryselectortemplate: Elemental 集群
     huawei: 华为云
+    ovhcloudmks: OVHcloud MKS
   providerTag:
     rke2:
       harvester: '{tag}'
@@ -2291,7 +2292,6 @@ cruResource:
   reviewYaml: "继续编辑 YAML"
   previewYaml: 以 YAML 文件编辑
   showYaml: 以 YAML 形式查看
-
 drivers:
   kontainer:
     title: 集群驱动
@@ -2337,7 +2337,6 @@ drivers:
       =1 { {warningDrivers}对应提供商中的资源将不会自动删除。}
       other { {warningDrivers}对应提供商中的资源将不会自动删除。}
       }
-
 detailText:
   collapse: 隐藏
   binary: '<二进制数据: {n, number} 字节>'
@@ -7420,7 +7419,7 @@ performance:
   gc:
     banner: 此设置是实验性的，可能会在后续版本中删除或更新。
     checkboxLabel: 启用垃圾回收
-    description: UI 将在本地缓存 kuberentes 资源，避免这些资源被重新抓取。在某些情况下，这可能会导致浏览器中存储了大量数据。你可以启用此设置进行定期删除。
+    description: UI 将在本地缓存 Kubernetes 资源，避免这些资源被重新抓取。在某些情况下，这可能会导致浏览器中存储了大量数据。你可以启用此设置进行定期删除。
     howRun:
       age:
         description: 必须在此期间内未访问过资源，才能考虑进行垃圾回收。

@@ -369,8 +369,8 @@ accountAndKeys:
 addClusterMemberDialog:
   title: Add Cluster Member
 addonConfigConfirmation:
-  title: Add-On Config Reset
-  body: Changing the Kubernetes Version can reset the Add-On Config values. You should check that the values are as expected before continuing.
+  title: Add-On Reset
+  body: Changing the Kubernetes Version can reset Add-On values. You should check that the values are as expected before continuing.
 addProjectMemberDialog:
   title: Add Project Member
 authConfig:
@@ -1216,17 +1216,39 @@ cis:
   workerProfile: CIS Profile
 cluster:
   addonChart:
-    rancher-vsphere-cpi: vSphere CPI Configuration
-    rancher-vsphere-csi: vSphere CSI Configuration
-    rke2-calico: Calico Configuration
-    rke2-calico-crd: Calico Configuration
-    rke2-canal: Canal Configuration
-    rke2-cilium: Cilium Configuration
-    rke2-coredns: CoreDNS Configuration
-    rke2-ingress-nginx: NGINX Ingress Configuration
-    rke2-kube-proxy: Kube Proxy Configuration
-    rke2-metrics-server: Metrics Server Configuration
-    rke2-multus: Multus Configuration
+    rancher-vsphere-cpi:
+      configuration: vSphere CPI
+      label: 'Add-on: vSphere CPI'
+    rancher-vsphere-csi:
+      configuration: vSphere CSI
+      label: 'Add-on: vSphere CSI'
+    rke2-calico:
+      configuration: Calico
+      label: 'Add-on: Calico'
+    rke2-calico-crd:
+      configuration: Calico
+      label: 'Add-on: Calico'
+    rke2-canal:
+      configuration: Canal
+      label: 'Add-on: Canal'
+    rke2-cilium:
+      configuration: Cilium
+      label: 'Add-on: Cilium'
+    rke2-coredns:
+      configuration: CoreDNS
+      label: 'Add-on: CoreDNS'
+    rke2-ingress-nginx:
+      configuration: NGINX Ingress
+      label: 'Add-on: NGINX'
+    rke2-kube-proxy:
+      configuration: Kube Proxy
+      label: 'Add-on: Kube Proxy'
+    rke2-metrics-server:
+      configuration: Metrics Server
+      label: 'Add-on: Metrics Server'
+    rke2-multus:
+      configuration: Multus
+      label: 'Add-on: Multus'
   agentEnvVars:
     label: Agent Environment
     detail: Add additional environment variables to the agent container.  This is most commonly useful for configuring a HTTP proxy.
@@ -1243,7 +1265,7 @@ cluster:
       label: Google
     rancher-vsphere:
       label: vSphere
-      note: '<b>Important:</b> Configure the vSphere Cloud Provider and Storage Provider options in the Add-On Config tab.'
+      note: '<b>Important:</b> Configure the vSphere Cloud Provider and Storage Provider options in the Add-on tabs.'
     harvester:
       label: Harvester
   copyConfig: Copy KubeConfig to Clipboard
@@ -1455,7 +1477,9 @@ cluster:
       installGuestAgent: Install guest agent
       vGpus:
         errors:
-          notAllocatable: '"VGPUs" not allocatable. There are not enough [{vGpus}] devices to be allocated to each node in machine pool [{pool}]'
+          notAllocatable: '[{vGpu}] vGPU device is not allocatable; required: {allocated}, allocatable: {allocatable}'
+        warnings:
+          minimumAllocatable: It's highly recommended to select a vGPU with a number of allocatable devices greater than the number of nodes (Machine Count) to avoid "un-schedulable" errors after cluster updates.
       tokenExpirationWarning: 'Warning: Harvester Cloud Credentials use an underlying authentication token that may have an expiry time - please see the following <a href="https://harvesterhci.io/kb/renew_harvester_cloud_credentials" target="_blank" rel="noopener nofollow">knowledge base article</a> for possible implications on management operations.'
     pnap:
       clientIdentifier:
@@ -1902,7 +1926,7 @@ cluster:
       serverType:
         label: Type
   addOns:
-    dependencyBanner: Add-On Configurations can vary between Kubernetes versions. Changing the Kubernetes version may reset the values below.
+    dependencyBanner: Add-On Configuration can vary between Kubernetes versions. Changing the Kubernetes version may reset the values below.
     additionalManifest:
       title: Additional Manifest
       tooltip: 'Additional Kubernetes Manifest YAML to be applied to the cluster on startup.'
@@ -2098,6 +2122,7 @@ cluster:
     zstack: ZStack
     machineinventoryselectortemplate: Elemental Cluster
     huawei: Hua Wei
+    ovhcloudmks: OVHcloud MKS
   providerTag:
     rke2:
       harvester: '{tag}'
@@ -2279,6 +2304,7 @@ cluster:
     upgrade: Upgrade Strategy
     registration: Registration
     customContainerdConfig: Custom Containerd Config
+    addOnAdditionalManifest: Additional Manifest
   rotateCertificates:
     label: Rotate Certificates
     modalTitle: Rotate Cluster Certificates
@@ -2345,6 +2371,13 @@ cluster:
     title: Data directory configuration
   jwtAuthentication:
     banner: Service Account access with JWT authentication can be configured after cluster creation from <br> <code>Cluster Management > Advanced > JWT Authentication</code>
+  cloudCredentials:
+    banners:
+      expired: '{count} {count, plural, =1 { Cluster has a Cloud Credential that has expired} other { Clusters have Cloud Credentials that have expired}}, please Renew Cloud {count, plural, =1 { Credential} other { Credentials}}'
+      expiring: '{count} {count, plural, =1 { Cluster has a Cloud Credential that expires soon} other { Clusters have Cloud Credentials that expire soon}}, please Renew Cloud {count, plural, =1 { Credential} other { Credentials}}'
+    expired: Cloud Credential expired, please Renew Cloud Credentials
+    expiring: Cloud Credential will expire on { expires }, please Renew Cloud Credentials
+    renew: Renew Cloud Credentials
 clusterIndexPage:
   hardwareResourceGauge:
     consumption: "{useful} of {total} {units} {suffix}"
@@ -7587,7 +7620,7 @@ performance:
       inputLabel: Resource Threshold
     description: Require the user to select namespaces and/or projects. This restricts the number of resources fetched when viewing lists and should help the responsiveness of the UI in systems with a lot of resources.
     label: Require Namespace / Project Filtering
-    incompatibleDescription: Required Namespace / Project Filtering is incomaptible with Manual Refresh and Incremental Loading. Enabling this will disable them.
+    incompatibleDescription: Required Namespace / Project Filtering is incompatible with Manual Refresh and Incremental Loading. Enabling this will disable them.
   advancedWorker:
     checkboxLabel: Enable Advanced Websocket Web Worker
     description: Updates to resources pushed to the UI come via WebSocket and are handled in the UI thread. Enable this option to handle cluster WebSocket updates in a Web Worker in a separate thread. This should help the responsiveness of the UI in systems where resources change often.
@@ -7838,6 +7871,11 @@ volumeClaimTemplate:
 manager:
   cloudCredentials:
     label: Cloud Credentials
+    banners:
+      expired: '{count} Cloud {count, plural, =1 { Credential has expired} other { Credentials have expired}}, please Renew'
+      expiring: '{count} Cloud {count, plural, =1 { Credential expires soon} other { Credentials expire soon}}, please Renew'
+    expired: Expired
+    renew: Renew
   drivers:
     label: Drivers
   rkeTemplates:
@@ -7911,8 +7949,10 @@ plugins:
     versionError: Could not load version information
     versions: Versions
     requiresVersion: Requires Rancher {version}
-    requiresKubeVersion: Requires Kube version {version}
-    requiresRancherVersion: Requires Rancher {version}
+    requiresKubeVersion: Requires Kube version {required}
+    requiresRancherVersion: Requires Rancher {required}
+    requiresExtensionApiVersion: Requires Extensions API version {required}
+    requiresHost: Requires a host that matches "{required}"
   install:
     label: Install
     prompt: Are you sure that you want to install this Extension?
@@ -8044,9 +8084,11 @@ plugins:
     prompt: You can install multiple Rancher extension repositories to increase your extensions catalog
     title: Add Extensions repositories
   currentInstalledVersionBlockedByKubeVersion: This version is not compatible with the current Kubernetes version ({ kubeVersion }  Vs  { kubeVersionToCheck }).
-  incompatibleKubeVersion: The latest version of this extension ({ version }) is not compatible with the current Kube version ({ kubeVersion }).
-  incompatibleRancherVersion: The latest version of this extension ({ version }) is not compatible with the current Rancher version ({ rancherVersion }).
+  incompatibleKubeVersion: The latest version of this extension ({ version }) is not compatible with the current Kube version ({ required }).
+  incompatibleRancherVersion: The latest version of this extension ({ version }) is not compatible with the current Rancher version ({ required }).
   warnNoAuth: This version of the extension will be loaded before authentication and will have access to the login process.
+  incompatibleHost: The latest version of this extension ({ version }) has a host of "{ required }" which is not compatible with this application "{ mainHost }".
+  incompatibleUiExtensionsApiVersion: The latest version of this extension ({ version }) is not compatible with the current Extensions API version ({ required }).
 clusterConnectMode:
   actions:
     restartConfirm: Are You Sure You Want To Save Connect Mode And Restart {name} Cluster Controller？
