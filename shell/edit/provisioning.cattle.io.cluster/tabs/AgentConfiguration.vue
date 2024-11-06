@@ -90,22 +90,27 @@ export default {
         const {
           cpu: limitsCpu,
           memory: limitsMemory,
+          'ephemeral-storage': limitEphemeralStorage
         } = limits;
-        const { cpu: requestsCpu, memory: requestsMemory } = requests;
+        const { cpu: requestsCpu, memory: requestsMemory, 'ephemeral-storage': requestEphemeralStorage } = requests;
 
         return {
           limitsCpu,
           limitsMemory,
+          limitEphemeralStorage,
           requestsCpu,
           requestsMemory,
+          requestEphemeralStorage
         };
       },
       set(neu) {
         const {
           limitsCpu,
           limitsMemory,
+          limitEphemeralStorage,
           requestsCpu,
           requestsMemory,
+          requestEphemeralStorage
         } = neu;
 
         const existing = this.value?.overrideResourceRequirements || {};
@@ -116,12 +121,14 @@ export default {
         const out = {
           ...existing,
           requests: {
-            cpu:    requestsCpu,
-            memory: requestsMemory,
+            cpu:                 requestsCpu,
+            memory:              requestsMemory,
+            'ephemeral-storage': requestEphemeralStorage
           },
           limits: {
-            cpu:    limitsCpu,
-            memory: limitsMemory,
+            cpu:                 limitsCpu,
+            memory:              limitsMemory,
+            'ephemeral-storage': limitEphemeralStorage
           },
         };
 
