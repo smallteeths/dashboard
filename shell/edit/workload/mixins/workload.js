@@ -480,15 +480,18 @@ export default {
         const {
           cpu: limitsCpu,
           memory: limitsMemory,
+          'ephemeral-storage': limitsEphemeralStorage,
           [GPU_KEY]: limitsGpu,
         } = limits;
-        const { cpu: requestsCpu, memory: requestsMemory } = requests;
+        const { cpu: requestsCpu, memory: requestsMemory, 'ephemeral-storage': requestEphemeralStorage } = requests;
 
         return {
           limitsCpu,
           limitsMemory,
+          limitsEphemeralStorage,
           requestsCpu,
           requestsMemory,
+          requestEphemeralStorage,
           limitsGpu,
         };
       },
@@ -496,20 +499,24 @@ export default {
         const {
           limitsCpu,
           limitsMemory,
+          limitsEphemeralStorage,
           requestsCpu,
           requestsMemory,
           // limitsGpu,
+          requestEphemeralStorage,
         } = neu;
 
         const out = {
           requests: {
-            cpu:    requestsCpu,
-            memory: requestsMemory,
+            cpu:                 requestsCpu,
+            memory:              requestsMemory,
+            'ephemeral-storage': requestEphemeralStorage
           },
           limits: {
-            cpu:    limitsCpu,
-            memory: limitsMemory,
+            cpu:                 limitsCpu,
+            memory:              limitsMemory,
             // [GPU_KEY]: limitsGpu,
+            'ephemeral-storage': limitsEphemeralStorage,
           },
         };
 
