@@ -49,6 +49,11 @@ export default {
     routes() {
       return this.config?.spec?.routes || [];
     },
+    showPodRouteSettings() {
+      return this.config?.spec?.routeSettings?.addClusterCIDR ||
+        this.config?.spec?.routeSettings?.addServiceCIDR ||
+        this.config?.spec?.routeSettings?.addNodeCIDR;
+    }
   }
 };
 </script>
@@ -56,14 +61,13 @@ export default {
   <div>
     <div class="mb-5">
       <h3>
-        FlatNetworkSubnet: {{ config?.metadata?.name }}
+        {{ t('macvlan.titleV2') }}: {{ config?.metadata?.name }}
       </h3>
     </div>
     <Tabbed
       :side-tabs="true"
       default-tab="general"
       :useHash="false"
-      @changed="onTabChanged"
     >
       <Tab
         name="general"
@@ -173,6 +177,45 @@ export default {
               <div class="priority">
                 {{ row.priority }}
               </div>
+            </div>
+          </div>
+          <div
+            v-if="showPodRouteSettings"
+            class="mt-15 advanced"
+          >
+            <h3>
+              {{ t('macvlan.routeSettings.title.pod') }}
+            </h3>
+            <div>
+              {{ config?.spec?.routeSettings?.addClusterCIDR ? t('macvlan.routeSettings.addClusterCIDR') : '' }}
+            </div>
+            <div>
+              {{ config?.spec?.routeSettings?.addServiceCIDR ? t('macvlan.routeSettings.addServiceCIDR') : '' }}
+            </div>
+            <div>
+              {{ config?.spec?.routeSettings?.addNodeCIDR ? t('macvlan.routeSettings.addNodeCIDR') : '' }}
+            </div>
+          </div>
+          <div
+            v-if="config?.spec?.routeSettings?.addPodIPToHost"
+            class="mt-15 advanced"
+          >
+            <h3>
+              {{ t('macvlan.routeSettings.title.node') }}
+            </h3>
+            <div>
+              {{ t('macvlan.routeSettings.addPodIPToHost') }}
+            </div>
+          </div>
+          <div
+            v-if="config?.spec?.routeSettings?.flatNetworkDefaultGateway"
+            class="mt-15 advanced"
+          >
+            <h3>
+              {{ t('macvlan.routeSettings.title.default') }}
+            </h3>
+            <div>
+              {{ t('macvlan.routeSettings.flatNetworkDefaultGateway') }}
             </div>
           </div>
         </div>

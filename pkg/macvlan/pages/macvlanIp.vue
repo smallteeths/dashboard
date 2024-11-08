@@ -2,7 +2,6 @@
 import { mapGetters } from 'vuex';
 import { SCHEMA } from '@shell/config/types';
 import ResourceTable from '@shell/components/ResourceTable';
-import { ROWS_PER_PAGE } from '@shell/store/prefs';
 import { MACVLAN_IP_PRODUCT_NAME } from '../config/macvlan-types';
 
 const schema = {
@@ -19,23 +18,17 @@ export default {
   name:       'ListMacvlanIp',
   components: { ResourceTable },
   data() {
-    const perPage = this.getPerPage();
-
     return {
       resource: MACVLAN_IP_PRODUCT_NAME,
       schema,
-      perPage,
     };
   },
   fetch() {
-    const { currentCluster, perPage } = this;
+    const { currentCluster } = this;
 
     this.$store.dispatch('macvlan/loadMacvlanIps', {
       cluster: currentCluster?.id,
-      query:   {
-        labelSelector: { subnet: this.$route.params?.id },
-        limit:         perPage
-      }
+      query:   { labelSelector: { subnet: this.$route.params?.id } }
     });
   },
 
@@ -109,21 +102,6 @@ export default {
     },
   },
   methods: {
-    getPerPage() {
-      // perPage can not change while the list is displayed
-      let out = this.rowsPerPage || 0;
-
-      if ( out <= 0 ) {
-        out = parseInt(this.$store.getters['prefs/get'](ROWS_PER_PAGE), 10) || 0;
-      }
-
-      // This should ideally never happen, but the preference value could be invalid, so return something...
-      if ( out <= 0 ) {
-        out = 10;
-      }
-
-      return out;
-    },
     getWorkloadName(name, workloadselector) {
       const nameArr = name.split('-');
       const workloadselectorArr = workloadselector.split('-');

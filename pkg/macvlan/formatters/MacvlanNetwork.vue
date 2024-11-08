@@ -65,7 +65,7 @@ export default {
       });
       formattedTooltip += '</div>';
 
-      return formattedTooltip;
+      return out?.length > 0 ? formattedTooltip : '';
     },
   }
 };

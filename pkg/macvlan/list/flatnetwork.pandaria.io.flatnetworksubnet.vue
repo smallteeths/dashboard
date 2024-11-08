@@ -2,7 +2,6 @@
 import { mapGetters } from 'vuex';
 import { CATALOG } from '@shell/config/types';
 import ResourceTable from '@shell/components/ResourceTable';
-import { ROWS_PER_PAGE } from '@shell/store/prefs';
 import ResourceFetch from '@shell/mixins/resource-fetch';
 import { MACVLAN_PRODUCT_NAME, MACVLAN_CHARTS_V2 } from '../config/macvlan-types';
 
@@ -84,23 +83,6 @@ export default {
           width:     220
         },
       ];
-    },
-  },
-  methods: {
-    getPerPage() {
-      // perPage can not change while the list is displayed
-      let out = this.rowsPerPage || 0;
-
-      if ( out <= 0 ) {
-        out = parseInt(this.$store.getters['prefs/get'](ROWS_PER_PAGE), 10) || 0;
-      }
-
-      // This should ideally never happen, but the preference value could be invalid, so return something...
-      if ( out <= 0 ) {
-        out = 10;
-      }
-
-      return out;
     },
   },
   typeDisplay() {
