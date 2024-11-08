@@ -111,10 +111,12 @@ export default {
       this.$store.getters['management/all'](
         MANAGEMENT.PROJECT
       ).forEach((obj) => {
-        out.push({
-          label: obj.nameDisplay,
-          value: obj.id.replace(/[/]/g, '-'),
-        });
+        if (obj.spec?.clusterName === this.currentCluster?.id) {
+          out.push({
+            label: this.truncateString(obj.nameDisplay),
+            value: obj.id.replace(/[/]/g, '-'),
+          });
+        }
       });
 
       return out;

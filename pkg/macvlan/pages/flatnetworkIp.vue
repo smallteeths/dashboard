@@ -3,7 +3,6 @@ import { mapGetters } from 'vuex';
 import { SCHEMA } from '@shell/config/types';
 import ResourceTable from '@shell/components/ResourceTable';
 import SubnetView from '../components/subnetView.vue';
-import { ROWS_PER_PAGE } from '@shell/store/prefs';
 import { MACVLAN_IP_PRODUCT_NAME_V2, MACVLAN_PRODUCT_NAME_V2 } from '../config/macvlan-types';
 import MacvlanBadgeState from '../formatters/MacvlanBadgeState';
 import Loading from '@shell/components/Loading';
@@ -29,25 +28,19 @@ export default {
     SubnetView,
   },
   data() {
-    const perPage = this.getPerPage();
-
     return {
       config:   {},
       resource: MACVLAN_IP_PRODUCT_NAME_V2,
       schema,
-      perPage,
     };
   },
   async fetch() {
-    const { currentCluster, perPage } = this;
+    const { currentCluster } = this;
 
     if (this.$route.params?.id) {
       await this.$store.dispatch('flatnetwork/loadFlatnetworkIps', {
         cluster: currentCluster?.id,
-        query:   {
-          labelSelector: { subnet: this.$route.params?.id },
-          limit:         perPage
-        }
+        query:   { labelSelector: { subnet: this.$route.params?.id } }
       });
       const config = await this.$store.dispatch('flatnetwork/loadFlatnetwork', {
         cluster: currentCluster?.id,
@@ -130,21 +123,6 @@ export default {
     },
   },
   methods: {
-    getPerPage() {
-      // perPage can not change while the list is displayed
-      let out = this.rowsPerPage || 0;
-
-      if ( out <= 0 ) {
-        out = parseInt(this.$store.getters['prefs/get'](ROWS_PER_PAGE), 10) || 0;
-      }
-
-      // This should ideally never happen, but the preference value could be invalid, so return something...
-      if ( out <= 0 ) {
-        out = 10;
-      }
-
-      return out;
-    },
     getWorkloadName(name, workloadselector) {
       const nameArr = name.split('-');
       const workloadselectorArr = workloadselector.split('-');

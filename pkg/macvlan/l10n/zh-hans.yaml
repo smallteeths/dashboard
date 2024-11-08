@@ -10,7 +10,7 @@ typeLabel:
       other { 扁平网络 (V2 实验性) }
     }
 macvlan:
-  titleV2: 扁平网络子网 (实验性)
+  titleV2: 扁平网络 (V2 实验性)
   deprecated: Rancher Macvlan (V1) 已经废弃请按照官方文档迁移到 V2
   nav:
     label: 扁平网络 (V1)

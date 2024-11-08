@@ -141,16 +141,16 @@ export default {
       vlan:           config.spec.vlan || '',
       fvFormRuleSets: [
         {
-          path: 'metadata.name', rules: ['required', 'nameChar'], translationKey: 'generic.name', rootObject: config
+          path: 'metadata.name', rules: ['nameChar'], translationKey: 'generic.name', rootObject: config
         },
         {
-          path: 'spec.master', rules: ['required', 'masterChar'], translationKey: 'macvlan.master.label', rootObject: config
+          path: 'spec.master', rules: ['masterChar'], translationKey: 'macvlan.master.label', rootObject: config
         },
         {
           path: 'spec.vlan', rules: ['vlanValidate'], rootObject: config
         },
         {
-          path: 'spec.cidr', rules: ['required', 'cidrValidate'], translationKey: 'macvlan.cidr.label', rootObject: config
+          path: 'spec.cidr', rules: ['cidrValidate'], translationKey: 'macvlan.cidr.label', rootObject: config
         },
         {
           path: 'spec.gateway', rules: ['gatewayVlidate'], rootObject: config
@@ -188,10 +188,12 @@ export default {
       this.$store.getters['management/all'](
         MANAGEMENT.PROJECT
       ).forEach((obj) => {
-        out.push({
-          label: obj.nameDisplay,
-          value: obj.id.replace(/[/]/g, '-'),
-        });
+        if (obj.spec?.clusterName === this.currentCluster?.id) {
+          out.push({
+            label: this.truncateString(obj.nameDisplay),
+            value: obj.id.replace(/[/]/g, '-'),
+          });
+        }
       });
 
       return out;
@@ -203,9 +205,12 @@ export default {
       const cidrIPV6RegExp = /^((?:[a-fA-F0-9]{1,4}:){1,7}:?|:(:[a-fA-F0-9]{1,4}){1,7})(\/(?:12[0-8]|1[01][0-9]|[1-9]?[0-9]))$/;
 
       const nameChar = (value) => {
+        if (!value) {
+          return this.t('validation.required', { key: this.t('generic.name') });
+        }
         const errors = [];
 
-        if (value.length < 2) {
+        if (value.length < 2 && value.length !== 0) {
           errors.push(this.t('macvlan.name.tooShort', { key: this.t('macvlan.name.label'), min: 2 }));
         } else {
           validateKubernetesName(value, this.t('macvlan.name.label'), this.$store.getters, { minLength: 2 }, errors);
@@ -216,10 +221,12 @@ export default {
         }
       };
       const masterChar = (value) => {
+        if (!value) {
+          return this.t('validation.required', { key: this.t('macvlan.master.label') });
+        }
         const errors = [];
 
         validateKubernetesName(value, this.t('macvlan.master.label'), this.$store.getters, { minLength: 0 }, errors);
-
         if (errors.length) {
           return errors[0];
         }
@@ -230,7 +237,10 @@ export default {
         }
       };
       const cidrValidate = (value) => {
-        if (value !== '' && !cidrIPV4RegExp.test(value) && !cidrIPV6RegExp.test(value)) {
+        if (!value) {
+          return this.t('validation.required', { key: this.t('macvlan.cidr.label') });
+        }
+        if (!cidrIPV4RegExp.test(value) && !cidrIPV6RegExp.test(value)) {
           return this.t('macvlan.cidr.cidrFormatError');
         }
       };
@@ -312,6 +322,7 @@ export default {
           this.config.spec.mode = 'l2';
         }
       },
+      immediate: true,
     }
   },
 
@@ -437,6 +448,9 @@ export default {
     },
     handleInput() {
       this.config.spec.routeSettings.addClusterCIDR = !this.config.spec.routeSettings.addClusterCIDR;
+    },
+    truncateString(str, maxLength = 30) {
+      return str.length > maxLength ? `${ str.slice(0, maxLength) }...` : str;
     }
   }
 };
@@ -460,6 +474,7 @@ export default {
             v-model="config.metadata.name"
             required
             label-key="generic.name"
+            tooltipKey="name"
             placeholder-key="nameNsDescription.name.placeholder"
             :mode="mode"
             :disabled="isEdit"
