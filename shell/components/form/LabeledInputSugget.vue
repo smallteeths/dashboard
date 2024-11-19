@@ -178,7 +178,7 @@ export default {
 
 <template>
   <div
-    class="input-container row"
+    class="input-container"
     @input="change"
   >
     <LabeledInput
