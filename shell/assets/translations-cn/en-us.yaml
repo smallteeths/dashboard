@@ -2352,8 +2352,8 @@ cluster:
     tips: The config.toml.tmpl on the host will not be cleaned up automatically after canceling the setting and will need to be removed manually.
   architecture:
     label:
-      mixed: Mixed
-      unknown: Unknown
+      mixed: mixed
+      unknown: unknown
   directoryConfig:
     checkboxText: Use the same path for System-agent, Provisioning and K8s Distro data directories configuration
     common:
@@ -8628,7 +8628,7 @@ codeMirror:
     tooltip: Key mapping preference.
 drivers:
   actions:
-    refresh: 刷新 Kubernetes 元数据
+    refresh: Refresh Kubernetes Metadata
   add:
     checksum:
       label: Checksum
