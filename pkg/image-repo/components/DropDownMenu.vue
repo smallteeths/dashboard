@@ -4,6 +4,7 @@ import IconOrSvg from '@shell/components/IconOrSvg';
 export default {
   name:       'DropDownMenu',
   components: { IconOrSvg },
+  emits:      ['visible-change', 'custom-event'],
   props:      {
     options: {
       type:    Array,

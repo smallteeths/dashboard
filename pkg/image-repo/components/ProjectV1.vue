@@ -58,14 +58,14 @@
     >
       <div>
         <LabeledInput
-          v-model.trim="form.name"
+          v-model:value.trim="form.name"
           class="mb-10"
           :label="t('harborConfig.form.projectName.label')"
           required
         />
         <LabeledInput
           v-if="isSystemAdmin"
-          v-model.number="form.count"
+          v-model:value.number="form.count"
           class="mb-10"
           type="number"
           :label="t('harborConfig.form.count.label')"

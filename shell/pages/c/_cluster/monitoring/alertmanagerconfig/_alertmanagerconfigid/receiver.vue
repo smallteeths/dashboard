@@ -16,6 +16,7 @@ import { PANDARIA_WEBHOOK_URL } from '@shell/edit/monitoring.coreos.com.alertman
 
 export default {
   name:       'AlertmanagerConfigReceiverCreateEdit',
+  emits:      ['error'],
   components: {
     ActionMenu,
     ButtonGroup,
@@ -370,7 +371,7 @@ export default {
             v-if="viewOptions && mode === view"
             :value="currentView"
             :options="viewOptions"
-            @input="handleButtonGroupClick"
+            @update:value="handleButtonGroupClick"
           />
 
           <button

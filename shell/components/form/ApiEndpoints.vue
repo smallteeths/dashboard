@@ -1,6 +1,6 @@
 <template>
   <ArrayList
-    v-model="data"
+    v-model:value="data"
     :title="title"
     :add-label="t('generic.add')"
     :mode="mode"
@@ -9,8 +9,7 @@
     @input="update"
   >
     <template
-      slot="columns"
-      slot-scope="scope"
+      #columns="scope"
     >
       <div class="endpoint">
         <div
@@ -43,6 +42,7 @@
 <script>
 import ArrayList from '@shell/components/form/ArrayList';
 export default {
+  emits: ['input'],
   props: {
     title: {
       type:    String,

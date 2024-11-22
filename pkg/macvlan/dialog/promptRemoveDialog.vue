@@ -12,6 +12,7 @@ const v1Action = 'macvlan/loadMacvlanPods';
 const v2Action = 'flatnetwork/loadFlatnetworkPods';
 
 export default {
+  emits: ['close'],
   props: {
     resources: {
       type:     Array,
@@ -202,9 +203,12 @@ export default {
               v-if="!row.pods.length"
               class="main-row"
             >
-              <template v-for="(col) in headers">
+              <template
+                v-for="(col) in headers"
+                :key="col.name"
+              >
                 <td
-                  :key="col.name"
+
                   :data-title="col.label"
                   :align="col.align || 'left'"
                   :width="col.width"

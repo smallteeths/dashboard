@@ -132,7 +132,7 @@ export default {
   <div>
     <div class="mb-10">
       <RadioGroup
-        v-model="specific"
+        v-model:value="specific"
         :mode="mode"
         name="specific"
         :row="true"
@@ -160,17 +160,17 @@ export default {
         class="key-to-path mb-10"
       >
         <LabeledSelect
-          v-model="item.key"
+          v-model:value="item.key"
           :options="keys"
           :mode="mode"
         />
         <LabeledInput
-          v-model.trim="item.path"
+          v-model:value.trim="item.path"
           :mode="mode"
           :placeholder="t('workload.storage.keyToPath.path.placeholder')"
         />
         <LabeledInput
-          v-model.number="item.mode"
+          v-model:value.number="item.mode"
           type="number"
           :mode="mode"
           :placeholder="t('workload.storage.keyToPath.mode.placeholder')"

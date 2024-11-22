@@ -131,7 +131,7 @@ export default {
         </div>
         <div class="text-center mt-20">
           <Checkbox
-            v-model="isRecoveryCode"
+            v-model:value="isRecoveryCode"
             :label="t('mfa.recoveryCode.label')"
             type="checkbox"
           />

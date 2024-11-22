@@ -12,7 +12,7 @@
       label-key="cluster.customContainerdConfig.tips"
     />
     <ArrayListGrouped
-      v-model="value.spec.rkeConfig.containerdSelectorConfig"
+      v-model:value="value.spec.rkeConfig.containerdSelectorConfig"
       class="mb-20"
       :add-label="t('cluster.customContainerdConfig.machineSelector.label')"
       :default-add-value="{machineLabelSelector: { matchExpressions: [], matchLabels: {} }}"
@@ -20,7 +20,7 @@
       <template #default="{row, i}">
         <h3>{{ t('cluster.customContainerdConfig.machineSelector.title') }}</h3>
         <MatchExpressions
-          v-model="row.value.machineLabelSelector"
+          v-model:value="row.value.machineLabelSelector"
           class="mb-20"
           type="pod"
           :mode="mode"
@@ -31,7 +31,7 @@
         <h3>{{ t('cluster.customContainerdConfig.template.title') }}</h3>
         <TomlEditor
           :ref="'tomlValues'+i"
-          v-model="row.value.containerdConfigTemplate"
+          v-model:value="row.value.containerdConfigTemplate"
           :lint="false"
           :editor-mode="mode === 'view' ? 'VIEW_CODE' : 'EDIT_CODE'"
           :hide-preview-buttons="true"

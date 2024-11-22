@@ -43,7 +43,7 @@
       <div class="label">
         <div class="label-item mb-20">
           <LabeledInput
-            v-model.trim="newForm.name"
+            v-model:value.trim="newForm.name"
             :label="t('harborConfig.formTag.name.label')"
             required
           />
@@ -75,7 +75,7 @@
           </v-popover>
         </div>
         <LabeledInput
-          v-model.trim="newForm.description"
+          v-model:value.trim="newForm.description"
           :label="t('harborConfig.formTag.description')"
         />
 
@@ -97,7 +97,7 @@
       <div class="label">
         <div class="label-item mb-20">
           <LabeledInput
-            v-model.trim="editForm.name"
+            v-model:value.trim="editForm.name"
             :label="t('harborConfig.formTag.name.label')"
             required
           />
@@ -129,7 +129,7 @@
           </v-popover>
         </div>
         <LabeledInput
-          v-model.trim="editForm.description"
+          v-model:value.trim="editForm.description"
           :label="t('harborConfig.formTag.description')"
         />
 

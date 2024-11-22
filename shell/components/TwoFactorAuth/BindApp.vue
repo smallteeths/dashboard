@@ -100,6 +100,7 @@ export default {
   components: {
     VerifyCode, Banner, DetailText, Card
   },
+  emits: ['on-done'],
   props: {
     handleEnableOtp: {
       type:    Function,

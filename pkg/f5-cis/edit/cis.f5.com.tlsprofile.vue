@@ -36,7 +36,7 @@
             :weight="97"
           >
             <Labels
-              v-model="value"
+              v-model:value="value"
               :mode="mode"
             />
           </Tab>
@@ -49,7 +49,7 @@
             <div class="row mb-20">
               <div class="col span-6">
                 <ArrayList
-                  v-model="value.spec.hosts "
+                  v-model:value="value.spec.hosts "
                   :title="t('f5cis.tlsProfile.form.hosts.label')"
                   :add-label="t('f5cis.tlsProfile.form.hosts.addLabel')"
                   :mode="mode"
@@ -67,7 +67,7 @@
             <div class="row mb-20">
               <div class="col span-6">
                 <LabeledSelect
-                  v-model="value.spec.tls.reference"
+                  v-model:value="value.spec.tls.reference"
                   required
                   :label="t('f5cis.tlsProfile.form.reference.label')"
                   :options="referenceOptions"
@@ -76,7 +76,7 @@
               </div>
               <div class="col span-6">
                 <LabeledSelect
-                  v-model="value.spec.tls.termination"
+                  v-model:value="value.spec.tls.termination"
                   required
                   :label="t('f5cis.tlsProfile.form.termination.label')"
                   :options="terminationOptions"
@@ -87,14 +87,14 @@
             <div class="row mb-20">
               <div class="col span-6">
                 <LabeledInput
-                  v-model="value.spec.tls.clientSSL"
+                  v-model:value="value.spec.tls.clientSSL"
                   :mode="mode"
                   :label="t('f5cis.tlsProfile.form.clientSSL.label')"
                 />
               </div>
               <div class="col span-6">
                 <LabeledInput
-                  v-model="value.spec.tls.serverSSL"
+                  v-model:value="value.spec.tls.serverSSL"
                   :mode="mode"
                   :label="t('f5cis.tlsProfile.form.serverSSL.label')"
                 />

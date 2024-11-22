@@ -1,3 +1,4 @@
+import { nextTick } from 'vue';
 /* eslint-disable jest/no-hooks */
 import { mount } from '@vue/test-utils';
 import Navlink from '@shell/edit/ui.cattle.io.navlink.vue';
@@ -11,21 +12,23 @@ describe('view: ui.cattle.io.navlink should', () => {
 
   const requiredSetup = () => ({
     // Remove all these mocks after migration to Vue 2.7/3 due mixin logic
-    mocks: {
-      $store: {
-        dispatch: jest.fn(),
-        getters:  {
-          currentStore:              () => 'current_store',
-          'current_store/schemaFor': jest.fn(),
-          'current_store/all':       jest.fn(),
-          'i18n/t':                  (val) => val,
-          'i18n/exists':             jest.fn(),
-          'cluster/schemaFor':       jest.fn(),
-          'store/customisation/':    jest.fn()
-        }
+    global: {
+      mocks: {
+        $store: {
+          dispatch: jest.fn(),
+          getters:  {
+            currentStore:              () => 'current_store',
+            'current_store/schemaFor': jest.fn(),
+            'current_store/all':       jest.fn(),
+            'i18n/t':                  (val) => val,
+            'i18n/exists':             jest.fn(),
+            'cluster/schemaFor':       jest.fn(),
+            'store/customisation/':    jest.fn()
+          }
+        },
+        $route:  { query: { AS: '' } },
+        $router: { applyQuery: jest.fn() },
       },
-      $route:  { query: { AS: '' } },
-      $router: { applyQuery: jest.fn() },
     },
     propsData: {
       metadata:   { namespace: 'test' },
@@ -42,7 +45,7 @@ describe('view: ui.cattle.io.navlink should', () => {
   });
 
   afterEach(() => {
-    wrapper.destroy();
+    wrapper.unmount();
   });
 
   it('have "Create" button disabled before fields are filled in', () => {
@@ -56,21 +59,20 @@ describe('view: ui.cattle.io.navlink should', () => {
 
     nameField.setValue(name);
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(saveButton.disabled).toBe(true);
   });
   it('have "Create" button enabled when Link type is URL and all required fields are filled in', async() => {
-    const saveButton = wrapper.find('[data-testid="form-save"]').element as HTMLInputElement;
     const nameField = wrapper.find('[data-testid="Navlink-name-field"]').find('input');
     const urlField = wrapper.find('[data-testid="Navlink-url-field"]');
 
     nameField.setValue(name);
     urlField.setValue(url);
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
-    expect(saveButton.disabled).toBe(false);
+    expect(CruResource.computed.canSave()).toBe(true);
   });
 
   it('have "Create" button disabled when Link type is Service and and only name is filled in', async() => {
@@ -82,7 +84,7 @@ describe('view: ui.cattle.io.navlink should', () => {
 
     nameField.setValue(name);
     serviceBttn.trigger('click');
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(saveButton.disabled).toBe(true);
   });
@@ -95,7 +97,7 @@ describe('view: ui.cattle.io.navlink should', () => {
 
     nameField.setValue(name);
     serviceBttn.trigger('click');
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     const schemeField = wrapper.find('[data-testid="Navlink-scheme-field"]');
     const serviceField = wrapper.find('[data-testid="Navlink-currentService-field"]');

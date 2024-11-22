@@ -76,7 +76,7 @@ export default {
       class="row mb-20"
     >
       <LabeledSelect
-        v-model="selectedWebhookType"
+        v-model:value="selectedWebhookType"
         :disabled="mode === view"
         :label="t('monitoringReceiver.webhook.add.selectWebhookType')"
         :placeholder="t('monitoringReceiver.webhook.add.generic')"
@@ -106,7 +106,7 @@ export default {
         class="col span-12"
       >
         <LabeledInput
-          v-model="value.webhook_url"
+          v-model:value="value.webhook_url"
           :required="true"
           :mode="mode"
           label="URL"

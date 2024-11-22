@@ -36,7 +36,7 @@ export default {
     <div class="row mb-10">
       <div class="col span-6">
         <LabeledInput
-          v-model="value.thanos.objectConfig.config.bucket"
+          v-model:value="value.thanos.objectConfig.config.bucket"
           :mode="mode"
           required
           :label="t('globalMonitoringPage.store.tencentcloudcos.bucketName.label')"
@@ -46,7 +46,7 @@ export default {
       </div>
       <div class="col span-6">
         <LabeledInput
-          v-model="value.thanos.objectConfig.config.region"
+          v-model:value="value.thanos.objectConfig.config.region"
           :mode="mode"
           required
           :label="t('globalMonitoringPage.store.tencentcloudcos.region.label')"
@@ -58,7 +58,7 @@ export default {
     <div class="row mb-10">
       <div class="col span-6">
         <LabeledInput
-          v-model="value.thanos.objectConfig.config.secret_id"
+          v-model:value="value.thanos.objectConfig.config.secret_id"
           :mode="mode"
           required
           :label="t('globalMonitoringPage.store.tencentcloudcos.secretId.label')"
@@ -68,7 +68,7 @@ export default {
       </div>
       <div class="col span-6">
         <LabeledInput
-          v-model="value.thanos.objectConfig.config.secret_key"
+          v-model:value="value.thanos.objectConfig.config.secret_key"
           :mode="mode"
           required
           :label="t('globalMonitoringPage.store.tencentcloudcos.secretKey.label')"
@@ -80,7 +80,7 @@ export default {
     <div class="row mb-10">
       <div class="col span-6">
         <LabeledInput
-          v-model="value.thanos.objectConfig.config.app_id"
+          v-model:value="value.thanos.objectConfig.config.app_id"
           :mode="mode"
           required
           :label="t('globalMonitoringPage.store.tencentcloudcos.appid.label')"

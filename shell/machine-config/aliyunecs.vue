@@ -794,7 +794,7 @@ export default {
       <div class="row mb-20">
         <div class="col span-6">
           <LabeledSelect
-            v-model="value.resourceGroupId"
+            v-model:value="value.resourceGroupId"
             :mode="mode"
             :options="resourceGroupOptions"
             :required="true"
@@ -804,7 +804,7 @@ export default {
         </div>
         <div class="col span-6">
           <LabeledSelect
-            v-model="value.region"
+            v-model:value="value.region"
             :mode="mode"
             :options="regionOptions"
             :required="true"
@@ -817,7 +817,7 @@ export default {
       <div class="row mb-20">
         <div class="col span-6">
           <LabeledSelect
-            v-model="value.zone"
+            v-model:value="value.zone"
             :mode="mode"
             :options="zoneOptions"
             :required="true"
@@ -828,7 +828,7 @@ export default {
         </div>
         <div class="col span-6">
           <LabeledSelect
-            v-model="value.vpcId"
+            v-model:value="value.vpcId"
             :mode="mode"
             :options="vpcOptions"
             :required="true"
@@ -842,7 +842,7 @@ export default {
       <div class="row mb-20">
         <div class="col span-6">
           <LabeledSelect
-            v-model="value.vswitchId"
+            v-model:value="value.vswitchId"
             :mode="mode"
             :options="vSwitcheOptions"
             :required="true"
@@ -854,7 +854,7 @@ export default {
         </div>
         <div class="col span-6">
           <LabeledSelect
-            v-model="value.internetChargeType"
+            v-model:value="value.internetChargeType"
             :mode="mode"
             :options="internetChargeTypeOptions"
             :required="true"
@@ -868,7 +868,7 @@ export default {
       <div class="row mb-20">
         <div class="col span-6">
           <LabeledSelect
-            v-model="value.instanceType"
+            v-model:value="value.instanceType"
             :mode="mode"
             :options="instanceOptions"
             :required="true"
@@ -889,7 +889,7 @@ export default {
         </div>
         <div class="col span-6">
           <LabeledSelect
-            v-model="value.diskFs"
+            v-model:value="value.diskFs"
             :mode="mode"
             :options="['ext4','xfs']"
             :required="true"
@@ -902,7 +902,7 @@ export default {
       <div class="row mb-20">
         <div class="col span-6">
           <LabeledSelect
-            v-model="imageType"
+            v-model:value="imageType"
             :mode="mode"
             :options="imageTypeChoose"
             :required="true"
@@ -915,7 +915,7 @@ export default {
         </div>
         <div class="col span-6">
           <LabeledSelect
-            v-model="value.imageId"
+            v-model:value="value.imageId"
             :mode="mode"
             :options="imageVersionChoose"
             :required="true"
@@ -930,7 +930,7 @@ export default {
       <div class="row mb-20">
         <div class="col span-6">
           <LabeledSelect
-            v-model="value.systemDiskCategory"
+            v-model:value="value.systemDiskCategory"
             :mode="mode"
             :options="systemDiskCategoryOptions"
             :required="true"
@@ -941,7 +941,7 @@ export default {
         </div>
         <div class="col span-6">
           <UnitInput
-            v-model="value.systemDiskSize"
+            v-model:value="value.systemDiskSize"
             output-as="string"
             :mode="mode"
             :min="20"
@@ -958,7 +958,7 @@ export default {
       <div class="row mb-20">
         <div class="col span-6">
           <UnitInput
-            v-model="value.internetMaxBandwidth"
+            v-model:value="value.internetMaxBandwidth"
             output-as="string"
             :mode="mode"
             :disabled="disabled"
@@ -976,7 +976,7 @@ export default {
         <div class="row mb-20">
           <div class="col span-6">
             <LabeledInput
-              v-model="value.slbId"
+              v-model:value="value.slbId"
               :mode="mode"
               :disabled="disabled"
               :placeholder="t('cluster.machineConfig.aliyunecs.aliyunSLB.placeholder')"
@@ -987,7 +987,7 @@ export default {
         <div class="row mb-20">
           <div class="col span-6">
             <LabeledSelect
-              v-model="value.diskCategory"
+              v-model:value="value.diskCategory"
               :mode="mode"
               :options="diskCategoryOptions"
               :required="true"
@@ -998,7 +998,7 @@ export default {
           </div>
           <div class="col span-6">
             <UnitInput
-              v-model="value.diskSize"
+              v-model:value="value.diskSize"
               output-as="string"
               :mode="mode"
               :min="20"
@@ -1015,7 +1015,7 @@ export default {
         <div class="row mb-20">
           <div class="col span-6">
             <LabeledSelect
-              v-model="instanceChargeType"
+              v-model:value="instanceChargeType"
               :mode="mode"
               :options="instanceChargeTypeOptions"
               :required="true"
@@ -1029,7 +1029,7 @@ export default {
             class="col span-6"
           >
             <LabeledSelect
-              v-model="periodUnit"
+              v-model:value="periodUnit"
               :mode="mode"
               :options="periodUnitOptions"
               :required="true"
@@ -1052,7 +1052,7 @@ export default {
               </h3>
             </div>
             <RadioGroup
-              v-model="spotDuration"
+              v-model:value="spotDuration"
               name="spotDuration"
               :mode="mode"
               :disabled="disabled"
@@ -1065,7 +1065,7 @@ export default {
               <h3>{{ t('cluster.machineConfig.aliyunecs.spotStrategy.label') }}</h3>
             </div>
             <RadioGroup
-              v-model="value.spotStrategy"
+              v-model:value="value.spotStrategy"
               name="spotStrategy"
               :mode="mode"
               :disabled="disabled"
@@ -1074,7 +1074,7 @@ export default {
             />
             <UnitInput
               v-if="value.spotStrategy === 'SpotWithPriceLimit'"
-              v-model="value.spotPriceLimit"
+              v-model:value="value.spotPriceLimit"
               output-as="string"
               :mode="mode"
               :min="0"
@@ -1092,7 +1092,7 @@ export default {
               <h3>{{ t('cluster.machineConfig.aliyunecs.ioOptimized.label') }}</h3>
             </div>
             <RadioGroup
-              v-model="value.ioOptimized"
+              v-model:value="value.ioOptimized"
               name="ioOptimized"
               :mode="mode"
               :disabled="disabled"
@@ -1105,7 +1105,7 @@ export default {
               <h3>{{ t('cluster.machineConfig.aliyunecs.upgradeKernel.label') }}</h3>
             </div>
             <RadioGroup
-              v-model="value.upgradeKernel"
+              v-model:value="value.upgradeKernel"
               name="upgradeKernel"
               :mode="mode"
               :disabled="disabled"
@@ -1118,7 +1118,7 @@ export default {
         <div class="row mt-20">
           <div class="col span-6">
             <ArrayList
-              v-model="value.openPort"
+              v-model:value="value.openPort"
               table-class="fixed"
               :mode="mode"
               :title="t('cluster.machineConfig.azure.openPort.label')"
@@ -1142,7 +1142,7 @@ export default {
               </span>
             </h3>
             <RadioGroup
-              v-model="securityGroupMode"
+              v-model:value="securityGroupMode"
               name="securityGroupMode"
               :mode="mode"
               :disabled="!value.vpcId || disabled"
@@ -1151,7 +1151,7 @@ export default {
             />
             <LabeledSelect
               v-if="value.vpcId && securityGroupMode === 'custom'"
-              v-model="value.securityGroup"
+              v-model:value="value.securityGroup"
               :mode="mode"
               :disabled="!value.vpcId || disabled"
               :options="securityGroupOptions"
@@ -1166,7 +1166,7 @@ export default {
           <div class="col span-12">
             <div>
               <Checkbox
-                v-model="value.privateAddressOnly"
+                v-model:value="value.privateAddressOnly"
                 :mode="mode"
                 :disabled="disabled"
                 :label="t('cluster.machineConfig.aliyunecs.privateAddressOnly.label')"

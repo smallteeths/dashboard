@@ -75,7 +75,7 @@ export default {
     >
       <div class="col span-12">
         <LabeledInput
-          v-model="value.webhook_url"
+          v-model:value="value.webhook_url"
           :required="true"
           :mode="mode"
           label="URL"

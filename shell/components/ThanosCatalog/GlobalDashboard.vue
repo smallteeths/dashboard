@@ -111,7 +111,7 @@ export default {
     <div class="row mb-20">
       <div class="col span-6">
         <LabeledInput
-          v-model="value.ui.title"
+          v-model:value="value.ui.title"
           :mode="mode"
           :label="t('globalMonitoringPage.grafana.title.label')"
           :placeholder="t('globalMonitoringPage.grafana.title.placeholder')"
@@ -119,7 +119,7 @@ export default {
       </div>
       <div class="col span-6">
         <LabeledInput
-          v-model="value.ui.tabTitle"
+          v-model:value="value.ui.tabTitle"
           :mode="mode"
           :label="t('globalMonitoringPage.grafana.tabTitle.label')"
           :placeholder="t('globalMonitoringPage.grafana.tabTitle.placeholder')"
@@ -129,7 +129,7 @@ export default {
     <div class="row mb-20">
       <div class="col span-6">
         <LabeledInput
-          v-model="value.ui.logo"
+          v-model:value="value.ui.logo"
           :mode="mode"
           :label="t('globalMonitoringPage.grafana.logo.label')"
           :placeholder="t('globalMonitoringPage.grafana.logo.placeholder')"
@@ -137,7 +137,7 @@ export default {
       </div>
       <div class="col span-6">
         <LabeledInput
-          v-model="value.ui.favicon"
+          v-model:value="value.ui.favicon"
           :mode="mode"
           :label="t('globalMonitoringPage.grafana.favicon.label')"
           :placeholder="t('globalMonitoringPage.grafana.favicon.placeholder')"
@@ -147,7 +147,7 @@ export default {
     <div class="row mb-20">
       <div class="col span-6">
         <LabeledInput
-          v-model="value.ui.serverUrl"
+          v-model:value="value.ui.serverUrl"
           :mode="mode"
           required
           :label="t('globalMonitoringPage.grafana.serverUrl.label')"
@@ -168,7 +168,7 @@ export default {
     <div class="row mb-20">
       <div class="col span-6">
         <RadioGroup
-          v-model="value.grafana.persistence.enabled"
+          v-model:value="value.grafana.persistence.enabled"
           name="enableGrafanaPersistence"
           :mode="mode"
           :labels="[t('generic.yes'), t('generic.no')]"
@@ -182,7 +182,7 @@ export default {
     >
       <div class="col span-6">
         <LabeledInput
-          v-model="value.grafana.persistence.size"
+          v-model:value="value.grafana.persistence.size"
           :mode="mode"
           required
           :label="t('globalMonitoringPage.grafana.size.label')"
@@ -191,7 +191,7 @@ export default {
       </div>
       <div class="col span-6">
         <LabeledSelect
-          v-model="value.grafana.persistence.storageClass"
+          v-model:value="value.grafana.persistence.storageClass"
           :mode="mode"
           :label="t('globalMonitoringPage.grafana.storageClass.label')"
           :options="storageClassesOptions"
@@ -206,7 +206,7 @@ export default {
     <div class="row mb-20">
       <div class="col span-6">
         <RadioGroup
-          v-model="value.grafana.sidecar.dashboards.enabled"
+          v-model:value="value.grafana.sidecar.dashboards.enabled"
           name="enableGrafanaSidecar"
           :mode="mode"
           :labels="[t('generic.yes'), t('generic.no')]"
@@ -218,7 +218,7 @@ export default {
     <div class="row mb-20">
       <div class="col span-6">
         <LabeledSelect
-          v-model="value.grafana.service.type"
+          v-model:value="value.grafana.service.type"
           :mode="mode"
           :label="t('globalMonitoringPage.grafana.serviceType.label')"
           :options="serviceTypes"
@@ -231,7 +231,7 @@ export default {
     <h3>{{ t('globalMonitoringPage.nodeSelector.helpText', {component: 'Grafana'}) }}</h3>
     <div class="row mb-20">
       <KeyValue
-        v-model="value.grafana.nodeSelector"
+        v-model:value="value.grafana.nodeSelector"
         :mode="mode"
         :read-allowed="false"
         :protip="true"

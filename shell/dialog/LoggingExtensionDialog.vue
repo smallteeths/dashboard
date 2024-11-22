@@ -21,6 +21,7 @@ export default {
   components: {
     AsyncButton, Card, Banner, ContainerMountPaths
   },
+  emits: ['close'],
   props: {
     resources: {
       type:     Array,
@@ -253,7 +254,7 @@ export default {
     />
     <template #body>
       <ContainerMountPaths
-        v-model="value"
+        v-model:value="value"
         mode="edit"
         :containers="value.containers"
         :workload="workload"

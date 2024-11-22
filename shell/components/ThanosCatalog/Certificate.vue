@@ -82,7 +82,7 @@ export default {
         data-testid="input-config-tls"
       >
         <RadioGroup
-          v-model="value.thanos.tls.enabled"
+          v-model:value="value.thanos.tls.enabled"
           name="objectStorageEnabled"
           :mode="mode"
           :labels="[t('generic.yes'), t('generic.no')]"
@@ -97,7 +97,7 @@ export default {
           data-testid="input-config-tls_key"
         >
           <LabeledInput
-            v-model="tls.key"
+            v-model:value="tls.key"
             :mode="mode"
             type="multiline"
             :label="t('globalMonitoringPage.tls.key.label')"
@@ -114,7 +114,7 @@ export default {
           data-testid="input-config-tls_cert"
         >
           <LabeledInput
-            v-model="tls.cert"
+            v-model:value="tls.cert"
             :mode="mode"
             type="multiline"
             :label="t('globalMonitoringPage.tls.cert.label')"
@@ -133,7 +133,7 @@ export default {
           data-testid="input-config-tls_ca"
         >
           <LabeledInput
-            v-model="tls.ca"
+            v-model:value="tls.ca"
             :mode="mode"
             type="multiline"
             :label="t('globalMonitoringPage.tls.ca.label')"

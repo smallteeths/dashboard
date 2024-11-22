@@ -18,6 +18,7 @@
 <script>
 export default {
   name:  'SwitchCheckbox',
+  emits: ['toggle-change'],
   props: {
     checked: {
       type:    Boolean,

@@ -471,7 +471,7 @@ export default {
       <div class="row mb-20">
         <div class="col span-3">
           <LabeledInput
-            v-model="config.metadata.name"
+            v-model:value="config.metadata.name"
             required
             label-key="generic.name"
             tooltipKey="name"
@@ -496,7 +496,7 @@ export default {
           <div class="row mb-20">
             <div class="col span-6">
               <LabeledInput
-                v-model="config.spec.master"
+                v-model:value="config.spec.master"
                 required
                 label-key="macvlan.master.label"
                 placeholder-key="macvlan.master.placeholder"
@@ -507,7 +507,7 @@ export default {
             </div>
             <div class="col span-6">
               <LabeledInput
-                v-model="vlan"
+                v-model:value="vlan"
                 label-key="macvlan.vlan.label"
                 placeholder-key="macvlan.vlan.placeholder"
                 :mode="mode"
@@ -521,7 +521,7 @@ export default {
           <div class="row mb-20">
             <div class="col span-6">
               <LabeledInput
-                v-model="config.spec.cidr"
+                v-model:value="config.spec.cidr"
                 required
                 label-key="macvlan.cidr.label"
                 placeholder-key="macvlan.cidr.placeholder"
@@ -532,7 +532,7 @@ export default {
             </div>
             <div class="col span-6">
               <LabeledSelect
-                v-model="config.spec.flatMode"
+                v-model:value="config.spec.flatMode"
                 :mode="mode"
                 required
                 label-key="macvlan.mode.flatMode"
@@ -545,7 +545,7 @@ export default {
           <div class="row mb-20">
             <div class="col span-6">
               <LabeledSelect
-                v-model="config.spec.mode"
+                v-model:value="config.spec.mode"
                 :mode="mode"
                 required
                 label-key="macvlan.mode.label"
@@ -555,7 +555,7 @@ export default {
             </div>
             <div class="col span-6">
               <LabeledInput
-                v-model="config.spec.gateway"
+                v-model:value="config.spec.gateway"
                 label-key="macvlan.gateway.label"
                 placeholder-key="macvlan.gateway.placeholder"
                 :mode="mode"
@@ -566,7 +566,7 @@ export default {
           <div class="row mb-20">
             <div class="col span-6">
               <LabeledSelect
-                v-model="config.metadata.labels.project"
+                v-model:value="config.metadata.labels.project"
                 :mode="mode"
                 required
                 label-key="macvlan.project.label"
@@ -579,7 +579,7 @@ export default {
               class="col span-6"
             >
               <LabeledSelect
-                v-model="config.spec.ipvlanFlag"
+                v-model:value="config.spec.ipvlanFlag"
                 :mode="mode"
                 required
                 label-key="macvlan.ipvlanFlag.label"

@@ -9,7 +9,7 @@
         </div>
         <div class="mb-10">
           <RadioGroup
-            v-model="gpuReservationMode"
+            v-model:value="gpuReservationMode"
             name="gpuReservationMode"
             :options="modeOptions"
             :labels="modeLabels"
@@ -18,7 +18,7 @@
         <template v-if="gpuReservationMode === 'shared'">
           <div>
             <UnitInput
-              v-model="gpuShared"
+              v-model:value="gpuShared"
               :suffix="t('gpuReservation.memUnit')"
               :placeholder="t('gpuReservation.placeholder')"
               :label="t('gpuReservation.shared')"
@@ -35,7 +35,7 @@
         <template v-else-if="gpuReservationMode === 'set'">
           <div>
             <UnitInput
-              v-model="gpuSet"
+              v-model:value="gpuSet"
               :suffix="t('gpuReservation.unit')"
               :placeholder="t('gpuReservation.placeholder')"
               :label="t('gpuReservation.set')"
@@ -49,7 +49,7 @@
           <div class="row">
             <div class="col span-6">
               <LabeledSelect
-                v-model="gpuDevice.name"
+                v-model:value="gpuDevice.name"
                 :label="t('gpuReservation.resourceName')"
                 :mode="mode"
                 :options="gpuResourceNames"
@@ -58,7 +58,7 @@
             </div>
             <div class="col span-6">
               <UnitInput
-                v-model="gpuDevice.value"
+                v-model:value="gpuDevice.value"
                 :suffix="t('gpuReservation.unit')"
                 :placeholder="t('gpuReservation.placeholder')"
                 :label="t('gpuReservation.set')"
@@ -80,7 +80,7 @@
           </p>
         </div>
         <UnitInput
-          v-model="vGpus"
+          v-model:value="vGpus"
           :suffix="t('vGpuReservation.unit')"
           :placeholder="t('vGpuReservation.placeholder')"
           :label="t('vGpuReservation.set')"
@@ -102,6 +102,7 @@ import { mapFeature, VIRTAITECH_GPU_SERVICE_UI } from '@shell/store/features';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 
 export default {
+  emits: ['input'],
   props: {
     mode: {
       type:     String,

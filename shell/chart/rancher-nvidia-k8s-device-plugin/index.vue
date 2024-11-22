@@ -42,6 +42,7 @@ export default {
     GpuResources,
   },
   hasTabs: true,
+  emits:   ['register-before-hook'],
   props:   {
     value: {
       type:    Object,
@@ -318,14 +319,14 @@ export default {
       <div class="row mb-10">
         <div class="col span-6">
           <LabeledInput
-            v-model="value.image.repository"
+            v-model:value="value.image.repository"
             :label="t('rancher-nvidia-k8s-device-plugin.containerImage.repository.label')"
             :mode="mode"
           />
         </div>
         <div class="col span-6">
           <LabeledInput
-            v-model="value.image.tag"
+            v-model:value="value.image.tag"
             :label="t('rancher-nvidia-k8s-device-plugin.containerImage.tag.label')"
             :mode="mode"
           />
@@ -334,14 +335,14 @@ export default {
       <div class="row mb-10">
         <div class="col span-6">
           <LabeledInput
-            v-model="gfdImageRepo"
+            v-model:value="gfdImageRepo"
             :label="t('rancher-nvidia-k8s-device-plugin.containerImage.gfdRepository.label')"
             :mode="mode"
           />
         </div>
         <div class="col span-6">
           <LabeledInput
-            v-model="gfdImageTag"
+            v-model:value="gfdImageTag"
             :label="t('rancher-nvidia-k8s-device-plugin.containerImage.gfdTag.label')"
             :mode="mode"
           />
@@ -350,14 +351,14 @@ export default {
       <div class="row mb-10">
         <div class="col span-6">
           <LabeledInput
-            v-model="nfdImageRepo"
+            v-model:value="nfdImageRepo"
             :label="t('rancher-nvidia-k8s-device-plugin.containerImage.nfdRepository.label')"
             :mode="mode"
           />
         </div>
         <div class="col span-6">
           <LabeledInput
-            v-model="nfdImageTag"
+            v-model:value="nfdImageTag"
             :label="t('rancher-nvidia-k8s-device-plugin.containerImage.nfdTag.label')"
             :mode="mode"
           />
@@ -387,9 +388,11 @@ export default {
               </button>
             </div>
           </template>
-          <template v-for="(c, index) in configs">
+          <template
+            v-for="(c, index) in configs"
+            :key="c.id"
+          >
             <Tab
-              :key="c.id"
               :name="c.id"
               :label="c.name"
               :weight="-index"
@@ -413,7 +416,7 @@ export default {
               >
                 <div class="col span-6">
                   <LabeledInput
-                    v-model="c.name"
+                    v-model:value="c.name"
                     :label="t('rancher-nvidia-k8s-device-plugin.devicePluginOptions.configName.label')"
                     :mode="mode"
                   />
@@ -422,7 +425,7 @@ export default {
               <div class="row mb-10">
                 <div class="col span-6">
                   <LabeledSelect
-                    v-model="c.config.flags.migStrategy"
+                    v-model:value="c.config.flags.migStrategy"
                     :label="t('rancher-nvidia-k8s-device-plugin.devicePluginOptions.migStrategy.label')"
                     :mode="mode"
                     :options="migStrategies"
@@ -435,7 +438,7 @@ export default {
               <div class="row mb-10">
                 <div class="col span-6">
                   <Checkbox
-                    v-model="c.config.flags.failOnInitError"
+                    v-model:value="c.config.flags.failOnInitError"
                     :mode="mode"
                     :label="t('rancher-nvidia-k8s-device-plugin.devicePluginOptions.failOnInitError.label')"
                   />
@@ -447,7 +450,7 @@ export default {
               <div class="row mb-10">
                 <div class="col span-6">
                   <LabeledInput
-                    v-model="c.config.flags.nvidiaDriverRoot"
+                    v-model:value="c.config.flags.nvidiaDriverRoot"
                     :label="t('rancher-nvidia-k8s-device-plugin.devicePluginOptions.nvidiaDriverRoot.label')"
                     :mode="mode"
                   />
@@ -459,7 +462,7 @@ export default {
               <div class="row mb-10">
                 <div class="col span-6">
                   <Checkbox
-                    v-model="c.config.flags.plugin.passDeviceSpecs"
+                    v-model:value="c.config.flags.plugin.passDeviceSpecs"
                     :mode="mode"
                     :label="t('rancher-nvidia-k8s-device-plugin.devicePluginOptions.passDeviceSpecs.label')"
                   />
@@ -471,7 +474,7 @@ export default {
               <div class="row mb-10">
                 <div class="col span-6">
                   <LabeledSelect
-                    v-model="c.config.flags.plugin.deviceListStrategy"
+                    v-model:value="c.config.flags.plugin.deviceListStrategy"
                     :label="t('rancher-nvidia-k8s-device-plugin.devicePluginOptions.deviceListStrategy.label')"
                     :mode="mode"
                     :options="deviceListStrategies"
@@ -484,7 +487,7 @@ export default {
               <div class="row mb-10">
                 <div class="col span-6">
                   <LabeledSelect
-                    v-model="c.config.flags.plugin.deviceIDStrategy"
+                    v-model:value="c.config.flags.plugin.deviceIDStrategy"
                     :label="t('rancher-nvidia-k8s-device-plugin.devicePluginOptions.deviceIDStrategy.label')"
                     :mode="mode"
                     :options="deviceIDStrategies"
@@ -498,7 +501,7 @@ export default {
               <div class="row mb-10">
                 <div class="col span-6">
                   <Checkbox
-                    v-model="sharedAccessEnabledMap[c.id]"
+                    v-model:value="sharedAccessEnabledMap[c.id]"
                     :mode="mode"
                     :label="t('rancher-nvidia-k8s-device-plugin.devicePluginOptions.sharedAccess.label')"
                   />
@@ -511,7 +514,7 @@ export default {
                 <div class="row mb-10">
                   <div class="col span-6">
                     <Checkbox
-                      v-model="c.config.sharing.timeSlicing.renameByDefault"
+                      v-model:value="c.config.sharing.timeSlicing.renameByDefault"
                       :mode="mode"
                       :label="t('rancher-nvidia-k8s-device-plugin.devicePluginOptions.renameByDefault.label')"
                     />
@@ -520,7 +523,7 @@ export default {
                 <div class="row mb-10">
                   <div class="col span-6">
                     <Checkbox
-                      v-model="c.config.sharing.timeSlicing.failRequestsGreaterThanOne"
+                      v-model:value="c.config.sharing.timeSlicing.failRequestsGreaterThanOne"
                       :mode="mode"
                       :label="t('rancher-nvidia-k8s-device-plugin.devicePluginOptions.failRequestsGreaterThanOne.label')"
                     />
@@ -549,7 +552,7 @@ export default {
       <div class="row">
         <div class="col span-6">
           <Checkbox
-            v-model="value.gfd.enabled"
+            v-model:value="value.gfd.enabled"
             :mode="mode"
             :label="t('rancher-nvidia-k8s-device-plugin.gfdOptions.enabled.label')"
           />
@@ -567,7 +570,7 @@ export default {
       <div class="row">
         <div class="col span-10">
           <KeyValue
-            v-model="value.nodeSelector"
+            v-model:value="value.nodeSelector"
             :add-label="t('labels.addLabel')"
             :mode="mode"
             :title="t('rancher-nvidia-k8s-device-plugin.scheduleOptions.nodeSelector.title')"

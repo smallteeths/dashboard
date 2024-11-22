@@ -415,8 +415,15 @@ export const actions = {
     }
   },
 
+  uiLogout({ commit, dispatch }) {
+    removeEmberPage();
+
+    commit('loggedOut');
+    dispatch('onLogout', null, { root: true });
+  },
+
   async logout({
-    dispatch, commit, getters, rootState, state
+    dispatch, getters, rootState, state
   }, options = {}) {
     // So, we only do this check if auth has been initialized.
     //
@@ -460,21 +467,34 @@ export const actions = {
       } catch (e) {}
     }
 
+    let logoutAction = 'logout';
+    const data = {};
+
+    // SLO - Single-sign logout - will logout auth provider from all places where it's logged in
+    if (options.slo) {
+      logoutAction = 'logoutAll';
+      data.finalRedirectUrl = returnTo({ isSlo: true }, this);
+    }
+
     try {
-      await dispatch('rancher/request', {
-        url:                  '/v3/tokens?action=logout',
+      const res = await dispatch('rancher/request', {
+        url:                  `/v3/tokens?action=${ logoutAction }`,
         method:               'post',
-        data:                 {},
+        data,
         headers:              { 'Content-Type': 'application/json' },
         redirectUnauthorized: false,
       }, { root: true });
+
+      // Single-sign logout for SAML providers that allow for it
+      if (res.baseType === 'samlConfigLogoutOutput' && res.idpRedirectUrl) {
+        window.location.href = res.idpRedirectUrl;
+
+        return;
+      }
     } catch (e) {
     }
 
-    removeEmberPage();
-
-    commit('loggedOut');
-    dispatch('onLogout', null, { root: true });
+    dispatch('uiLogout');
   },
 
   mfa({ rootState }) {

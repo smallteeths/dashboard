@@ -278,13 +278,13 @@ export default {
       return value;
     },
     toggleCollapse(val, key) {
-      this.$set(this.isCollapsed, key, val);
+      this.isCollapsed[key] = val;
     },
     toggleAll(action) {
       const val = action !== 'expand';
 
       Object.keys(this.isCollapsed).forEach((key) => {
-        this.$set(this.isCollapsed, key, val);
+        this.isCollapsed[key] = val;
       });
     }
   },
@@ -292,7 +292,7 @@ export default {
   watch: {
     fleetWorkspaces(value) {
       value?.filter((ws) => ws.repos?.length).forEach((ws) => {
-        this.$set(this.isCollapsed, ws.id, false);
+        this.isCollapsed[ws.id] = false;
       });
     }
   }
@@ -372,8 +372,8 @@ export default {
         </p>
       </div>
       <CollapsibleCard
-        v-for="ws in workspacesData"
-        :key="ws.id"
+        v-for="(ws, i) in workspacesData"
+        :key="i"
         class="mt-20 mb-40"
         :title="`${t('resourceDetail.masthead.workspace')}: ${ws.nameDisplay}`"
         :is-collapsed="isCollapsed[ws.id]"
@@ -400,14 +400,12 @@ export default {
         </template>
         <template v-slot:content>
           <ResourceTable
-            v-bind="$attrs"
             :schema="schema"
             :headers="headers"
             :rows="ws.repos"
             key-field="_key"
             :search="false"
             :table-actions="false"
-            v-on="$listeners"
           >
             <template #cell:clustersReady="{row}">
               <span v-if="ws.type === 'namespace'"> - </span>

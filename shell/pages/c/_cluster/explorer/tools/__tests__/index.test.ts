@@ -16,30 +16,33 @@ describe('page: cluster tools', () => {
         }
       ]
     },
-    mocks: {
-      $route:      { query: {} },
-      $fetchState: {
-        pending: false, error: true, timestamp: Date.now()
-      },
-      $store: {
-        dispatch: (schema: string, opt: { type: string }) => {
-          if (schema === 'management/findAll' && opt.type === MANAGEMENT.PROJECT) {
-            return [];
-          }
+    global: {
+      mocks: {
+        $route:      { query: {} },
+        $fetchState: {
+          pending: false, error: true, timestamp: Date.now()
         },
-        getters: {
-          'features/get':         () => true,
-          'management/schemaFor': (schema: string) => {
-            if (schema === MANAGEMENT.PROJECT) {
-              return true;
+        $store: {
+          dispatch: (schema: string, opt: { type: string }) => {
+            if (schema === 'management/findAll' && opt.type === MANAGEMENT.PROJECT) {
+              return [];
             }
           },
-          currentCluster:  { id: 'cluster', status: { provider: 'provider' } },
-          'i18n/t':        jest.fn(),
-          'catalog/repos': []
+          getters: {
+            'features/get':         () => true,
+            'management/schemaFor': (schema: string) => {
+              if (schema === MANAGEMENT.PROJECT) {
+                return true;
+              }
+            },
+            currentCluster: { id: 'cluster', status: { provider: 'provider' } },
+            'i18n/t':       jest.fn(),
+
+            'catalog/repos': []
+          }
         }
-      }
-    },
+      },
+    }
   };
 
   it('should show apps catalog', async() => {
@@ -54,7 +57,7 @@ describe('page: cluster tools', () => {
   it('should show apps catalog when no permissions to `project` schema', async() => {
     const options = clone(mountOptions);
 
-    options.mocks.$store.dispatch = (schema: string, opt: { type: string }) => {
+    options.global.mocks.$store.dispatch = (schema: string, opt: { type: string }) => {
       if (schema === 'management/findAll' && opt.type === MANAGEMENT.PROJECT) {
         return null;
       }

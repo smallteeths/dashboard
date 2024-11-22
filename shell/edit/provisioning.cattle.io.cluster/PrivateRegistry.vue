@@ -30,7 +30,7 @@ export default {
     </div>
     <div class="mt-20">
       <LabeledInput
-        v-model="value.spec.systemDefaultRegistry"
+        v-model:value="value.spec.systemDefaultRegistry"
         :label="t('cluster.import.privateRegistry.label')"
         :placeholder="t('cluster.import.privateRegistry.placeholder')"
       />

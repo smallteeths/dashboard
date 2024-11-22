@@ -171,14 +171,14 @@ export default {
           <td>{{ c.spec.displayName }} </td>
           <td>
             <ToggleSwitch
-              v-model="c.monitoringEabled"
+              v-model:value="c.monitoringEabled"
               :labels="[false, true]"
               @input="updateClusterStore"
             />
           </td>
           <td>
             <LabeledInput
-              v-model="c.clusterStore"
+              v-model:value="c.clusterStore"
               :mode="mode"
               :placeholder="t('globalMonitoringPage.customAddress.placeholder')"
               @input="updateClusterStore"
@@ -188,7 +188,7 @@ export default {
       </tbody>
     </table>
     <ArrayList
-      v-model="value.thanos.query.otherClusterStores"
+      v-model:value="value.thanos.query.otherClusterStores"
       :title="t('globalMonitoringPage.customAddress.otherHeader')"
       :mode="mode"
       :value-placeholder="t('globalMonitoringPage.customAddress.placeholder')"

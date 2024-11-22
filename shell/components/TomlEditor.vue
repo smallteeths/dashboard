@@ -12,6 +12,7 @@ export const EDITOR_MODES = {
 
 export default {
   components: { CodeMirror, FileDiff },
+  emits:      ['input', 'onInput', 'onReady', 'onChanges'],
   props:      {
     editorMode: {
       type:    String,

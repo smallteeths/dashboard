@@ -132,7 +132,7 @@ export default {
     <div class="row mb-10">
       <div class="col span-6">
         <LabeledInput
-          v-model="value.thanos.objectConfig.config.bucket"
+          v-model:value="value.thanos.objectConfig.config.bucket"
           :mode="mode"
           required
           :label="t('globalMonitoringPage.store.aliyunoss.bucketName.label')"
@@ -142,7 +142,7 @@ export default {
       </div>
       <div class="col span-6">
         <LabeledSelect
-          v-model="value.thanos.objectConfig.config.endpoint"
+          v-model:value="value.thanos.objectConfig.config.endpoint"
           :mode="mode"
           required
           :label="t('globalMonitoringPage.store.aliyunoss.endpoint.label')"
@@ -156,7 +156,7 @@ export default {
     <div class="row mb-10">
       <div class="col span-6">
         <LabeledInput
-          v-model="value.thanos.objectConfig.config.access_key_id"
+          v-model:value="value.thanos.objectConfig.config.access_key_id"
           :mode="mode"
           required
           :label="t('globalMonitoringPage.store.aliyunoss.accessKey.label')"
@@ -166,7 +166,7 @@ export default {
       </div>
       <div class="col span-6">
         <LabeledInput
-          v-model="value.thanos.objectConfig.config.access_key_secret"
+          v-model:value="value.thanos.objectConfig.config.access_key_secret"
           :mode="mode"
           required
           :label="t('globalMonitoringPage.store.aliyunoss.secretKey.label')"

@@ -158,7 +158,7 @@ export default {
   mounted() {
     this.startTimer();
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.stopTimer();
   },
   components: {

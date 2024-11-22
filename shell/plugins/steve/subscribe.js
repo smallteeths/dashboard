@@ -8,7 +8,7 @@
  */
 
 import { addObject, clear, removeObject } from '@shell/utils/array';
-import { get } from '@shell/utils/object';
+import { get, deepToRaw } from '@shell/utils/object';
 import { SCHEMA, MANAGEMENT } from '@shell/config/types';
 import { CSRF } from '@shell/config/cookies';
 import { getPerformanceSetting } from '@shell/utils/settings';
@@ -232,8 +232,9 @@ export async function createWorker(store, ctx) {
 
   while (workerQueues[storeName]?.length) {
     const message = workerQueues[storeName].shift();
+    const safeMessage = deepToRaw(message);
 
-    store.$workers[storeName].postMessage(message);
+    store.$workers[storeName].postMessage(safeMessage);
   }
 }
 

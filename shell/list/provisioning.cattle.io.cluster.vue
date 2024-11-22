@@ -173,11 +173,7 @@ export default {
   $loadingResources() {
     // results are filtered so we wouldn't get the correct count on indicator...
     return { loadIndeterminate: true };
-  },
-
-  mounted() {
-    window.c = this;
-  },
+  }
 };
 </script>
 
@@ -200,7 +196,7 @@ export default {
     >
       <template
         v-if="canImport"
-        slot="extraActions"
+        #extraActions
       >
         <router-link
           :to="importLocation"

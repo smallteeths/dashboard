@@ -17,6 +17,8 @@ const DUAL_NETWORK_CARD_V2 = '[{"name":"rancher-flat-network","interface":"eth1"
 const SINGLE_NETWORK_CARD_V2 = '[{"name":"rancher-flat-network","interface":"eth0"}]';
 
 export default {
+  emits: ['update:value'],
+
   components: {
     RadioGroup, Tip, ArrayList, KeyValue, LabeledInput, LabeledSelect
   },
@@ -251,7 +253,7 @@ export default {
         }
       };
 
-      this.$emit('input', out);
+      this.$emit('update:value', out);
     }
   }
 };
@@ -263,23 +265,23 @@ export default {
       <div class="row mb-20">
         <div class="col span-6">
           <LabeledSelect
-            v-model="networkMode"
+            v-model:value="networkMode"
             :mode="mode"
             :options="networkModeChoices"
             :label="t('workload.networking.networkMode.label')"
             :placeholder="t('workload.networking.networkMode.placeholder')"
-            @input="update"
+            @update:value="update"
           />
         </div>
 
         <div class="col span-6">
           <LabeledSelect
-            v-model="dnsPolicy"
+            v-model:value="dnsPolicy"
             :mode="mode"
             :options="dnsPolicyChoices"
             :label="t('workload.networking.dnsPolicy.label')"
             :placeholder="t('workload.networking.dnsPolicy.placeholder')"
-            @input="update"
+            @update:value="update"
           />
         </div>
       </div>
@@ -287,20 +289,20 @@ export default {
       <div class="row">
         <div class="col span-6">
           <LabeledInput
-            v-model="hostname"
+            v-model:value="hostname"
             :mode="mode"
             :label="t('workload.networking.hostname.label')"
             :placeholder="t('workload.networking.hostname.placeholder')"
-            @input="update"
+            @update:value="update"
           />
         </div>
         <div class="col span-6">
           <LabeledInput
-            v-model="subdomain"
+            v-model:value="subdomain"
             :mode="mode"
             :label="t('workload.networking.subdomain.label')"
             :placeholder="t('workload.networking.subdomain.placeholder')"
-            @input="update"
+            @update:value="update"
           />
         </div>
       </div>
@@ -313,25 +315,25 @@ export default {
         <div class="col span-6">
           <ArrayList
             key="dnsNameservers"
-            v-model="nameservers"
+            v-model:value="nameservers"
             :title="t('workload.networking.nameservers.label')"
             :value-placeholder="t('workload.networking.nameservers.placeholder')"
             :add-label="t('workload.networking.nameservers.add')"
             :mode="mode"
             :protip="false"
-            @input="update"
+            @update:value="update"
           />
         </div>
         <div class="col span-6">
           <ArrayList
             key="dnsSearches"
-            v-model="searches"
+            v-model:value="searches"
             :title="t('workload.networking.searches.label')"
             :value-placeholder="t('workload.networking.searches.placeholder')"
             :add-label="t('workload.networking.searches.add')"
             :mode="mode"
             :protip="false"
-            @input="update"
+            @update:value="update"
           />
         </div>
       </div>
@@ -341,7 +343,7 @@ export default {
     <div class="mt-20">
       <div class="row">
         <KeyValue
-          v-model="options"
+          v-model:value="options"
           :key-label="t('generic.name')"
           key-name="name"
           :mode="mode"
@@ -350,7 +352,7 @@ export default {
           :read-allowed="false"
           :as-map="false"
           :value-label="t('generic.value')"
-          @input="update"
+          @update:value="update"
         />
       </div>
     </div>
@@ -360,7 +362,7 @@ export default {
       <div class="col span-12">
         <KeyValue
           key="hostAliases"
-          v-model="hostAliases"
+          v-model:value="hostAliases"
           :mode="mode"
           :title="t('workload.networking.hostAliases.label')"
           :protip="t('workload.networking.hostAliases.tip')"
@@ -373,7 +375,7 @@ export default {
           :value-label="t('workload.networking.hostAliases.valueLabel')"
           :value-placeholder="t('workload.networking.hostAliases.valuePlaceholder')"
           :add-label="t('workload.networking.hostAliases.add')"
-          @input="updateHostAliases"
+          @update:value="updateHostAliases"
         >
           <template #title>
             <h3>{{ t('workload.networking.hostAliases.label') }}</h3>
@@ -387,7 +389,7 @@ export default {
       <div class="row">
         <div class="col span-12">
           <RadioGroup
-            v-model="allowVlansubnet"
+            v-model:value="allowVlansubnet"
             name="vlansubnet"
             :label="t('workload.networking.vlansubnet.label')"
             :options="[false,true]"
@@ -402,7 +404,7 @@ export default {
         <div class="row mt-20">
           <div class="col span-6">
             <LabeledSelect
-              v-model="vlansubnetNetwork"
+              v-model:value="vlansubnetNetwork"
               :mode="mode"
               :options="vlansubnetNetworkChoices"
               :label="t('workload.networking.vlansubnet.network.label')"
@@ -414,7 +416,7 @@ export default {
 
           <div class="col span-6">
             <LabeledInput
-              v-model="vlansubnetIp"
+              v-model:value="vlansubnetIp"
               :mode="mode"
               :label="t('workload.networking.vlansubnet.ip.label')"
               :placeholder="t('workload.networking.vlansubnet.ip.placeholder')"
@@ -425,7 +427,7 @@ export default {
         <div class="row mt-20">
           <div class="col span-6">
             <LabeledInput
-              v-model="vlansubnetMac"
+              v-model:value="vlansubnetMac"
               :mode="mode"
               :label="t('workload.networking.vlansubnet.mac.label')"
               :placeholder="t('workload.networking.vlansubnet.mac.placeholder')"
@@ -435,7 +437,7 @@ export default {
 
           <div class="col span-6">
             <LabeledSelect
-              v-model="vlansubnetName"
+              v-model:value="vlansubnetName"
               :mode="mode"
               :options="vlansubnetChoices"
               :label="t('workload.networking.vlansubnet.subnet.label')"

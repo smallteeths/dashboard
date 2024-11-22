@@ -62,7 +62,7 @@ export default {
   <div>
     <div class="row mb-20">
       <LabeledSelect
-        v-model="value.name"
+        v-model:value="value.name"
         :options="providerChoices"
         :label="t('drivers.add.operatorName.label')"
         :mode="mode"
@@ -71,7 +71,7 @@ export default {
     </div>
     <div class="row mb-20">
       <LabeledInput
-        v-model.trim="value.url"
+        v-model:value.trim="value.url"
         :label="t('drivers.add.customUiUrl.label')"
         :placeholder="t('drivers.add.customUiUrl.placeholder', null, true)"
         :tooltip="t('drivers.add.customUiUrl.tooltip', null, true)"
@@ -83,7 +83,7 @@ export default {
     </div>
     <div class="col span-6">
       <ArrayList
-        v-model="value.whitelistDomains"
+        v-model:value="value.whitelistDomains"
         :protip="false"
         :mode="mode"
         :title="t('drivers.add.whitelist')"

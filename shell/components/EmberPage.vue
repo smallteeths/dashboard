@@ -48,18 +48,12 @@ const INTERCEPTS = {
       resource: CAPI.RANCHER_CLUSTER,
     }
   },
-  'global-admin.catalog': {
-    name:   'c-cluster-mcapps-pages-page',
-    params: {
-      cluster: 'local',
-      product: 'mcapps',
-      page:    'catalogs'
-    }
-  },
   'authenticated.cluster.istio.cluster-setting': { name: 'c-cluster-explorer-tools' },
 };
 
 export default {
+  emits: ['before-nav'],
+
   components: { Loading },
 
   props: {
@@ -157,7 +151,7 @@ export default {
     this.initFrame();
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('message', this.receiveMessage);
 
     if (this.heightSync) {

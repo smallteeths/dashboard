@@ -6,6 +6,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 BASE_DIR="$(cd $SCRIPT_DIR && cd ../.. && pwd)"
 SHELL_DIR=$BASE_DIR/shell/
 CREATORS_DIR=$BASE_DIR/creators/extension
+PUBLISH_ARGS="--no-git-tag-version --access public --registry $NPM_REGISTRY $NPM_TAG"
 FORCE_PUBLISH_TO_NPM="false"
 DEFAULT_NPM_REGISTRY="https://registry.npmjs.org"
 
@@ -30,8 +31,6 @@ if [ "$FORCE_PUBLISH_TO_NPM" == "true" ]; then
   export NPM_REGISTRY=$DEFAULT_NPM_REGISTRY
 fi
 
-PUBLISH_ARGS="--no-git-tag-version --access public --registry $NPM_REGISTRY"
-
 pushd ${SHELL_DIR} >/dev/null
 
 function publish() {
@@ -46,6 +45,11 @@ function publish() {
     PKG_VERSION=$3
   fi
 
+  # if the PKG_VERSION has a - it means it will be a pre-release
+  if [[ $PKG_VERSION == *"-"* ]]; then
+    PUBLISH_ARGS="--no-git-tag-version --access public --registry $NPM_REGISTRY --tag pre-release"
+  fi
+
   echo "Publishing ${NAME} from ${FOLDER}"
   pushd ${FOLDER} >/dev/null
 
@@ -56,18 +60,10 @@ function publish() {
     cp -R ${BASE_DIR}/pkg/rancher-components/src/components ./rancher-components/
   fi
 
-  # if the PKG_VERSION has a - it means it will be a pre-release of legacy-v2
-  if [[ $PKG_VERSION == *"-"* ]]; then
-    PUBLISH_ARGS="$PUBLISH_ARGS --tag legacy-v2-pre-release"
-  else
-    # If we need to release shell, we tag it as legacy-v2
-    PUBLISH_ARGS="$PUBLISH_ARGS --tag legacy-v2"
-  fi
-
   # Make a note of dependency versions, if required
   node ${SCRIPT_DIR}/record-deps.js
 
-  echo "Publishing to registry: $NPM_REGISTRY with args: $PUBLISH_ARGS"
+  echo "Publishing to registry: $NPM_REGISTRY"
 
   npm publish ${PUBLISH_ARGS}
   RET=$?

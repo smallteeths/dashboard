@@ -5,6 +5,8 @@ import Login from '@shell/mixins/login';
 import { encryptPassword } from '@shell/utils/auth';
 
 export default {
+  emits: ['error', 'showInputs'],
+
   components: { LabeledInput, AsyncButton },
   mixins:     [Login],
 
@@ -57,14 +59,14 @@ export default {
       <div class="span-6 offset-3">
         <div class="mb-20">
           <LabeledInput
-            v-model="username"
+            v-model:value="username"
             :label="t('login.username')"
             autocomplete="username"
           />
         </div>
         <div class="mb-20">
           <LabeledInput
-            v-model="password"
+            v-model:value="password"
             type="password"
             :label="t('login.password')"
             autocomplete="password"

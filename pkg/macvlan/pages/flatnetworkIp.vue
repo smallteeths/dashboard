@@ -27,6 +27,7 @@ export default {
     Loading,
     SubnetView,
   },
+  inheritAttrs: false,
   data() {
     return {
       config:   {},
@@ -189,7 +190,6 @@ export default {
         :loading="loading"
         :table-actions="false"
         :row-actions="false"
-        v-on="$listeners"
       >
         <template #cell:status="{row}">
           <MacvlanBadgeState

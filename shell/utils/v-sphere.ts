@@ -39,14 +39,17 @@ class VSphereUtils {
     { $store }: Rke2Component, {
       generateName, upstreamClusterName, upstreamNamespace, downstreamName, downstreamNamespace
     }: SecretDetails): Promise<SecretJson | undefined> {
+    // Fetch secrets in a specific namespace and partially matching the name to the generate name
     const secrets = await $store.dispatch('management/request', { url: `/v1/${ SECRET }/${ upstreamNamespace }?filter=metadata.name=${ generateName }` });
 
+    // Filter by specific annotations
     const applicableSecret = secrets.data?.filter((s: any) => {
       return s.metadata.annotations['provisioning.cattle.io/sync-target-namespace'] === downstreamNamespace &&
         s.metadata.annotations['provisioning.cattle.io/sync-target-name'] === downstreamName &&
         s.metadata.annotations['rke.cattle.io/object-authorized-for-clusters'].includes(upstreamClusterName);
     });
 
+    // If there's more than one the user should tidy up... as it'll cause mayhem with the actual sync from local --> downstream cluster
     if (applicableSecret.length > 1) {
       return Promise.reject(new Error(`Found multiple matching secrets (${ upstreamNamespace }/${ upstreamNamespace } for ${ upstreamClusterName }), this will cause synchronizing mishaps. Consider removing stale secrets from old clusters`));
     }
@@ -92,11 +95,6 @@ class VSphereUtils {
     };
   }
 
-  /**
-   * Check that system is setup to handle vsphere secrets syncing downstream
-   *
-   * Do this via checking the provider and that the required FF is enabled.
-   */
   private handleVsphereSecret({ $store, provider }: { $store: any, provider: string}): boolean {
     if (provider !== VMWARE_VSPHERE) {
       return false;

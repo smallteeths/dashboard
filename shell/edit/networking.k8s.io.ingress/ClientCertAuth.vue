@@ -10,7 +10,7 @@
     <div class="row mb-20">
       <div class="col span-6">
         <RadioGroup
-          v-model="authTlsVerifyClient"
+          v-model:value="authTlsVerifyClient"
           name="authTlsVerifyClient"
           :options="authTlsVerifyClientOptions"
           :mode="mode"
@@ -22,7 +22,7 @@
         class="col span-6"
       >
         <LabeledSelect
-          v-model="authTlsSecret"
+          v-model:value="authTlsSecret"
           :options="certsOptions"
           :label="t('ingress.formSslClientAuth.secret.title')"
           required
@@ -38,7 +38,7 @@
     >
       <div class="col span-6">
         <LabeledInput
-          v-model.number="authTlsVerifyDepth"
+          v-model:value.number="authTlsVerifyDepth"
           type="number"
           :label="t('ingress.formSslClientAuth.depth.title')"
           :placeholder="t('ingress.formSslClientAuth.depth.placeholder')"
@@ -48,7 +48,7 @@
       </div>
       <div class="col span-6">
         <LabeledInput
-          v-model="authTlsErrorPage"
+          v-model:value="authTlsErrorPage"
           :label="t('ingress.formSslClientAuth.errorPage.title')"
           :placeholder="t('ingress.formSslClientAuth.errorPage.placeholder')"
           :tooltip="t('ingress.formSslClientAuth.errorPage.detail')"

@@ -209,7 +209,7 @@ export default {
     <div class="row mb-20">
       <div class="col span-6">
         <RadioGroup
-          v-model="objectStorageEnabled"
+          v-model:value="objectStorageEnabled"
           name="objectStorageEnabled"
           :mode="mode"
           :labels="[t('generic.yes'), t('generic.no')]"
@@ -222,7 +222,7 @@ export default {
       <div class="row mb-20">
         <div class="col span-6">
           <LabeledSelect
-            v-model="value.thanos.objectConfig.type"
+            v-model:value="value.thanos.objectConfig.type"
             :mode="mode"
             required
             :label="t('globalMonitoringPage.store.enabled.label')"
@@ -253,7 +253,7 @@ export default {
       <h3>{{ t('globalMonitoringPage.nodeSelector.helpText', {component: thanosStore}) }}</h3>
       <div class="row mb-20">
         <KeyValue
-          v-model="value.thanos.store.nodeSelector"
+          v-model:value="value.thanos.store.nodeSelector"
           :mode="mode"
           :read-allowed="false"
           :protip="true"
@@ -288,7 +288,7 @@ export default {
       <h3>{{ t('globalMonitoringPage.nodeSelector.helpText', {component: thanosCompact}) }}</h3>
       <div class="row mb-20">
         <KeyValue
-          v-model="value.thanos.compact.nodeSelector"
+          v-model:value="value.thanos.compact.nodeSelector"
           :mode="mode"
           :read-allowed="false"
           :protip="true"

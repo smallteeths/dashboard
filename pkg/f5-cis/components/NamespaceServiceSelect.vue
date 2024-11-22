@@ -2,7 +2,7 @@
   <div class="row">
     <div class="col span-4">
       <LabeledSelect
-        v-model="namespace"
+        v-model:value="namespace"
         required
         :options="nsOptions"
         :mode="mode"
@@ -12,7 +12,7 @@
     </div>
     <div class="col span-4">
       <LabeledSelect
-        v-model="service"
+        v-model:value="service"
         required
         :options="serviceNameOptions"
         :mode="mode"
@@ -25,13 +25,13 @@
     >
       <LabeledInput
         v-if="portOptions.length === 0 || isView"
-        v-model.number="servicePort"
+        v-model:value.number="servicePort"
         :mode="mode"
         :label="t('f5cis.virtualServer.form.pool.serciePort.label')"
       />
       <LabeledSelect
         v-else
-        v-model="servicePort"
+        v-model:value="servicePort"
         :mode="mode"
         :options="portOptions"
         :label="t('f5cis.virtualServer.form.pool.serciePort.label')"
@@ -47,6 +47,7 @@ import { LabeledInput } from '@components/Form/LabeledInput';
 
 export default {
   components: { LabeledSelect, LabeledInput },
+  emits:      ['update-namespace', 'update-service', 'update-service-port'],
   props:      {
     mode: {
       type:    String,

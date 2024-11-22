@@ -93,8 +93,8 @@ export default {
       <div v-clean-html="t('advancedSettings.subtext')" />
     </Banner>
     <div
-      v-for="setting in settings"
-      :key="setting.id"
+      v-for="(setting, i) in settings"
+      :key="i"
       class="advanced-setting mb-20"
       :data-testid="`advanced-setting__option-${setting.id}`"
     >

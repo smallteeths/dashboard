@@ -41,6 +41,7 @@ import access from '../../mixins/access.js';
 export default {
   components: { Banner },
   mixins:     [access],
+  emits:      ['refresh'],
   props:      {
     apiRequest: {
       type:     Object,

@@ -58,7 +58,7 @@
     >
       <div>
         <LabeledInput
-          v-model.trim="form.name"
+          v-model:value.trim="form.name"
           class="mb-10"
           :label="t('harborConfig.form.projectName.label')"
           required

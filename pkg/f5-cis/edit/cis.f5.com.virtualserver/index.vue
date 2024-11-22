@@ -36,7 +36,7 @@
             :weight="98"
           >
             <Labels
-              v-model="value"
+              v-model:value="value"
               :mode="mode"
             />
           </Tab>
@@ -49,14 +49,14 @@
             <div class="row mb-20">
               <div class="col span-6">
                 <LabeledInput
-                  v-model="value.spec.virtualServerName"
+                  v-model:value="value.spec.virtualServerName"
                   :mode="mode"
                   :label="t('f5cis.virtualServer.form.virtualServerName.label')"
                 />
               </div>
               <div class="col span-6">
                 <LabeledInput
-                  v-model="value.spec.virtualServerAddress "
+                  v-model:value="value.spec.virtualServerAddress "
                   :mode="mode"
                   :label="t('f5cis.virtualServer.form.virtualServerAddress.label')"
                 />
@@ -65,7 +65,7 @@
             <div class="row mb-20">
               <div class="col span-6">
                 <LabeledInput
-                  v-model.number="value.spec.virtualServerHTTPSPort"
+                  v-model:value.number="value.spec.virtualServerHTTPSPort"
                   type="number"
                   :label="t('f5cis.virtualServer.form.virtualServerHTTPSPort.label')"
                   :mode="mode"
@@ -73,7 +73,7 @@
               </div>
               <div class="col span-6">
                 <LabeledInput
-                  v-model.number="value.spec.virtualServerHTTPPort"
+                  v-model:value.number="value.spec.virtualServerHTTPPort"
                   type="number"
                   :label="t('f5cis.virtualServer.form.virtualServerHTTPPort.label')"
                   :mode="mode"
@@ -83,7 +83,7 @@
             <div class="row mb-20">
               <div class="col span-6">
                 <LabeledSelect
-                  v-model="value.spec.tlsProfileName"
+                  v-model:value="value.spec.tlsProfileName"
                   :label="t('f5cis.virtualServer.form.tlsProfileName.label')"
                   :options="tlsProfileNameOptions"
                   :mode="mode"
@@ -91,7 +91,7 @@
               </div>
               <div class="col span-6">
                 <LabeledInput
-                  v-model="value.spec.host"
+                  v-model:value="value.spec.host"
                   :mode="mode"
                   :label="t('f5cis.virtualServer.form.host.label')"
                 />
@@ -130,14 +130,14 @@
             <div class="row mb-20">
               <div class="col span-6">
                 <LabeledInput
-                  v-model="p.name"
+                  v-model:value="p.name"
                   :mode="mode"
                   :label="t('f5cis.virtualServer.form.pool.name.label')"
                 />
               </div>
               <div class="col span-6">
                 <LabeledInput
-                  v-model="p.path"
+                  v-model:value="p.path"
                   :mode="mode"
                   :label="t('f5cis.virtualServer.form.pool.path.label')"
                   required
@@ -147,14 +147,14 @@
             <div class="row mb-20">
               <div class="col span-6">
                 <LabeledInput
-                  v-model="p.hostRewrite"
+                  v-model:value="p.hostRewrite"
                   :mode="mode"
                   :label="t('f5cis.virtualServer.form.pool.hostRewrite.label')"
                 />
               </div>
               <div class="col span-6">
                 <LabeledInput
-                  v-model="p.rewrite"
+                  v-model:value="p.rewrite"
                   :mode="mode"
                   :label="t('f5cis.virtualServer.form.pool.rewrite.label')"
                 />
@@ -192,7 +192,7 @@
               <div class="row mb-20">
                 <div class="col span-6">
                   <LabeledSelect
-                    v-model="p.monitor.type"
+                    v-model:value="p.monitor.type"
                     :label="t('f5cis.virtualServer.form.pool.monitor.type.label')"
                     :options="monitorTypeOptions"
                     :mode="mode"
@@ -201,7 +201,7 @@
                 </div>
                 <div class="col span-6">
                   <LabeledInput
-                    v-model.number="p.monitor.interval"
+                    v-model:value.number="p.monitor.interval"
                     required
                     type="number"
                     :label="t('f5cis.virtualServer.form.pool.monitor.interval.label')"
@@ -214,14 +214,14 @@
               >
                 <div class="col span-6">
                   <LabeledInput
-                    v-model="p.monitor.recv"
+                    v-model:value="p.monitor.recv"
                     :mode="mode"
                     :label="t('f5cis.virtualServer.form.pool.monitor.recv.label')"
                   />
                 </div>
                 <div class="col span-6">
                   <LabeledInput
-                    v-model="p.monitor.send"
+                    v-model:value="p.monitor.send"
                     required
                     :mode="mode"
                     :label="t('f5cis.virtualServer.form.pool.monitor.send.label')"
@@ -231,7 +231,7 @@
               <div class="row mb-20">
                 <div class="col span-6">
                   <LabeledInput
-                    v-model.number="p.monitor.targetPort"
+                    v-model:value.number="p.monitor.targetPort"
                     type="number"
                     :label="t('f5cis.virtualServer.form.pool.monitor.targetPort.label')"
                     :mode="mode"
@@ -239,7 +239,7 @@
                 </div>
                 <div class="col span-6">
                   <LabeledInput
-                    v-model.number="p.monitor.timeout"
+                    v-model:value.number="p.monitor.timeout"
                     type="number"
                     :label="t('f5cis.virtualServer.form.pool.monitor.timeout.label')"
                     :mode="mode"
@@ -248,7 +248,7 @@
               </div>
             </div>
             <ArrayListGrouped
-              v-model="p.monitors"
+              v-model:value="p.monitors"
               class="mt-20"
               :default-add-value="defaultMonitorValue"
               :mode="mode"
@@ -258,7 +258,7 @@
                 <div class="row mb-20">
                   <div class="col span-6">
                     <LabeledSelect
-                      v-model="row.value.type"
+                      v-model:value="row.value.type"
                       :label="t('f5cis.virtualServer.form.pool.monitor.type.label')"
                       :options="monitorTypeOptions"
                       :mode="mode"
@@ -267,7 +267,7 @@
                   </div>
                   <div class="col span-6">
                     <LabeledInput
-                      v-model.number="row.value.interval"
+                      v-model:value.number="row.value.interval"
                       required
                       type="number"
                       :label="t('f5cis.virtualServer.form.pool.monitor.interval.label')"
@@ -280,14 +280,14 @@
                 >
                   <div class="col span-6">
                     <LabeledInput
-                      v-model="row.value.recv"
+                      v-model:value="row.value.recv"
                       :mode="mode"
                       :label="t('f5cis.virtualServer.form.pool.monitor.recv.label')"
                     />
                   </div>
                   <div class="col span-6">
                     <LabeledInput
-                      v-model="row.value.send"
+                      v-model:value="row.value.send"
                       required
                       :mode="mode"
                       :label="t('f5cis.virtualServer.form.pool.monitor.send.label')"
@@ -297,7 +297,7 @@
                 <div class="row mb-20">
                   <div class="col span-6">
                     <LabeledInput
-                      v-model.number="row.value.targetPort"
+                      v-model:value.number="row.value.targetPort"
                       type="number"
                       :label="t('f5cis.virtualServer.form.pool.monitor.targetPort.label')"
                       :mode="mode"
@@ -305,7 +305,7 @@
                   </div>
                   <div class="col span-6">
                     <LabeledInput
-                      v-model.number="row.value.timeout"
+                      v-model:value.number="row.value.timeout"
                       type="number"
                       :label="t('f5cis.virtualServer.form.pool.monitor.timeout.label')"
                       :mode="mode"

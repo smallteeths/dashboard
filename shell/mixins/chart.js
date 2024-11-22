@@ -481,7 +481,7 @@ export default {
         }
       }
 
-      this.$set(this, 'autoInstallInfo', out);
+      this['autoInstallInfo'] = out;
     },
 
     selectVersion({ id: version }) {

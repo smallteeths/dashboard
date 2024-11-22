@@ -62,7 +62,7 @@
         <div class="label">
           <div class="mt-20">
             <LabeledInput
-              v-model.trim="form.name"
+              v-model:value.trim="form.name"
               :label="t('harborConfig.form.addMember.username.label')"
               :placeholder="t('harborConfig.form.addMember.username.placeholder')"
               required
@@ -70,7 +70,7 @@
           </div>
           <div class="mt-20">
             <LabeledSelect
-              v-model="form.role"
+              v-model:value="form.role"
               :label="t('harborConfig.form.addMember.role.label')"
               :options="options"
             />

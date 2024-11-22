@@ -6,8 +6,8 @@ import { allHash } from '@shell/utils/promise';
 import { escapeHtml } from '@shell/utils/string';
 
 export default {
-  name: 'ForceUpdateMachinePlanDialog',
-
+  name:  'ForceUpdateMachinePlanDialog',
+  emits: ['close'],
   props: {
     resources: {
       type:     Array,

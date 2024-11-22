@@ -42,7 +42,7 @@ export default {
         class="col span-6"
       >
         <LabeledInput
-          v-model="value.http_config.access_key_id"
+          v-model:value="value.http_config.access_key_id"
           type="password"
           :mode="mode"
           :required="true"
@@ -55,7 +55,7 @@ export default {
         class="col span-6"
       >
         <LabeledInput
-          v-model="value.http_config.access_key_secret"
+          v-model:value="value.http_config.access_key_secret"
           type="password"
           :required="true"
           :mode="mode"
@@ -70,7 +70,7 @@ export default {
         class="col span-6"
       >
         <LabeledInput
-          v-model="value.http_config.template_code"
+          v-model:value="value.http_config.template_code"
           :required="true"
           :mode="mode"
           :label="t('monitoringReceiver.pandariaWebhook.aliyunSMS.templateCodeLabel')"
@@ -82,7 +82,7 @@ export default {
         class="col span-6"
       >
         <LabeledInput
-          v-model="value.http_config.sign_name"
+          v-model:value="value.http_config.sign_name"
           :required="true"
           :mode="mode"
           :label="t('monitoringReceiver.pandariaWebhook.aliyunSMS.signatureNameLabel')"
@@ -108,7 +108,7 @@ export default {
       class="row mb-20"
     >
       <Checkbox
-        v-model="value.sendResolved"
+        v-model:value="value.sendResolved"
         :mode="mode"
         :label="t('monitoringReceiver.shared.sendResolved.label')"
       />

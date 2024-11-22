@@ -3,6 +3,7 @@ import debounce from 'lodash/debounce';
 import { removeAt } from '@shell/utils/array';
 import { _EDIT, _VIEW } from '@shell/config/query-params';
 export default {
+  emits: ['focusKey', 'input'],
   props: {
     value: {
       type:    Array,
@@ -97,9 +98,9 @@ export default {
       <template
         v-for="(row, i) in rows"
         v-else
+        :key="i + 'row'"
       >
         <div
-          :key="i+'key'"
           class="kv-item key"
         >
           <input
@@ -113,7 +114,6 @@ export default {
           >
         </div>
         <div
-          :key="i+'value'"
           class="kv-item value"
         >
           <input

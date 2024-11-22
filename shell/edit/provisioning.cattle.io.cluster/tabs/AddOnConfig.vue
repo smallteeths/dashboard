@@ -7,6 +7,8 @@ import { labelForAddon } from '@shell/utils/cluster';
 import { _EDIT } from '@shell/config/query-params';
 
 export default {
+  emits: ['additional-manifest-changed', 'update-questions', 'update-values'],
+
   components: {
     Banner,
     Questions,
@@ -57,7 +59,7 @@ export default {
   computed: {
     isEdit() {
       return this.mode === _EDIT;
-    },
+    }
   }
 };
 </script>
@@ -74,10 +76,10 @@ export default {
       v-if="versionInfo && addonVersion"
       :key="addonsRev"
     >
-      <h3>{{ labelForAddon(addonVersion.name) }}</h3>
+      <h3>{{ labelForAddon($store, addonVersion.name) }}</h3>
       <Questions
         v-if="versionInfo[addonVersion.name] && versionInfo[addonVersion.name].questions && addonVersion.name && userChartValuesTemp[addonVersion.name]"
-        v-model="userChartValuesTemp[addonVersion.name]"
+        v-model:value="userChartValuesTemp[addonVersion.name]"
         :emit="true"
         in-store="management"
         :mode="mode"
@@ -94,7 +96,7 @@ export default {
         :as-object="true"
         :editor-mode="mode === 'view' ? 'VIEW_CODE' : 'EDIT_CODE'"
         :hide-preview-buttons="true"
-        @input="data => $emit('update-values', addonVersion.name, data)"
+        @update:value="$emit('update-values', addonVersion.name, $event)"
       />
       <div class="spacer" />
     </div>

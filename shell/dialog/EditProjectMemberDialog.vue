@@ -13,7 +13,7 @@ export default {
     AsyncButton,
     Banner
   },
-
+  emits: ['close'],
   props: {
     resources: {
       type:     Array,
@@ -143,7 +143,7 @@ export default {
         {{ error }}
       </Banner>
       <ProjectMemberEditor
-        v-model="member"
+        v-model:value="member"
         :mode="mode"
         :use-two-columns-for-custom="true"
         :init-value="value"

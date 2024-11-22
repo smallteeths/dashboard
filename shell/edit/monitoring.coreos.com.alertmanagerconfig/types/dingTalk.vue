@@ -25,7 +25,7 @@ export default {
         class="col span-12"
       >
         <LabeledInput
-          v-model="value.http_config.proxy_url"
+          v-model:value="value.http_config.proxy_url"
           :mode="mode"
           :label="t('monitoringReceiver.shared.proxyUrl.label')"
           :placeholder="t('monitoringReceiver.shared.proxyUrl.placeholder')"
@@ -38,7 +38,7 @@ export default {
         class="col span-12"
       >
         <LabeledInput
-          v-model="value.http_config.secret"
+          v-model:value="value.http_config.secret"
           type="password"
           :mode="mode"
           :label="t('monitoringReceiver.pandariaWebhook.dingTalk.secretLabel')"
@@ -51,7 +51,7 @@ export default {
       class="row mb-20"
     >
       <Checkbox
-        v-model="value.sendResolved"
+        v-model:value="value.sendResolved"
         :mode="mode"
         :label="t('monitoringReceiver.shared.sendResolved.label')"
       />

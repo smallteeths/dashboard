@@ -15,7 +15,7 @@
     "preserveSymlinks": true,
     "typeRoots": [
       "../../node_modules",
-      "../../node_modules/@rancher/shell/types"
+      "../../shell/types",
     ],    
     "types": [
       "node",
@@ -34,7 +34,7 @@
     ],
     "paths": {
       "@shell/*": [
-        "../../node_modules/@rancher/shell/*"
+        "../../shell/*"
       ],
       "@components/*": [
         "@rancher/components/*"

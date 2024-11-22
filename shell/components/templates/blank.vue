@@ -5,7 +5,6 @@ import Inactivity from '@shell/components/Inactivity';
 
 export default {
   components: { Inactivity },
-  middleware: ['authenticated'],
   mixins:     [Brand, AutoLogout],
 };
 </script>

@@ -9,6 +9,7 @@ const URL_DOMAIN_REG = /[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{
 const URL_REG = /(http|ftp|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&:/~\+#]*[\w\-\@?^=%&/~\+#])?/;
 
 export default {
+  emits: ['close'],
   data() {
     const auditLogSetting = this.$store.getters['management/byId'](MANAGEMENT.SETTING, SETTING.AUDIT_LOG_SERVER_URL);
 
@@ -75,7 +76,7 @@ export default {
       class="pl-10 pr-10"
     >
       <LabeledInput
-        v-model="url"
+        v-model:value="url"
         class="mb-10"
         :localized-label="true"
         :required="true"

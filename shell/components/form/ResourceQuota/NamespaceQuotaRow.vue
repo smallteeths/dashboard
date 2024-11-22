@@ -8,7 +8,7 @@ export default {
   components: {
     Select, PercentageBar, UnitInput
   },
-
+  emits: ['input'],
   props: {
     mode: {
       type:     String,

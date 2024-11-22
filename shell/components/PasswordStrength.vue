@@ -33,6 +33,7 @@ import { MANAGEMENT } from '@shell/config/types';
 import { SETTING } from '@shell/config/settings';
 
 export default {
+  emits: ['strengthChange'],
   props: {
     password: {
       type:    String,

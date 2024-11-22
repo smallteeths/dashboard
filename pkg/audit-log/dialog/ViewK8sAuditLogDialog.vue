@@ -7,6 +7,7 @@ import Loading from '@shell/components/Loading';
 import { Banner } from '@components/Banner';
 
 export default {
+  emits: ['close'],
   props: {
     value: {
       type:     Object,

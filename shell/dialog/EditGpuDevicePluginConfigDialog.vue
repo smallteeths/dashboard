@@ -19,7 +19,7 @@
         <div class="mb-20 row">
           <div class="col span-6">
             <LabeledSelect
-              v-model="config"
+              v-model:value="config"
               :label="t('editGpuDevicePluginConfigDialog.config.label')"
               :placeholder="t('editGpuDevicePluginConfigDialog.config.placeholder')"
               :options="configs"
@@ -78,6 +78,7 @@ const pluginConfigMapId = 'nvidia-device-plugin/rancher-nvidia-k8s-device-plugin
 const pluginConfigLabelKey = 'nvidia.com/device-plugin.config';
 
 export default {
+  emits: ['close'],
   props: {
     resources: {
       type:     Array,

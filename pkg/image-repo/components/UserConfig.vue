@@ -38,7 +38,7 @@
         <div class="row mb-20">
           <div class="col span-12">
             <LabeledInput
-              v-model.trim="harborServerSetting.value"
+              v-model:value.trim="harborServerSetting.value"
               mode="view"
               :label="t('harborConfig.form.address.label')"
             />
@@ -47,7 +47,7 @@
         <div class="row mb-20">
           <div class="col span-6">
             <LabeledInput
-              v-model.trim="harborAccount.username"
+              v-model:value.trim="harborAccount.username"
               mode="view"
               :label="t('harborConfig.form.username.label')"
             />
@@ -79,7 +79,7 @@
         <div class="row mb-20">
           <div class="col span-12">
             <LabeledInput
-              v-model.trim="userAccount.username"
+              v-model:value.trim="userAccount.username"
               mode="view"
               :label="t('harborConfig.form.username.label')"
             />
@@ -92,7 +92,7 @@
           >
             <div class="col span-12">
               <Password
-                v-model="userAccount.password"
+                v-model:value="userAccount.password"
                 mode="edit"
                 :label="t('harborConfig.form.pw.label')"
                 :placeholder="t('harborConfig.form.pw.placeholder')"
@@ -105,7 +105,7 @@
           <div class="row mb-20">
             <div class="col span-12">
               <LabeledInput
-                v-model.trim="userAccount.email"
+                v-model:value.trim="userAccount.email"
                 mode="edit"
                 :label="t('harborConfig.form.email.label')"
                 :placeholder="t('harborConfig.form.email.placeholder')"
@@ -118,7 +118,7 @@
           >
             <div class="col span-12">
               <Password
-                v-model="userAccount.password"
+                v-model:value="userAccount.password"
                 mode="edit"
                 :label="t('harborConfig.form.pw.label')"
                 :placeholder="t('harborConfig.form.pw.placeholder')"
@@ -156,7 +156,7 @@
         <div class="row mb-20">
           <div class="col span-12">
             <LabeledInput
-              v-model.trim="harborServerSetting.value"
+              v-model:value.trim="harborServerSetting.value"
               mode="view"
               :label="t('harborConfig.form.address.label')"
             />
@@ -165,7 +165,7 @@
         <div class="row mb-20">
           <div class="col span-6">
             <LabeledInput
-              v-model.trim="harborAccount.username"
+              v-model:value.trim="harborAccount.username"
               mode="view"
               :label="t('harborConfig.form.username.label')"
             />
@@ -174,7 +174,7 @@
         <div class="row mb-20">
           <div class="col span-12">
             <Password
-              v-model="changePwdForm.oldPassword"
+              v-model:value="changePwdForm.oldPassword"
               mode="edit"
               :label="t('changePassword.currentPassword.label')"
               required
@@ -184,7 +184,7 @@
         <div class="row mb-20">
           <div class="col span-12">
             <Password
-              v-model="changePwdForm.newPassword"
+              v-model:value="changePwdForm.newPassword"
               mode="edit"
               :label="t('harborConfig.form.newPw.label')"
               :placeholder="t('harborConfig.form.newPw.placeholder')"
@@ -195,7 +195,7 @@
         <div class="row mb-20">
           <div class="col span-12">
             <Password
-              v-model="changePwdForm.confirmPassword"
+              v-model:value="changePwdForm.confirmPassword"
               mode="edit"
               :label="t('harborConfig.form.confirmPw.label')"
               :placeholder="t('harborConfig.form.confirmPw.placeholder')"

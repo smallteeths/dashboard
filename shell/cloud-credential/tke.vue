@@ -6,10 +6,7 @@ import { LabeledInput } from '@components/Form/LabeledInput';
 export default {
   components: { Loading, LabeledInput },
   mixins:     [CreateEditView],
-
-  fetch() {
-  },
-
+  emits:      ['validationChanged'],
   data() {
     return {};
   },

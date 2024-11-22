@@ -73,7 +73,7 @@ export default {
         <div>
           <LabeledInput
             :id="`mount-path-${i}`"
-            v-model="volumeMount.mountPath"
+            v-model:value="volumeMount.mountPath"
             :mode="mode"
           />
         </div>

@@ -137,7 +137,7 @@ export default {
       <div class="ip-start">
         <LabeledInput
           ref="ipStart"
-          v-model="row.rangeStart"
+          v-model:value="row.rangeStart"
           :mode="mode"
           :placeholder="t('macvlan.ipRange.start.placeholder')"
           :disabled="idx < oldLength"
@@ -148,7 +148,7 @@ export default {
 
       <div class="ip-end">
         <LabeledInput
-          v-model="row.rangeEnd"
+          v-model:value="row.rangeEnd"
           :mode="mode"
           :placeholder="t('macvlan.ipRange.end.placeholder')"
           :disabled="idx < oldLength"

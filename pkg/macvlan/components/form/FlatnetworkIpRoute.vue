@@ -143,21 +143,21 @@ export default {
       <div class="dst">
         <LabeledInput
           ref="dst"
-          v-model="row.dst"
+          v-model:value="row.dst"
           :mode="mode"
           :placeholder="t('macvlan.route.dst.placeholder')"
         />
       </div>
       <div class="via">
         <LabeledInput
-          v-model="row.via"
+          v-model:value="row.via"
           :mode="mode"
           :placeholder="t('macvlan.route.via.placeholder')"
         />
       </div>
       <div class="dev">
         <LabeledSelect
-          v-model="row.dev"
+          v-model:value="row.dev"
           :disabled="isView"
           :options="devChoices"
           :mode="mode"
@@ -166,14 +166,14 @@ export default {
       </div>
       <div class="src">
         <LabeledInput
-          v-model="row.src"
+          v-model:value="row.src"
           :mode="mode"
           :placeholder="t('macvlan.route.src.placeholder')"
         />
       </div>
       <div class="priority">
         <LabeledInput
-          v-model="row.priority"
+          v-model:value="row.priority"
           :mode="mode"
           type="number"
           :placeholder="t('macvlan.route.priority.placeholder')"

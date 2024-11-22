@@ -36,7 +36,7 @@ export default {
     <div class="row mb-10">
       <div class="col span-6">
         <LabeledInput
-          v-model="value.thanos.objectConfig.config.bucket"
+          v-model:value="value.thanos.objectConfig.config.bucket"
           :mode="mode"
           required
           :label="t('globalMonitoringPage.store.gcs.bucketName.label')"
@@ -48,7 +48,7 @@ export default {
     <div class="row mb-10">
       <div class="col span-12">
         <LabeledInput
-          v-model="value.thanos.objectConfig.config.service_account"
+          v-model:value="value.thanos.objectConfig.config.service_account"
           :mode="mode"
           type="multiline"
           required

@@ -3,7 +3,7 @@
     class="verify-code__contnet"
   >
     <LabeledInput
-      v-model="form.passCode"
+      v-model:value="form.passCode"
       :label="t('mfa.code.label')"
       :placeholder="placeholder"
       required
@@ -29,6 +29,7 @@ import { SETTING } from '@shell/config/settings';
 
 export default {
   components: { LabeledInput, AsyncButton },
+  emits:      ['on-errors', 'on-done'],
   props:      {
     handleVerify: {
       type:    Function,

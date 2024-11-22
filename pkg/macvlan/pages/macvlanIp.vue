@@ -15,8 +15,9 @@ const schema = {
 };
 
 export default {
-  name:       'ListMacvlanIp',
-  components: { ResourceTable },
+  name:         'ListMacvlanIp',
+  components:   { ResourceTable },
+  inheritAttrs: false,
   data() {
     return {
       resource: MACVLAN_IP_PRODUCT_NAME,
@@ -143,7 +144,6 @@ export default {
       :loading="loading"
       :table-actions="false"
       :row-actions="false"
-      v-on="$listeners"
     >
       <template #cell:ipType="{row}">
         <span>{{ t(`macvlan.macvlanIp.ipType.${row.ipType}`) }}</span>

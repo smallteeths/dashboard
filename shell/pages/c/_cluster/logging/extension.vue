@@ -220,7 +220,7 @@ export default {
     >
       <template #header-right>
         <LabeledSelect
-          v-model="workloadType"
+          v-model:value="workloadType"
           class="workload-type-filter"
           :options="workloadTypesChoices"
           :multiple="false"

@@ -11,7 +11,7 @@ export default {
     AsyncButton,
     Banner,
   },
-
+  emits: ['close'],
   props: {
     urls: {
       type:    Array,

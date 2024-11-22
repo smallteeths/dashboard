@@ -119,7 +119,7 @@ export default {
       <div class="ip-start">
         <LabeledInput
           ref="ipStart"
-          v-model="row.from"
+          v-model:value="row.from"
           :mode="mode"
           :placeholder="t('macvlan.ipRange.start.placeholder')"
         />
@@ -129,7 +129,7 @@ export default {
 
       <div class="ip-end">
         <LabeledInput
-          v-model="row.to"
+          v-model:value="row.to"
           :mode="mode"
           :placeholder="t('macvlan.ipRange.end.placeholder')"
         />

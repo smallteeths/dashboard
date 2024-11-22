@@ -8,6 +8,7 @@ import { find } from 'lodash';
 
 export default {
   name:   'HarborTable',
+  emits:  ['checkbox-change', 'checkbox-all', 'bulk-remove', 'input-search', 'sort-change', 'action'],
   mixins: [
     filtering,
     paging,
@@ -131,7 +132,7 @@ export default {
     }
     window.addEventListener('resize', this.getElementHeight);
   },
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('resize', this.getElementHeight);
   },
   methods: {

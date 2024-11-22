@@ -37,6 +37,7 @@ const SERVICE_TYPES = [
 
 export default {
   name:  'GlobalMonitoring',
+  emits: ['updateVersion'],
   props: {
     mode: {
       type:    String,
@@ -172,7 +173,7 @@ export default {
             data-testid="input-config-clusterId"
           >
             <LabeledSelect
-              v-model="value.global.clusterId"
+              v-model:value="value.global.clusterId"
               :mode="mode"
               :disabled="installed"
               required
@@ -189,7 +190,7 @@ export default {
             data-testid="input-config-version"
           >
             <LabeledSelect
-              v-model="value.global.version"
+              v-model:value="value.global.version"
               :mode="mode"
               required
               :label="upgradeAvailable ? t('monitoringPage.upgradeAvailable', {version: latestVersion}) : t('globalMonitoringPage.version')"
@@ -207,7 +208,7 @@ export default {
             data-testid="input-config-defaultApiToken"
           >
             <RadioGroup
-              v-model="value.ui.defaultApiToken"
+              v-model:value="value.ui.defaultApiToken"
               name="defaultTokenEnabled"
               :mode="mode"
               :labels="[t('generic.yes'), t('generic.no')]"
@@ -221,7 +222,7 @@ export default {
             data-testid="input-config-apiToken"
           >
             <LabeledInput
-              v-model="value.ui.apiToken"
+              v-model:value="value.ui.apiToken"
               required
               :mode="mode"
               :label="t('globalMonitoringPage.token.custom.label')"
@@ -234,7 +235,7 @@ export default {
         <MonitoringStore
           v-if="!!chart.id"
           ref="monitoringStore"
-          v-model="value"
+          v-model:value="value"
           :mode="mode"
           :installed="installed"
           :monitoring-settings="monitoringSettings"
@@ -257,7 +258,7 @@ export default {
           <h3>{{ t('globalMonitoringPage.nodeSelector.helpText', {component: thanosQuery}) }}</h3>
           <div class="row mb-20">
             <KeyValue
-              v-model="value.thanos.query.nodeSelector"
+              v-model:value="value.thanos.query.nodeSelector"
               :mode="mode"
               :read-allowed="false"
               :protip="true"
@@ -284,7 +285,7 @@ export default {
           <div class="row mb-20">
             <div class="col span-6">
               <LabeledSelect
-                v-model="value.thanos.query.service.type"
+                v-model:value="value.thanos.query.service.type"
                 :mode="mode"
                 :label="t('globalMonitoringPage.thanos.serviceType.label')"
                 :options="serviceTypes"

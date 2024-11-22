@@ -277,7 +277,7 @@ export default {
           </div>
           <div>
             <UnitInput
-              v-model="tq.limit.limit"
+              v-model:value="tq.limit.limit"
               :mode="mode"
               :placeholder="typeOption[tq.type].placeholder"
               :increment="typeOption[tq.type].increment"
@@ -288,7 +288,7 @@ export default {
           </div>
           <div>
             <UnitInput
-              v-model="tq.nsLimit.limit"
+              v-model:value="tq.nsLimit.limit"
               :mode="mode"
               :placeholder="typeOption[tq.type].placeholder"
               :increment="typeOption[tq.type].increment"
@@ -306,7 +306,7 @@ export default {
             @input="updateType($event, tq)"
           />
           <UnitInput
-            v-model="tq.limit"
+            v-model:value="tq.limit"
             :mode="mode"
             :placeholder="typeOption[tq.type].placeholder"
             :increment="typeOption[tq.type].increment"
@@ -316,7 +316,7 @@ export default {
             :output-modifier="true"
           />
           <UnitInput
-            v-model="tq.nsLimit"
+            v-model:value="tq.nsLimit"
             :mode="mode"
             :placeholder="typeOption[tq.type].placeholder"
             :increment="typeOption[tq.type].increment"

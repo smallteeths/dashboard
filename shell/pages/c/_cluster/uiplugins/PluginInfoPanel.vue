@@ -5,7 +5,6 @@ import { Banner } from '@components/Banner';
 import LazyImage from '@shell/components/LazyImage';
 import { MANAGEMENT } from '@shell/config/types';
 import { SETTING } from '@shell/config/settings';
-import { EXTENSIONS_INCOMPATIBILITY_TYPES, UI_PLUGIN_HOST_APP } from '@shell/config/uiplugins';
 
 export default {
   async fetch() {
@@ -108,7 +107,7 @@ export default {
 
     handleVersionBtnTooltip(version) {
       if (!version.isVersionCompatible && Object.keys(version.versionIncompatibilityData).length) {
-        return this.t(version.versionIncompatibilityData?.tooltipKey, { required: version.versionIncompatibilityData?.type === EXTENSIONS_INCOMPATIBILITY_TYPES.HOST ? UI_PLUGIN_HOST_APP : version.versionIncompatibilityData?.required });
+        return this.t(version.versionIncompatibilityData?.tooltipKey, { required: version.versionIncompatibilityData?.required, mainHost: version.versionIncompatibilityData?.mainHost });
       }
 
       return '';
@@ -182,12 +181,6 @@ export default {
           </div>
         </div>
         <div>
-          <Banner
-            v-if="info.error"
-            color="error"
-            :label="info.error"
-            class="mt-10"
-          />
           <Banner
             v-if="info.builtin"
             color="warning"
@@ -421,7 +414,7 @@ export default {
 
         padding-bottom: 10px;
 
-        ::v-deep .chart-readmes {
+        :deep() .chart-readmes {
           flex: 1;
           overflow: auto;
         }

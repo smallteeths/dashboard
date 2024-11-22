@@ -4,6 +4,7 @@ import DropDownMenu from '@pkg/image-repo/components/DropDownMenu.vue';
 export default {
   components: { DropDownMenu },
   name:       'CardCollapse',
+  emits:      ['update:open'],
   props:      {
     open: {
       type:    Boolean,

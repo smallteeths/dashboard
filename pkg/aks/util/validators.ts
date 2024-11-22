@@ -202,10 +202,10 @@ export const nodePoolCount = (ctx:any) => {
         }
 
         if (count < min) {
-          ctx.$set(pool._validation, '_validCount', false);
+          pool._validation['_validCount'] = false;
           allValid = false;
         } else {
-          ctx.$set(pool._validation, '_validCount', true);
+          pool._validation['_validCount'] = true;
         }
       });
 

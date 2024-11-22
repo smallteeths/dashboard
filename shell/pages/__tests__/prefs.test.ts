@@ -21,31 +21,31 @@ describe('page: prefs should', () => {
       .setSystemTime(new Date(date));
 
     const wrapper = shallowMount(Preferences, {
-      propsData: { value: 'asd' },
-      computed:  {
-        pm: jest.fn(),
-        am: jest.fn(),
-      },
-      mocks: {
-        $store: {
-          getters: {
-            'prefs/options':        () => format,
-            'prefs/get':            jest.fn(),
-            'management/schemaFor': jest.fn(),
-            isSingleProduct:        jest.fn(),
-            'i18n/t':               jest.fn(),
-            'management/byId':      jest.fn(),
+      props: { value: 'asd' },
+
+      global: {
+        mocks: {
+          $store: {
+            getters: {
+              'prefs/options':        () => format,
+              'prefs/get':            jest.fn().mockReturnValue('YYYY-MM-DD HH:mm:ss'),
+              'management/schemaFor': jest.fn(),
+              isSingleProduct:        jest.fn(),
+              'i18n/t':               jest.fn(),
+              'management/byId':      jest.fn(),
+            }
           }
-        }
+        },
+
+        stubs: {
+          BackLink:              { template: '<div />' },
+          ButtonGroup:           { template: '<div />' },
+          LabeledSelect:         { template: '<div />' },
+          Checkbox:              { template: '<div />' },
+          LandingPagePreference: { template: '<div />' },
+          LocaleSelector:        { template: '<div />' },
+        },
       },
-      stubs: {
-        BackLink:              { template: '<div />' },
-        ButtonGroup:           { template: '<div />' },
-        LabeledSelect:         { template: '<div />' },
-        Checkbox:              { template: '<div />' },
-        LandingPagePreference: { template: '<div />' },
-        LocaleSelector:        { template: '<div />' },
-      }
     });
 
     const options = (wrapper.vm as unknown as any).dateOptions;
@@ -68,31 +68,31 @@ describe('page: prefs should', () => {
       .setSystemTime(new Date(date));
 
     const wrapper = shallowMount(Preferences, {
-      propsData: { value: 'asd' },
-      computed:  {
-        pm: jest.fn(),
-        am: jest.fn(),
-      },
-      mocks: {
-        $store: {
-          getters: {
-            'prefs/options':        () => format,
-            'prefs/get':            jest.fn(),
-            'management/schemaFor': jest.fn(),
-            isSingleProduct:        jest.fn(),
-            'i18n/t':               jest.fn(),
-            'management/byId':      jest.fn(),
+      props: { value: 'asd' },
+
+      global: {
+        mocks: {
+          $store: {
+            getters: {
+              'prefs/options':        () => format,
+              'prefs/get':            jest.fn().mockReturnValue('YYYY-MM-DD HH:mm:ss'),
+              'management/schemaFor': jest.fn(),
+              isSingleProduct:        jest.fn(),
+              'i18n/t':               jest.fn(),
+              'management/byId':      jest.fn(),
+            }
           }
-        }
+        },
+
+        stubs: {
+          BackLink:              { template: '<div />' },
+          ButtonGroup:           { template: '<div />' },
+          LabeledSelect:         { template: '<div />' },
+          Checkbox:              { template: '<div />' },
+          LandingPagePreference: { template: '<div />' },
+          LocaleSelector:        { template: '<div />' },
+        },
       },
-      stubs: {
-        BackLink:              { template: '<div />' },
-        ButtonGroup:           { template: '<div />' },
-        LabeledSelect:         { template: '<div />' },
-        Checkbox:              { template: '<div />' },
-        LandingPagePreference: { template: '<div />' },
-        LocaleSelector:        { template: '<div />' },
-      }
     });
 
     const options = (wrapper.vm as unknown as any).dateOptions;

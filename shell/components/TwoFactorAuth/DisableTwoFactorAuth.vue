@@ -28,7 +28,7 @@
           class="pr-10 pl-10"
         >
           <LabeledInput
-            v-model="form.passCode"
+            v-model:value="form.passCode"
             class="mb-10"
             :label="t('mfa.code.label')"
             required

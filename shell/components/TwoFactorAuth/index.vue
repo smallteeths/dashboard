@@ -77,6 +77,7 @@ export default {
   components: {
     BindApp, RecoveryCode, DisableTwoFactorAuth
   },
+  emits: ['on-enable-otp'],
   props: {
     enabled: {
       type:    Boolean,

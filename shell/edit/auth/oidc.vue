@@ -180,7 +180,7 @@ export default {
           :disable="disable"
           :edit="goToEdit"
         >
-          <template slot="rows">
+          <template #rows>
             <tr><td>{{ t(`authConfig.oidc.rancherUrl`) }}: </td><td>{{ model.rancherUrl }}</td></tr>
             <tr><td>{{ t(`authConfig.oidc.clientId`) }}: </td><td>{{ model.clientId }}</td></tr>
             <tr><td>{{ t(`authConfig.oidc.issuer`) }}: </td><td>{{ model.issuer }}</td></tr>
@@ -208,7 +208,7 @@ export default {
         <div class="row mb-20">
           <div class="col span-6">
             <LabeledInput
-              v-model="model.clientId"
+              v-model:value="model.clientId"
               :label="t(`authConfig.oidc.clientId`)"
               :mode="mode"
               required
@@ -217,7 +217,7 @@ export default {
           </div>
           <div class="col span-6">
             <LabeledInput
-              v-model="model.clientSecret"
+              v-model:value="model.clientSecret"
               :label="t(`authConfig.oidc.clientSecret`)"
               :mode="mode"
               required
@@ -229,7 +229,7 @@ export default {
         <div class="row mb-20">
           <div class="col span-6">
             <LabeledInput
-              v-model="model.privateKey"
+              v-model:value="model.privateKey"
               :label="t(`authConfig.oidc.key.label`)"
               :placeholder="t(`authConfig.oidc.key.placeholder`)"
               :mode="mode"
@@ -239,12 +239,12 @@ export default {
               class="role-tertiary add mt-5"
               :label="t('generic.readFromFile')"
               :mode="mode"
-              @selected="$set(model, 'privateKey', $event)"
+              @selected="model.privateKey = $event"
             />
           </div>
           <div class="col span-6">
             <LabeledInput
-              v-model="model.certificate"
+              v-model:value="model.certificate"
               :label="t(`authConfig.oidc.cert.label`)"
               :placeholder="t(`authConfig.oidc.cert.placeholder`)"
               :mode="mode"
@@ -254,7 +254,7 @@ export default {
               class="role-tertiary add mt-5"
               :label="t('generic.readFromFile')"
               :mode="mode"
-              @selected="$set(model, 'certificate', $event)"
+              @selected="model.certificate = $event"
             />
           </div>
         </div>
@@ -262,12 +262,12 @@ export default {
         <div class="row mb-20">
           <div class="col span-6">
             <ArrayList
-              v-model="oidcScope"
+              v-model:value="oidcScope"
               :mode="mode"
               :title="t('authConfig.oidc.scope.label')"
               :value-placeholder="t('authConfig.oidc.scope.placeholder')"
               :protip="t('authConfig.oidc.scope.protip', {}, true)"
-              @input="updateScope"
+              @update:value="updateScope"
             />
           </div>
         </div>
@@ -275,7 +275,7 @@ export default {
         <div class="row mb-20">
           <div class="col span-6">
             <RadioGroup
-              v-model="customEndpoint.value"
+              v-model:value="customEndpoint.value"
               name="customEndpoint"
               label-key="authConfig.oidc.customEndpoint.label"
               :labels="customEndpoint.labels"
@@ -292,7 +292,7 @@ export default {
         <div class="row mb-20">
           <div class="col span-6">
             <LabeledInput
-              v-model="oidcUrls.url"
+              v-model:value="oidcUrls.url"
               :label="t(`authConfig.oidc.url`)"
               :mode="mode"
               :required="!customEndpoint.value"
@@ -302,7 +302,7 @@ export default {
           </div>
           <div class="col span-6">
             <LabeledInput
-              v-model="oidcUrls.realm"
+              v-model:value="oidcUrls.realm"
               :label="t(`authConfig.oidc.realm`)"
               :mode="mode"
               :required="!customEndpoint.value"
@@ -315,7 +315,7 @@ export default {
         <div class="row mb-20">
           <div class="col span-6">
             <LabeledInput
-              v-model="model.rancherUrl"
+              v-model:value="model.rancherUrl"
               :label="t(`authConfig.oidc.rancherUrl`)"
               :mode="mode"
               required
@@ -328,7 +328,7 @@ export default {
         <div class="row mb-20">
           <div class="col span-6">
             <LabeledInput
-              v-model="model.issuer"
+              v-model:value="model.issuer"
               :label="t(`authConfig.oidc.issuer`)"
               :mode="mode"
               required
@@ -338,7 +338,7 @@ export default {
           </div>
           <div class="col span-6">
             <LabeledInput
-              v-model="model.authEndpoint"
+              v-model:value="model.authEndpoint"
               :label="t(`authConfig.oidc.authEndpoint`)"
               :mode="mode"
               :disabled="!customEndpoint.value"
@@ -352,7 +352,7 @@ export default {
           <div class="row mb-20">
             <div class="col span-6">
               <LabeledInput
-                v-model="model.jwksUrl"
+                v-model:value="model.jwksUrl"
                 :label="t(`authConfig.oidc.jwksUrl`)"
                 :mode="mode"
                 :disabled="!customEndpoint.value"
@@ -360,7 +360,7 @@ export default {
             </div>
             <div class="col span-6">
               <LabeledInput
-                v-model="model.tokenEndpoint"
+                v-model:value="model.tokenEndpoint"
                 :label="t(`authConfig.oidc.tokenEndpoint`)"
                 :mode="mode"
                 :disabled="!customEndpoint.value"
@@ -371,7 +371,7 @@ export default {
           <div class="row mb-20">
             <div class="col span-6">
               <LabeledInput
-                v-model="model.userInfoEndpoint"
+                v-model:value="model.userInfoEndpoint"
                 :label="t(`authConfig.oidc.userInfoEndpoint`)"
                 :mode="mode"
                 :disabled="!customEndpoint.value"
@@ -379,7 +379,7 @@ export default {
             </div>
             <div class="col span-6">
               <LabeledInput
-                v-model="model.acrValue"
+                v-model:value="model.acrValue"
                 :label="t(`authConfig.oidc.acrValue`)"
                 :mode="mode"
                 :disabled="!customEndpoint.value"
@@ -396,7 +396,7 @@ export default {
   .banner {
     display: block;
 
-    &::v-deep code {
+    &:deep() code {
       padding: 0 3px;
       margin: 0 3px;
     }

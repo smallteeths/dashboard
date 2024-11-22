@@ -6,9 +6,7 @@ import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
 export default {
   components: { Loading, LabeledInput },
   mixins:     [CreateEditView],
-
-  fetch() {
-  },
+  emits:      ['validationChanged'],
 
   data() {
     return {};

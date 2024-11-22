@@ -299,7 +299,7 @@ export default {
       <div class="row pt-10 pb-10">
         <div class="col span-6">
           <RadioGroup
-            v-model="sidecar"
+            v-model:value="sidecar"
             name="sidecar"
             :label="t('monitoring.thanos.sidecar.label')"
             :labels="[t('generic.yes'), t('generic.no')]"
@@ -312,7 +312,7 @@ export default {
           class="col span-6"
         >
           <RadioGroup
-            v-model="tls"
+            v-model:value="tls"
             name="tls"
             :label="t('monitoring.thanos.tls.label')"
             :labels="[t('generic.yes'), t('generic.no')]"

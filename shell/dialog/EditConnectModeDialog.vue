@@ -24,7 +24,7 @@
         <div class="mb-20 row">
           <div class="col span-6">
             <LabeledSelect
-              v-model="mode.directAccess"
+              v-model:value="mode.directAccess"
               :label="t('clusterConnectMode.connectMode.label')"
               :localized-label="true"
               :options="connectModes"
@@ -35,7 +35,7 @@
         <div class="row">
           <div class="col span-12">
             <ApiEndpoints
-              v-model="mode.apiEndpoints"
+              v-model:value="mode.apiEndpoints"
               :title="t('clusterConnectMode.apiEndpoint.label')"
               mode="edit"
               :status-map="statusMap"
@@ -131,6 +131,7 @@ import ApiEndpoints from '@shell/components/form/ApiEndpoints.vue';
 import { stringify } from '@shell/utils/error';
 
 export default {
+  emits: ['close'],
   props: {
     resources: {
       type:     Array,

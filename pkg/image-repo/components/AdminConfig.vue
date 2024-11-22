@@ -47,7 +47,7 @@
       <div class="row mb-20">
         <div class="col span-12">
           <LabeledInput
-            v-model.trim="harborConfig.url"
+            v-model:value.trim="harborConfig.url"
             :mode="mode"
             :label="t('harborConfig.form.address.label')"
             :placeholder="t('harborConfig.form.address.placeholder')"
@@ -58,7 +58,7 @@
       <div class="row mb-20">
         <div class="col span-6">
           <LabeledInput
-            v-model.trim="harborConfig.username"
+            v-model:value.trim="harborConfig.username"
             :mode="mode"
             :label="t('harborConfig.form.username.label')"
             :placeholder="t('harborConfig.form.username.placeholder')"
@@ -70,7 +70,7 @@
           class="col span-6"
         >
           <Password
-            v-model="harborConfig.password"
+            v-model:value="harborConfig.password"
             :mode="mode"
             :label="t('harborConfig.form.pw.label')"
             :placeholder="t('harborConfig.form.pw.placeholder')"
@@ -81,7 +81,7 @@
       <div class="row">
         <div class="col span-6">
           <RadioGroup
-            v-model="harborConfig.version"
+            v-model:value="harborConfig.version"
             name="version"
             :options="['v1', 'v2.0']"
             :label="t('harborConfig.form.version.label')"
@@ -94,7 +94,7 @@
         </div>
         <div class="col span-6">
           <Checkbox
-            v-model="harborConfig.insecureSkipVerify"
+            v-model:value="harborConfig.insecureSkipVerify"
             :mode="mode"
             :label="t('harborConfig.form.harborInsecureSkipVerify')"
           />
@@ -106,19 +106,19 @@
         class="change-pwd-view mt-20 mb-20"
       >
         <Password
-          v-model="changePwdForm.oldPwd"
+          v-model:value="changePwdForm.oldPwd"
           :label="t('changePassword.currentPassword.label')"
           :placeholder="t('harborConfig.form.pw.placeholder')"
           required
         />
         <Password
-          v-model="changePwdForm.newPwd"
+          v-model:value="changePwdForm.newPwd"
           :label="t('harborConfig.form.newPw.label')"
           :placeholder="t('harborConfig.form.pw.placeholder')"
           required
         />
         <Password
-          v-model="changePwdForm.confirmPwd"
+          v-model:value="changePwdForm.confirmPwd"
           :label="t('harborConfig.form.confirmPw.label')"
           :placeholder="t('harborConfig.form.pw.placeholder')"
           required

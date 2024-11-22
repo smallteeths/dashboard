@@ -138,7 +138,7 @@ export default {
   <div>
     <ArrayListGrouped
       :key="selectedContainers.length"
-      v-model="selectedContainers"
+      v-model:value="selectedContainers"
       :mode="mode"
       :namespace="workload.namespace"
       :kind="workload.kind"

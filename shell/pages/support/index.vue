@@ -171,8 +171,8 @@ export default {
           </div>
           <div class="boxes">
             <div
-              v-for="key in promos"
-              :key="key"
+              v-for="(key, i) in promos"
+              :key="i"
               class="box"
             >
               <h2>{{ t(`${key}.title`) }}</h2>
@@ -212,7 +212,7 @@ export default {
       box-shadow: none;
     }
 
-    &::v-deep .card-actions {
+    &:deep() .card-actions {
       display: flex;
       justify-content: space-between;
     }

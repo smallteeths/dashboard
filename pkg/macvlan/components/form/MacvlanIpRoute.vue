@@ -138,21 +138,21 @@ export default {
       <div class="dst">
         <LabeledInput
           ref="dst"
-          v-model="row.dst"
+          v-model:value="row.dst"
           :mode="mode"
           :placeholder="t('macvlan.route.dst.placeholder')"
         />
       </div>
       <div class="gw">
         <LabeledInput
-          v-model="row.gw"
+          v-model:value="row.gw"
           :mode="mode"
           :placeholder="t('macvlan.route.gw.placeholder')"
         />
       </div>
       <div class="iface">
         <LabeledSelect
-          v-model="row.iface"
+          v-model:value="row.iface"
           :disabled="isView"
           :options="ifaceChoices"
           :mode="mode"

@@ -3,6 +3,7 @@ import { Card } from '@components/Card';
 import JsonView from '@pkg/components/JsonView';
 
 export default {
+  emits: ['close'],
   props: {
     value: {
       type:     Object,

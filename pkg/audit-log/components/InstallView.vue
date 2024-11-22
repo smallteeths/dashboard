@@ -223,7 +223,7 @@ export default {
             <div v-clean-html="t('auditLog.installView.steps.deploymentCompoents.address.tips')" />
           </Banner>
           <LabeledInput
-            v-model="url"
+            v-model:value="url"
             :localized-label="true"
             :required="true"
             :label="t('auditLog.installView.steps.deploymentCompoents.address.label')"

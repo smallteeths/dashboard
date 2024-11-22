@@ -10,7 +10,7 @@ import { sortBy } from '@shell/utils/sort';
 import { ucFirst } from '@shell/utils/string';
 import { KEY } from '@shell/utils/platform';
 import { getVersionInfo } from '@shell/utils/version';
-import { LEGACY, EXPLORER_HARVESTER_CLUSTER } from '@shell/store/features';
+import { EXPLORER_HARVESTER_CLUSTER } from '@shell/store/features';
 import { SETTING } from '@shell/config/settings';
 import { filterOnlyKubernetesClusters, filterHiddenLocalCluster } from '@shell/utils/cluster';
 import { getProductFromRoute } from '@shell/utils/router';
@@ -77,10 +77,6 @@ export default {
         marginBottom: globalBannerSettings?.footerFont,
         marginTop:    `${ this.showTwoFactorAuthTips ? `${ (Number.isNaN(hf) ? 0 : hf) + 2 }em` : globalBannerSettings?.headerFont }`
       };
-    },
-
-    legacyEnabled() {
-      return this.features(LEGACY);
     },
 
     explorerHarvesterClusterEnabled() {
@@ -270,12 +266,6 @@ export default {
       });
     },
 
-    legacyApps() {
-      const options = this.options;
-
-      return options.filter((opt) => opt.inStore === 'management' && opt.category === 'legacy');
-    },
-
     configurationApps() {
       const options = this.options;
 
@@ -362,7 +352,6 @@ export default {
       const appBar = {
         hciApps:           this.hciApps,
         multiClusterApps:  this.multiClusterApps,
-        legacyApps:        this.legacyApps,
         configurationApps: this.configurationApps,
         pinFiltered:       this.pinFiltered,
         clustersFiltered:  this.clustersFiltered,
@@ -397,7 +386,7 @@ export default {
     document.addEventListener('keyup', this.handler);
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     document.removeEventListener('keyup', this.handler);
   },
 
@@ -469,7 +458,7 @@ export default {
 
       let contentText = '';
       let content;
-      let classes = '';
+      let popperClass = '';
 
       // this is the normal tooltip scenario where we are just passing a string
       if (typeof item === 'string') {
@@ -494,7 +483,7 @@ export default {
       } else {
         contentText = item.label;
         // this adds a class to the tooltip container so that we can control the max width
-        classes = 'menu-description-tooltip';
+        popperClass = 'menu-description-tooltip';
 
         if (item.description) {
           contentText += `<br><br>${ item.description }`;
@@ -506,7 +495,7 @@ export default {
           content = this.shown ? contentText : null;
 
           // this adds a class to adjust tooltip position so it doesn't overlap the cluster pinning action
-          classes += ' description-tooltip-pos-adjustment';
+          popperClass += ' description-tooltip-pos-adjustment';
         }
       }
 
@@ -514,7 +503,7 @@ export default {
         content,
         placement:     'right',
         popperOptions: { modifiers: { preventOverflow: { enabled: false }, hide: { enabled: false } } },
-        classes
+        popperClass
       };
     },
   }
@@ -640,8 +629,8 @@ export default {
               </a>
             </div>
             <div
-              v-for="a in appBar.hciApps"
-              :key="a.label"
+              v-for="(a, i) in appBar.hciApps"
+              :key="i"
               @click="hide()"
             >
               <router-link
@@ -672,7 +661,7 @@ export default {
               >
                 <div
                   v-for="(c, index) in appBar.pinFiltered"
-                  :key="c.id"
+                  :key="index"
                   :data-testid="`pinned-ready-cluster-${index}`"
                   @click="hide()"
                 >
@@ -747,7 +736,7 @@ export default {
               <div class="clustersList">
                 <div
                   v-for="(c, index) in appBar.clustersFiltered"
-                  :key="c.id"
+                  :key="index"
                   :data-testid="`top-level-menu-cluster-${index}`"
                   @click="hide()"
                 >
@@ -771,6 +760,7 @@ export default {
                       v-clean-tooltip="getTooltipConfig(c)"
                       class="cluster-name"
                     >
+                      <!-- HERE LOCAL CLUSTER! -->
                       <p>{{ c.label }}</p>
                       <p
                         v-if="c.description"
@@ -852,8 +842,8 @@ export default {
                 </span>
               </div>
               <div
-                v-for="a in appBar.multiClusterApps"
-                :key="a.label"
+                v-for="(a, i) in appBar.multiClusterApps"
+                :key="i"
                 @click="hide()"
               >
                 <router-link
@@ -870,34 +860,6 @@ export default {
                 </router-link>
               </div>
             </template>
-            <template v-if="legacyEnabled">
-              <div
-                class="category-title"
-              >
-                <hr>
-                <span>
-                  {{ t('nav.categories.legacy') }}
-                </span>
-              </div>
-              <div
-                v-for="a in appBar.legacyApps"
-                :key="a.label"
-                @click="hide()"
-              >
-                <router-link
-                  class="option"
-                  :class="{'active-menu-link': a.isMenuActive }"
-                  :to="a.to"
-                >
-                  <IconOrSvg
-                    v-clean-tooltip="getTooltipConfig(a.label)"
-                    :icon="a.icon"
-                    :src="a.svg"
-                  />
-                  <div>{{ a.label }}</div>
-                </router-link>
-              </div>
-            </template>
 
             <!-- App menu -->
             <template v-if="configurationApps.length">
@@ -910,8 +872,8 @@ export default {
                 </span>
               </div>
               <div
-                v-for="a in appBar.configurationApps"
-                :key="a.label"
+                v-for="(a, i) in appBar.configurationApps"
+                :key="i"
                 @click="hide()"
               >
                 <router-link
@@ -982,15 +944,15 @@ export default {
   }
 
   .localeSelector {
-    .popover-inner {
+    .v-popper__inner {
       padding: 10px 0;
     }
 
-    .popover-arrow {
+    .v-popper__arrow-container {
       display: none;
     }
 
-    .popover:focus {
+    .v-popper:focus {
       outline: 0;
     }
   }
@@ -1529,15 +1491,15 @@ export default {
   }
 
   .localeSelector {
-    ::v-deep .popover-inner {
+    :deep() .v-popper__inner {
       padding: 50px 0;
     }
 
-    ::v-deep .popover-arrow {
+    :deep() .v-popper__arrow-container {
       display: none;
     }
 
-    ::v-deep .popover:focus {
+    :deep() .v-popper:focus {
       outline: 0;
     }
 

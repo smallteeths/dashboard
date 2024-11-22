@@ -16,6 +16,7 @@ export default {
   components: {
     AsyncButton, Card, LabeledInput, LabeledSelect, Banner, PercentageBar, Checkbox
   },
+  emits: ['close'],
   props: {
     resources: {
       type:     Array,
@@ -191,20 +192,20 @@ export default {
     />
     <template #body>
       <LabeledSelect
-        v-model="currentContainer"
+        v-model:value="currentContainer"
         :label="t('modalDownLoadFileComponent.container')"
         :options="choices"
         class="mt-20"
         required
       />
       <LabeledInput
-        v-model="filePath"
+        v-model:value="filePath"
         :label="t('modalDownLoadFileComponent.filePath')"
         class="mt-20"
         required
       />
       <Checkbox
-        v-model="windows"
+        v-model:value="windows"
         class="check mt-20"
         type="checkbox"
         label="Windows"

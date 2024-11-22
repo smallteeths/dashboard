@@ -40,6 +40,7 @@ import AsyncButton from '@shell/components/AsyncButton';
 export default {
   name:       'Dialog',
   components: { AsyncButton },
+  emits:      ['close', 'removed'],
   props:      {
     type: {
       type:    String,

@@ -118,6 +118,9 @@ describe('steve: getters:', () => {
     it('returns a string without an exclude statement if excludeFields is set but the url does not start with "/v1/"', () => {
       expect(urlOptionsGetter('foo', { excludeFields: ['bar'] })).toBe('foo');
     });
+    it('returns a string without an exclude statement if excludeFields is an array but the URL doesn\'t include the "/v1/ string"', () => {
+      expect(urlOptionsGetter('foo', { excludeFields: ['bar'] })).toBe('foo');
+    });
     it('returns a string with a limit applied if a limit is provided', () => {
       expect(urlOptionsGetter('foo', { limit: 10 })).toBe('foo?limit=10');
     });

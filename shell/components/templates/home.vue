@@ -11,6 +11,7 @@ import BrowserTabVisibility from '@shell/mixins/browser-tab-visibility';
 import AutoLogout from '@shell/mixins/auto-logout';
 import Inactivity from '@shell/components/Inactivity';
 import { mapState, mapGetters } from 'vuex';
+import PromptModal from '@shell/components/PromptModal';
 
 export default {
 
@@ -21,12 +22,11 @@ export default {
     AzureWarning,
     AwsComplianceBanner,
     Inactivity,
-    FixedTips
+    FixedTips,
+    PromptModal
   },
 
   mixins: [Brand, BrowserTabVisibility, AutoLogout],
-
-  middleware: ['authenticated'],
 
   data() {
     return {
@@ -61,7 +61,7 @@ export default {
     <Inactivity />
     <AwsComplianceBanner />
     <AzureWarning />
-
+    <PromptModal />
     <div
       class="dashboard-content"
       :class="{'dashboard-padding-left': showTopLevelMenu}"

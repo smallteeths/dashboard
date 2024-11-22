@@ -7,10 +7,11 @@ import ResourceFetch from '@shell/mixins/resource-fetch';
 import { MACVLAN_PRODUCT_NAME, MACVLAN_CHARTS } from '../config/macvlan-types';
 
 export default {
-  name:       'ListMacvlan',
-  components: { ResourceTable, Banner },
-  mixins:     [ResourceFetch],
-  props:      {
+  name:         'ListMacvlan',
+  components:   { ResourceTable, Banner },
+  mixins:       [ResourceFetch],
+  inheritAttrs: false,
+  props:        {
     schema: {
       type:     Object,
       required: true,
@@ -116,7 +117,6 @@ export default {
       :schema="schema"
       key-field="_key"
       :loading="loading"
-      v-on="$listeners"
     />
   </div>
 </template>

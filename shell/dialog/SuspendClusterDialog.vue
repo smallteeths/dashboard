@@ -43,6 +43,7 @@
 import { Card } from '@components/Card';
 
 export default {
+  emits: ['close'],
   props: {
     resources: {
       type:     Array,

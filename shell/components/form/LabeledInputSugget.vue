@@ -9,6 +9,7 @@ import $ from 'jquery';
 export default {
   components: { LabeledInput },
   mixins:     [LabeledFormElement],
+  emits:      ['input', 'onSearch'],
   props:      {
     disabled: {
       type:    Boolean,
@@ -183,7 +184,7 @@ export default {
   >
     <LabeledInput
       ref="text"
-      v-model="textValue"
+      v-model:value="textValue"
       class="input-string col span-8"
       :label="textLabel"
       :placeholder="placeholder"

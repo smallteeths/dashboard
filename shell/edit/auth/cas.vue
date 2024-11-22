@@ -184,7 +184,7 @@ export default {
         <div class="row mb-20">
           <div class="col span-6">
             <LabeledInput
-              v-model="model.hostname"
+              v-model:value="model.hostname"
               :label="t('authConfig.cas.hostUrl.label')"
               :placeholder="t('authConfig.cas.hostUrl.placeholder')"
               :mode="mode"
@@ -207,7 +207,7 @@ export default {
         <div class="row mb-20">
           <div class="col span-6">
             <Checkbox
-              v-model="model.tls"
+              v-model:value="model.tls"
               :mode="mode"
               class="full-height"
               :label="`${t('authConfig.cas.enableTLS')}(https://)`"
@@ -217,7 +217,7 @@ export default {
         <div class="row mb-20">
           <div class="col span-6">
             <UnitInput
-              v-model="model.connectionTimeout"
+              v-model:value="model.connectionTimeout"
               required
               :mode="mode"
               :label="t('authConfig.cas.connectionTimeout.label')"
@@ -226,7 +226,7 @@ export default {
           </div>
           <div class="col span-6">
             <LabeledInput
-              v-model="model.service"
+              v-model:value="model.service"
               :label="t('authConfig.cas.callbackURL.label')"
               :placeholder="t('authConfig.cas.callbackURL.placeholder')"
               :mode="mode"
@@ -238,7 +238,7 @@ export default {
         <div class="row mb-20">
           <div class="col span-6">
             <LabeledInput
-              v-model="model.loginEndpoint"
+              v-model:value="model.loginEndpoint"
               :label="t(`authConfig.cas.loginEndpoint.label`)"
               :placeholder="t('authConfig.cas.loginEndpoint.placeholder')"
               :mode="mode"
@@ -247,7 +247,7 @@ export default {
           </div>
           <div class="col span-6">
             <LabeledInput
-              v-model="model.logoutEndpoint"
+              v-model:value="model.logoutEndpoint"
               :label="t(`authConfig.cas.logoutEndpoint.label`)"
               :placeholder="t('authConfig.cas.logoutEndpoint.placeholder')"
               :mode="mode"

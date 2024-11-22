@@ -28,6 +28,8 @@ const NODE_GPU_METRICS_SUMMARY_URL = '/api/v1/namespaces/cattle-monitoring-syste
 export default {
   name: 'DetailNode',
 
+  emits: ['input'],
+
   components: {
     Alert,
     ConsumptionGauge,
@@ -308,8 +310,9 @@ export default {
     </div>
     <div class="spacer" />
     <ResourceTabs
-      v-model="value"
+      :value="value"
       :mode="mode"
+      @update:value="$emit('input', $event)"
     >
       <Tab
         name="pods"

@@ -99,7 +99,7 @@ export default {
     <div class="row mb-10">
       <div class="col span-6">
         <UnitInput
-          v-model="limits.cpu"
+          v-model:value="limits.cpu"
           :mode="mode"
           required
           :label="t('formReservation.limitCpu.label', {component})"
@@ -114,7 +114,7 @@ export default {
       </div>
       <div class="col span-6">
         <UnitInput
-          v-model="limits.memory"
+          v-model:value="limits.memory"
           :mode="mode"
           required
           :input-exponent="2"
@@ -131,7 +131,7 @@ export default {
     <div class="row mb-10">
       <div class="col span-6">
         <UnitInput
-          v-model="requests.cpu"
+          v-model:value="requests.cpu"
           required
           :mode="mode"
           :input-exponent="-1"
@@ -146,7 +146,7 @@ export default {
       </div>
       <div class="col span-6">
         <UnitInput
-          v-model="requests.memory"
+          v-model:value="requests.memory"
           required
           :placeholder="t('formReservation.requestMemory.placeholder')"
           :label="t('formReservation.requestMemory.label', {component})"

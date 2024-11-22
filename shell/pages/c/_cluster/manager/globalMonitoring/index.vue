@@ -57,7 +57,7 @@ export default {
     ChildHook,
     FormValidation,
   ],
-
+  emits: ['cancel', 'update'],
   async fetch() {
     await this.$store.dispatch('catalog/load', { inStore: this.inStore });
     try {
@@ -1049,7 +1049,7 @@ export default {
     <template>
       <div class="chart__values__controls">
         <ButtonGroup
-          v-model="formYamlOption"
+          v-model:value="formYamlOption"
           :options="formYamlOptions"
           inactive-class="bg-disabled btn-sm"
           active-class="bg-primary btn-sm"
@@ -1057,7 +1057,7 @@ export default {
         <div class="chart__values__controls--spacer" />
         <ButtonGroup
           v-if="showDiff"
-          v-model="diffMode"
+          v-model:value="diffMode"
           :options="yamlDiffModeOptions"
           inactive-class="bg-disabled btn-sm"
           active-class="bg-primary btn-sm"
@@ -1068,7 +1068,7 @@ export default {
           <template v-if="showAsForm">
             <ThanosCatalog
               ref="thanosCatalog"
-              v-model="value"
+              v-model:value="value"
               :installed="monitoringStatus.installed"
               option-key="value"
               :chart="chart"
@@ -1082,7 +1082,7 @@ export default {
           <template v-else>
             <YamlEditor
               ref="yaml"
-              v-model="valuesYaml"
+              v-model:value="valuesYaml"
               class="chart__values__content"
               :scrolling="true"
               :initial-yaml-values="originalYamlValues"

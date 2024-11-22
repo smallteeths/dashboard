@@ -10,7 +10,7 @@
     <div class="row mb-20">
       <div class="col span-6">
         <RadioGroup
-          v-model="enableCors"
+          v-model:value="enableCors"
           name="enableCors"
           :options="enableCorsOptions"
           :mode="mode"
@@ -26,7 +26,7 @@
         <Checkbox
           v-for="opt in corsAllowMethodsOptions"
           :key="opt.value"
-          v-model="corsAllowMethods"
+          v-model:value="corsAllowMethods"
           :mode="mode"
           :label="opt.label"
           :value-when-true="opt.value"
@@ -39,7 +39,7 @@
     >
       <div class="col span-6">
         <LabeledInput
-          v-model="corsAllowHeaders"
+          v-model:value="corsAllowHeaders"
           :label="t('ingress.formIngressCorsSetting.corsAllowHeader.title')"
           :placeholder="t('ingress.formIngressCorsSetting.corsAllowHeader.placeholder')"
           :tooltip="t('ingress.formIngressCorsSetting.corsAllowHeader.detail')"
@@ -48,7 +48,7 @@
       </div>
       <div class="col span-6">
         <LabeledInput
-          v-model="corsExposeHeaders"
+          v-model:value="corsExposeHeaders"
           :label="t('ingress.formIngressCorsSetting.corsExposeHeader.title')"
           :placeholder="t('ingress.formIngressCorsSetting.corsExposeHeader.placeholder')"
           :tooltip="t('ingress.formIngressCorsSetting.corsExposeHeader.detail')"
@@ -62,7 +62,7 @@
     >
       <div class="col span-6">
         <LabeledInput
-          v-model="corsAllowOrigin"
+          v-model:value="corsAllowOrigin"
           :label="t('ingress.formIngressCorsSetting.corsAllowOrigin.title')"
           :placeholder="t('ingress.formIngressCorsSetting.corsAllowOrigin.placeholder')"
           :tooltip="t('ingress.formIngressCorsSetting.corsAllowOrigin.detail')"
@@ -71,7 +71,7 @@
       </div>
       <div class="col span-6">
         <RadioGroup
-          v-model="corsAllowCredentials"
+          v-model:value="corsAllowCredentials"
           :label="t('ingress.formIngressCorsSetting.corsAllowCredential.title')"
           name="corsAllowCredentials"
           :options="enableAllowCredentialsOptions"
@@ -85,7 +85,7 @@
     >
       <div class="col span-6">
         <LabeledInput
-          v-model.number="corsMaxAge"
+          v-model:value.number="corsMaxAge"
           type="number"
           :label="t('ingress.formIngressCorsSetting.corsMaxAge.title')"
           :placeholder="t('ingress.formIngressCorsSetting.corsMaxAge.placeholder')"

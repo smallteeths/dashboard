@@ -10,7 +10,7 @@
     <div class="row mb-20">
       <div class="col span-6">
         <LabeledInput
-          v-model="permanentRedirect"
+          v-model:value="permanentRedirect"
           :label="t('ingress.formIngressGeneralSetting.permanentRedirect.title')"
           :placeholder="t('ingress.formIngressGeneralSetting.permanentRedirect.placeholder')"
           :tooltip="t('ingress.formIngressGeneralSetting.permanentRedirect.detail')"
@@ -19,7 +19,7 @@
       </div>
       <div class="col span-6">
         <LabeledInput
-          v-model.number="permanentRedirectCode"
+          v-model:value.number="permanentRedirectCode"
           type="number"
           min="0"
           :label="t('ingress.formIngressGeneralSetting.permanentRedirectCode.title')"
@@ -33,7 +33,7 @@
     <div class="row mb-20">
       <div class="col span-6">
         <RadioGroup
-          v-model="sslRedirect"
+          v-model:value="sslRedirect"
           :label="t('ingress.formIngressGeneralSetting.sslRedirect.title')"
           name="sslRedirect"
           :options="sslRedirectOptions"
@@ -42,7 +42,7 @@
       </div>
       <div class="col span-3">
         <RadioGroup
-          v-model="proxyBuffering"
+          v-model:value="proxyBuffering"
           :label="t('ingress.formIngressGeneralSetting.proxyBuffering.title')"
           name="proxyBuffering"
           :options="proxyBufferingOptions"
@@ -55,7 +55,7 @@
         style="align-self: flex-end;"
       >
         <LabeledInput
-          v-model.number="proxyBufferSize"
+          v-model:value.number="proxyBufferSize"
           type="number"
           min="0"
           :label="t('ingress.formIngressGeneralSetting.proxyBufferSize.title')"
@@ -67,7 +67,7 @@
     <div class="row mb-20">
       <div class="col span-6">
         <LabeledInput
-          v-model="whitelistSourceRange"
+          v-model:value="whitelistSourceRange"
           :label="t('ingress.formIngressGeneralSetting.whitelist.title')"
           :placeholder="t('ingress.formIngressGeneralSetting.whitelist.placeholder')"
           :tooltip="t('ingress.formIngressGeneralSetting.whitelist.detail')"
@@ -76,7 +76,7 @@
       </div>
       <div class="col span-6">
         <LabeledInput
-          v-model.number="limitRps"
+          v-model:value.number="limitRps"
           type="number"
           min="0"
           :label="t('ingress.formIngressGeneralSetting.limitRps.title')"
@@ -89,7 +89,7 @@
     <div class="row mb-20">
       <div class="col span-6">
         <LabeledInput
-          v-model.number="proxyBodySize"
+          v-model:value.number="proxyBodySize"
           type="number"
           min="0"
           :label="t('ingress.formIngressGeneralSetting.proxyBodySize.title')"
@@ -100,7 +100,7 @@
       </div>
       <div class="col span-6">
         <LabeledInput
-          v-model="rewriteTarget"
+          v-model:value="rewriteTarget"
           :label="t('ingress.formIngressGeneralSetting.rewriteTarget.title')"
           :placeholder="t('ingress.formIngressGeneralSetting.rewriteTarget.placeholder')"
           :tooltip="t('ingress.formIngressGeneralSetting.rewriteTarget.detail')"

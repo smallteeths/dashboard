@@ -18,6 +18,7 @@
 
 <script>
 export default {
+  emits: ['itemSelected'],
   props: {
     items: {
       type:    Array,

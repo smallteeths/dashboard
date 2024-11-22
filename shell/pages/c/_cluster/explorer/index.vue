@@ -48,7 +48,6 @@ import Certificates from '@shell/components/Certificates';
 import { NAME as EXPLORER } from '@shell/config/product/explorer';
 import TabTitle from '@shell/components/TabTitle';
 import { STATES_ENUM } from '@shell/plugins/dashboard-store/resource-class';
-import paginationUtils from '@shell/utils/pagination-utils';
 
 export const RESOURCES = [NAMESPACE, INGRESS, PV, WORKLOAD_TYPES.DEPLOYMENT, WORKLOAD_TYPES.STATEFUL_SET, WORKLOAD_TYPES.JOB, WORKLOAD_TYPES.DAEMON_SET, SERVICE];
 
@@ -117,15 +116,7 @@ export default {
       if (this.currentCluster.isLocal && this.$store.getters['management/schemaFor'](MANAGEMENT.NODE)) {
         this.$store.dispatch('management/findAll', { type: MANAGEMENT.NODE });
       }
-
-      this.canViewAgents = this.$store.getters['cluster/canList'](WORKLOAD_TYPES.DEPLOYMENT) && this.$store.getters['cluster/canList'](WORKLOAD_TYPES.STATEFUL_SET);
-
-      if (this.canViewAgents) {
-        this.loadAgents();
-      }
     }
-
-    this.showCertificates = !paginationUtils.isSteveCacheEnabled({ rootGetters: this.$store.getters });
   },
 
   data() {
@@ -142,7 +133,6 @@ export default {
       cattleDeployment:   'loading',
       fleetDeployment:    'loading',
       fleetStatefulSet:   'loading',
-      canViewAgents:      false,
       disconnected:       false,
       events:             [],
       nodeMetrics:        [],
@@ -164,7 +154,7 @@ export default {
     };
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     // Remove the data and stop watching resources that were fetched in this page
     // Events in particular can lead to change messages having to be processed when we are no longer interested in events
     this.$store.dispatch('cluster/forgetType', EVENT);
@@ -177,6 +167,17 @@ export default {
     clearInterval(this.interval);
   },
 
+  watch: {
+    canViewAgents: {
+      handler(neu, old) {
+        if (neu && !old) {
+          this.loadAgents();
+        }
+      },
+      immediate: true
+    }
+  },
+
   computed: {
     ...mapGetters(['currentCluster']),
     ...monitoringStatus(),
@@ -187,6 +188,22 @@ export default {
 
     mgmtNodes() {
       return this.$store.getters['management/all'](MANAGEMENT.CLUSTER);
+    },
+
+    fleetAgentNamespace() {
+      return this.$store.getters['cluster/byId'](NAMESPACE, 'cattle-fleet-system');
+    },
+
+    cattleAgentNamespace() {
+      if (this.currentCluster.isLocal) {
+        return;
+      }
+
+      return this.$store.getters['cluster/byId'](NAMESPACE, 'cattle-system');
+    },
+
+    canViewAgents() {
+      return !!this.fleetAgentNamespace || (!this.currentCluster.isLocal && this.cattleAgentNamespace);
     },
 
     showClusterTools() {
@@ -273,15 +290,15 @@ export default {
         });
       });
 
-      if (this.canViewAgents) {
-        if (!this.currentCluster.isLocal) {
-          services.push({
-            name:     'cattle',
-            status:   this.cattleStatus,
-            labelKey: 'clusterIndexPage.sections.componentStatus.cattle',
-          });
-        }
+      if (this.cattleAgentNamespace) {
+        services.push({
+          name:     'cattle',
+          status:   this.cattleStatus,
+          labelKey: 'clusterIndexPage.sections.componentStatus.cattle',
+        });
+      }
 
+      if (this.fleetAgentNamespace) {
         services.push({
           name:     'fleet',
           status:   this.fleetStatus,
@@ -507,18 +524,24 @@ export default {
 
       return out;
     },
+
+    hasNodes() {
+      return this.nodes?.length > 0;
+    },
   },
 
   methods: {
     loadAgents() {
-      if (this.currentCluster.isLocal) {
-        this.setAgentResource('fleetDeployment', WORKLOAD_TYPES.DEPLOYMENT, 'cattle-fleet-system/fleet-controller');
-        this.setAgentResource('fleetStatefulSet', WORKLOAD_TYPES.STATEFUL_SET, 'cattle-fleet-local-system/fleet-agent');
-      } else {
-        this.setAgentResource('fleetStatefulSet', WORKLOAD_TYPES.STATEFUL_SET, 'cattle-fleet-system/fleet-agent');
+      if (this.fleetAgentNamespace) {
+        if (this.currentCluster.isLocal) {
+          this.setAgentResource('fleetDeployment', WORKLOAD_TYPES.DEPLOYMENT, 'cattle-fleet-system/fleet-controller');
+          this.setAgentResource('fleetStatefulSet', WORKLOAD_TYPES.STATEFUL_SET, 'cattle-fleet-local-system/fleet-agent');
+        } else {
+          this.setAgentResource('fleetStatefulSet', WORKLOAD_TYPES.STATEFUL_SET, 'cattle-fleet-system/fleet-agent');
+        }
+      }
+      if (this.cattleAgentNamespace) {
         this.setAgentResource('cattleDeployment', WORKLOAD_TYPES.DEPLOYMENT, 'cattle-system/cattle-cluster-agent');
-
-        // Scaling Up/Down cattle deployment causes web sockets disconnection;
         this.interval = setInterval(() => {
           this.disconnected = !!this.$store.getters['cluster/inError']({ type: NODE });
         }, 1000);
@@ -634,7 +657,7 @@ export default {
         >{{ currentCluster.kubernetesVersionExtension }}</span>
       </div>
       <div
-        v-if="nodes.length > 0"
+        v-if="hasNodes"
         data-testid="architecture__label"
       >
         <label>{{ t('glance.architecture') }}: </label>
@@ -739,8 +762,8 @@ export default {
 
     <div v-if="clusterServices">
       <div
-        v-for="service in clusterServices"
-        :key="service.name"
+        v-for="(service, i) in clusterServices"
+        :key="i"
         class="k8s-service-status"
         :class="{[service.status]: true }"
         :data-testid="`k8s-service-${ service.name }`"
@@ -925,7 +948,7 @@ export default {
   align-items: center;
 }
 
-.etcd-metrics ::v-deep .external-link {
+.etcd-metrics :deep() .external-link {
   top: -107px;
 }
 

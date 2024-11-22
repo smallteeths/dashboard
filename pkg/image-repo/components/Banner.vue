@@ -4,6 +4,7 @@ import { stringify } from '@shell/utils/error';
 
 export default {
   name:  'Banner',
+  emits: ['close'],
   props: {
     color: {
       type:    String,

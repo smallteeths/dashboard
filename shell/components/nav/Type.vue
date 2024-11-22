@@ -10,6 +10,8 @@ export default {
 
   components: { Favorite, TabTitle },
 
+  emits: ['selected'],
+
   props: {
     type: {
       type:     Object,
@@ -52,6 +54,26 @@ export default {
       const inStore = this.$store.getters['currentStore'](this.type.name);
 
       return this.$store.getters[`${ inStore }/count`]({ name: this.type.name });
+    },
+
+    isActive() {
+      const typeFullPath = this.$router.resolve(this.type.route)?.fullPath.toLowerCase();
+      const pageFullPath = this.$route.fullPath?.toLowerCase();
+
+      if ( !this.type.exact) {
+        const typeSplit = typeFullPath.split('/');
+        const pageSplit = pageFullPath.split('/');
+
+        for (let index = 0; index < typeSplit.length; ++index) {
+          if ( index >= pageSplit.length || typeSplit[index] !== pageSplit[index] ) {
+            return false;
+          }
+        }
+
+        return true;
+      }
+
+      return typeFullPath === pageFullPath;
     }
 
   },
@@ -64,12 +86,9 @@ export default {
     selectType() {
       // Prevent issues if custom NavLink is used #5047
       if (this.type?.route) {
-        const typePath = this.$router.resolve(this.type.route)?.route?.fullPath;
+        const typePath = this.$router.resolve(this.type.route)?.fullPath;
         const legacyPaths = [
           '/project-resource-quota',
-          '/image-repo-config',
-          '/image-repo-projects',
-          '/image-repo-logs',
         ];
 
         if (/^(\/c|p|g|n\/)/.test(typePath) && legacyPaths.some((p) => typePath?.indexOf(p) > -1)) {
@@ -102,11 +121,9 @@ export default {
   <router-link
     v-if="type.route"
     :key="type.name"
-    v-slot="{ href, navigate, isActive, isExactActive }"
+    v-slot="{ href, navigate,isExactActive }"
     custom
     :to="type.route"
-    :exact="type.exact"
-    :exact-path="type['exact-path']"
   >
     <li
       class="child nav-type"
@@ -160,7 +177,7 @@ export default {
   </router-link>
   <li
     v-else-if="type.link"
-    class="child nav-type"
+    class="child nav-type nav-link"
     data-testid="link-type"
   >
     <a
@@ -194,13 +211,13 @@ export default {
         padding-left: 3px;
       }
 
-      ::v-deep .highlight {
+      :deep() .highlight {
         background: var(--diff-ins-bg);
         color: var(--body-text);
         padding: 2px;
       }
 
-      ::v-deep .icon {
+      :deep() .icon {
         position: relative;
         color: var(--muted);
       }
@@ -225,7 +242,7 @@ export default {
         background: var(--nav-hover);
         text-decoration: none;
 
-        ::v-deep .icon {
+        :deep() .icon {
           color: var(--body-text);
         }
       }
@@ -247,12 +264,18 @@ export default {
       align-items: center;
     }
 
+    &.nav-type.nav-link {
+      a .label {
+        display: flex;
+      }
+    }
+
     &.nav-type:not(.depth-0) {
       A {
         padding-left: 16px;
       }
 
-      ::v-deep .label I {
+      :deep() .label I {
         padding-right: 2px;
       }
     }

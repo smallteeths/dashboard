@@ -7,6 +7,8 @@ import { NORMAN } from '@shell/config/types';
 import { _CREATE } from '@shell/config/query-params';
 
 export default {
+  emits: ['close'],
+
   components: {
     Card,
     ProjectMemberEditor,
@@ -114,54 +116,53 @@ export default {
     :show-highlight-border="false"
     :sticky="true"
   >
-    <h4
-      slot="title"
-      v-clean-html="t('addProjectMemberDialog.title')"
-      class="text-default-text"
-    />
-
-    <div
-      slot="body"
-      class="pl-10 pr-10"
-    >
-      <Banner
-        v-if="error"
-        color="error"
-      >
-        {{ error }}
-      </Banner>
-      <ProjectMemberEditor
-        v-model="member"
-        :mode="mode"
-        :use-two-columns-for-custom="true"
+    <template #title>
+      <h4
+        v-clean-html="t('addProjectMemberDialog.title')"
+        class="text-default-text"
       />
-    </div>
+    </template>
 
-    <div
-      slot="actions"
-      class="buttons"
-    >
-      <button
-        class="btn role-secondary mr-10"
-        @click="close"
-      >
-        {{ t('generic.cancel') }}
-      </button>
+    <template #body>
+      <div class="pl-10 pr-10">
+        <Banner
+          v-if="error"
+          color="error"
+        >
+          {{ error }}
+        </Banner>
+        <ProjectMemberEditor
+          v-model:value="member"
+          :mode="mode"
+          :use-two-columns-for-custom="true"
+        />
+      </div>
+    </template>
 
-      <AsyncButton
-        v-if="saveInModal"
-        mode="create"
-        @click="cb=>saveBindings(cb)"
-      />
+    <template #actions>
+      <div class="buttons">
+        <button
+          class="btn role-secondary mr-10"
+          @click="close"
+        >
+          {{ t('generic.cancel') }}
+        </button>
 
-      <button
-        v-else
-        class="btn role-primary"
-        @click="apply"
-      >
-        {{ t('generic.add') }}
-      </button>
-    </div>
+        <AsyncButton
+          v-if="saveInModal"
+          mode="create"
+          @click="cb=>saveBindings(cb)"
+        />
+
+        <button
+          v-else
+          class="btn role-primary"
+          @click="apply"
+        >
+          {{ t('generic.add') }}
+        </button>
+      </div>
+    </template>
   </Card>
 </template>
 <style lang='scss' scoped>

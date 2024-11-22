@@ -39,6 +39,7 @@
 <script>
 export default {
   name:  'Dialog',
+  emits: ['close', 'create'],
   props: {
     show: {
       type:    Boolean,

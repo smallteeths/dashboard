@@ -8,6 +8,8 @@ import Loading from '@shell/components/Loading';
 import { NAME } from '@shell/config/table-headers';
 
 export default {
+  emits: ['input'],
+
   components: {
     Tab,
     ResourceTabs,
@@ -234,8 +236,9 @@ export default {
   <Loading v-if="$fetchState.pending" />
   <div v-else>
     <ResourceTabs
-      v-model="value"
+      :value="value"
       :mode="mode"
+      @update:value="$emit('input', $event)"
     >
       <Tab
         v-if="globalBindings"

@@ -39,7 +39,7 @@ export default {
     <div class="row mb-10">
       <div class="col span-6">
         <LabeledInput
-          v-model="value.thanos.objectConfig.config.container"
+          v-model:value="value.thanos.objectConfig.config.container"
           :mode="mode"
           required
           :label="t('globalMonitoringPage.store.azure.bucketName.label')"
@@ -49,7 +49,7 @@ export default {
       </div>
       <div class="col span-6">
         <LabeledInput
-          v-model="value.thanos.objectConfig.config.endpoint"
+          v-model:value="value.thanos.objectConfig.config.endpoint"
           :mode="mode"
           required
           :label="t('globalMonitoringPage.store.azure.endpoint.label')"
@@ -61,7 +61,7 @@ export default {
     <div class="row mb-10">
       <div class="col span-6">
         <LabeledInput
-          v-model="value.thanos.objectConfig.config.storage_account"
+          v-model:value="value.thanos.objectConfig.config.storage_account"
           :mode="mode"
           required
           :label="t('globalMonitoringPage.store.azure.storageAccount.label')"
@@ -71,7 +71,7 @@ export default {
       </div>
       <div class="col span-6">
         <LabeledInput
-          v-model="value.thanos.objectConfig.config.storage_account_key"
+          v-model:value="value.thanos.objectConfig.config.storage_account_key"
           :mode="mode"
           required
           :label="t('globalMonitoringPage.store.azure.storageAccountKey.label')"
@@ -83,7 +83,7 @@ export default {
     <div class="row mb-10">
       <div class="col span-6">
         <LabeledInput
-          v-model="value.thanos.objectConfig.config.max_retries"
+          v-model:value="value.thanos.objectConfig.config.max_retries"
           :mode="mode"
           type="number"
           min="0"

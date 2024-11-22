@@ -35,7 +35,7 @@ const HUAWEI_REGION_CHOICES = getHuaweiRegionChoices(REGIONS);
 export default {
   components: { LabeledInput, LabeledSelect },
   mixins:     [CreateEditView],
-
+  emits:      ['validationChanged'],
   data() {
     return { huaweiRegionChoices: HUAWEI_REGION_CHOICES };
   },
@@ -92,7 +92,7 @@ export default {
 <template>
   <div>
     <LabeledSelect
-      v-model="value.decodedData.regionID"
+      v-model:value="value.decodedData.regionID"
       label-key="cluster.credential.huawei.regionID.label"
       :localized-label="true"
       :options="huaweiRegionChoices"

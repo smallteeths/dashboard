@@ -5,6 +5,8 @@ import capitalize from 'lodash/capitalize';
 import { ROWS_PER_PAGE } from '@shell/store/prefs';
 
 export default {
+  emits: ['clicked'],
+
   components: { LazyImage },
 
   props: {
@@ -184,7 +186,7 @@ export default {
       v-if="rows.length"
       class="grid"
     >
-      <div
+      <component
         :is="asLink && !r.isIframe ? 'a' : 'div'"
         v-for="(r, idx) in pageData"
         :key="get(r, keyField)"
@@ -240,7 +242,7 @@ export default {
         >
           {{ get(r, descriptionField) }}
         </div>
-      </div>
+      </component>
     </div>
     <div
       v-else

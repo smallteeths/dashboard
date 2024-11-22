@@ -15,6 +15,7 @@ import BrowserTabVisibility from '@shell/mixins/browser-tab-visibility';
 import AutoLogout from '@shell/mixins/auto-logout';
 import Inactivity from '@shell/components/Inactivity';
 import { mapGetters } from 'vuex';
+import PromptModal from '@shell/components/PromptModal';
 
 export default {
 
@@ -24,6 +25,7 @@ export default {
     Header,
     IndentedPanel,
     PromptRemove,
+    PromptModal,
     FixedBanner,
     GrowlManager,
     AwsComplianceBanner,
@@ -31,8 +33,6 @@ export default {
     Inactivity,
     FixedTips
   },
-
-  middleware: ['authenticated'],
 
   mixins: [Brand, BrowserTabVisibility, AutoLogout],
 
@@ -81,6 +81,7 @@ export default {
         </IndentedPanel>
         <ActionMenu />
         <PromptRemove />
+        <PromptModal />
         <AssignTo />
         <button
           v-if="themeShortcut"
