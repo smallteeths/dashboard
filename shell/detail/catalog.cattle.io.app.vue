@@ -31,8 +31,8 @@ export default {
   },
 
   async fetch() {
+    this.$store.dispatch('catalog/load', { force: true, reset: true });
     const promises = {
-      catalog:       this.$store.dispatch('catalog/load', { force: true, reset: true }),
       allOperations: this.$store.dispatch('cluster/findAll', { type: CATALOG.OPERATION }),
       secrets:       this.value.fetchValues(true),
     };
