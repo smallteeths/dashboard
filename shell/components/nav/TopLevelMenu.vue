@@ -573,7 +573,7 @@ export default {
                 :to="{ name: 'home' }"
               >
                 <svg
-                  v-tooltip="getTooltipConfig(t('nav.home'))"
+                  v-clean-tooltip="getTooltipConfig(t('nav.home'))"
                   xmlns="http://www.w3.org/2000/svg"
                   height="24"
                   viewBox="0 0 24 24"
@@ -687,13 +687,13 @@ export default {
                     @shortkey="handleKeyComboClick"
                   >
                     <ClusterIconMenu
-                      v-tooltip="getTooltipConfig(c, true)"
+                      v-clean-tooltip="getTooltipConfig(c, true)"
                       :cluster="c"
                       :route-combo="routeCombo"
                       class="rancher-provider-icon"
                     />
                     <div
-                      v-tooltip="getTooltipConfig(c)"
+                      v-clean-tooltip="getTooltipConfig(c)"
                       class="cluster-name"
                     >
                       <p>{{ c.label }}</p>
@@ -714,12 +714,12 @@ export default {
                     :data-testid="`pinned-menu-cluster-disabled-${ c.id }`"
                   >
                     <ClusterIconMenu
-                      v-tooltip="getTooltipConfig(c, true)"
+                      v-clean-tooltip="getTooltipConfig(c, true)"
                       :cluster="c"
                       class="rancher-provider-icon"
                     />
                     <div
-                      v-tooltip="getTooltipConfig(c)"
+                      v-clean-tooltip="getTooltipConfig(c)"
                       class="cluster-name"
                     >
                       <p>{{ c.label }}</p>
@@ -762,13 +762,13 @@ export default {
                     @shortkey="handleKeyComboClick"
                   >
                     <ClusterIconMenu
-                      v-tooltip="getTooltipConfig(c, true)"
+                      v-clean-tooltip="getTooltipConfig(c, true)"
                       :cluster="c"
                       :route-combo="routeCombo"
                       class="rancher-provider-icon"
                     />
                     <div
-                      v-tooltip="getTooltipConfig(c)"
+                      v-clean-tooltip="getTooltipConfig(c)"
                       class="cluster-name"
                     >
                       <p>{{ c.label }}</p>
@@ -790,12 +790,12 @@ export default {
                     :data-testid="`menu-cluster-disabled-${ c.id }`"
                   >
                     <ClusterIconMenu
-                      v-tooltip="getTooltipConfig(c, true)"
+                      v-clean-tooltip="getTooltipConfig(c, true)"
                       :cluster="c"
                       class="rancher-provider-icon"
                     />
                     <div
-                      v-tooltip="getTooltipConfig(c)"
+                      v-clean-tooltip="getTooltipConfig(c)"
                       class="cluster-name"
                     >
                       <p>{{ c.label }}</p>
@@ -862,7 +862,7 @@ export default {
                   :to="a.to"
                 >
                   <IconOrSvg
-                    v-tooltip="getTooltipConfig(a.label)"
+                    v-clean-tooltip="getTooltipConfig(a.label)"
                     :icon="a.icon"
                     :src="a.svg"
                   />
@@ -890,7 +890,7 @@ export default {
                   :to="a.to"
                 >
                   <IconOrSvg
-                    v-tooltip="getTooltipConfig(a.label)"
+                    v-clean-tooltip="getTooltipConfig(a.label)"
                     :icon="a.icon"
                     :src="a.svg"
                   />
@@ -920,7 +920,7 @@ export default {
                   :to="a.to"
                 >
                   <IconOrSvg
-                    v-tooltip="getTooltipConfig(a.label)"
+                    v-clean-tooltip="getTooltipConfig(a.label)"
                     :icon="a.icon"
                     :src="a.svg"
                   />

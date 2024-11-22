@@ -48,7 +48,6 @@ import Certificates from '@shell/components/Certificates';
 import { NAME as EXPLORER } from '@shell/config/product/explorer';
 import TabTitle from '@shell/components/TabTitle';
 import { STATES_ENUM } from '@shell/plugins/dashboard-store/resource-class';
-import capitalize from 'lodash/capitalize';
 import paginationUtils from '@shell/utils/pagination-utils';
 
 export const RESOURCES = [NAMESPACE, INGRESS, PV, WORKLOAD_TYPES.DEPLOYMENT, WORKLOAD_TYPES.STATEFUL_SET, WORKLOAD_TYPES.JOB, WORKLOAD_TYPES.DAEMON_SET, SERVICE];
@@ -218,7 +217,7 @@ export default {
         if (!node.metadata?.state?.transitioning) {
           const architecture = node.labels?.[NODE_ARCHITECTURE];
 
-          const key = architecture ? capitalize(architecture) : this.t('cluster.architecture.label.unknown');
+          const key = architecture || this.t('cluster.architecture.label.unknown');
 
           obj[key] = (obj[key] || 0) + 1;
         }
