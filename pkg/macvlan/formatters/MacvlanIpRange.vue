@@ -54,7 +54,7 @@ export default {
           ···
         </span>
       </div>
-      <template slot="popover">
+      <template #popover>
         <div
           v-for="(range, index) in ranges"
           :key="index"

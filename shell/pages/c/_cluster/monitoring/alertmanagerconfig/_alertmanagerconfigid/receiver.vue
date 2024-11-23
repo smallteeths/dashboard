@@ -197,7 +197,7 @@ export default {
         }
       });
 
-      this.$set(this.alertmanagerConfigResource, 'errors', errors);
+      this.alertmanagerConfigResource.errors = errors;
 
       if (this.alertmanagerConfigResource.errors.length) {
         buttonDone(false);

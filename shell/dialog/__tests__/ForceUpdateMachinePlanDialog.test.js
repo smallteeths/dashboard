@@ -1,11 +1,11 @@
 import { mount } from '@vue/test-utils';
 import ForceUpdateMachinePlanDialog from '@shell/dialog/ForceUpdateMachinePlanDialog.vue';
-import cleanHtmlDirective from '@shell/plugins/clean-html-directive';
+import cleanHtml from '@shell/directives/clean-html';
 
 describe('component: ForceUpdateMachinePlanDialog', () => {
   it('there should be a prompt message', () => {
     const wrapper = mount(ForceUpdateMachinePlanDialog, {
-      propsData: {
+      props: {
         resources: [
           {
             id:       'test',
@@ -13,16 +13,20 @@ describe('component: ForceUpdateMachinePlanDialog', () => {
           }
         ]
       },
-      directives: { cleanHtmlDirective },
+
       data() {
         return { toUpdate: [] };
       },
-      mocks: {
-        $store: {
-          dispatch: jest.fn(() => Promise.resolve({})),
-          getters:  { 'i18n/t': (t) => t, 'i18n/exists': (k) => k }
-        }
-      },
+      global: {
+        directives: { cleanHtml },
+        mocks:      {
+          $store: {
+            dispatch: jest.fn(() => Promise.resolve({})),
+            getters:  { 'i18n/t': (t) => t, 'i18n/exists': (k) => k }
+          }
+        },
+      }
+
     });
 
     const inputWrap = wrapper.find('[data-testid="card-body-slot"]');

@@ -49,9 +49,9 @@ export default {
       handler(neu) {
         Object.keys(this.tls).forEach((key) => {
           if (this.tls[key]) {
-            this.$set(this.value.thanos.tls, key, base64Encode(this.tls[key]));
+            this.value.thanos.tls[key] = base64Encode(this.tls[key]);
           } else {
-            this.$set(this.value.thanos.tls, key, this.defaultTls[key]);
+            this.value.thanos.tls[key] = this.defaultTls[key];
           }
         });
       },

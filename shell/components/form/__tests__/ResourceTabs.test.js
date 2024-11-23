@@ -38,15 +38,18 @@ describe('component: ResourceTabs', () => {
 
   it('should show event tab', () => {
     const wrapper = shallowMount(ResourceTabs, {
-      mocks: {
-        $store: {
-          getters: {
-            currentStore:        jest.fn(() => 'cluster'),
-            'cluster/schemaFor': jest.fn(() => true),
-            'i18n/t':            jest.fn()
-          },
-          dispatch: jest.fn(() => Promise.resolve())
-        }
+      global: {
+        mocks: {
+          $store: {
+            getters: {
+              currentStore:        jest.fn(() => 'cluster'),
+              'cluster/schemaFor': jest.fn(() => true),
+              'i18n/t':            jest.fn()
+            },
+            dispatch: jest.fn(() => Promise.resolve())
+          }
+        },
+        stubs: { Tabbed: { template: '<div><slot /></div>' } }
       }
     });
 
@@ -55,17 +58,20 @@ describe('component: ResourceTabs', () => {
   });
   it('should remove event tab', () => {
     const wrapper = shallowMount(ResourceTabs, {
-      propsData: { needEvents: false },
-      mocks:     {
-        $store: {
-          getters: {
-            currentStore:        jest.fn(() => 'cluster'),
-            'cluster/schemaFor': jest.fn(() => true),
-            'i18n/t':            jest.fn()
-          },
-          dispatch: jest.fn(() => Promise.resolve())
+      props:  { needEvents: false },
+      global: {
+        mocks: {
+          $store: {
+            getters: {
+              currentStore:        jest.fn(() => 'cluster'),
+              'cluster/schemaFor': jest.fn(() => true),
+              'i18n/t':            jest.fn()
+            },
+            dispatch: jest.fn(() => Promise.resolve())
+          }
         }
       }
+
     });
 
     expect(wrapper.vm.showEvents).toBe(false);

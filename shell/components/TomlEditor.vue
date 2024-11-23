@@ -224,7 +224,7 @@ export default {
     flex: 1;
   }
 
-  ::v-deep .code-mirror  {
+  :deep(.code-mirror)  {
     position: relative;
 
     .CodeMirror {

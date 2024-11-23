@@ -174,7 +174,7 @@ export default {
 
     updateHarborRegistryUrl(val) {
       if (val === 'Harbor' && this.harborRegistryUrl) {
-        this.$set(this, 'registryUrl', this.harborRegistryUrl);
+        this.registryUrl = this.harborRegistryUrl;
       }
     }
   }
@@ -190,7 +190,7 @@ export default {
           name="registryProvider"
           :mode="mode"
           :options="registryAddresses"
-          @input="updateHarborRegistryUrl"
+          @update:value="updateHarborRegistryUrl"
         />
       </div>
     </div>

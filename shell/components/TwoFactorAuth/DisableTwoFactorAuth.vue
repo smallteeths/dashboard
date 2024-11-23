@@ -6,7 +6,7 @@
     >
       {{ t('mfa.disableOTP.label') }}
     </button>
-    <modal
+    <AppModal
       class="two-factor-disable-modal"
       name="two-factor-disable"
       :width="600"
@@ -17,51 +17,54 @@
         class="prompt-disable-two-factor-auth"
         :show-highlight-border="false"
       >
-        <h4
-          slot="title"
-          class="text-default-text"
-        >
-          {{ t('mfa.disableOTP.label') }}
-        </h4>
-        <div
-          slot="body"
-          class="pr-10 pl-10"
-        >
-          <LabeledInput
-            v-model:value="form.passCode"
-            class="mb-10"
-            :label="t('mfa.code.label')"
-            required
-          />
-          <Banner
-            v-for="e in errors"
-            :key="e"
-            color="error"
-            :label="e"
-          />
-        </div>
-        <div
-          slot="actions"
-          class="bottom"
-        >
-          <div class="buttons">
-            <button
-              class="mr-10 btn role-secondary"
-              @click="confirm(false)"
-            >
-              {{ t('generic.cancel') }}
-            </button>
-            <button
-              class="btn role-primary"
-              :disabled="loading"
-              @click="confirm(true)"
-            >
-              {{ t('mfa.disable') }}
-            </button>
+        <template #title>
+          <h4
+            class="text-default-text"
+          >
+            {{ t('mfa.disableOTP.label') }}
+          </h4>
+        </template>
+        <template #body>
+          <div
+            class="pr-10 pl-10"
+          >
+            <LabeledInput
+              v-model:value="form.passCode"
+              class="mb-10"
+              :label="t('mfa.code.label')"
+              required
+            />
+            <Banner
+              v-for="e in errors"
+              :key="e"
+              color="error"
+              :label="e"
+            />
           </div>
-        </div>
+        </template>
+        <template #actions>
+          <div
+            class="bottom"
+          >
+            <div class="buttons">
+              <button
+                class="mr-10 btn role-secondary"
+                @click="confirm(false)"
+              >
+                {{ t('generic.cancel') }}
+              </button>
+              <button
+                class="btn role-primary"
+                :disabled="loading"
+                @click="confirm(true)"
+              >
+                {{ t('mfa.disable') }}
+              </button>
+            </div>
+          </div>
+        </template>
       </Card>
-    </modal>
+    </AppModal>
   </div>
 </template>
 
@@ -71,6 +74,7 @@ import { Banner } from '@components/Banner';
 import { stringify } from '@shell/utils/error';
 import { LabeledInput } from '@components/Form/LabeledInput';
 import { mapPref, ENABLE_TWO_FACTOR_AUTH } from '@shell/store/prefs';
+import AppModal from '@shell/components/AppModal.vue';
 
 export default {
   props: {
@@ -137,6 +141,7 @@ export default {
     Card,
     Banner,
     LabeledInput,
+    AppModal
   }
 };
 </script>

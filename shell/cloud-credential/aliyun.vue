@@ -58,7 +58,7 @@ export default {
       placeholder-key="cluster.credential.aliyun.accessKey.placeholder"
       type="text"
       :mode="mode"
-      @input="value.setData('accessKeyId', $event);"
+      @update:value="value.setData('accessKeyId', $event);"
     />
     <LabeledInput
       :value="value.decodedData.accessKeySecret"
@@ -67,7 +67,7 @@ export default {
       placeholder-key="cluster.credential.aliyun.secretKey.placeholder"
       type="password"
       :mode="mode"
-      @input="value.setData('accessKeySecret', $event);"
+      @update:value="value.setData('accessKeySecret', $event);"
     />
   </div>
 </template>

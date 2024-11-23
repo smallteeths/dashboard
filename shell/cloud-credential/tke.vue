@@ -56,7 +56,7 @@ export default {
       placeholder-key="cluster.credential.tke.accessKeyId.placeholder"
       type="text"
       :mode="mode"
-      @input="value.setData('accessKeyId', $event);"
+      @update:value="value.setData('accessKeyId', $event);"
     />
     <LabeledInput
       :value="value.decodedData.accessKeySecret"
@@ -65,7 +65,7 @@ export default {
       placeholder-key="cluster.credential.tke.accessKeySecret.placeholder"
       type="password"
       :mode="mode"
-      @input="value.setData('accessKeySecret', $event);"
+      @update:value="value.setData('accessKeySecret', $event);"
     />
   </div>
 </template>

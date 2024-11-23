@@ -356,7 +356,7 @@ export default {
             v-model:value="parametersYaml"
             class="yaml-editor"
             :editor-mode="editorMode"
-            @newObject="$set(value.spec, 'parameters', $event)"
+            @newObject="value.spec.parameters=$event"
           />
         </Tab>
       </Tabbed>

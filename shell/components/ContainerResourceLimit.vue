@@ -330,7 +330,7 @@ export default {
           :input-exponent="-1"
           :output-modifier="true"
           :base-unit="t('suffix.cpus')"
-          @input="updateLimits"
+          @update:value="updateLimits"
         />
       </span>
       <span class="col span-6">
@@ -342,7 +342,7 @@ export default {
           :input-exponent="2"
           :increment="1024"
           :output-modifier="true"
-          @input="updateLimits"
+          @update:value="updateLimits"
         />
       </span>
     </div>
@@ -359,7 +359,7 @@ export default {
           :input-exponent="-1"
           :output-modifier="true"
           :base-unit="t('suffix.cpus')"
-          @input="updateLimits"
+          @update:value="updateLimits"
         />
       </span>
       <span class="col span-6">
@@ -371,7 +371,7 @@ export default {
           :input-exponent="2"
           :increment="1024"
           :output-modifier="true"
-          @input="updateLimits"
+          @update:value="updateLimits"
         />
       </span>
     </div>

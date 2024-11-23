@@ -396,7 +396,7 @@ export default {
             :labels="[t('generic.disabled'), t('generic.enabled')]"
             :mode="mode"
             :disabled="unsupportVlansubnet"
-            @input="update"
+            @update:value="update"
           />
         </div>
       </div>
@@ -410,7 +410,7 @@ export default {
               :label="t('workload.networking.vlansubnet.network.label')"
               :placeholder="t('workload.networking.network.placeholder')"
               :required="true"
-              @input="update"
+              @update:value="update"
             />
           </div>
 
@@ -420,7 +420,7 @@ export default {
               :mode="mode"
               :label="t('workload.networking.vlansubnet.ip.label')"
               :placeholder="t('workload.networking.vlansubnet.ip.placeholder')"
-              @input="update"
+              @update:value="update"
             />
           </div>
         </div>
@@ -431,7 +431,7 @@ export default {
               :mode="mode"
               :label="t('workload.networking.vlansubnet.mac.label')"
               :placeholder="t('workload.networking.vlansubnet.mac.placeholder')"
-              @input="update"
+              @update:value="update"
             />
           </div>
 
@@ -443,7 +443,7 @@ export default {
               :label="t('workload.networking.vlansubnet.subnet.label')"
               :placeholder="t('workload.networking.vlansubnet.subnet.placeholder')"
               :required="true"
-              @input="update"
+              @update:value="update"
             />
           </div>
         </div>

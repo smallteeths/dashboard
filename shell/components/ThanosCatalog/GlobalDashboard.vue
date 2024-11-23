@@ -83,18 +83,18 @@ export default {
 
   methods: {
     updateGrafanaTolerations(inputVal) {
-      this.$set(this.value.grafana, 'tolerations', inputVal.map((item) => {
+      this.value.grafana.tolerations = inputVal.map((item) => {
         delete item.vKey;
 
         return item;
-      }));
+      });
     },
     initTolerations() {
-      this.$set(this, 'grafanaTolerations', this.value.grafana.tolerations.map((item) => {
+      this.grafanaTolerations = this.value.grafana.tolerations.map((item) => {
         item.vKey = random32();
 
         return item;
-      }));
+      });
     }
   },
   created() {
@@ -250,7 +250,7 @@ export default {
         <Tolerations
           :value="grafanaTolerations"
           :mode="mode"
-          @input="updateGrafanaTolerations"
+          @update:value="updateGrafanaTolerations"
         />
       </div>
     </div>

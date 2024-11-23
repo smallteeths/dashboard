@@ -102,7 +102,7 @@ export default {
           }
         };
 
-        this.$set(this.value, 'resourceQuota', resourceQuota);
+        this.value.resourceQuota = resourceQuota;
 
         return;
       }
@@ -113,7 +113,7 @@ export default {
         }
       };
 
-      this.$set(this.value, 'resourceQuota', resourceQuota);
+      this.value.resourceQuota = resourceQuota;
     }
   },
 };
@@ -138,7 +138,7 @@ export default {
       :project-resource-quota-limits="projectResourceQuotaLimits"
       :default-resource-quota-limits="defaultResourceQuotaLimits"
       :namespace-resource-quota-limits="namespaceResourceQuotaLimits"
-      @input="update"
+      @update:value="update"
     />
   </div>
 </template>

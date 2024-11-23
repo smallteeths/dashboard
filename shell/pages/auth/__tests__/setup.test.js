@@ -71,7 +71,15 @@ describe('page: auth/setup', () => {
           product:            '',
         };
       },
-      mocks: { $route: { query: {} }, $fetchState: {} }
+      global: {
+        mocks: {
+          $route:      { query: {} },
+          $router:     { replace: jest.fn() },
+          $store:      { getters: { 'management/byId': jest.fn() }, dispatch: jest.fn(() => Promise.resolve()) },
+          $fetchState: {}
+        }
+      }
+
     });
 
     expect(wrapper.findComponent(PasswordStrength).exists()).toBe(true);

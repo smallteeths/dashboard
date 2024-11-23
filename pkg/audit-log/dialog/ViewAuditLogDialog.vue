@@ -39,44 +39,47 @@ export default {
     :show-highlight-border="false"
     :sticky="true"
   >
-    <div
-      slot="title"
-      class="title"
-    >
-      <h4
-        v-clean-html="t('auditLog.detail.title')"
-        class="text-default-text"
-      />
-      <i
-        class="icon icon-close"
-        @click="close"
-      />
-    </div>
-
-    <div
-      slot="body"
-      class="pl-10 pr-10"
-    >
-      <div>
-        <h4>{{ t('auditLog.detail.request') }}</h4>
-        <JsonView :value="requestBody" />
-      </div>
-      <div class="mt-10">
-        <h4>{{ t('auditLog.detail.response') }}</h4>
-        <JsonView :value="responseBody" />
-      </div>
-    </div>
-    <div
-      slot="actions"
-      class="buttons"
-    >
-      <button
-        class="btn role-secondary mr-10"
-        @click="close"
+    <template #title>
+      <div
+        class="title"
       >
-        {{ t('generic.cancel') }}
-      </button>
-    </div>
+        <h4
+          v-clean-html="t('auditLog.detail.title')"
+          class="text-default-text"
+        />
+        <i
+          class="icon icon-close"
+          @click="close"
+        />
+      </div>
+    </template>
+
+    <template #body>
+      <div
+        class="pl-10 pr-10"
+      >
+        <div>
+          <h4>{{ t('auditLog.detail.request') }}</h4>
+          <JsonView :value="requestBody" />
+        </div>
+        <div class="mt-10">
+          <h4>{{ t('auditLog.detail.response') }}</h4>
+          <JsonView :value="responseBody" />
+        </div>
+      </div>
+    </template>
+    <template #actions>
+      <div
+        class="buttons"
+      >
+        <button
+          class="btn role-secondary mr-10"
+          @click="close"
+        >
+          {{ t('generic.cancel') }}
+        </button>
+      </div>
+    </template>
   </Card>
 </template>
 

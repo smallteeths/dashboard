@@ -12,17 +12,20 @@ describe('component: SelectIconGrid.vue', () => {
   it('is iframe', () => {
     const routerPush = jest.fn((t) => t);
     const wrapper = mount(SelectIconGrid, {
-      propsData: { rows: [row] },
-      mocks:     {
-        $router: { push: routerPush },
-        $route:  { params: { cluster: CLUSTER } },
-        $store:  { getters: { 'prefs/get': () => 10 } }
+      props:  { rows: [row] },
+      global: {
+        mocks: {
+          $router: { push: routerPush },
+          $route:  { params: { cluster: CLUSTER } },
+          $store:  { getters: { 'prefs/get': () => 10 } }
+        }
       }
+
     });
 
-    const grid = wrapper.findAll('[data-testid="select-icon-grid-0"]');
+    const grid = wrapper.find('[data-testid="select-icon-grid-0"]');
 
-    expect(grid).toHaveLength(1);
+    expect(grid.exists()).toBe(true);
 
     grid.trigger('click');
 

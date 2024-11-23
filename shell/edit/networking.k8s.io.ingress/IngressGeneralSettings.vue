@@ -172,12 +172,12 @@ export default {
       },
       set(v) {
         if (!this.value?.metadata?.annotations) {
-          this.$set(this.value.metadata, 'annotations', {});
+          this.value.metadata.annotations = {};
         }
         if (!v?.trim()) {
-          this.$delete(this.value?.metadata?.annotations, REWRITE_TARGET);
+          delete this.value?.metadata?.annotations[REWRITE_TARGET];
         } else {
-          this.$set(this.value.metadata.annotations, REWRITE_TARGET, v);
+          this.value.metadata.annotations[REWRITE_TARGET] = v;
         }
       }
     },
@@ -187,12 +187,12 @@ export default {
       },
       set(v) {
         if (!this.value?.metadata?.annotations) {
-          this.$set(this.value.metadata, 'annotations', {});
+          this.value.metadata.annotations = {};
         }
         if (!v?.trim() === 'false') {
-          this.$delete(this.value.metadata.annotations, SSL_REDIRECT);
+          delete this.value.metadata.annotations[SSL_REDIRECT];
         } else {
-          this.$set(this.value.metadata.annotations, SSL_REDIRECT, v);
+          this.value.metadata.annotations[SSL_REDIRECT] = v;
         }
       }
     },
@@ -202,13 +202,13 @@ export default {
       },
       set(v) {
         if (!this.value?.metadata?.annotations) {
-          this.$set(this.value.metadata, 'annotations', {});
+          this.value.metadata.annotations = {};
         }
         if (v?.trim() === 'off') {
-          this.$delete(this.value.metadata.annotations, PROXY_BUFFERING);
-          this.$delete(this.value.metadata.annotations, PROXY_BUFFER_SIZE);
+          delete this.value.metadata.annotations[PROXY_BUFFERING];
+          delete this.value.metadata.annotations[PROXY_BUFFER_SIZE];
         } else {
-          this.$set(this.value.metadata.annotations, PROXY_BUFFERING, v);
+          this.value.metadata.annotations[PROXY_BUFFERING] = v;
         }
       }
     },
@@ -218,9 +218,9 @@ export default {
       },
       set(v) {
         if (!this.value?.metadata?.annotations) {
-          this.$set(this.value.metadata, 'annotations', {});
+          this.value.metadata.annotations = {};
         }
-        this.$set(this.value.metadata.annotations, PROXY_BUFFER_SIZE, `${ v }k`);
+        this.value.metadata.annotations[PROXY_BUFFER_SIZE] = `${ v }k`;
       }
     },
     whitelistSourceRange: {
@@ -229,12 +229,12 @@ export default {
       },
       set(v) {
         if (!this.value?.metadata?.annotations) {
-          this.$set(this.value.metadata, 'annotations', {});
+          this.value.metadata.annotations = {};
         }
         if (!v?.trim()) {
-          this.$delete(this.value?.metadata?.annotations, WHITELIST_SOURCE_RANGE);
+          delete this.value?.metadata?.annotations[WHITELIST_SOURCE_RANGE];
         } else {
-          this.$set(this.value.metadata.annotations, WHITELIST_SOURCE_RANGE, v);
+          this.value.metadata.annotations[WHITELIST_SOURCE_RANGE] = v;
         }
       }
     },
@@ -244,12 +244,12 @@ export default {
       },
       set(v) {
         if (!this.value?.metadata?.annotations) {
-          this.$set(this.value.metadata, 'annotations', {});
+          this.value.metadata.annotations = {};
         }
         if (!v?.trim()) {
-          this.$delete(this.value?.metadata?.annotations, PERMANENT_REDIRECT);
+          delete this.value?.metadata?.annotations[PERMANENT_REDIRECT];
         } else {
-          this.$set(this.value.metadata.annotations, PERMANENT_REDIRECT, v);
+          this.value.metadata.annotations[PERMANENT_REDIRECT] = v;
         }
       }
     },
@@ -259,12 +259,12 @@ export default {
       },
       set(v) {
         if (!this.value?.metadata?.annotations) {
-          this.$set(this.value.metadata, 'annotations', {});
+          this.value.metadata.annotations = {};
         }
         if (!v) {
-          this.$delete(this.value?.metadata?.annotations, PERMANENT_REDIRECT_CODE);
+          delete this.value?.metadata?.annotations[PERMANENT_REDIRECT_CODE];
         } else {
-          this.$set(this.value.metadata.annotations, PERMANENT_REDIRECT_CODE, `${ v }`);
+          this.value.metadata.annotations[PERMANENT_REDIRECT_CODE] = `${ v }`;
         }
       }
     },
@@ -274,12 +274,12 @@ export default {
       },
       set(v) {
         if (!this.value?.metadata?.annotations) {
-          this.$set(this.value.metadata, 'annotations', {});
+          this.value.metadata.annotations = {};
         }
         if (!v) {
-          this.$delete(this.value?.metadata?.annotations, PROXY_BODY_SIZE);
+          delete this.value?.metadata?.annotations[PROXY_BODY_SIZE];
         } else {
-          this.$set(this.value.metadata.annotations, PROXY_BODY_SIZE, `${ v }m`);
+          this.value.metadata.annotations[PROXY_BODY_SIZE] = `${ v }m`;
         }
       }
     },
@@ -289,12 +289,12 @@ export default {
       },
       set(v) {
         if (!this.value?.metadata?.annotations) {
-          this.$set(this.value.metadata, 'annotations', {});
+          this.value.metadata.annotations = {};
         }
         if (!v) {
-          this.$delete(this.value?.metadata?.annotations, LIMIT_RPS);
+          delete this.value?.metadata?.annotations[LIMIT_RPS];
         } else {
-          this.$set(this.value.metadata.annotations, LIMIT_RPS, `${ v }`);
+          this.value.metadata.annotations[LIMIT_RPS] = `${ v }`;
         }
       }
     }

@@ -4,64 +4,67 @@
       class="edit-gpu-device-plugin-config-dialog"
       :show-highlight-border="false"
     >
-      <h4
-        slot="title"
-        class="text-default-text"
-      >
-        {{ t('editGpuDevicePluginConfigDialog.title', { name: nodeName }) }}
-      </h4>
-      <div
-        slot="body"
-        class="pr-10 pl-10"
-        style="min-height: 300px;"
-      >
-        <h5>{{ t('editGpuDevicePluginConfigDialog.subtitle') }}</h5>
-        <div class="mb-20 row">
-          <div class="col span-6">
-            <LabeledSelect
-              v-model:value="config"
-              :label="t('editGpuDevicePluginConfigDialog.config.label')"
-              :placeholder="t('editGpuDevicePluginConfigDialog.config.placeholder')"
-              :options="configs"
-              clearable
-            />
+      <template #title>
+        <h4
+          class="text-default-text"
+        >
+          {{ t('editGpuDevicePluginConfigDialog.title', { name: nodeName }) }}
+        </h4>
+      </template>
+      <template #body>
+        <div
+          class="pr-10 pl-10"
+          style="min-height: 300px;"
+        >
+          <h5>{{ t('editGpuDevicePluginConfigDialog.subtitle') }}</h5>
+          <div class="mb-20 row">
+            <div class="col span-6">
+              <LabeledSelect
+                v-model:value="config"
+                :label="t('editGpuDevicePluginConfigDialog.config.label')"
+                :placeholder="t('editGpuDevicePluginConfigDialog.config.placeholder')"
+                :options="configs"
+                clearable
+              />
+            </div>
+          </div>
+          <div class="row">
+            <div class="col span-12">
+              <YamlEditor
+                v-if="configContent"
+                ref="yamlEditor"
+                class="yaml-editor"
+                :value="configContent"
+                editor-mode="VIEW_CODE"
+              />
+            </div>
           </div>
         </div>
-        <div class="row">
-          <div class="col span-12">
-            <YamlEditor
-              v-if="configContent"
-              ref="yamlEditor"
-              class="yaml-editor"
-              :value="configContent"
-              editor-mode="VIEW_CODE"
-            />
-          </div>
-        </div>
-      </div>
-      <div
-        slot="actions"
-        class="bottom"
-      >
-        <Banner
-          v-for="(err, i) in errors"
-          :key="i"
-          color="error"
-          :label="err"
-        />
-        <div class="buttons">
-          <button
-            class="mr-10 btn role-secondary"
-            @click="close"
-          >
-            {{ t('generic.cancel') }}
-          </button>
-          <AsyncButton
-            :disabled="loading || !pluginConfigMap"
-            @click="save"
+      </template>
+      <template #actions>
+        <div
+          class="bottom"
+        >
+          <Banner
+            v-for="(err, i) in errors"
+            :key="i"
+            color="error"
+            :label="err"
           />
+          <div class="buttons">
+            <button
+              class="mr-10 btn role-secondary"
+              @click="close"
+            >
+              {{ t('generic.cancel') }}
+            </button>
+            <AsyncButton
+              :disabled="loading || !pluginConfigMap"
+              @click="save"
+            />
+          </div>
         </div>
-      </div>
+      </template>
     </Card>
   </div>
 </template>

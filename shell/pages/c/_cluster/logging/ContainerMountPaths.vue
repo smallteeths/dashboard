@@ -99,7 +99,7 @@ export default {
           }
         });
 
-        this.$set(container, 'volumeMounts', out);
+        container.volumeMounts = out;
       });
     },
 

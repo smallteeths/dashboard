@@ -33,9 +33,9 @@ export default {
   },
 
   data() {
-    this.$set(this.value, 'spec', this.value.spec || {});
-    this.$set(this.value.spec, 'namespaceDefaultResourceQuota', this.value.spec.namespaceDefaultResourceQuota || { limit: {} });
-    this.$set(this.value.spec, 'resourceQuota', this.value.spec.resourceQuota || { limit: {} });
+    this.value.spec = this.value.spec || {};
+    this.value.spec.namespaceDefaultResourceQuota = this.value.spec.namespaceDefaultResourceQuota || { limit: {} };
+    this.value.spec.resourceQuota = this.value.spec.resourceQuota || { limit: {} };
     const quotaLimit = this.value.spec.resourceQuota.limit;
     const nsQuotaLimit = this.value.spec.namespaceDefaultResourceQuota.limit;
     const allTypes = [...new Set([...Object.keys(quotaLimit), ...Object.keys(nsQuotaLimit)])];
@@ -266,13 +266,13 @@ export default {
               :mode="mode"
               :value="tq.type"
               :options="remainingTypes(tq.type)"
-              @input="updateType($event, tq)"
+              @update:value="updateType($event, tq)"
             />
             <Select
               :mode="mode"
               :value="tq.limit.sc"
               :options="remainingSc(tq.type, tq.limit.sc)"
-              @input="updateStorageClass($event, tq)"
+              @update:value="updateStorageClass($event, tq)"
             />
           </div>
           <div>
@@ -303,7 +303,7 @@ export default {
             :mode="mode"
             :value="tq.type"
             :options="remainingTypes(tq.type)"
-            @input="updateType($event, tq)"
+            @update:value="updateType($event, tq)"
           />
           <UnitInput
             v-model:value="tq.limit"

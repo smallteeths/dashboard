@@ -116,131 +116,134 @@ export default {
       :show-highlight-border="false"
       :sticky="true"
     >
-      <div
-        slot="title"
-        class="title"
-      >
-        <h4
-          v-clean-html="t('auditLog.detail.title')"
-          class="text-default-text"
-        />
-        <i
-          class="icon icon-close"
-          @click="close"
-        />
-      </div>
+      <template #title>
+        <div
+          class="title"
+        >
+          <h4
+            v-clean-html="t('auditLog.detail.title')"
+            class="text-default-text"
+          />
+          <i
+            class="icon icon-close"
+            @click="close"
+          />
+        </div>
+      </template>
 
-      <div
-        slot="body"
-        class="pl-10 pr-10"
-      >
-        <h5>
-          {{ t('auditLog.k8sAuditEventDialog.title') }} : {{ value.auditID }}
-        </h5>
-        <div class="flex gap-4">
-          <div
-            v-if="clusterName"
-            class="flex gap-2"
-          >
-            <span class="text-$label-color">{{ t('auditLog.k8sAuditEventDialog.cluster') }}: </span><span>{{ clusterName }}</span>
-          </div>
-          <div class="flex gap-2">
-            <span class="text-$label-color">{{ t('auditLog.table.stage') }}: </span><span>{{ value?.stage }}</span>
-          </div>
-          <div class="flex gap-2">
-            <span class="text-$label-color">{{ t('auditLog.table.requestTimestamp') }}: </span> {{ value?.requestTimestamp }}
-          </div>
-        </div>
-        <hr class="mt-4 mb-4">
-        <div class="grid gap-4px">
-          <div class="flex gap-2">
-            <span class="text-$label-color">{{ t('auditLog.table.verb') }}:</span> <span>{{ value?.verb }}</span>
-          </div>
-          <div class="flex gap-2">
-            <span class="text-$label-color">{{ t('auditLog.table.requestURI') }}:</span> <span>{{ value?.requestURI }}</span>
-          </div>
-          <div class="flex gap-2">
-            <span class="text-$label-color">{{ t('auditLog.k8sAuditEventDialog.stageTime') }}:</span> <span>{{ value?.stageTimestamp }}</span>
-          </div>
-          <div class="flex gap-2">
-            <span class="text-$label-color">{{ t('auditLog.k8sAuditEventDialog.responseCode') }}:</span> <span>{{ value?.responseCode }}</span>
-          </div>
-          <div class="flex gap-2">
-            <span class="text-$label-color">{{ t('auditLog.k8sAuditEventDialog.sourceIPs') }}:</span> <span>{{ value?.sourceIPs }}</span>
-          </div>
-        </div>
-        <hr class="mt-10 mb-10">
-        <Tabbed
-          :default-tab="defaultTab"
-          :flat="true"
-          @changed="handleTabChanged"
+      <template #body>
+        <div
+          class="pl-10 pr-10"
         >
-          <Tab
-            :label="t('auditLog.k8sAuditEventDialog.user')"
-            name="user"
-            :weight="5"
-          >
-            <JsonView
-              ref="user"
-              :value="user"
-              class="m-20"
-            />
-          </Tab>
-          <Tab
-            :label="t('auditLog.k8sAuditEventDialog.impersonaltedUser')"
-            name="impersonatedUser"
-            :weight="4"
-          >
-            <JsonView
-              ref="impersonatedUser"
-              :value="impersonatedUser"
-              class="m-20"
-            />
-          </Tab>
-          <Tab
-            :label="t('auditLog.k8sAuditEventDialog.userAgent')"
-            name="userAgent"
-            :weight="3"
-          >
-            <div class="m-20">
-              {{ value.userAgent }}
+          <h5>
+            {{ t('auditLog.k8sAuditEventDialog.title') }} : {{ value.auditID }}
+          </h5>
+          <div class="flex gap-4">
+            <div
+              v-if="clusterName"
+              class="flex gap-2"
+            >
+              <span class="text-$label-color">{{ t('auditLog.k8sAuditEventDialog.cluster') }}: </span><span>{{ clusterName }}</span>
             </div>
-          </Tab>
-          <Tab
-            :label="t('auditLog.k8sAuditEventDialog.requestBody')"
-            name="requestBody"
-            :weight="2"
+            <div class="flex gap-2">
+              <span class="text-$label-color">{{ t('auditLog.table.stage') }}: </span><span>{{ value?.stage }}</span>
+            </div>
+            <div class="flex gap-2">
+              <span class="text-$label-color">{{ t('auditLog.table.requestTimestamp') }}: </span> {{ value?.requestTimestamp }}
+            </div>
+          </div>
+          <hr class="mt-4 mb-4">
+          <div class="grid gap-4px">
+            <div class="flex gap-2">
+              <span class="text-$label-color">{{ t('auditLog.table.verb') }}:</span> <span>{{ value?.verb }}</span>
+            </div>
+            <div class="flex gap-2">
+              <span class="text-$label-color">{{ t('auditLog.table.requestURI') }}:</span> <span>{{ value?.requestURI }}</span>
+            </div>
+            <div class="flex gap-2">
+              <span class="text-$label-color">{{ t('auditLog.k8sAuditEventDialog.stageTime') }}:</span> <span>{{ value?.stageTimestamp }}</span>
+            </div>
+            <div class="flex gap-2">
+              <span class="text-$label-color">{{ t('auditLog.k8sAuditEventDialog.responseCode') }}:</span> <span>{{ value?.responseCode }}</span>
+            </div>
+            <div class="flex gap-2">
+              <span class="text-$label-color">{{ t('auditLog.k8sAuditEventDialog.sourceIPs') }}:</span> <span>{{ value?.sourceIPs }}</span>
+            </div>
+          </div>
+          <hr class="mt-10 mb-10">
+          <Tabbed
+            :default-tab="defaultTab"
+            :flat="true"
+            @changed="handleTabChanged"
           >
-            <JsonView
-              ref="requestBody"
-              :value="requestBody"
-              class="m-20"
-            />
-          </Tab>
-          <Tab
-            :label="t('auditLog.k8sAuditEventDialog.responseBody')"
-            name="responseBody"
-            :weight="1"
-          >
-            <JsonView
-              ref="responseBody"
-              :value="responseBody"
-              class="m-20"
-            />
-          </Tab>
-        </Tabbed>
-      </div>
-      <div
-        slot="actions"
-        class="buttons"
-      >
-        <button
-          class="btn role-secondary mr-10"
-          @click="close"
+            <Tab
+              :label="t('auditLog.k8sAuditEventDialog.user')"
+              name="user"
+              :weight="5"
+            >
+              <JsonView
+                ref="user"
+                :value="user"
+                class="m-20"
+              />
+            </Tab>
+            <Tab
+              :label="t('auditLog.k8sAuditEventDialog.impersonaltedUser')"
+              name="impersonatedUser"
+              :weight="4"
+            >
+              <JsonView
+                ref="impersonatedUser"
+                :value="impersonatedUser"
+                class="m-20"
+              />
+            </Tab>
+            <Tab
+              :label="t('auditLog.k8sAuditEventDialog.userAgent')"
+              name="userAgent"
+              :weight="3"
+            >
+              <div class="m-20">
+                {{ value.userAgent }}
+              </div>
+            </Tab>
+            <Tab
+              :label="t('auditLog.k8sAuditEventDialog.requestBody')"
+              name="requestBody"
+              :weight="2"
+            >
+              <JsonView
+                ref="requestBody"
+                :value="requestBody"
+                class="m-20"
+              />
+            </Tab>
+            <Tab
+              :label="t('auditLog.k8sAuditEventDialog.responseBody')"
+              name="responseBody"
+              :weight="1"
+            >
+              <JsonView
+                ref="responseBody"
+                :value="responseBody"
+                class="m-20"
+              />
+            </Tab>
+          </Tabbed>
+        </div>
+      </template>
+      <template #actions>
+        <div
+          class="buttons"
         >
-          {{ t('generic.cancel') }}
-        </button>
-      </div>
+          <button
+            class="btn role-secondary mr-10"
+            @click="close"
+          >
+            {{ t('generic.cancel') }}
+          </button>
+        </div>
+      </template>
     </Card>
     <div v-else>
       <Banner

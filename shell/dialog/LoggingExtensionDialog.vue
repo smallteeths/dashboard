@@ -124,7 +124,7 @@ export default {
       const errors = this.validation();
 
       if (errors.length) {
-        this.$set(this, 'errors', errors);
+        this.errors = errors;
         buttonCb(false);
 
         return;
@@ -147,14 +147,14 @@ export default {
           const error = err?.data || err;
           const message = exceptionToErrorsArray(error);
 
-          this.$set(this, 'errors', message);
+          this.errors = message;
           buttonCb(false);
         });
       } catch (err) {
         const error = err?.data || err;
         const message = exceptionToErrorsArray(error);
 
-        this.$set(this, 'errors', message);
+        this.errors = message;
         buttonCb(false);
       }
     },
@@ -247,11 +247,13 @@ export default {
     name="modal"
     :show-highlight-border="false"
   >
-    <h4
-      slot="title"
-      v-clean-html="t('logging.extension.storage.title')"
-      class="text-default-text"
-    />
+    <template #title>
+      <h4
+        v-clean-html="t('logging.extension.storage.title')"
+        class="text-default-text"
+      />
+    </template>
+
     <template #body>
       <ContainerMountPaths
         v-model:value="value"
@@ -260,34 +262,35 @@ export default {
         :workload="workload"
       />
     </template>
-    <div
-      slot="actions"
-      class="actions"
-    >
-      <Banner
-        color="info"
-        :label="t('logging.extension.storage.tips')"
-      />
-      <Banner
-        v-for="(err, i) in errors"
-        :key="i"
-        color="error"
-        :label="err"
-      />
-      <div class="buttons">
-        <button
-          type="button"
-          class="btn role-secondary mr-10"
-          @click="close"
-        >
-          {{ t('generic.cancel') }}
-        </button>
-        <AsyncButton
-          mode="edit"
-          @click="save"
+    <template #actions>
+      <div
+        class="actions"
+      >
+        <Banner
+          color="info"
+          :label="t('logging.extension.storage.tips')"
         />
+        <Banner
+          v-for="(err, i) in errors"
+          :key="i"
+          color="error"
+          :label="err"
+        />
+        <div class="buttons">
+          <button
+            type="button"
+            class="btn role-secondary mr-10"
+            @click="close"
+          >
+            {{ t('generic.cancel') }}
+          </button>
+          <AsyncButton
+            mode="edit"
+            @click="save"
+          />
+        </div>
       </div>
-    </div>
+    </template>
   </Card>
 </template>
 <style lang="scss" scoped>

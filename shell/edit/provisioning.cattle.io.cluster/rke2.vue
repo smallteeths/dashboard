@@ -2524,7 +2524,7 @@ export default {
           @update:value="$emit('input', $event)"
         />
         <CustomContainerdConfig
-          v-model:value="value"
+          :value="value"
           :mode="mode"
         />
 

@@ -165,8 +165,8 @@ export default {
       return count;
     },
     showMorePods(row) {
-      this.$set(row, 'pods', row.pods.concat(row.morePods));
-      this.$set(row, 'more', false);
+      row.pods = row.pods.concat(row.morePods);
+      row.more = false;
     },
   },
   components: { Card, SortableTable }
@@ -179,119 +179,121 @@ export default {
       class="macvlan"
       :show-highlight-border="false"
     >
-      <h4
-        slot="title"
-        class="text-default-text"
-      >
-        {{ t('promptRemove.title') }}
-      </h4>
-      <div
-        slot="body"
-        class="pr-10 pl-10 inner"
-      >
-        <SortableTable
-          key-field="_key"
-          :headers="headers"
-          :rows="rows"
-          :row-actions="false"
-          :table-actions="false"
-          :search="false"
-          :loading="loading"
+      <template #title>
+        <h4
+          class="text-default-text"
         >
-          <template #main-row="{row}">
-            <tr
-              v-if="!row.pods.length"
-              class="main-row"
-            >
-              <template
-                v-for="(col) in headers"
-                :key="col.name"
+          {{ t('promptRemove.title') }}
+        </h4>
+      </template>
+      <template #body>
+        <div
+          class="pr-10 pl-10 inner"
+        >
+          <SortableTable
+            key-field="_key"
+            :headers="headers"
+            :rows="rows"
+            :row-actions="false"
+            :table-actions="false"
+            :search="false"
+            :loading="loading"
+          >
+            <template #main-row="{row}">
+              <tr
+                v-if="!row.pods.length"
+                class="main-row"
+              >
+                <template
+                  v-for="(col) in headers"
+                  :key="col.name"
+                >
+                  <td
+
+                    :data-title="col.label"
+                    :align="col.align || 'left'"
+                    :width="col.width"
+                    class="pl-5"
+                  >
+                    {{ col.name === 'podName' ? t('macvlan.promptRemove.pod') : row[col.name] }}
+                  </td>
+                </template>
+              </tr>
+              <tr
+                v-for="(pod, i) in row.pods"
+                :key="pod.name"
+                class="main-row"
+                :class="{ 'multi-pod': row.pods.length, 'border-bottom-none': i !== row.pods.length-1 || row.more}"
+                :data-node-id="row.key"
+              >
+                <template v-for="(col, j) in headers">
+                  <td
+                    v-if="j===0 && i === 0"
+                    :key="col.name"
+                    :data-title="col.label"
+                    :data-testid="`sortable-cell-${ i }-${ j }`"
+                    :align="col.align || 'left'"
+                    :width="col.width"
+                    :rowspan="getNameRowSpen(row)"
+                  >
+                    {{ i===0 ? row[col.name] : '' }}
+                  </td>
+                  <td
+                    v-if="j>0"
+                    :key="col.name"
+                    :data-title="col.label"
+                    :data-testid="`sortable-cell-${ i }-${ j }`"
+                    :align="col.align || 'left'"
+                    :width="col.width"
+                    class="pl-5"
+                  >
+                    {{ pod[col.name] }}
+                  </td>
+                </template>
+              </tr>
+              <tr
+                v-if="row.more"
+                class="main-row multi-pod"
+                :data-node-id="row.key"
               >
                 <td
-
-                  :data-title="col.label"
-                  :align="col.align || 'left'"
-                  :width="col.width"
-                  class="pl-5"
+                  colspan="3"
+                  class="text-center"
+                  style="text-indent: -100px;"
                 >
-                  {{ col.name === 'podName' ? t('macvlan.promptRemove.pod') : row[col.name] }}
+                  <button
+                    type="button"
+                    class="btn btn-sm bg-primary role-line"
+                    @click="showMorePods(row)"
+                  >
+                    {{ t('macvlan.promptRemove.moreInfo', {count: row.morePods.length}) }}
+                  </button>
                 </td>
-              </template>
-            </tr>
-            <tr
-              v-for="(pod, i) in row.pods"
-              :key="pod.name"
-              class="main-row"
-              :class="{ 'multi-pod': row.pods.length, 'border-bottom-none': i !== row.pods.length-1 || row.more}"
-              :data-node-id="row.key"
-            >
-              <template v-for="(col, j) in headers">
-                <td
-                  v-if="j===0 && i === 0"
-                  :key="col.name"
-                  :data-title="col.label"
-                  :data-testid="`sortable-cell-${ i }-${ j }`"
-                  :align="col.align || 'left'"
-                  :width="col.width"
-                  :rowspan="getNameRowSpen(row)"
-                >
-                  {{ i===0 ? row[col.name] : '' }}
-                </td>
-                <td
-                  v-if="j>0"
-                  :key="col.name"
-                  :data-title="col.label"
-                  :data-testid="`sortable-cell-${ i }-${ j }`"
-                  :align="col.align || 'left'"
-                  :width="col.width"
-                  class="pl-5"
-                >
-                  {{ pod[col.name] }}
-                </td>
-              </template>
-            </tr>
-            <tr
-              v-if="row.more"
-              class="main-row multi-pod"
-              :data-node-id="row.key"
-            >
-              <td
-                colspan="3"
-                class="text-center"
-                style="text-indent: -100px;"
-              >
-                <button
-                  type="button"
-                  class="btn btn-sm bg-primary role-line"
-                  @click="showMorePods(row)"
-                >
-                  {{ t('macvlan.promptRemove.moreInfo', {count: row.morePods.length}) }}
-                </button>
-              </td>
-            </tr>
-          </template>
-        </SortableTable>
-      </div>
-
-      <div
-        slot="actions"
-        class="bottom"
-      >
-        <div class="buttons">
-          <button
-            class="mr-10 btn role-secondary"
-            @click="close()"
-          >
-            {{ t('generic.cancel') }}
-          </button>
-          <button
-            class="btn role-primary"
-            @click="removeFlatnetworks()"
-          >
-            {{ t('clusterConnectMode.actions.yes') }}
-          </button>
+              </tr>
+            </template>
+          </SortableTable>
         </div>
-      </div>
+      </template>
+      <template #actions>
+        <div
+          class="bottom"
+        >
+          <div class="buttons">
+            <button
+              class="mr-10 btn role-secondary"
+              @click="close()"
+            >
+              {{ t('generic.cancel') }}
+            </button>
+            <button
+              class="btn role-primary"
+              @click="removeFlatnetworks()"
+            >
+              {{ t('clusterConnectMode.actions.yes') }}
+            </button>
+          </div>
+        </div>
+      </template>
     </Card>
   </div>
 </template>

@@ -23,7 +23,7 @@ export default {
   },
 
   methods: {
-    $_checkTimeout() {
+    checkTimeout() {
       const now = new Date().getTime();
 
       if (now - this.lastActive < this.uiSessionTimeout) {
@@ -40,30 +40,30 @@ export default {
       }, 5000);
     },
 
-    $_init() {
+    init() {
       this.autoLogoutTimer = window.setInterval(() => {
-        this.$_checkTimeout();
+        this.checkTimeout();
       }, 60 * 1000);
-      const resetLastActive = throttle(() => {
-        this.lastActive = new Date().getTime();
-      }, 250, { leading: true });
 
       defaultEvents.forEach((e) => {
-        window.document.addEventListener(e, resetLastActive);
+        window.document.addEventListener(e, this.resetLastActive);
       });
-      this.$on('hook:beforeDestroy', () => {
-        if (this.autoLogoutTimer) {
-          window.clearInterval(this.autoLogoutTimer);
-        }
-
-        defaultEvents.forEach((e) => {
-          window.document.removeEventListener(e, resetLastActive);
-        });
-      });
-    }
+    },
+    resetLastActive: throttle(function() {
+      this.lastActive = new Date().getTime();
+    }, 250, { leading: true })
   },
 
   mounted() {
-    this.$_init();
+    this.init();
   },
+  beforeUnmount() {
+    if (this.autoLogoutTimer) {
+      window.clearInterval(this.autoLogoutTimer);
+    }
+
+    defaultEvents.forEach((e) => {
+      window.document.removeEventListener(e, this.resetLastActive);
+    });
+  }
 };

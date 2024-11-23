@@ -47,7 +47,7 @@ export default {
           }
         };
 
-        this.$set(this.value, 'loggingOverlay', loggingOverlay);
+        this.value.loggingOverlay = loggingOverlay;
       } else {
         this.value.loggingOverlay && (delete this.value.loggingOverlay);
       }
@@ -75,7 +75,7 @@ export default {
     }
 
     if (provider === 'tke') {
-      this.$set(this, 'clusterType', provider === 'tke' ? 'tke' : '');
+      this.clusterType = provider === 'tke' ? 'tke' : '';
     }
   },
 };

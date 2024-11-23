@@ -86,9 +86,9 @@ export default {
       },
       set(v) {
         if (!this.value.gfd.image) {
-          this.$set(this.value.gfd, 'image', { repository: v });
+          this.value.gfd.image = { repository: v };
         } else {
-          this.$set(this.value.gfd.image, 'repository', v);
+          this.value.gfd.image.repository = v;
         }
       },
     },
@@ -98,9 +98,9 @@ export default {
       },
       set(v) {
         if (!this.value.gfd.image) {
-          this.$set(this.value.gfd, 'image', { tag: v });
+          this.value.gfd.image = { tag: v };
         } else {
-          this.$set(this.value.gfd.image, 'tag', v);
+          this.value.gfd.image.tag = v;
         }
       },
     },
@@ -110,9 +110,9 @@ export default {
       },
       set(v) {
         if (!this.value.nfd.image) {
-          this.$set(this.value.nfd, 'image', { repository: v });
+          this.value.nfd.image = { repository: v };
         } else {
-          this.$set(this.value.nfd.image, 'repository', v);
+          this.value.nfd.image.repository = v;
         }
       },
     },
@@ -122,9 +122,9 @@ export default {
       },
       set(v) {
         if (!this.value.nfd.image) {
-          this.$set(this.value.nfd, 'image', { tag: v });
+          this.value.nfd.image = { tag: v };
         } else {
-          this.$set(this.value.nfd.image, 'tag', v);
+          this.value.nfd.image.tag = v;
         }
       },
     },
@@ -224,7 +224,7 @@ export default {
         if (c.config?.sharing?.timeSlicing?.resources?.length > 0) {
           enabled = true;
         }
-        this.$set(this.sharedAccessEnabledMap, c.id, enabled);
+        this.sharedAccessEnabledMap[c.id] = enabled;
       });
       this.configs = configs;
     },
@@ -255,7 +255,7 @@ export default {
         };
 
         configs.push(c);
-        this.$set(this.sharedAccessEnabledMap, c.id, false);
+        this.sharedAccessEnabledMap[c.id] = false;
         this.$nextTick(() => {
           if ( this.$refs.configs?.select ) {
             this.$refs.configs.select(name);
@@ -271,7 +271,7 @@ export default {
       //   c.name = name;
       //   c.id = name;
       //   configs.push(c);
-      //   this.$set(this.sharedAccessEnabledMap, c.id, false);
+      //   this.sharedAccessEnabledMap[c.id] = false;
       //   this.$nextTick(() => {
       //     if ( this.$refs.configs?.select ) {
       //       this.$refs.configs.select(name);
@@ -288,7 +288,7 @@ export default {
       };
 
       configs.push(c);
-      this.$set(this.sharedAccessEnabledMap, c.id, false);
+      this.sharedAccessEnabledMap[c.id] = false;
       this.$nextTick(() => {
         if ( this.$refs.configs?.select ) {
           this.$refs.configs.select(name);
@@ -298,7 +298,7 @@ export default {
     removeConfig(idx) {
       const [c] = this.configs.splice(idx, 1);
 
-      this.$delete(this.sharedAccessEnabledMap, c.id);
+      delete this.sharedAccessEnabledMap[c.id];
     },
     handleConfigTabChange({ tab }) {
       this.selectedDefaultConfig = tab.name === 'default';
@@ -534,7 +534,7 @@ export default {
                     <GpuResources
                       :value="c.config.sharing.timeSlicing.resources"
                       :mode="mode"
-                      @input="updateResources($event, c)"
+                      @update:value="updateResources($event, c)"
                     />
                   </div>
                 </div>

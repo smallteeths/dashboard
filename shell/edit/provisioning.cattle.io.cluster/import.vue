@@ -209,7 +209,7 @@ export default {
         @update:value="$emit('input', $event)"
       />
       <PrivateRegistry
-        v-model:value="value"
+        :value="value"
         :mode="mode"
       />
     </Tabbed>

@@ -29,8 +29,8 @@ export default {
     }
   },
   data() {
-    this.$set(this.value, 'http_config', this.value.http_config || {});
-    this.$set(this.value, 'send_resolved', this.value.send_resolved || false);
+    this.value.http_config = this.value.http_config || {};
+    this.value.send_resolved = this.value.send_resolved || false;
     const isDriverUrl = this.value.url === MS_TEAMS_URL || this.value.url === ALIBABA_CLOUD_SMS_URL;
 
     return {
@@ -82,7 +82,7 @@ export default {
         :placeholder="t('monitoringReceiver.webhook.add.generic')"
         :localized-label="true"
         :options="webhookOptons"
-        @input="updateWebhookType($event)"
+        @update:value="updateWebhookType($event)"
       />
     </div>
     <div class="row">

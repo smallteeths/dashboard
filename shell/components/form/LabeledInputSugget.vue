@@ -9,7 +9,7 @@ import $ from 'jquery';
 export default {
   components: { LabeledInput },
   mixins:     [LabeledFormElement],
-  emits:      ['input', 'onSearch'],
+  emits:      ['update:value', 'onSearch'],
   props:      {
     disabled: {
       type:    Boolean,
@@ -89,7 +89,7 @@ export default {
         return this.value;
       },
       set(newVal) {
-        this.$emit('input', newVal);
+        this.$emit('update:value', newVal);
       },
     }
   },
@@ -180,7 +180,6 @@ export default {
 <template>
   <div
     class="input-container"
-    @input="change"
   >
     <LabeledInput
       ref="text"
@@ -195,6 +194,7 @@ export default {
       :rules="rules"
       v-bind="$attrs"
       @blur="onBlur"
+      @update:value="change"
     />
     <v-select
       ref="button-dropdown"
@@ -253,27 +253,27 @@ export default {
   color: var(--link);
   padding: 0;
 
-  &.vs--open ::v-deep {
+  &.vs--open :deep() {
     outline: none;
     box-shadow: none;
   }
-  ::v-deep .vs__selected-options {
+  :deep(.vs__selected-options) {
     display: none;
   }
 
   &:hover {
-    ::v-deep .vs__dropdown-toggle .vs__actions,
-    ::v-deep .vs__selected-options {
+    :deep(.vs__dropdown-toggle .vs__actions),
+    :deep(.vs__selected-options) {
       background: var(--accent-btn-hover);
     }
-    ::v-deep .vs__dropdown-toggle .vs__actions {
+    :deep(.vs__dropdown-toggle .vs__actions) {
       &:after {
         color: var(--accent-btn-hover-text);
       }
     }
   }
 
-  ::v-deep > .vs__dropdown-toggle {
+  :deep(> .vs__dropdown-toggle) {
     width: 100%;
     display: flex;
     border: none;
@@ -288,12 +288,12 @@ export default {
     }
   }
 
-  ::v-deep .vs__actions {
+  :deep(.vs__actions) {
     height: 59px;
     line-height: 18px;
   }
 
-  ::v-deep .vs__selected-options {
+  :deep(.vs__selected-options) {
     .vs__selected {
       margin: unset;
       border: none;
@@ -306,7 +306,7 @@ export default {
     }
   }
 
-  ::v-deep .vs__dropdown-menu {
+  :deep(.vs__dropdown-menu) {
     min-width: unset;
     width: fit-content;
   }

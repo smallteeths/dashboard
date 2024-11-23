@@ -331,22 +331,22 @@ export default {
       const errors = [];
 
       if (errors.length) {
-        this.$set(this, 'errors', errors);
+        this.errors = errors;
         btnCb(false);
 
         return;
       }
       // remove unused fields
-      this.$delete(this.config, 'id');
-      this.$delete(this.config, 'links');
-      this.$delete(this.config, 'type');
-      this.$delete(this.config, '__clone');
+      delete this.config.id;
+      delete this.config.links;
+      delete this.config.type;
+      delete this.config.__clone;
       const metadata = this.config.metadata;
 
       if (metadata) {
-        this.$delete(metadata, 'state');
-        this.$delete(metadata, 'relationships');
-        this.$delete(metadata, 'fields');
+        delete metadata.state;
+        delete metadata.relationships;
+        delete metadata.fields;
       }
 
       this.$store.dispatch(`flatnetwork/${ this.isEdit ? 'update' : 'create' }Flatnetwork`, {
@@ -357,7 +357,7 @@ export default {
         this.cancel();
       }).catch((err) => {
         errors.push(err.message);
-        this.$set(this, 'errors', errors);
+        this.errors = errors;
         btnCb(false);
       });
     },
@@ -513,7 +513,7 @@ export default {
                 :mode="mode"
                 :disabled="isEdit"
                 :rules="fvGetAndReportPathRules('spec.vlan')"
-                @input="$set(config.spec, 'vlan', Number($event));"
+                @update:value="config.spec.vlan = Number($event)"
               />
             </div>
           </div>
@@ -614,7 +614,7 @@ export default {
                 :value="config.spec.routeSettings.addClusterCIDR"
                 :val="true"
                 :label="t('macvlan.routeSettings.addClusterCIDR')"
-                @input="() => {
+                @update:value="() => {
                   config.spec.routeSettings.addClusterCIDR = !config.spec.routeSettings.addClusterCIDR
                 }"
               />
@@ -624,7 +624,7 @@ export default {
                 :value="config.spec.routeSettings.addServiceCIDR"
                 :val="true"
                 :label="t('macvlan.routeSettings.addServiceCIDR')"
-                @input="() => {
+                @update:value="() => {
                   config.spec.routeSettings.addServiceCIDR = !config.spec.routeSettings.addServiceCIDR
                 }"
               />
@@ -634,7 +634,7 @@ export default {
                 :value="config.spec.routeSettings.addNodeCIDR"
                 :val="true"
                 :label="t('macvlan.routeSettings.addNodeCIDR')"
-                @input="() => {
+                @update:value="() => {
                   config.spec.routeSettings.addNodeCIDR = !config.spec.routeSettings.addNodeCIDR
                 }"
               />
@@ -646,7 +646,7 @@ export default {
               :value="config.spec.routeSettings.addPodIPToHost"
               :val="true"
               :label="t('macvlan.routeSettings.addPodIPToHost')"
-              @input="() => {
+              @update:value="() => {
                 config.spec.routeSettings.addPodIPToHost = !config.spec.routeSettings.addPodIPToHost
               }"
             />
@@ -657,7 +657,7 @@ export default {
               :value="config.spec.routeSettings.flatNetworkDefaultGateway"
               :val="true"
               :label="t('macvlan.routeSettings.flatNetworkDefaultGateway')"
-              @input="() => {
+              @update:value="() => {
                 config.spec.routeSettings.flatNetworkDefaultGateway = !config.spec.routeSettings.flatNetworkDefaultGateway
               }"
             />

@@ -1,10 +1,10 @@
 <template>
+  <PageHeader>
+    <template #title>
+      {{ t('harborConfig.image') }}
+    </template>
+  </PageHeader>
   <VersionSwitchLayout>
-    <PageHeader>
-      <template #title>
-        {{ t('harborConfig.image') }}
-      </template>
-    </PageHeader>
     <template #default="{apiRequest}">
       <ProjectDetailV1
         :project-id="projectId"

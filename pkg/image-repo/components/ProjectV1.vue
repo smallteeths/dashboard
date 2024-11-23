@@ -79,7 +79,7 @@
             :select-value="form.storageUnitValue"
             :text-label="t('harborConfig.form.storage.label')"
             type="number"
-            @input="inputWithSelectChange($event)"
+            @update:value="inputWithSelectChange($event)"
           />
         </div>
 

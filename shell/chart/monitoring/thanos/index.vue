@@ -227,7 +227,7 @@ export default {
     set,
     changeSidecar() {
       this.updateThanos('sidecar');
-      this.$set(this, 'tls', this.sidecar);
+      this.tls = this.sidecar;
     },
     changeTls() {
       this.updateThanos('tls');

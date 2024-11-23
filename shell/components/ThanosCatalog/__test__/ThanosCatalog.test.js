@@ -1,5 +1,5 @@
 import ThanosCatalog from '@shell/components/ThanosCatalog/index.vue';
-import { mount } from '@vue/test-utils';
+import { mount, shallowMount } from '@vue/test-utils';
 import { _EDIT } from '@shell/config/query-params';
 
 const $route = { params: { cluster: 'local' }, hash: '' };
@@ -9,8 +9,8 @@ const $router = {
 
 describe('global monitorning ThanosCatalog', () => {
   it('should display default inputs', () => {
-    const wrapper = mount(ThanosCatalog, {
-      propsData: {
+    const wrapper = shallowMount(ThanosCatalog, {
+      props: {
         tabErrors:               {},
         fvGetAndReportPathRules: () => {},
         installed:               false,
@@ -18,7 +18,8 @@ describe('global monitorning ThanosCatalog', () => {
         value:                   { global: { cattle: { clusterId: 'local' } }, ui: { defaultApiToken: true } },
         mode:                    _EDIT,
       },
-      mocks: { $route, $router }
+      global: { mocks: { $route, $router }, stubs: { Tabbed: { template: '<div><slot /> </div>' }, Tab: { template: '<div><slot /></div>' } } }
+
     });
 
     const inputWraps = wrapper.findAll('[data-testid^=input-config-]');
@@ -28,7 +29,7 @@ describe('global monitorning ThanosCatalog', () => {
 
   it('should change an update on selection', async() => {
     const wrapper = mount(ThanosCatalog, {
-      propsData: {
+      props: {
         tabErrors:               {},
         fvGetAndReportPathRules: () => {},
         installed:               false,
@@ -36,7 +37,8 @@ describe('global monitorning ThanosCatalog', () => {
         value:                   { global: { clusterId: 'local' }, ui: { defaultApiToken: false } },
         mode:                    _EDIT,
       },
-      mocks: { $route, $router },
+      global: { mocks: { $route, $router }, stubs: { Tabbed: { template: '<div><slot /> </div>' }, Tab: { template: '<div><slot /></div>' } } }
+
     });
 
     const select = wrapper.find(`[data-testid="input-config-version"]`);

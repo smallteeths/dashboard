@@ -22,7 +22,6 @@
     "not dead"
   ],
   "dependencies": {
-    "vxe-table": "^3.6.13",
-    "xe-utils": "^3.5.11"
+    "vxe-table": "^4.9.5"
   }
 }

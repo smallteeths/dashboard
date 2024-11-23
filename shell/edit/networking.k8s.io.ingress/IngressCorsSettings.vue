@@ -148,18 +148,18 @@ export default {
       },
       set(v) {
         if (!this.value?.metadata?.annotations) {
-          this.$set(this.value.metadata, 'annotations', {});
+          this.value.metadata.annotations = {};
         }
         if (v === 'false') {
-          this.$delete(this.value.metadata.annotations, ENABLE_CORS);
-          this.$delete(this.value.metadata.annotations, CORS_ALLOW_METHODS);
-          this.$delete(this.value.metadata.annotations, CORS_ALLOW_HEADERS);
-          this.$delete(this.value.metadata.annotations, CORS_EXPOSE_HEADERS);
-          this.$delete(this.value.metadata.annotations, CORS_ALLOW_ORIGIN);
-          this.$delete(this.value.metadata.annotations, CORS_ALLOW_CREDENTIALS);
-          this.$delete(this.value.metadata.annotations, CORS_MAX_AGE);
+          delete this.value.metadata.annotations[ENABLE_CORS];
+          delete this.value.metadata.annotations[CORS_ALLOW_METHODS];
+          delete this.value.metadata.annotations[CORS_ALLOW_HEADERS];
+          delete this.value.metadata.annotations[CORS_EXPOSE_HEADERS];
+          delete this.value.metadata.annotations[CORS_ALLOW_ORIGIN];
+          delete this.value.metadata.annotations[CORS_ALLOW_CREDENTIALS];
+          delete this.value.metadata.annotations[CORS_MAX_AGE];
         } else {
-          this.$set(this.value.metadata.annotations, ENABLE_CORS, v);
+          this.value.metadata.annotations[ENABLE_CORS] = v;
         }
       }
     },
@@ -169,12 +169,12 @@ export default {
       },
       set(v) {
         if (!this.value?.metadata?.annotations) {
-          this.$set(this.value.metadata, 'annotations', {});
+          this.value.metadata.annotations = {};
         }
         if (v?.length === 0 || v?.length === this.corsAllowMethodsOptions.length) {
-          this.$delete(this.value.metadata.annotations, CORS_ALLOW_METHODS);
+          delete this.value.metadata.annotations[CORS_ALLOW_METHODS];
         } else {
-          this.$set(this.value.metadata.annotations, CORS_ALLOW_METHODS, v.join(','));
+          this.value.metadata.annotations[CORS_ALLOW_METHODS] = v.join(',');
         }
       }
     },
@@ -184,12 +184,12 @@ export default {
       },
       set(v) {
         if (!this.value?.metadata?.annotations) {
-          this.$set(this.value.metadata, 'annotations', {});
+          this.value.metadata.annotations = {};
         }
         if (v?.trim() === '') {
-          this.$delete(this.value.metadata.annotations, CORS_ALLOW_HEADERS);
+          delete this.value.metadata.annotations[CORS_ALLOW_HEADERS];
         } else {
-          this.$set(this.value.metadata.annotations, CORS_ALLOW_HEADERS, v);
+          this.value.metadata.annotations[CORS_ALLOW_HEADERS] = v;
         }
       }
     },
@@ -199,12 +199,12 @@ export default {
       },
       set(v) {
         if (!this.value?.metadata?.annotations) {
-          this.$set(this.value.metadata, 'annotations', {});
+          this.value.metadata.annotations = {};
         }
         if (v?.trim() === '') {
-          this.$delete(this.value.metadata.annotations, CORS_EXPOSE_HEADERS);
+          delete this.value.metadata.annotations[CORS_EXPOSE_HEADERS];
         } else {
-          this.$set(this.value.metadata.annotations, CORS_EXPOSE_HEADERS, v);
+          this.value.metadata.annotations[CORS_EXPOSE_HEADERS] = v;
         }
       }
     },
@@ -214,12 +214,12 @@ export default {
       },
       set(v) {
         if (!this.value?.metadata?.annotations) {
-          this.$set(this.value.metadata, 'annotations', {});
+          this.value.metadata.annotations = {};
         }
         if (v?.trim() === '') {
-          this.$delete(this.value.metadata.annotations, CORS_ALLOW_ORIGIN);
+          delete this.value.metadata.annotations[CORS_ALLOW_ORIGIN];
         } else {
-          this.$set(this.value.metadata.annotations, CORS_ALLOW_ORIGIN, v);
+          this.value.metadata.annotations[CORS_ALLOW_ORIGIN] = v;
         }
       }
     },
@@ -241,12 +241,12 @@ export default {
       },
       set(v) {
         if (!this.value?.metadata?.annotations) {
-          this.$set(this.value.metadata, 'annotations', {});
+          this.value.metadata.annotations = {};
         }
         if (v?.trim() === 'true') {
-          this.$delete(this.value.metadata.annotations, CORS_ALLOW_CREDENTIALS);
+          delete this.value.metadata.annotations[CORS_ALLOW_CREDENTIALS];
         } else {
-          this.$set(this.value.metadata.annotations, CORS_ALLOW_CREDENTIALS, v);
+          this.value.metadata.annotations[CORS_ALLOW_CREDENTIALS] = v;
         }
       }
     },
@@ -256,12 +256,12 @@ export default {
       },
       set(v) {
         if (!this.value?.metadata?.annotations) {
-          this.$set(this.value.metadata, 'annotations', {});
+          this.value.metadata.annotations = {};
         }
         if (!v) {
-          this.$delete(this.value.metadata.annotations, CORS_MAX_AGE);
+          delete this.value.metadata.annotations[CORS_MAX_AGE];
         } else {
-          this.$set(this.value.metadata.annotations, CORS_MAX_AGE, `${ v }`);
+          this.value.metadata.annotations[CORS_MAX_AGE] = `${ v }`;
         }
       }
     }

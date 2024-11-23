@@ -102,17 +102,17 @@ export default {
   watch: {
     objectStorageEnabled(neu) {
       if (neu) {
-        !this.value.thanos.objectConfig.config && this.$set(this.value.thanos.objectConfig, 'config', {});
-        !this.value.thanos.objectConfig?.type && this.$set(this.value.thanos.objectConfig, 'type', 'S3');
+        !this.value.thanos.objectConfig.config && (this.value.thanos.objectConfig.config = {});
+        !this.value.thanos.objectConfig?.type && (this.value.thanos.objectConfig.type = 'S3');
       } else {
-        this.$set(this.value.thanos, 'objectConfig', {});
+        this.value.thanos.objectConfig = {};
       }
 
-      this.$set(this.value.thanos.compact, 'enabled', neu);
-      this.$set(this.value.thanos.store, 'enabled', neu);
+      this.value.thanos.compact.enabled = neu;
+      this.value.thanos.store.enabled = neu;
     },
     'value.thanos.objectConfig.type'(neu) {
-      this.value?.thanos?.objectConfig?.config && this.$set(this.value.thanos.objectConfig, 'config', {});
+      this.value?.thanos?.objectConfig?.config && (this.value.thanos.objectConfig.config = {});
       this.setObjectStorageComponent(neu);
     },
   },
@@ -126,7 +126,7 @@ export default {
     },
     initValue() {
       if (this.value.thanos?.objectConfig?.type) {
-        this.$set(this, 'objectStorageEnabled', true);
+        this.objectStorageEnabled = true;
       }
 
       this.setObjectStorageComponent(this.value.thanos?.objectConfig?.type);
@@ -136,38 +136,38 @@ export default {
         const os = this.objectStorageProviders.find((os) => os.value === pervider);
 
         if (os) {
-          this.$set(this, 'objectStorageComponent', os.component);
+          this.objectStorageComponent = os.component;
 
           return;
         }
       }
-      this.$set(this, 'objectStorageComponent', AwsS3);
+      this.objectStorageComponent = AwsS3;
     },
     updateCompactTolerations(inputVal) {
-      this.$set(this.value.thanos.compact, 'tolerations', inputVal.map((item) => {
+      this.value.thanos.compact.tolerations = inputVal.map((item) => {
         delete item.vKey;
 
         return item;
-      }));
+      });
     },
     updateStoreTolerations(inputVal) {
-      this.$set(this.value.thanos.store, 'tolerations', inputVal.map((item) => {
+      this.value.thanos.store.tolerations = inputVal.map((item) => {
         delete item.vKey;
 
         return item;
-      }));
+      });
     },
     initTolerations() {
-      this.$set(this, 'compactTolerations', this.value.thanos.compact.tolerations.map((item) => {
+      this.compactTolerations = this.value.thanos.compact.tolerations.map((item) => {
         item.vKey = random32();
 
         return item;
-      }));
-      this.$set(this, 'storeTolerations', this.value.thanos.store.tolerations.map((item) => {
+      });
+      this.storeTolerations = this.value.thanos.store.tolerations.map((item) => {
         item.vKey = random32();
 
         return item;
-      }));
+      });
     },
   },
 
@@ -271,7 +271,7 @@ export default {
           <Tolerations
             :value="storeTolerations"
             :mode="mode"
-            @input="updateStoreTolerations"
+            @update:value="updateStoreTolerations"
           />
         </div>
       </div>
@@ -306,7 +306,7 @@ export default {
           <Tolerations
             :value="compactTolerations"
             :mode="mode"
-            @input="updateCompactTolerations"
+            @update:value="updateCompactTolerations"
           />
         </div>
       </div>

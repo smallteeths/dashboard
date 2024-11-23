@@ -151,7 +151,7 @@ export default {
       >
         ···
       </div>
-      <template slot="popover">
+      <template #popover>
         <div
           v-for="(route, index) in routes"
           :key="index"

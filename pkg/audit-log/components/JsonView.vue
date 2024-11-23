@@ -37,7 +37,7 @@ export default {
 
 <style lang="scss" scoped>
   .json-view {
-    ::v-deep .code-mirror {
+    :deep(.code-mirror) {
       .CodeMirror {
         background-color: var(--yaml-editor-bg);
         & .CodeMirror-gutters {

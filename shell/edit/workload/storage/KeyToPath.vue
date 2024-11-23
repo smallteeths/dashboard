@@ -149,6 +149,7 @@ export default {
           <i
             v-clean-tooltip="t('workload.storage.keyToPath.path.tips')"
             class="icon icon-info"
+            data-test="tips"
           />
         </div>
         <div>{{ t('workload.storage.keyToPath.mode.label') }}</div>

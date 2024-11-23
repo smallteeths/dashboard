@@ -42,7 +42,7 @@
             class="icon icon-copy icon-lg guideLink"
             @click="copy(row.pullCommand)"
           />
-          <template slot="popover">
+          <template #popover>
             <div>
               Copy to Clipboard
             </div>

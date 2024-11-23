@@ -264,16 +264,16 @@ export default {
     margin-top: 3px;
   }
 
-  ::v-deep .icon-chevron-up {
+  :deep(.icon-chevron-up) {
     display: none;
   }
-  ::v-deep .icon-chevron-down {
+  :deep(.icon-chevron-down) {
     display: block;
   }
-  ::v-deep .open .icon-chevron-up {
+  :deep(.open .icon-chevron-up) {
     display: block;
   }
-  ::v-deep .open .icon-chevron-down {
+  :deep(.open .icon-chevron-down) {
     display: none;
   }
   .label-item {

@@ -172,7 +172,7 @@ export default {
         const error = err?.data || err;
         const message = exceptionToErrorsArray(error);
 
-        this.$set(this, 'errors', message);
+        this.errors = message;
         buttonCb(false);
       }
     },
@@ -185,11 +185,13 @@ export default {
     name="modal"
     :show-highlight-border="false"
   >
-    <h4
-      slot="title"
-      v-clean-html="t('modalDownLoadFileComponent.title')"
-      class="text-default-text"
-    />
+    <template #title>
+      <h4
+        v-clean-html="t('modalDownLoadFileComponent.title')"
+        class="text-default-text"
+      />
+    </template>
+
     <template #body>
       <LabeledSelect
         v-model:value="currentContainer"
@@ -226,31 +228,32 @@ export default {
         />
       </div>
     </template>
-    <div
-      slot="actions"
-      class="actions"
-    >
-      <div class="buttons">
-        <button
-          type="button"
-          class="btn role-secondary mr-10"
-          @click="close"
-        >
-          {{ t('generic.cancel') }}
-        </button>
-        <AsyncButton
-          mode="download"
-          :disabled="!currentContainer || !filePath"
-          @click="save"
+    <template #actions>
+      <div
+        class="actions"
+      >
+        <div class="buttons">
+          <button
+            type="button"
+            class="btn role-secondary mr-10"
+            @click="close"
+          >
+            {{ t('generic.cancel') }}
+          </button>
+          <AsyncButton
+            mode="download"
+            :disabled="!currentContainer || !filePath"
+            @click="save"
+          />
+        </div>
+        <Banner
+          v-for="(err, i) in errors"
+          :key="i"
+          color="error"
+          :label="err"
         />
       </div>
-      <Banner
-        v-for="(err, i) in errors"
-        :key="i"
-        color="error"
-        :label="err"
-      />
-    </div>
+    </template>
   </Card>
 </template>
 <style lang="scss" scoped>

@@ -308,7 +308,7 @@ describe('component: ContainerResourceLimit, method: updateBeforeSave', () => {
     it('should show max/min cpu/memory limit', () => {
       const tMock = jest.fn((t) => t);
 
-      const wrapper = shallowMount(ContainerResourceLimit, { mocks: { t: tMock } });
+      const wrapper = shallowMount(ContainerResourceLimit, { global: { mocks: { t: tMock } } });
 
       expect(tMock).toHaveBeenCalledWith('containerResourceLimit.maxCpu');
       expect(tMock).toHaveBeenCalledWith('containerResourceLimit.minCpu');
@@ -333,8 +333,8 @@ describe('component: ContainerResourceLimit, method: updateBeforeSave', () => {
       const tMock = jest.fn();
 
       shallowMount(ContainerResourceLimit, {
-        propsData: { limitMinMaxValues: false },
-        mocks:     { t: tMock }
+        props:  { limitMinMaxValues: false },
+        global: { mocks: { t: tMock } }
       });
 
       expect(tMock).not.toHaveBeenCalledWith('containerResourceLimit.maxCpu');
@@ -348,14 +348,13 @@ describe('component: ContainerResourceLimit, method: updateBeforeSave', () => {
 
     it('should init min/max cpu/memory in namespace annotation', () => {
       const crLimitWrapper = shallowMount(ContainerResourceLimit, {
-        propsData: {
+        props: {
           namespace: {
             id:       'test',
             metadata: { annotations: { [CONTAINER_DEFAULT_RESOURCE_LIMIT]: JSON.stringify(limits) } },
           }
         },
-
-        mocks: { t: jest.fn() }
+        global: { mocks: { t: jest.fn() } }
       });
 
       expect(crLimitWrapper.vm.$data).toMatchObject(limits);
@@ -363,16 +362,18 @@ describe('component: ContainerResourceLimit, method: updateBeforeSave', () => {
     it('should update min/max cpu/memory in namespace annotation', async() => {
       const setAnnotationMock = jest.fn();
       const crLimitWrapper = shallowMount(ContainerResourceLimit, {
-        propsData: {
+        props: {
           namespace: {
             id:            'test',
             metadata:      { annotations: { [CONTAINER_DEFAULT_RESOURCE_LIMIT]: JSON.stringify(limits) } },
             setAnnotation: setAnnotationMock
           }
         },
-        mocks: {
-          t:                      jest.fn(),
-          validateResourceLimits: jest.fn(() => []),
+        global: {
+          mocks: {
+            t:                      jest.fn(),
+            validateResourceLimits: jest.fn(() => []),
+          }
         }
       });
       const updatedLimits = {
@@ -401,15 +402,17 @@ describe('component: ContainerResourceLimit, method: updateBeforeSave', () => {
     it('should not include min/max cpu/memory in namespace annotation', () => {
       const setAnnotationMock = jest.fn();
       const crLimitWrapper = shallowMount(ContainerResourceLimit, {
-        propsData: {
+        props: {
           namespace: {
             id:            'test',
             setAnnotation: setAnnotationMock
           }
         },
-        mocks: {
-          t:                      jest.fn(),
-          validateResourceLimits: jest.fn(() => []),
+        global: {
+          mocks: {
+            t:                      jest.fn(),
+            validateResourceLimits: jest.fn(() => []),
+          }
         }
       });
 

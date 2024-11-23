@@ -426,18 +426,18 @@ export default {
 
       spec.pool.serviceNamespace = this.value?.metadata?.namespace ?? '';
 
-      this.$set(this.value, 'spec', spec);
+      this.value.spec = spec;
     }
 
     if (this.value.metadata.labels.f5cr !== 'true') {
-      this.$set(this.value.metadata.labels, 'f5cr', 'true');
+      this.value.metadata.labels.f5cr = true;
     }
 
     this.registerBeforeHook(this.willSave, 'willSave');
   },
   methods: {
     removeMonitor(p) {
-      this.$delete(p, 'monitor');
+      delete p.monitor;
     },
     valueRequired(value, name, type = 'string') {
       if (type === 'string') {
@@ -467,7 +467,7 @@ export default {
         p.monitors = [];
       } else if (p.monitor && p.monitors?.length > 1) {
         p.monitors.splice(0, 0, p.monitor);
-        this.$delete(p, 'monitor');
+        delete p.monitor;
       }
 
       errors.push(this.valueRequired(p?.path, `pool.path`));
@@ -500,7 +500,7 @@ export default {
       }
       this.removeEmptyProps(this.value);
       if (this.value.metadata.labels.f5cr !== 'true') {
-        this.$set(this.value.metadata.labels, 'f5cr', 'true');
+        this.value.metadata.labels.f5cr = true;
       }
     },
     filterByCurrentResourceNamespace(resources) {
@@ -545,7 +545,7 @@ export default {
 <style lang="scss" scoped>
 
 .transport-server-tabs {
-  > ::v-deep .tabs.horizontal {
+  > :deep(.tabs.horizontal) {
     border-bottom: 1px solid var(--border);
     margin-bottom: 10px;
   }

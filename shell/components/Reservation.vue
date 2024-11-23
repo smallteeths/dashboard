@@ -55,14 +55,14 @@ export default {
     get,
     set,
     initValues() {
-      this.$set(this, 'limits', {
+      this.limits = {
         cpu:    this.initValue('limits.cpu'),
         memory: this.initValue('limits.memory'),
-      });
-      this.$set(this, 'requests', {
+      };
+      this.requests = {
         cpu:    this.initValue('requests.cpu'),
         memory: this.initValue('requests.memory'),
-      });
+      };
     },
 
     initValue(key) {
@@ -109,7 +109,7 @@ export default {
           :base-unit="t('suffix.cpus')"
           :fv-get-and-report-path-rules="fvGetAndReportPathRules"
           :rules="fvGetAndReportPathRules(`${resourcesKey}.limits.cpu`)"
-          @input="updateLimits"
+          @update:value="updateLimits"
         />
       </div>
       <div class="col span-6">
@@ -124,7 +124,7 @@ export default {
           :placeholder="t('formReservation.limitMemory.placeholder')"
           :fv-get-and-report-path-rules="fvGetAndReportPathRules"
           :rules="fvGetAndReportPathRules(`${resourcesKey}.limits.memory`)"
-          @input="updateLimits"
+          @update:value="updateLimits"
         />
       </div>
     </div>
@@ -141,7 +141,7 @@ export default {
           :placeholder="t('formReservation.requestCpu.placeholder')"
           :fv-get-and-report-path-rules="fvGetAndReportPathRules"
           :rules="fvGetAndReportPathRules(`${resourcesKey}.requests.cpu`)"
-          @input="updateRequests"
+          @iupdate:value="updateRequests"
         />
       </div>
       <div class="col span-6">
@@ -156,7 +156,7 @@ export default {
           :output-modifier="true"
           :fv-get-and-report-path-rules="fvGetAndReportPathRules"
           :rules="fvGetAndReportPathRules(`${resourcesKey}.requests.memory`)"
-          @input="updateRequests"
+          @update:value="updateRequests"
         />
       </div>
     </div>

@@ -5,15 +5,17 @@ describe('component: AgentEnv', () => {
   it('should display proxy tips', () => {
     const mockT = jest.fn();
     const wrapper = mount(AgentEnv, {
-      propsData: {
+      props: {
         mode:  'edit',
         value: { spec: { agentEnvVars: [] } }
       },
-      mocks: { t: mockT },
-      stubs: {
-        Markdown: true,
-        Tab:      { template: '<div><slot></slot></div>' },
-        KeyValue: true
+      global: {
+        mocks: { t: mockT },
+        stubs: {
+          Markdown: true,
+          Tab:      { template: '<div><slot></slot></div>' },
+          KeyValue: true
+        }
       }
 
     });

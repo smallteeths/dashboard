@@ -153,10 +153,10 @@ export default {
 
       if (type === 'secret' && this.value[type]?.secretName) {
         this.value[type].secretName = '';
-        this.$delete(this.value[type], 'items');
+        delete this.value[type].items;
       } else if (type === 'configMap' && this.value[type]?.name) {
         this.value[type].name = '';
-        this.$delete(this.value[type], 'items');
+        delete this.value[type].items;
       }
     }
   }

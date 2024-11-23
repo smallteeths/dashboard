@@ -369,7 +369,7 @@ export default {
           </Banner>
           <ClientCertAuth
             ref="ingressClientCertAuth"
-            v-model:value="value"
+            :value="value"
             class="mb-20"
             :mode="mode"
             :namespace-secrets="namespaceSecrets"
@@ -377,14 +377,14 @@ export default {
           <hr>
           <IngressGeneralSettings
             ref="ingressGeneralSettings"
-            v-model:value="value"
+            :value="value"
             class="mb-20"
             :mode="mode"
           />
           <hr>
           <IngressCorsSettings
             ref="ingressCorsSettings"
-            v-model:value="value"
+            :value="value"
             :mode="mode"
           />
         </div>

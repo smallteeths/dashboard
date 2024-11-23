@@ -1,11 +1,10 @@
 import { shallowMount } from '@vue/test-utils';
 import KeyToPath from '@shell/edit/workload/storage/KeyToPath.vue';
+import cleanTooltip from '@shell/directives/clean-tooltip';
 describe('index.vue', () => {
   it('should render correctly with pod volume tips', () => {
-    const t = jest.fn();
-
-    shallowMount(KeyToPath, {
-      propsData: {
+    const wrapper = shallowMount(KeyToPath, {
+      props: {
         value: {
           secret: {
             items: [
@@ -18,12 +17,16 @@ describe('index.vue', () => {
         },
         savePvcHookName: 'test',
       },
-      stubs: {
-        LabeledInput: true, LabeledSelect: true, RadioGroup: { template: '<div><slot /></div>' }
-      },
-      mocks: { $store: { getters: { 'i18n/t': t } } },
+      global: {
+        directives: { cleanTooltip },
+        stubs:      {
+          LabeledInput: true, LabeledSelect: true, RadioGroup: { template: '<div><slot /></div>' }
+        },
+        mocks: { $store: { getters: { 'i18n/t': () => {} } } },
+      }
+
     });
 
-    expect(t).toHaveBeenCalledWith('workload.storage.keyToPath.path.tips', undefined);
+    expect(wrapper.findAll('[data-test="tips"]')).toHaveLength(1);
   });
 });

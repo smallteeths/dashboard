@@ -255,7 +255,7 @@ export default {
         return this.config.spec.ipDelayReuse / 60;
       },
       set(neu) {
-        this.$set(this.config.spec, 'ipDelayReuse', neu * 60);
+        this.config.spec.ipDelayReuse = neu * 60;
       }
     }
   },
@@ -279,22 +279,22 @@ export default {
       }
 
       if (errors.length) {
-        this.$set(this, 'errors', errors);
+        this.errors = errors;
         btnCb(false);
 
         return;
       }
       // remove unused fields
-      this.$delete(this.config, 'id');
-      this.$delete(this.config, 'links');
-      this.$delete(this.config, 'type');
-      this.$delete(this.config, '__clone');
+      delete this.config.id;
+      delete this.config.links;
+      delete this.config.type;
+      delete this.config.__clone;
       const metadata = this.config.metadata;
 
       if (metadata) {
-        this.$delete(metadata, 'state');
-        this.$delete(metadata, 'relationships');
-        this.$delete(metadata, 'fields');
+        delete metadata.state;
+        delete metadata.relationships;
+        delete metadata.fields;
       }
 
       this.$store.dispatch(`macvlan/${ this.isEdit ? 'update' : 'create' }Macvlan`, {
@@ -305,7 +305,7 @@ export default {
         this.cancel();
       }).catch((err) => {
         errors.push(err.message);
-        this.$set(this, 'errors', errors);
+        this.errors = errors;
         btnCb(false);
       });
     },
@@ -445,7 +445,7 @@ export default {
                 :mode="mode"
                 :disabled="isEdit"
                 :rules="fvGetAndReportPathRules('spec.vlan')"
-                @input="$set(config.spec, 'vlan', Number($event));"
+                @update:value="config.spec.vlan = Number($event)"
               />
             </div>
           </div>

@@ -153,7 +153,7 @@ export default {
           :disable="disable"
           :edit="goToEdit"
         >
-          <template slot="rows">
+          <template #rows>
             <tr><td>{{ t(`authConfig.cas.hostUrl.label`) }}: </td><td>{{ model.hostname }}</td></tr>
             <tr><td>{{ t(`authConfig.cas.enableTLS`) }}(https://): </td><td>{{ model.tls }}</td></tr>
             <tr><td>{{ t(`authConfig.cas.port.label`) }}: </td><td>{{ model.port }}</td></tr>
@@ -200,7 +200,7 @@ export default {
               :step="1"
               :mode="mode"
               :label="t('authConfig.cas.port.label')"
-              @input="e=>$set(model, 'port', e.replace(/[^0-9]*/g, ''))"
+              @update:value="e=>model.port = e.replace(/[^0-9]*/g, '')"
             />
           </div>
         </div>

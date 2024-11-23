@@ -97,7 +97,7 @@ export default {
       :localized-label="true"
       :options="huaweiRegionChoices"
       :mode="mode"
-      @input="value.setData('regionID', $event);"
+      @update:value="value.setData('regionID', $event);"
     />
     <LabeledInput
       :value="value.decodedData.projectID"
@@ -106,7 +106,7 @@ export default {
       placeholder-key="cluster.credential.huawei.projectId.placeholder"
       type="text"
       :mode="mode"
-      @input="value.setData('projectID', $event);"
+      @update:value="value.setData('projectID', $event);"
     />
     <LabeledInput
       :value="value.decodedData.accessKey"
@@ -115,7 +115,7 @@ export default {
       placeholder-key="cluster.credential.huawei.accessKey.placeholder"
       type="text"
       :mode="mode"
-      @input="value.setData('accessKey', $event);"
+      @update:value="value.setData('accessKey', $event);"
     />
     <LabeledInput
       :value="value.decodedData.secretKey"
@@ -124,7 +124,7 @@ export default {
       placeholder-key="cluster.credential.huawei.secretKey.placeholder"
       type="password"
       :mode="mode"
-      @input="value.setData('secretKey', $event);"
+      @update:value="value.setData('secretKey', $event);"
     />
     <p
       v-clean-html="t('cluster.credential.huawei.regionID.help', {}, true)"

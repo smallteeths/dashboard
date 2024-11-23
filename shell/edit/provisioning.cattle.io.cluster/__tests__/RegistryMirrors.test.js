@@ -6,12 +6,15 @@ describe('component: RegistryMirrors', () => {
     const mockT = jest.fn();
 
     mount(RegistryMirrors, {
-      propsData: {
+      props: {
         value: { spec: { rkeConfig: {} } },
         mode:  'edit'
       },
-      mocks:      { t: mockT },
-      directives: { cleanTooltip: jest.fn() }
+      global: {
+        mocks:      { t: mockT },
+        directives: { cleanTooltip: jest.fn() }
+      }
+
     });
 
     expect(mockT).toHaveBeenCalledWith('registryMirror.keyPlaceholder');

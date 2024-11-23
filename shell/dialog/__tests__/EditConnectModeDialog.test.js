@@ -1,11 +1,11 @@
-import { shallowMount } from '@vue/test-utils';
+import { mount } from '@vue/test-utils';
 import { Banner } from '@components/Banner';
 import EditConnectModeDialog from '@shell/dialog/EditConnectModeDialog.vue';
 
 describe('component: EditConnectModeDialog', () => {
   it('should clear old error message after verifying the connection', async() => {
-    const wrapper = shallowMount(EditConnectModeDialog, {
-      propsData: {
+    const wrapper = mount(EditConnectModeDialog, {
+      props: {
         resources: [
           {
             id:       'test',
@@ -14,7 +14,8 @@ describe('component: EditConnectModeDialog', () => {
           }
         ]
       },
-      mocks: { $store: { getters: { 'i18n/t': jest.fn() } } }
+      global: { stubs: { teleport: true }, mocks: { $store: { getters: { 'i18n/t': jest.fn(), 'i18n/exists': jest.fn() } } } }
+
     });
 
     await wrapper.setData({ errors: ['error'] });
@@ -28,8 +29,8 @@ describe('component: EditConnectModeDialog', () => {
     expect(wrapper.vm.$data.errors).toStrictEqual([]);
   });
   it('should show error message after verifying the connection failed', async() => {
-    const wrapper = shallowMount(EditConnectModeDialog, {
-      propsData: {
+    const wrapper = mount(EditConnectModeDialog, {
+      props: {
         resources: [
           {
             id:       'test',
@@ -38,7 +39,11 @@ describe('component: EditConnectModeDialog', () => {
           }
         ]
       },
-      mocks: { $store: { getters: { 'i18n/t': jest.fn() } } }
+      global: {
+        stubs: { AsyncButton: true },
+        mocks: { $store: { getters: { 'i18n/t': jest.fn() } } }
+      }
+
     });
 
     await wrapper.setData({ mode: { apiEndpoints: ['test'] } });

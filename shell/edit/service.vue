@@ -512,7 +512,8 @@ export default {
               :value-placeholder="t('servicesPage.ips.external.placeholder')"
               :mode="mode"
               :protip="false"
-              @input="(e) => $set(value.metadata.annotations, 'field.cattle.io/ipAddresses', JSON.stringify(e))"
+              data-test="external-ips-new"
+              @update:value="(e) => value.metadata.annotations['field.cattle.io/ipAddresses']=JSON.stringify(e)"
             />
           </div>
         </div>
@@ -576,7 +577,7 @@ export default {
               "
               :label="t('servicesPage.affinity.timeout.label')"
               :placeholder="t('servicesPage.affinity.timeout.placeholder')"
-              @input="
+              @update:value="
                 (e) => value.spec.sessionAffinityConfig.clientIP.timeoutSeconds = e
               "
             />

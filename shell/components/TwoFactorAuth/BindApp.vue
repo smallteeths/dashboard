@@ -42,7 +42,7 @@
         :label="e"
       />
     </div>
-    <modal
+    <AppModal
       class="two-factor-secret-modal"
       name="two-factor-secret"
       :width="600"
@@ -53,37 +53,40 @@
         class="prompt-two-factor-secret"
         :show-highlight-border="false"
       >
-        <h4
-          slot="title"
-          class="text-default-text"
-        >
-          {{ t('mfa.bindApp.secretView.title') }}
-        </h4>
-        <div
-          slot="body"
-          class="pr-10 pl-10"
-        >
-          <DetailText
-            :value="secret"
-            label-key="mfa.bindApp.secretView.secret"
-            class="mt-20"
-          />
-        </div>
-        <div
-          slot="actions"
-          class="bottom"
-        >
-          <div class="buttons">
-            <button
-              class="mr-10 btn role-secondary"
-              @click="close"
-            >
-              {{ t('generic.cancel') }}
-            </button>
+        <template #title>
+          <h4
+            class="text-default-text"
+          >
+            {{ t('mfa.bindApp.secretView.title') }}
+          </h4>
+        </template>
+        <template #body>
+          <div
+            class="pr-10 pl-10"
+          >
+            <DetailText
+              :value="secret"
+              label-key="mfa.bindApp.secretView.secret"
+              class="mt-20"
+            />
           </div>
-        </div>
+        </template>
+        <template #actions>
+          <div
+            class="bottom"
+          >
+            <div class="buttons">
+              <button
+                class="mr-10 btn role-secondary"
+                @click="close"
+              >
+                {{ t('generic.cancel') }}
+              </button>
+            </div>
+          </div>
+        </template>
       </Card>
-    </modal>
+    </AppModal>
   </div>
 </template>
 <script>
@@ -95,10 +98,11 @@ import { Card } from '@components/Card';
 import { NORMAN, MANAGEMENT } from '@shell/config/types';
 import { SETTING } from '@shell/config/settings';
 import qrcode from 'qrcode';
+import AppModal from '@shell/components/AppModal.vue';
 
 export default {
   components: {
-    VerifyCode, Banner, DetailText, Card
+    VerifyCode, Banner, DetailText, Card, AppModal
   },
   emits: ['on-done'],
   props: {

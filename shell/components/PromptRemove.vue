@@ -456,7 +456,7 @@ export default {
             v-model:value="removeFinalizers"
             label-key="promptForceRemove.forceDelete"
             class="mt-10 type"
-            @input="finalizersToRemove"
+            @update:value="finalizersToRemove"
           />
         </template>
         <div v-else-if="!hasCustomRemove">

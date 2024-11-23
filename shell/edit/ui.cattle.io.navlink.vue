@@ -304,9 +304,9 @@ export default {
     },
 
     updateGroupNameChoices(neu) {
-      this.$set(this, 'groupNameChoices', this.allGroups.filter((item) => {
+      this.groupNameChoices = this.allGroups.filter((item) => {
         return item.includes(neu);
-      }));
+      });
     },
     setIcon(value) {
       this.imageErrorMessage = '';
@@ -458,7 +458,7 @@ export default {
           :text-label="t('navLink.tabs.group.group.label')"
           :options="groupNameChoices || allGroups"
           :tooltip="t('navLink.tabs.group.group.tooltip')"
-          @input="updateGroupNameChoices"
+          @update:value="updateGroupNameChoices"
         />
       </div>
       <div class="col span-6">

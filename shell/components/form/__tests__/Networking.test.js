@@ -1,12 +1,12 @@
 import Networking from '@shell/components/form/Networking.vue';
 import { _CREATE } from '@shell/config/query-params';
 import { mount } from '@vue/test-utils';
-import { cleanHtmlDirective } from '@shell/plugins/clean-html-directive';
+import { cleanHtml } from '@shell/directives/clean-html';
 
 describe('component: Networking', () => {
   it('should be display input when enable flat network', () => {
     const wrapper = mount(Networking, {
-      propsData: {
+      props: {
         namespace: 'default',
         value:     {},
         mode:      _CREATE,
@@ -14,13 +14,16 @@ describe('component: Networking', () => {
       data() {
         return { allowVlansubnet: true };
       },
-      directives: { cleanHtmlDirective },
-      mocks:      {
-        $store: {
-          getters:  { 'i18n/t': (t) => t },
-          dispatch: jest.fn(() => Promise.resolve())
+      global: {
+        directives: { cleanHtml },
+        mocks:      {
+          $store: {
+            getters:  { 'i18n/t': (t) => t },
+            dispatch: jest.fn(() => Promise.resolve())
+          }
         }
       }
+
     });
 
     const selectWraps = wrapper.findAll('.labeled-select');
@@ -32,7 +35,7 @@ describe('component: Networking', () => {
 
   it('should be display Scaling and Upgrade Policy info', () => {
     const wrapper = mount(Networking, {
-      propsData: {
+      props: {
         namespace: 'default',
         value:     {},
         mode:      _CREATE,
@@ -40,13 +43,16 @@ describe('component: Networking', () => {
       data() {
         return { allowVlansubnet: true };
       },
-      directives: { cleanHtmlDirective },
-      mocks:      {
-        $store: {
-          getters:  { 'i18n/t': (t) => t },
-          dispatch: jest.fn(() => Promise.resolve())
+      global: {
+        directives: { cleanHtml },
+        mocks:      {
+          $store: {
+            getters:  { 'i18n/t': (t) => t },
+            dispatch: jest.fn(() => Promise.resolve())
+          }
         }
       }
+
     });
 
     const tipWrapper = wrapper.find('.tip');

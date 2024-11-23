@@ -7,7 +7,7 @@ import CruResource from '@shell/components/CruResource';
 describe('component: provisioning.cattle.io.cluster/import', () => {
   it('should contain PrivateRegistry component', () => {
     const wrapper = shallowMount(Import, {
-      propsData: {
+      props: {
         mode:     'create',
         value:    {},
         provider: 'import'
@@ -17,16 +17,23 @@ describe('component: provisioning.cattle.io.cluster/import', () => {
           return [];
         }
       },
-      mocks: {
-        $fetchState: { pending: false },
-        $store:      {
-          getters: {
-            'management/schemaFor': jest.fn(),
-            'prefs/get':            jest.fn(),
-            'features/get':         jest.fn()
+      global: {
+        stubs: {
+          CruResource: { template: '<div><slot /></div>' },
+          Tabbed:      { template: '<div><slot /></div>' }
+        },
+        mocks: {
+          $fetchState: { pending: false },
+          $store:      {
+            getters: {
+              'management/schemaFor': jest.fn(),
+              'prefs/get':            jest.fn(),
+              'features/get':         jest.fn()
+            },
           },
         },
       },
+
     });
 
     expect(wrapper.findComponent(PrivateRegistry).exists()).toBe(true);
@@ -34,7 +41,7 @@ describe('component: provisioning.cattle.io.cluster/import', () => {
 
   it('should contain the correct cancel method', async() => {
     const wrapper = shallowMount(Import, {
-      propsData: {
+      props: {
         mode:     'create',
         value:    {},
         provider: 'import'
@@ -44,19 +51,22 @@ describe('component: provisioning.cattle.io.cluster/import', () => {
           return [];
         }
       },
-      mocks: {
-        $fetchState: { pending: false },
-        $router:     [],
-        $route:      { params: { cluster: 'provisioning.cattle.io.cluster' } },
-        $store:      {
-          getters: {
-            'management/schemaFor': jest.fn(),
-            'prefs/get':            jest.fn(),
-            'features/get':         jest.fn(),
-            productId:              'provisioning.cattle.io.cluster'
+      global: {
+        mocks: {
+          $fetchState: { pending: false },
+          $router:     [],
+          $route:      { params: { cluster: 'provisioning.cattle.io.cluster' } },
+          $store:      {
+            getters: {
+              'management/schemaFor': jest.fn(),
+              'prefs/get':            jest.fn(),
+              'features/get':         jest.fn(),
+              productId:              'provisioning.cattle.io.cluster'
+            },
           },
-        },
+        }
       }
+
     });
 
     expect(wrapper.vm.cancel).toBeDefined();

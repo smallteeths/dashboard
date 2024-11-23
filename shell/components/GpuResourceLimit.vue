@@ -24,7 +24,7 @@
               :label="t('gpuReservation.shared')"
               min="1"
               :mode="mode"
-              @input="updateGpuShared"
+              @update:value="updateGpuShared"
             />
             <Banner
               color="warning"
@@ -41,7 +41,7 @@
               :label="t('gpuReservation.set')"
               :mode="mode"
               min="1"
-              @input="updateGpuSet"
+              @update:value="updateGpuSet"
             />
           </div>
         </template>
@@ -53,7 +53,7 @@
                 :label="t('gpuReservation.resourceName')"
                 :mode="mode"
                 :options="gpuResourceNames"
-                @change="updateGpuDevice('name', $event)"
+                @update:value="updateGpuDevice('name', $event)"
               />
             </div>
             <div class="col span-6">
@@ -64,7 +64,7 @@
                 :label="t('gpuReservation.set')"
                 :mode="mode"
                 min="1"
-                @input="updateGpuDevice('value', $event)"
+                @update:value="updateGpuDevice('value', $event)"
               />
             </div>
           </div>
@@ -86,7 +86,7 @@
           :label="t('vGpuReservation.set')"
           :mode="mode"
           min="1"
-          @input="updateVgpus"
+          @update:value="updateVgpus"
         />
       </div>
     </div>

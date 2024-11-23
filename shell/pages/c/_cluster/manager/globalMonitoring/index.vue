@@ -639,7 +639,7 @@ export default {
       };
 
       setSetting(this.$store, SETTING.GLOBAL_MONITORING_V2, JSON.stringify(settings));
-      this.$set(this, 'monitoringSettings', settings);
+      this.monitoringSettings = settings;
       this.monitoringStatus = false;
     },
 
@@ -795,7 +795,7 @@ export default {
         },
       });
 
-      this.$set(this.value.ui, 'apiToken', token.token);
+      this.value.ui.apiToken = token.token;
     },
 
     async initFormValue() {
@@ -846,12 +846,12 @@ export default {
     initServerUrl() {
       this.serverUrlSetting = this.$store.getters['management/byId'](MANAGEMENT.SETTING, SETTING.SERVER_URL) || {};
 
-      this.value.ui && this.serverUrlSetting.value && this.$set(this.value.ui, 'serverUrl', this.serverUrlSetting.value);
+      this.value.ui && this.serverUrlSetting.value && (this.value.ui.serverUrl = this.serverUrlSetting.value);
     },
     initApiToken() {
       if (!!this.value?.ui?.defaultApiToken || this.value?.ui?.defaultApiToken === undefined) {
-        this.$set(this.value.ui, 'apiToken', '');
-        this.$set(this.value.ui, 'defaultApiToken', true);
+        this.value.ui.apiToken = '';
+        this.value.ui.defaultApiToken = true;
       }
     },
     initGlobalMonitoringRoute() {
@@ -864,7 +864,7 @@ export default {
       this.monitoringSettings = monitoringSettings;
 
       if (currentCluster?.metadata?.state?.name !== 'active') {
-        this.$set(this, 'warnings', [this.t('globalMonitoringPage.globalMonitoringClusterUnavailable', { clusterName: currentCluster?.nameDisplay || currentClusterId } )]);
+        this.warnings = [this.t('globalMonitoringPage.globalMonitoringClusterUnavailable', { clusterName: currentCluster?.nameDisplay || currentClusterId } )];
 
         return;
       }
@@ -900,7 +900,7 @@ export default {
             }).then(() => {
               setSetting(this.$store, SETTING.GLOBAL_MONITORING_ENABLED, 'false');
 
-              this.$set(this, 'disabledV1Done', true);
+              this.disabledV1Done = true;
               this.$emit('update', { ready: true, hidden: true });
             }).catch(() => {
               throw new Error(`Failed to uninstall`);
@@ -938,7 +938,7 @@ export default {
         }));
       }
 
-      this.$set(this, 'warnings', warnings);
+      this.warnings = warnings;
     },
     getRouteParamsClusterId() {
       const params = this.$route.params.cluster;
@@ -1163,7 +1163,7 @@ export default {
       &__content {
         flex: 1;
 
-        ::v-deep .tab-container {
+        :deep(.tab-container) {
           overflow: auto;
         }
       }

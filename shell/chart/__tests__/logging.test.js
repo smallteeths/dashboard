@@ -25,15 +25,15 @@ describe('chart: Logging', () => {
     const provider = 'tke';
     // const clusterType = '';
     const wrapper = shallowMount(Logging, {
-      propsData: { value: {} },
-      computed:  {
+      props:    { value: {} },
+      computed: {
         currentCluster() {
           return { status: { provider } };
         },
       }
     });
 
-    await wrapper.vm.$nextTick();
+    await wrapper.setData({ clusterType: 'tke' });
 
     expect(wrapper.props().value.loggingOverlay.spec.fluentbit.extraVolumeMounts[0].source)
       .toBe('/var/lib/containerd');

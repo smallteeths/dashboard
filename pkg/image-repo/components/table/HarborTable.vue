@@ -307,22 +307,18 @@ export default {
             :min-width="th.minWidth"
           >
             <template
-              v-if="th.action"
               #default="{row}"
             >
               <DropDownMenu
+                v-if="th.action"
                 :options="th.action.options"
                 :currentRow="row"
                 @custom-event="(record) => {
                   $emit('action', record, row);
                 }"
               />
-            </template>
-            <template
-              v-else-if="th.slot"
-              #default="{row}"
-            >
               <slot
+                v-else-if="th.slot"
                 :name="th.field"
                 :row="row"
               >

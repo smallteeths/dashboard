@@ -86,7 +86,7 @@ export default {
           <i class="icon icon-actions" />
         </button>
       </slot>
-      <template slot="popover">
+      <template #popover>
         <ul
           class="list-unstyled menu"
         >

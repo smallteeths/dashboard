@@ -173,11 +173,10 @@ export default {
       </div>
       <div class="priority">
         <LabeledInput
-          v-model:value="row.priority"
+          v-model:value.number="row.priority"
           :mode="mode"
           type="number"
           :placeholder="t('macvlan.route.priority.placeholder')"
-          @input="$set(row, 'priority', Number($event));"
         />
       </div>
       <div

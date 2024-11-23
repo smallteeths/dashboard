@@ -567,7 +567,7 @@ export default {
           }
         };
 
-        this.$set(this.container, 'resources', cleanUp(out));
+        this.container.resources = cleanUp(out);
 
         if (requestsGpuShared && limitsGpuShared && (!schedulerName || schedulerName === 'default-scheduler')) {
           this.podTemplateSpec.schedulerName = this.systemGpuManagementSchedulerName;
@@ -761,7 +761,7 @@ export default {
         }
         const index = repo.indexOf(':');
 
-        this.$set(this.container, 'image', index > -1 ? `${ image.substr(0, image.lastIndexOf(':')) }:${ tag }` : `${ image }:${ tag }`);
+        this.container.image = index > -1 ? `${ image.substr(0, image.lastIndexOf(':')) }:${ tag }` : `${ image }:${ tag }`;
       }
     },
 

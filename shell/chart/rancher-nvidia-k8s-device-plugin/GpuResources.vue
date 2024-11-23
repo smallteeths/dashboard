@@ -3,7 +3,7 @@ import debounce from 'lodash/debounce';
 import { removeAt } from '@shell/utils/array';
 import { _EDIT, _VIEW } from '@shell/config/query-params';
 export default {
-  emits: ['focusKey', 'input'],
+  emits: ['focusKey', 'update:value'],
   props: {
     value: {
       type:    Array,
@@ -62,7 +62,7 @@ export default {
     update() {
       const out = this.rows.map((item) => ({ ...item }));
 
-      this.$emit('input', out);
+      this.$emit('update:value', out);
     },
   }
 };

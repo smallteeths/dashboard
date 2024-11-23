@@ -191,8 +191,8 @@ export default {
     },
 
     changeRows(filterRows, searchLabels) {
-      this.$set(this, 'filterRows', filterRows);
-      this.$set(this, 'searchLabels', searchLabels);
+      this.filterRows = filterRows;
+      this.searchLabels = searchLabels;
     },
   },
 };

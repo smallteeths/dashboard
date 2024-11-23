@@ -126,24 +126,24 @@ export default {
     },
 
     updateQueryTolerations(inputVal) {
-      this.$set(this.value.thanos.query, 'tolerations', inputVal.map((item) => {
+      this.value.thanos.query.tolerations = inputVal.map((item) => {
         delete item.vKey;
 
         return item;
-      }));
+      });
     },
     updateApiToken(neu) {
       if (neu) {
-        this.$set(this.value.ui, 'apiToken', '');
+        this.value.ui.apiToken = '';
       }
     },
 
     initTolerations() {
-      this.$set(this, 'queryTolerations', this.value.thanos.query.tolerations.map((item) => {
+      this.queryTolerations = this.value.thanos.query.tolerations.map((item) => {
         item.vKey = random32();
 
         return item;
-      }));
+      });
     },
   },
 
@@ -182,7 +182,7 @@ export default {
               option-label="spec.displayName"
               :label="t('globalMonitoringPage.cluster')"
               :rules="fvGetAndReportPathRules('global.clusterId')"
-              @input="updateCluster"
+              @update:value="updateCluster"
             />
           </div>
           <div
@@ -196,7 +196,7 @@ export default {
               :label="upgradeAvailable ? t('monitoringPage.upgradeAvailable', {version: latestVersion}) : t('globalMonitoringPage.version')"
               :options="chartVersions"
               :option-label="optionLabel"
-              @input="$emit('updateVersion', $event)"
+              @update:value="$emit('updateVersion', $event)"
             />
           </div>
         </div>
@@ -213,7 +213,7 @@ export default {
               :mode="mode"
               :labels="[t('generic.yes'), t('generic.no')]"
               :options="[true, false]"
-              @input="updateApiToken"
+              @update:value="updateApiToken"
             />
           </div>
           <div
@@ -235,7 +235,7 @@ export default {
         <MonitoringStore
           v-if="!!chart.id"
           ref="monitoringStore"
-          v-model:value="value"
+          :value="value"
           :mode="mode"
           :installed="installed"
           :monitoring-settings="monitoringSettings"
@@ -277,7 +277,7 @@ export default {
               <Tolerations
                 :value="queryTolerations"
                 :mode="mode"
-                @input="updateQueryTolerations"
+                @update:value="updateQueryTolerations"
               />
             </div>
           </div>

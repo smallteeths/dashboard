@@ -4,37 +4,40 @@
       class="prompt-resume-cluster"
       :show-highlight-border="false"
     >
-      <h4
-        slot="title"
-        class="text-default-text"
-      >
-        {{ t('cluster.k3s.actions.resume.label') }}
-      </h4>
-      <div
-        slot="body"
-        class="pr-10 pl-10"
-      >
-        {{ t('cluster.k3s.actions.resume.confirm', { name: names}) }}
-      </div>
-      <div
-        slot="actions"
-        class="bottom"
-      >
-        <div class="buttons">
-          <button
-            class="mr-10 btn role-secondary"
-            @click="confirm(false)"
-          >
-            {{ t('generic.cancel') }}
-          </button>
-          <button
-            class="btn role-primary"
-            @click="confirm(true)"
-          >
-            {{ t('generic.confirm') }}
-          </button>
+      <template #title>
+        <h4
+          class="text-default-text"
+        >
+          {{ t('cluster.k3s.actions.resume.label') }}
+        </h4>
+      </template>
+      <template #body>
+        <div
+          class="pr-10 pl-10"
+        >
+          {{ t('cluster.k3s.actions.resume.confirm', { name: names}) }}
         </div>
-      </div>
+      </template>
+      <template #actions>
+        <div
+          class="bottom"
+        >
+          <div class="buttons">
+            <button
+              class="mr-10 btn role-secondary"
+              @click="confirm(false)"
+            >
+              {{ t('generic.cancel') }}
+            </button>
+            <button
+              class="btn role-primary"
+              @click="confirm(true)"
+            >
+              {{ t('generic.confirm') }}
+            </button>
+          </div>
+        </div>
+      </template>
     </Card>
   </div>
 </template>

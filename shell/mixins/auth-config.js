@@ -139,7 +139,7 @@ export default {
           if ( routerBase !== '/' ) {
             route = `${ routerBase.replace(/\/+$/, '') }/${ route.replace(/^\/+/, '') }`;
           }
-          this.$set(this.model, 'service', `${ window.location.origin }${ route }`);
+          this.model.service = `${ window.location.origin }${ route }`;
         }
       }
 
@@ -288,7 +288,7 @@ export default {
           if ( routerBase !== '/' ) {
             route = `${ routerBase.replace(/\/+$/, '') }/${ route.replace(/^\/+/, '') }`;
           }
-          this.$set(this.model, 'service', `${ window.location.origin }${ route }`);
+          this.model.service = `${ window.location.origin }${ route }`;
         }
       }
 

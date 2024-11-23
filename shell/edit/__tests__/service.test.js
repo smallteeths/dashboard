@@ -22,11 +22,8 @@ describe('edit: service', () => {
   });
 
   it('should contain external ip address form', () => {
-    const mockT = jest.fn();
-
-    shallowMount(Service, {
-      directives: { cleanHtml: jest.fn() },
-      propsData:  {
+    const wrapper = shallowMount(Service, {
+      props: {
         value: {
           spec: {
             type:      CLUSTERIP,
@@ -35,18 +32,27 @@ describe('edit: service', () => {
           metadata: { annotations: { 'field.cattle.io/ipAddresses': '["10.1.1.2"]' } }
         }
       },
-      mocks: {
-        $route: { name: 'test' },
-        $store: {
-          getters: {
-            'management/all': jest.fn(() => []),
-            'i18n/t':         mockT
-          },
+      global: {
+        directives: { cleanHtml: jest.fn() },
+        stubs:      {
+          NameNsDescription: true, CruResource: { template: '<div><slot /></div>' }, Tabbed: { template: '<div><slot /></div>' }, Tab: { template: '<div><slot /></div>' }
+        },
+        mocks: {
+          $route: { name: 'test', query: {} },
+          $store: {
+            getters: {
+              'management/all':    jest.fn(() => []),
+              'i18n/t':            jest.fn(),
+              currentStore:        jest.fn(() => 'cluster'),
+              'cluster/schemaFor': jest.fn()
+            },
 
-        }
+          }
+        },
+
       }
     });
 
-    expect(mockT).toHaveBeenCalledWith('servicesPage.ips.external.label', undefined);
+    expect(wrapper.find('[data-test="external-ips-new"]').exists()).toBe(true);
   });
 });

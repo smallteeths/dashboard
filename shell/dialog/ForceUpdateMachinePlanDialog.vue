@@ -4,6 +4,7 @@ import AsyncButton from '@shell/components/AsyncButton';
 import { SECRET } from '@shell/config/types';
 import { allHash } from '@shell/utils/promise';
 import { escapeHtml } from '@shell/utils/string';
+import { mapGetters } from 'vuex';
 
 export default {
   name:  'ForceUpdateMachinePlanDialog',
@@ -52,6 +53,7 @@ export default {
   },
 
   computed: {
+    ...mapGetters({ t: 'i18n/t' }),
     names() {
       return this.toUpdate.map((obj) => obj.nameDisplay).slice(0, 5);
     },
@@ -132,39 +134,43 @@ export default {
       class="prompt-force-update-mode"
       :show-highlight-border="false"
     >
-      <h4
-        slot="title"
-        class="text-default-text"
-      >
-        {{ t('promptRemove.title') }}
-      </h4>
-      <div
-        slot="body"
-        class="pr-10 pl-10"
-      >
-        {{ t('forceUpdateMachinePlan.attemptingToUpdate') }}
-        <span
-          v-clean-html="resourceNames(names, plusMore)"
-        />
-      </div>
-      <div
-        slot="actions"
-        class="bottom"
-      >
-        <div class="buttons">
-          <button
-            class="mr-10 btn role-secondary"
-            @click="close"
-          >
-            {{ t('generic.cancel') }}
-          </button>
-          <AsyncButton
-            :disabled="loading"
-            mode="update"
-            @click="confirmUpdate"
+      <template #title>
+        <h4
+          class="text-default-text"
+        >
+          {{ t('promptRemove.title') }}
+        </h4>
+      </template>
+      <template #body>
+        <div
+          data-testid="card-body-slot"
+          class="pr-10 pl-10"
+        >
+          {{ t('forceUpdateMachinePlan.attemptingToUpdate') }}
+          <span
+            v-clean-html="resourceNames(names, plusMore)"
           />
         </div>
-      </div>
+      </template>
+      <template #actions>
+        <div
+          class="bottom"
+        >
+          <div class="buttons">
+            <button
+              class="mr-10 btn role-secondary"
+              @click="close"
+            >
+              {{ t('generic.cancel') }}
+            </button>
+            <AsyncButton
+              :disabled="loading"
+              mode="update"
+              @click="confirmUpdate"
+            />
+          </div>
+        </div>
+      </template>
     </Card>
   </div>
 </template>

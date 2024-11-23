@@ -66,48 +66,51 @@ export default {
     class="view-audit-log-dialog"
     :show-highlight-border="false"
   >
-    <h4
-      slot="title"
-      v-clean-html="t('auditLog.serverUrlDialog.title')"
-      class="text-default-text"
-    />
-    <div
-      slot="body"
-      class="pl-10 pr-10"
-    >
-      <LabeledInput
-        v-model:value="url"
-        class="mb-10"
-        :localized-label="true"
-        :required="true"
-        :label="t('auditLog.installView.steps.deploymentCompoents.address.label')"
+    <template #title>
+      <h4
+        v-clean-html="t('auditLog.serverUrlDialog.title')"
+        class="text-default-text"
       />
+    </template>
+    <template #body>
+      <div
+        class="pl-10 pr-10"
+      >
+        <LabeledInput
+          v-model:value="url"
+          class="mb-10"
+          :localized-label="true"
+          :required="true"
+          :label="t('auditLog.installView.steps.deploymentCompoents.address.label')"
+        />
 
-      <Banner
-        v-for="(e, idx) in errors"
-        :key="idx"
-        color="error"
-        :label="e"
-      />
-    </div>
-    <div
-      slot="actions"
-      class="buttons"
-    >
-      <button
-        class="btn role-primary mr-10"
-        :disabled="loading"
-        @click="save"
+        <Banner
+          v-for="(e, idx) in errors"
+          :key="idx"
+          color="error"
+          :label="e"
+        />
+      </div>
+    </template>
+    <template #actions>
+      <div
+        class="buttons"
       >
-        {{ t('generic.save') }}
-      </button>
-      <button
-        class="btn role-secondary mr-10"
-        @click="close"
-      >
-        {{ t('generic.cancel') }}
-      </button>
-    </div>
+        <button
+          class="btn role-primary mr-10"
+          :disabled="loading"
+          @click="save"
+        >
+          {{ t('generic.save') }}
+        </button>
+        <button
+          class="btn role-secondary mr-10"
+          @click="close"
+        >
+          {{ t('generic.cancel') }}
+        </button>
+      </div>
+    </template>
   </Card>
 </template>
 

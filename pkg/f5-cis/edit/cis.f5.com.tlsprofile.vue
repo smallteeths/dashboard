@@ -189,11 +189,11 @@ export default {
     if (!this.value.spec) {
       const spec = cloneDeep(specTemplate);
 
-      this.$set(this.value, 'spec', spec);
+      this.value.spec = spec;
     }
 
     if (this.value.metadata.labels.f5cr !== 'true') {
-      this.$set(this.value.metadata.labels, 'f5cr', 'true');
+      this.value.metadata.labels.f5cr = true;
     }
 
     this.registerBeforeHook(this.willSave, 'willSave');
@@ -228,7 +228,7 @@ export default {
       }
       this.removeEmptyProps(this.value);
       if (this.value.metadata.labels.f5cr !== 'true') {
-        this.$set(this.value.metadata.labels, 'f5cr', 'true');
+        this.value.metadata.labels.f5cr = true;
       }
     },
     filterByCurrentResourceNamespace(resources) {
@@ -274,7 +274,7 @@ export default {
 <style lang="scss" scoped>
 
 .tls-profile-tabs {
-  > ::v-deep .tabs.horizontal {
+  > :deep(.tabs.horizontal) {
     border-bottom: 1px solid var(--border);
     margin-bottom: 10px;
   }

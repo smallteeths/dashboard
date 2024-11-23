@@ -6,7 +6,7 @@
     :mode="mode"
     :remove-allowed="mode !== 'view'"
     :protip="false"
-    @input="update"
+    @update:value="update"
   >
     <template
       #columns="scope"

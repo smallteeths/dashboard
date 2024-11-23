@@ -1,6 +1,7 @@
-import { mount } from '@vue/test-utils';
+import { shallowMount } from '@vue/test-utils';
 import rke2 from '@shell/edit/provisioning.cattle.io.cluster/rke2.vue';
 import CustomContainerdConfig from '@shell/edit/provisioning.cattle.io.cluster/CustomContainerdConfig.vue';
+import { _CREATE } from '@shell/config/query-params';
 
 describe('component: rke2, computed: generateName', () => {
   it('should return default generate name when empty registry hostname', () => {
@@ -26,88 +27,75 @@ describe('component: rke2, computed: generateName', () => {
         },
         agentConfig: { 'cloud-provider-name': 'any' }
       };
-      const wrapper = mount(rke2, {
-
-        propsData: {
-          mode:            'create',
+      const wrapper = shallowMount(rke2, {
+        props: {
+          mode:            _CREATE,
           value,
-          provider:        'custom',
           selectedVersion: { agentArgs: mockAgentArgs },
+          provider:        'custom'
         },
-        data:     () => ({ credentialId: 'I am authenticated' }),
-        computed: {
-          showForm() {
-            return true;
+
+        global: {
+          stubs: {
+            CruResource:              { template: '<div><slot></slot></div>' }, // Required to render the slot content
+            Banner:                   true,
+            LabeledSelect:            true,
+            ACE:                      true,
+            AgentEnv:                 true,
+            AgentConfiguration:       true,
+            ArrayList:                true,
+            ArrayListGrouped:         true,
+            BadgeState:               true,
+            Checkbox:                 true,
+            ClusterMembershipEditor:  true,
+            ClusterAppearance:        true,
+            DrainOptions:             true,
+            LabeledInput:             true,
+            Labels:                   true,
+            Loading:                  true,
+            MachinePool:              true,
+            MatchExpressions:         true,
+            NameNsDescription:        true,
+            Questions:                true,
+            RadioGroup:               true,
+            RegistryConfigs:          true,
+            RegistryMirrors:          true,
+            S3Config:                 true,
+            SelectCredential:         true,
+            SelectOrCreateAuthSecret: true,
+            UnitInput:                true,
+            YamlEditor:               true,
+            MemberRoles:              true,
+            Basics:                   true,
+            Etcd:                     true,
+            Networking:               true,
+            Upgrade:                  true,
+            Registries:               true,
+            AddOnConfig:              true,
+            Advanced:                 true,
+            Tabbed:                   { template: '<div><slot /></div>' },
+            Tab:                      { template: '<div><slot /></div>' }
           },
-          versionOptions() {
-            return [
-              {
-                id: 'v1.25.0+rke2r1', value: 'v1.25.0+rke2r1', serverArgs: {}, agentArgs: mockAgentArgs, charts: {}
-              },
-              {
-                id: 'v1.24.0+rke2r1', value: 'v1.24.0+rke2r1', serverArgs: {}, agentArgs: mockAgentArgs, charts: {}
-              },
-              {
-                id: 'v1.23.0+rke2r1', value: 'v1.23.0+rke2r1', serverArgs: {}, agentArgs: mockAgentArgs, charts: {}
-              },
-              {
-                id: 'v1.25.0+k3s1', value: 'v1.25.0+k3s1', serverArgs: {}, agentArgs: mockAgentArgs, charts: {}
-              },
-              {
-                id: 'v1.24.0+k3s1', value: 'v1.24.0+k3s1', serverArgs: {}, agentArgs: mockAgentArgs, charts: {}
-              }
-            ];
-          }
-        },
-        stubs: {
-          CruResource:              { template: '<div><slot></slot></div>' },
-          Banner:                   true,
-          LabeledSelect:            true,
-          ACE:                      true,
-          AgentEnv:                 true,
-          AgentConfiguration:       true,
-          ArrayList:                true,
-          ArrayListGrouped:         true,
-          BadgeState:               true,
-          Checkbox:                 true,
-          ClusterMembershipEditor:  true,
-          DrainOptions:             true,
-          LabeledInput:             true,
-          Labels:                   true,
-          Loading:                  true,
-          MachinePool:              true,
-          MatchExpressions:         true,
-          NameNsDescription:        true,
-          Questions:                true,
-          RadioGroup:               true,
-          RegistryConfigs:          true,
-          RegistryMirrors:          true,
-          S3Config:                 true,
-          SelectCredential:         true,
-          SelectOrCreateAuthSecret: true,
-          Tab:                      { template: '<div><slot></slot></div>' },
-          Tabbed:                   { template: '<div><slot></slot></div>' },
-          UnitInput:                true,
-          YamlEditor:               true,
-          MemberRoles:              true,
-          Basics:                   true
-        },
-        mocks: {
-          $fetchState: { pending: false },
-          $route:      {
-            name:  'anything',
-            query: { AS: 'yaml' },
-          },
-          $store: {
-            getters: {
-              currentStore:                     () => 'current_store',
-              'management/schemaFor':           jest.fn(),
-              'current_store/all':              jest.fn(),
-              'i18n/t':                         jest.fn(),
-              'i18n/withFallback':              jest.fn(),
-              'plugins/cloudProviderForDriver': jest.fn()
+          mocks: {
+            $fetchState: { pending: false },
+            $route:      {
+              name:  'anything',
+              query: { AS: 'yaml' },
             },
-            dispatch: jest.fn()
+            $store: {
+              dispatch: () => jest.fn(),
+              getters:  {
+                currentStore:                      () => 'current_store',
+                'management/schemaFor':            jest.fn(),
+                'current_store/all':               jest.fn(),
+                'i18n/t':                          jest.fn(),
+                'i18n/withFallback':               jest.fn(),
+                'plugins/cloudProviderForDriver':  jest.fn(),
+                'customization/getPreviewCluster': jest.fn()
+              }
+            },
+            $plugin: { getDynamic: jest.fn(() => undefined ) }
+
           }
         }
 
@@ -115,7 +103,7 @@ describe('component: rke2, computed: generateName', () => {
       const c = wrapper.findComponent(CustomContainerdConfig);
 
       expect(c.exists()).toBe(true);
-      expect(c.props('value')).toBe(value);
+      expect(c.props('value')).toStrictEqual(value);
       expect(c.props('mode')).toBe('create');
     });
   });

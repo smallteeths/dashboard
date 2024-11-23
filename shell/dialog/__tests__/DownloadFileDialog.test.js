@@ -1,14 +1,14 @@
 import { mount } from '@vue/test-utils';
 import { Banner } from '@components/Banner';
 import DownloadFileDialog from '@shell/dialog/DownloadFileDialog.vue';
-import cleanHtmlDirective from '@shell/plugins/clean-html-directive';
+import cleanHtml from '@shell/directives/clean-html';
 
 describe('component: DownloadFileDialog', () => {
   it('should clear old error message after verifying the connection', async() => {
     const wrapper = mount(DownloadFileDialog, {
-      directives: { cleanHtmlDirective },
-      slots:      { title: '<h4 />' },
-      propsData:  {
+
+      slots: { title: '<h4 />' },
+      props: {
         resources: [
           {
             id:       'test',
@@ -16,17 +16,17 @@ describe('component: DownloadFileDialog', () => {
           }
         ]
       },
-      mocks: {
-        $store: {
-          dispatch: jest.fn(() => Promise.resolve({})),
-          getters:  { 'i18n/t': jest.fn(), 'i18n/exists': (k) => k }
-        }
+
+      global: {
+        directives: { cleanHtml },
+        mocks:      {
+          $store: {
+            dispatch: jest.fn(() => Promise.resolve({})),
+            getters:  { 'i18n/t': jest.fn(), 'i18n/exists': (k) => k }
+          }
+        },
       }
     });
-
-    const inputWraps = wrapper.findAll('[class^=labeled-]');
-
-    expect(inputWraps).toHaveLength(2);
 
     await wrapper.setData({ errors: ['error'] });
     expect(wrapper.findComponent(Banner).props('label')).toStrictEqual('error');

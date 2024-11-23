@@ -176,7 +176,7 @@ export default {
       }
 
       this.$nextTick(() => {
-        this.$set(this, 'bindings', [...this.bindings, ...toSaved]);
+        this.bindings = [...this.bindings, ...toSaved];
       });
     }
   }

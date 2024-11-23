@@ -14,6 +14,7 @@ const vueApp = createApp({});
 
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
+global.structuredClone = (v) => JSON.parse(JSON.stringify(v));
 
 // vueApp.config.productionTip = false;
 vueApp.use(i18n, { store: { dispatch() {} } });

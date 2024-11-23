@@ -130,11 +130,11 @@ export default {
             throw new Error('An error was detected in the iframe');
           }
 
-          this.$set(this, 'loading', !loaded);
-          this.$set(this, 'error', isFailure);
+          this.loading = !loaded;
+          this.error = isFailure;
         } catch (ex) {
-          this.$set(this, 'error', true);
-          this.$set(this, 'loading', false);
+          this.error = true;
+          this.loading = false;
           clearInterval(this.interval);
           this.interval = null;
         }
@@ -282,7 +282,7 @@ export default {
   min-height: 100%;
   min-width: 100%;
 
-  & ::v-deep .content {
+  & :deep(.content) {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -293,7 +293,7 @@ export default {
     padding: 0;
   }
 
-  & ::v-deep .overlay {
+  & :deep(.overlay) {
     position: static;
     background-color: initial;
   }

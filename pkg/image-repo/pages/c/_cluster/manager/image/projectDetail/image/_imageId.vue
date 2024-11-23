@@ -41,7 +41,7 @@
             class="icon icon-copy icon-lg guideLink"
             @click="copy(row.pullCommand)"
           />
-          <template slot="popover">
+          <template #popover>
             <div>
               Copy to Clipboard
             </div>
@@ -63,7 +63,7 @@
               </a>
             </div>
           </slot>
-          <template slot="popover">
+          <template #popover>
             <table
               class="sortable-table"
             >

@@ -34,7 +34,7 @@
               </span>
             </div>
           </template>
-          <template slot="popover">
+          <template #popover>
             <div class="push-image-content">
               <div style="padding:8px 5px; font-size:18px">
                 {{ t('harborConfig.table.pushImg.title') }}

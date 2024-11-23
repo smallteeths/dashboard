@@ -97,7 +97,7 @@ export default {
 
       out = difference(stores, this.query.enabledClusterStores.map((c) => c.address));
 
-      this.$set(this.query, 'otherClusterStores', out);
+      this.query.otherClusterStores = out;
     },
 
     updateClusterStore() {
@@ -108,15 +108,15 @@ export default {
 
       out = [...clusterStores, ...otherClusterStores];
 
-      this.$set(this.value.thanos.query, 'stores', out);
-      this.$set(this.value.thanos.query, 'enabledClusterStores', enabledClusters.map((c) => {
+      this.value.thanos.query.stores = out;
+      this.value.thanos.query.enabledClusterStores = enabledClusters.map((c) => {
         return {
           address:     c.clusterStore || c.monitoringNodeIp,
           id:          c.id,
           customStore: !!c.clusterStore,
           enabled:     true,
         };
-      }));
+      });
     },
   },
 
@@ -173,7 +173,7 @@ export default {
             <ToggleSwitch
               v-model:value="c.monitoringEabled"
               :labels="[false, true]"
-              @input="updateClusterStore"
+              @update:value="updateClusterStore"
             />
           </td>
           <td>
@@ -181,7 +181,7 @@ export default {
               v-model:value="c.clusterStore"
               :mode="mode"
               :placeholder="t('globalMonitoringPage.customAddress.placeholder')"
-              @input="updateClusterStore"
+              @update:value="updateClusterStore"
             />
           </td>
         </tr>
@@ -193,7 +193,7 @@ export default {
       :mode="mode"
       :value-placeholder="t('globalMonitoringPage.customAddress.placeholder')"
       :add-label="t('globalMonitoringPage.customAddress.add')"
-      @input="updateClusterStore"
+      @update:value="updateClusterStore"
     />
   </div>
 </template>

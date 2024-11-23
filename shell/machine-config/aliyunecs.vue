@@ -175,22 +175,22 @@ export default {
       }
 
       if (!this.value?.upgradeKernel) {
-        this.$set(this.value, 'upgradeKernel', false);
+        this.value.upgradeKernel = false;
       }
       if (!this.value?.ioOptimized) {
-        this.$set(this.value, 'ioOptimized', 'optimized');
+        this.value.ioOptimized = 'optimized';
       }
       if (!this.value?.diskFs) {
-        this.$set(this.value, 'diskFs', 'ext4');
+        this.value.diskFs = 'ext4';
       }
       if (!this.value?.internetChargeType) {
-        this.$set(this.value, 'internetChargeType', 'PayByTraffic');
+        this.value.internetChargeType = 'PayByTraffic';
       }
       if (!this.value?.instanceChargeType) {
-        this.$set(this.value, 'instanceChargeType', this.defaultValue?.instanceChargeType);
+        this.value.instanceChargeType = this.defaultValue?.instanceChargeType;
       }
       if (!this.value?.openPort || !this.value?.openPort.length) {
-        this.$set(this.value, 'openPort', this.defaultValue?.openPort);
+        this.value.openPort = this.defaultValue?.openPort;
       }
 
       this.initTags();
@@ -267,7 +267,7 @@ export default {
         this.value.instanceChargeType = this.defaultValue?.instanceChargeType;
         this.value.spotDuration = '1';
         this.spotDuration = true;
-        this.$set(this.value, 'spotStrategy', 'SpotAsPriceGo');
+        this.value.spotStrategy = 'SpotAsPriceGo';
       } else {
         this.value.spotStrategy = this.defaultValue.spotStrategy;
         delete this.value.spotDuration;
@@ -392,7 +392,7 @@ export default {
         ary.push(`${ k }=${ tag[k] }`);
       }
 
-      this.$set(this.value, 'tag', ary);
+      this.value.tag = ary;
     },
 
     initTags() {
@@ -464,14 +464,14 @@ export default {
       let instanceChargeType = this.value?.instanceChargeType || this.instanceChargeType;
 
       if (instanceChargeType === 'PrePaid') {
-        this.$set(this, 'periodUnit', `${ this.value.period }_${ this.value.periodUnit }`);
+        this.periodUnit = `${ this.value.period }_${ this.value.periodUnit }`;
       }
 
       if (this.value.spotStrategy && this.value.spotStrategy !== 'NoSpot') {
         instanceChargeType = 'SpotStrategy';
       }
 
-      this.$set(this, 'instanceChargeType', instanceChargeType);
+      this.instanceChargeType = instanceChargeType;
     },
 
     getAvailableInstanceTypes() {
@@ -910,7 +910,7 @@ export default {
             :disabled="disabled"
             :label="t('cluster.machineConfig.aliyunecs.imageId.label')"
             :placeholder="t('cluster.machineConfig.aliyunecs.imageId.placeholder')"
-            @input="imageTypeChanged"
+            @update:value="imageTypeChanged"
           />
         </div>
         <div class="col span-6">
@@ -950,7 +950,7 @@ export default {
             :label="t('cluster.machineConfig.aliyunecs.systemDiskSize.label')"
             :placeholder="t('cluster.machineConfig.aliyunecs.systemDiskSize.placeholder', {min: systemDiskCategorySize.Min, max: systemDiskCategorySize.Max})"
             :suffix="t('cluster.machineConfig.aliyunecs.systemDiskSize.suffix')"
-            @input="unitInputRangeLimit(20, 500, 'systemDiskSize')"
+            @update:value="unitInputRangeLimit(20, 500, 'systemDiskSize')"
           />
         </div>
       </div>
@@ -967,7 +967,7 @@ export default {
             :label="t('cluster.machineConfig.aliyunecs.internetMaxBandwidth.label')"
             :placeholder="t('cluster.machineConfig.aliyunecs.internetMaxBandwidth.placeholder')"
             :suffix="t('cluster.machineConfig.aliyunecs.internetMaxBandwidth.suffix')"
-            @input="unitInputRangeLimit(1, 100, 'internetMaxBandwidth')"
+            @update:value="unitInputRangeLimit(1, 100, 'internetMaxBandwidth')"
           />
         </div>
       </div>
@@ -1007,7 +1007,7 @@ export default {
               :label="t('cluster.machineConfig.aliyunecs.diskSize.label')"
               :placeholder="t('cluster.machineConfig.aliyunecs.diskSize.placeholder', {min: diskCategorySize.Min, max: diskCategorySize.Max})"
               :suffix="t('cluster.machineConfig.aliyunecs.diskSize.suffix')"
-              @input="unitInputRangeLimit(20, 32768, 'diskSize')"
+              @update:value="unitInputRangeLimit(20, 32768, 'diskSize')"
             />
           </div>
         </div>
@@ -1183,7 +1183,7 @@ export default {
               :label="t('cluster.machineConfig.aliyunecs.tagTitle')"
               :add-label="t('labels.addTag')"
               :disabled="disabled"
-              @input="updateTags"
+              @update:value="updateTags"
             />
           </div>
         </div>

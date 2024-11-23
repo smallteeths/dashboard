@@ -276,7 +276,7 @@ export default {
 .gap-20 {
   gap: 20px;
 }
-::v-deep .controls-row {
+:deep(.controls-row) {
   position: relative;
 }
 </style>

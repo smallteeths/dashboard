@@ -126,55 +126,57 @@ export default {
     :show-highlight-border="false"
     :sticky="true"
   >
-    <h4
-      slot="title"
-      v-clean-html="t('editProjectMemberDialog.title')"
-      class="text-default-text"
-    />
-
-    <div
-      slot="body"
-      class="pl-10 pr-10"
-    >
-      <Banner
-        v-if="error"
-        color="error"
-      >
-        {{ error }}
-      </Banner>
-      <ProjectMemberEditor
-        v-model:value="member"
-        :mode="mode"
-        :use-two-columns-for-custom="true"
-        :init-value="value"
+    <template #title>
+      <h4
+        v-clean-html="t('editProjectMemberDialog.title')"
+        class="text-default-text"
       />
-    </div>
-
-    <div
-      slot="actions"
-      class="buttons"
-    >
-      <button
-        class="btn role-secondary mr-10"
-        @click="close"
+    </template>
+    <template #body>
+      <div
+        class="pl-10 pr-10"
       >
-        {{ t('generic.cancel') }}
-      </button>
+        <Banner
+          v-if="error"
+          color="error"
+        >
+          {{ error }}
+        </Banner>
+        <ProjectMemberEditor
+          v-model:value="member"
+          :mode="mode"
+          :use-two-columns-for-custom="true"
+          :init-value="value"
+        />
+      </div>
+    </template>
 
-      <AsyncButton
-        v-if="saveInModal"
-        :mode="mode"
-        @click="cb=>saveBindings(cb)"
-      />
-
-      <button
-        v-else
-        class="btn role-primary"
-        @click="apply"
+    <template #actions>
+      <div
+        class="buttons"
       >
-        {{ t('generic.save') }}
-      </button>
-    </div>
+        <button
+          class="btn role-secondary mr-10"
+          @click="close"
+        >
+          {{ t('generic.cancel') }}
+        </button>
+
+        <AsyncButton
+          v-if="saveInModal"
+          :mode="mode"
+          @click="cb=>saveBindings(cb)"
+        />
+
+        <button
+          v-else
+          class="btn role-primary"
+          @click="apply"
+        >
+          {{ t('generic.save') }}
+        </button>
+      </div>
+    </template>
   </Card>
 </template>
 <style lang='scss' scoped>

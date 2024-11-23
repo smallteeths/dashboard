@@ -14,7 +14,7 @@
           name="authTlsVerifyClient"
           :options="authTlsVerifyClientOptions"
           :mode="mode"
-          @input="authTlsVerifyClientChanged"
+          @update:value="authTlsVerifyClientChanged"
         />
       </div>
       <div
@@ -117,12 +117,12 @@ export default {
       },
       set(v) {
         if (!this.value?.metadata?.annotations) {
-          this.$set(this.value.metadata, 'annotations', {});
+          this.value.metadata.annotations = {};
         }
         if (!v?.trim()) {
-          this.$delete(this.value.metadata.annotations, AUTH_TLS_VERIFY_CLIENT);
+          delete this.value.metadata.annotations[AUTH_TLS_VERIFY_CLIENT];
         } else {
-          this.$set(this.value.metadata.annotations, AUTH_TLS_VERIFY_CLIENT, v);
+          this.value.metadata.annotations[AUTH_TLS_VERIFY_CLIENT] = v;
         }
       }
     },
@@ -132,12 +132,12 @@ export default {
       },
       set(v) {
         if (!this.value?.metadata?.annotations) {
-          this.$set(this.value.metadata, 'annotations', {});
+          this.value.metadata.annotations = {};
         }
         if (!v?.trim()) {
-          this.$delete(this.value.metadata.annotations, AUTH_TLS_SECRET);
+          delete this.value.metadata.annotations[AUTH_TLS_SECRET];
         } else {
-          this.$set(this.value.metadata.annotations, AUTH_TLS_SECRET, v);
+          this.value.metadata.annotations[AUTH_TLS_SECRET] = v;
         }
       }
     },
@@ -147,12 +147,12 @@ export default {
       },
       set(v) {
         if (!this.value?.metadata?.annotations) {
-          this.$set(this.value.metadata, 'annotations', {});
+          this.value.metadata.annotations = {};
         }
         if (!v) {
-          this.$delete(this.value.metadata.annotations, AUTH_TLS_VERIFY_DEPTH);
+          delete this.value.metadata.annotations[AUTH_TLS_VERIFY_DEPTH];
         } else {
-          this.$set(this.value.metadata.annotations, AUTH_TLS_VERIFY_DEPTH, `${ v }`);
+          this.value.metadata.annotations[AUTH_TLS_VERIFY_DEPTH] = `${ v }`;
         }
       }
     },
@@ -168,12 +168,12 @@ export default {
       },
       set(v) {
         if (!this.value?.metadata?.annotations) {
-          this.$set(this.value.metadata, 'annotations', {});
+          this.value.metadata.annotations = {};
         }
         if (!v?.trim()) {
-          this.$delete(this.value.metadata.annotations, AUTH_TLS_ERROR_PAGE);
+          delete this.value.metadata.annotations[AUTH_TLS_ERROR_PAGE];
         } else {
-          this.$set(this.value.metadata.annotations, AUTH_TLS_ERROR_PAGE, v);
+          this.value.metadata.annotations[AUTH_TLS_ERROR_PAGE] = v;
         }
       }
     },
@@ -182,7 +182,7 @@ export default {
     authTlsVerifyClientChanged(v) {
       if (v === 'off') {
         [AUTH_TLS_VERIFY_CLIENT, AUTH_TLS_SECRET, AUTH_TLS_ERROR_PAGE, AUTH_TLS_VERIFY_DEPTH].forEach((k) => {
-          this.$delete(this.value.metadata.annotations, k);
+          delete this.value.metadata.annotations.k;
         });
       }
     },

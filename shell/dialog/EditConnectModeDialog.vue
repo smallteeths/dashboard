@@ -5,77 +5,79 @@
       class="prompt-cluster-connect-mode"
       :show-highlight-border="false"
     >
-      <h4
-        slot="title"
-        class="text-default-text"
-      >
-        {{ t('clusterConnectMode.connectMode.label') }}
-      </h4>
-      <div
-        v-if="connectModeLoading"
-        slot="body"
-      />
-      <div
-        v-else
-        slot="body"
-        class="pr-10 pl-10"
-        style="min-height: 300px;"
-      >
-        <div class="mb-20 row">
-          <div class="col span-6">
-            <LabeledSelect
-              v-model:value="mode.directAccess"
-              :label="t('clusterConnectMode.connectMode.label')"
-              :localized-label="true"
-              :options="connectModes"
-              :append-to-body="false"
-            />
-          </div>
-        </div>
-        <div class="row">
-          <div class="col span-12">
-            <ApiEndpoints
-              v-model:value="mode.apiEndpoints"
-              :title="t('clusterConnectMode.apiEndpoint.label')"
-              mode="edit"
-              :status-map="statusMap"
-            />
-          </div>
-        </div>
-      </div>
-      <div
-        slot="actions"
-        class="bottom"
-      >
-        <Banner
-          v-for="(err, i) in errors"
-          :key="i"
-          color="error"
-          :label="err"
+      <template #title>
+        <h4
+          class="text-default-text"
+        >
+          {{ t('clusterConnectMode.connectMode.label') }}
+        </h4>
+      </template>
+      <template #body>
+        <div
+          v-if="connectModeLoading"
         />
-        <div class="buttons">
-          <button
-            class="mr-10 btn role-secondary"
-            @click="close"
-          >
-            {{ t('generic.cancel') }}
-          </button>
-          <AsyncButton
-            class="mr-10"
-            :action-label="t('clusterConnectMode.testConnect.label')"
-            :waiting-label="t('clusterConnectMode.testConnect.label')"
-            :success-label="t('clusterConnectMode.testConnect.label')"
-            :disabled="loading || connectModeLoading"
-            @click="validate"
-          />
-          <AsyncButton
-            :disabled="loading || connectModeLoading"
-            @click="confirmSave"
-          />
+        <div
+          v-else
+          class="pr-10 pl-10"
+          style="min-height: 300px;"
+        >
+          <div class="mb-20 row">
+            <div class="col span-6">
+              <LabeledSelect
+                v-model:value="mode.directAccess"
+                :label="t('clusterConnectMode.connectMode.label')"
+                :localized-label="true"
+                :options="connectModes"
+                :append-to-body="false"
+              />
+            </div>
+          </div>
+          <div class="row">
+            <div class="col span-12">
+              <ApiEndpoints
+                v-model:value="mode.apiEndpoints"
+                :title="t('clusterConnectMode.apiEndpoint.label')"
+                mode="edit"
+                :status-map="statusMap"
+              />
+            </div>
+          </div>
         </div>
-      </div>
+      </template>
+      <template #actions>
+        <div
+          class="bottom"
+        >
+          <Banner
+            v-for="(err, i) in errors"
+            :key="i"
+            color="error"
+            :label="err"
+          />
+          <div class="buttons">
+            <button
+              class="mr-10 btn role-secondary"
+              @click="close"
+            >
+              {{ t('generic.cancel') }}
+            </button>
+            <AsyncButton
+              class="mr-10"
+              :action-label="t('clusterConnectMode.testConnect.label')"
+              :waiting-label="t('clusterConnectMode.testConnect.label')"
+              :success-label="t('clusterConnectMode.testConnect.label')"
+              :disabled="loading || connectModeLoading"
+              @click="validate"
+            />
+            <AsyncButton
+              :disabled="loading || connectModeLoading"
+              @click="confirmSave"
+            />
+          </div>
+        </div>
+      </template>
     </Card>
-    <modal
+    <AppModal
       class="confirm-modal"
       name="confirm-save"
       :width="350"
@@ -86,39 +88,42 @@
         class="prompt-cluster-connect-mode"
         :show-highlight-border="false"
       >
-        <h4
-          slot="title"
-          class="text-default-text"
-        >
-          {{ t('promptRemove.title') }}
-        </h4>
-        <div
-          slot="body"
-          class="pr-10 pl-10"
-        >
-          {{ t('clusterConnectMode.actions.restartConfirm', { name: cluster.metadata.name}) }}
-        </div>
-        <div
-          slot="actions"
-          class="bottom"
-        >
-          <div class="buttons">
-            <button
-              class="mr-10 btn role-secondary"
-              @click="confirm(false)"
-            >
-              {{ t('generic.cancel') }}
-            </button>
-            <button
-              class="btn role-primary"
-              @click="confirm(true)"
-            >
-              {{ t('clusterConnectMode.actions.yes') }}
-            </button>
+        <template #title>
+          <h4
+            class="text-default-text"
+          >
+            {{ t('promptRemove.title') }}
+          </h4>
+        </template>
+        <template #body>
+          <div
+            class="pr-10 pl-10"
+          >
+            {{ t('clusterConnectMode.actions.restartConfirm', { name: cluster.metadata.name}) }}
           </div>
-        </div>
+        </template>
+        <template #actions>
+          <div
+            class="bottom"
+          >
+            <div class="buttons">
+              <button
+                class="mr-10 btn role-secondary"
+                @click="confirm(false)"
+              >
+                {{ t('generic.cancel') }}
+              </button>
+              <button
+                class="btn role-primary"
+                @click="confirm(true)"
+              >
+                {{ t('clusterConnectMode.actions.yes') }}
+              </button>
+            </div>
+          </div>
+        </template>
       </Card>
-    </modal>
+    </AppModal>
   </div>
 </template>
 
@@ -129,6 +134,7 @@ import { Banner } from '@components/Banner';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 import ApiEndpoints from '@shell/components/form/ApiEndpoints.vue';
 import { stringify } from '@shell/utils/error';
+import AppModal from '@shell/components/AppModal.vue';
 
 export default {
   emits: ['close'],
@@ -269,6 +275,7 @@ export default {
     Banner,
     LabeledSelect,
     ApiEndpoints,
+    AppModal
   }
 };
 </script>

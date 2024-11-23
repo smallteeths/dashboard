@@ -368,11 +368,12 @@ export default {
       >
         <div>
           <Thanos
-            v-model:value="value"
+            :value="value"
             :access-modes="accessModes"
             :mode="mode"
             :pvcs="pvcs"
             :storage-classes="storageClasses"
+            @update:value="$emit('input', $event)"
           />
         </div>
       </Tab>

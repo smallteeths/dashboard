@@ -8,7 +8,7 @@ export default {
   components: {
     Select, PercentageBar, UnitInput
   },
-  emits: ['input'],
+  emits: ['update:value'],
   props: {
     mode: {
       type:     String,
@@ -194,7 +194,7 @@ export default {
         addSuffixSpace: false
       });
 
-      this.$emit('input', this.type, value, this.storageClass);
+      this.$emit('update:value', this.type, value, this.storageClass);
     }
   }
 };
@@ -247,7 +247,7 @@ export default {
       :base-unit="typeOption.baseUnit"
       :suffix="typeOption.suffix"
       :output-modifier="true"
-      @input="update"
+      @update:value="update"
     />
   </div>
 </template>

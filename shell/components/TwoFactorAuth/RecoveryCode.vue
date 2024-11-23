@@ -15,7 +15,7 @@
       {{ t('mfa.recoveryCode.new') }}
     </button>
 
-    <modal
+    <AppModal
       class="view-recovery-code-modal"
       name="view-recovery-code"
       :width="600"
@@ -26,65 +26,68 @@
         class="prompt-view-recovery-code"
         :show-highlight-border="false"
       >
-        <h4
-          slot="title"
-          class="text-default-text"
-        >
-          {{ t('mfa.recoveryCode.title') }}
-        </h4>
-        <div
-          slot="body"
-          class="pr-10 pl-10 recovery-code__content"
-        >
-          <VerifyCode
-            v-if="codes.length === 0"
-            :handleVerify="handleVerify"
-            @on-errors="handleErrors"
-          />
-          <template v-else>
-            <p
-              v-for="c in codes"
-              :key="c"
-            >
-              {{ c }}
-            </p>
-          </template>
-
-          <Banner
-            v-for="e in errors"
-            :key="e"
-            color="error"
-            :label="e"
-          />
-        </div>
-        <div
-          slot="actions"
-          class="bottom"
-        >
-          <div class="buttons">
-            <CopyToClipboard
-              :text="codeString"
-              :disabled="codes.length === 0"
+        <template #title>
+          <h4
+            class="text-default-text"
+          >
+            {{ t('mfa.recoveryCode.title') }}
+          </h4>
+        </template>
+        <template #body>
+          <div
+            class="pr-10 pl-10 recovery-code__content"
+          >
+            <VerifyCode
+              v-if="codes.length === 0"
+              :handleVerify="handleVerify"
+              @on-errors="handleErrors"
             />
-            <button
-              class="mr-10 btn role-secondary"
-              :disabled="codes.length === 0"
-              @click="download"
-            >
-              {{ t('mfa.recoveryCode.download') }}
-            </button>
+            <template v-else>
+              <p
+                v-for="c in codes"
+                :key="c"
+              >
+                {{ c }}
+              </p>
+            </template>
 
-            <button
-              class="mr-10 btn role-secondary"
-              @click="close"
-            >
-              {{ t('generic.cancel') }}
-            </button>
+            <Banner
+              v-for="e in errors"
+              :key="e"
+              color="error"
+              :label="e"
+            />
           </div>
-        </div>
+        </template>
+        <template #actions>
+          <div
+            class="bottom"
+          >
+            <div class="buttons">
+              <CopyToClipboard
+                :text="codeString"
+                :disabled="codes.length === 0"
+              />
+              <button
+                class="mr-10 btn role-secondary"
+                :disabled="codes.length === 0"
+                @click="download"
+              >
+                {{ t('mfa.recoveryCode.download') }}
+              </button>
+
+              <button
+                class="mr-10 btn role-secondary"
+                @click="close"
+              >
+                {{ t('generic.cancel') }}
+              </button>
+            </div>
+          </div>
+        </template>
       </Card>
-    </modal>
-    <modal
+    </AppModal>
+    <AppModal
       class="view-recovery-code-modal"
       name="new-recovery-code"
       :width="600"
@@ -95,64 +98,67 @@
         class="prompt-view-recovery-code"
         :show-highlight-border="false"
       >
-        <h4
-          slot="title"
-          class="text-default-text"
-        >
-          {{ t('mfa.recoveryCode.new') }}
-        </h4>
-        <div
-          slot="body"
-          class="pr-10 pl-10 recovery-code__content"
-        >
-          <VerifyCode
-            v-if="codes.length === 0"
-            :handleVerify="generateNewCodes"
-            @on-errors="handleErrors"
-          />
-          <template v-else>
-            <p
-              v-for="c in codes"
-              :key="c"
-            >
-              {{ c }}
-            </p>
-          </template>
-
-          <Banner
-            v-for="e in errors"
-            :key="e"
-            color="error"
-            :label="e"
-          />
-        </div>
-        <div
-          slot="actions"
-          class="bottom"
-        >
-          <div class="buttons">
-            <CopyToClipboard
-              :text="codeString"
-              :disabled="codes.length === 0"
+        <template #title>
+          <h4
+            class="text-default-text"
+          >
+            {{ t('mfa.recoveryCode.new') }}
+          </h4>
+        </template>
+        <template #body>
+          <div
+            class="pr-10 pl-10 recovery-code__content"
+          >
+            <VerifyCode
+              v-if="codes.length === 0"
+              :handleVerify="generateNewCodes"
+              @on-errors="handleErrors"
             />
-            <button
-              class="mr-10 btn role-secondary"
-              :disabled="codes.length === 0"
-              @click="download"
-            >
-              {{ t('mfa.recoveryCode.download') }}
-            </button>
+            <template v-else>
+              <p
+                v-for="c in codes"
+                :key="c"
+              >
+                {{ c }}
+              </p>
+            </template>
 
-            <button
-              class="mr-10 btn role-secondary"
-              @click="closeNewCodeView"
-            >
-              {{ t('generic.cancel') }}
-            </button>
+            <Banner
+              v-for="e in errors"
+              :key="e"
+              color="error"
+              :label="e"
+            />
           </div>
-        </div>
+        </template>
+        <template #actions>
+          <div
+            class="bottom"
+          >
+            <div class="buttons">
+              <CopyToClipboard
+                :text="codeString"
+                :disabled="codes.length === 0"
+              />
+              <button
+                class="mr-10 btn role-secondary"
+                :disabled="codes.length === 0"
+                @click="download"
+              >
+                {{ t('mfa.recoveryCode.download') }}
+              </button>
+
+              <button
+                class="mr-10 btn role-secondary"
+                @click="closeNewCodeView"
+              >
+                {{ t('generic.cancel') }}
+              </button>
+            </div>
+          </div>
+        </template>
       </Card>
-    </modal>
+    </AppModal>
   </div>
 </template>
 <script>
@@ -161,10 +167,11 @@ import { downloadFile } from '@shell/utils/download';
 import VerifyCode from '@shell/components/TwoFactorAuth/VerifyCode.vue';
 import { Card } from '@components/Card';
 import { Banner } from '@components/Banner';
+import AppModal from '@shell/components/AppModal.vue';
 
 export default {
   components: {
-    CopyToClipboard, VerifyCode, Card, Banner
+    CopyToClipboard, VerifyCode, Card, Banner, AppModal
   },
   data() {
     return {
