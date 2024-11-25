@@ -4624,10 +4624,10 @@
   dependencies:
     vue-demi "*"
 
-"@vxe-ui/core@^3.0.14":
-  version "3.0.14"
-  resolved "https://registry.npmjs.org/@vxe-ui/core/-/core-3.0.14.tgz#118a96ff8f7beda8c377ea964a735884f4fd8ee9"
-  integrity sha512-cKZxd1KMf/O1fFlS/IJrPkC8p8jqfVK29LVZE6yEbz8IKNoqJ0LQM+3ZVMlAo67PTFKv0FdC/xqMwRoAuN2Hkg==
+"@vxe-ui/core@^4.0.17":
+  version "4.0.17"
+  resolved "https://r.cnpmjs.org/@vxe-ui/core/-/core-4.0.17.tgz#01b9a4215e79e4d0279528fd0e9e3430e16859e5"
+  integrity sha512-05lnGnFrZJnLSCiJbTqTXWjtlxmO7ew8/5a7f/yPwgdZ8WLY93nA8n0XDiQVFNBrGIFMrtvL+vX3+xpjaXrLHA==
   dependencies:
     dom-zindex "^1.0.6"
     xe-utils "^3.5.32"
@@ -15059,19 +15059,19 @@ vuex@4.0.2:
   dependencies:
     "@vue/devtools-api" "^6.0.0-beta.11"
 
-vxe-pc-ui@^3.3.3:
-  version "3.3.4"
-  resolved "https://registry.npmjs.org/vxe-pc-ui/-/vxe-pc-ui-3.3.4.tgz#31a3a471f507766c57a8b8781cab0ed391949ab1"
-  integrity sha512-iejBe1/qn3mMtCabakJFqTPdvQqz767TNR2SQdLc0cqZ2jA7GCNy6r5r8EYoROPkdEv7EreogUIWEckLNWdraA==
+vxe-pc-ui@^4.3.3:
+  version "4.3.4"
+  resolved "https://r.cnpmjs.org/vxe-pc-ui/-/vxe-pc-ui-4.3.4.tgz#763519f56095de27919c40f05b3ce1be6a7daec2"
+  integrity sha512-LDQiH6n40OSqeBvnnnIqifEXOMz1lJS7NQT6wjCNeeXKwVudFC8sbwO9TcfPVYZBqvWseJ5/SvYOjh3KJ376yw==
   dependencies:
-    "@vxe-ui/core" "^3.0.14"
+    "@vxe-ui/core" "^4.0.17"
 
-vxe-table@^3.6.13:
-  version "3.11.5"
-  resolved "https://registry.npmjs.org/vxe-table/-/vxe-table-3.11.5.tgz#aad935680fa51ebe10cc4d883842a9e5486763c6"
-  integrity sha512-DmTlaCOwnZImS48gKzfUqYSujmg8WbGAfz8QA2sqhruHsN/aFdEet0RzPIajNxkGH57c9JB3lJEs7NuKlJYY7Q==
+vxe-table@^4.9.5:
+  version "4.9.5"
+  resolved "https://r.cnpmjs.org/vxe-table/-/vxe-table-4.9.5.tgz#cac0b43e6661fbc532657f2b5eeee093a33fe24a"
+  integrity sha512-s4/5NX4coVYNXTCewatZ5q47Z47bpknE4HSvjG1tLhgirOQwbBqIInUJKbkgLTz0cNRQXWaBysxwIQawO/6UbA==
   dependencies:
-    vxe-pc-ui "^3.3.3"
+    vxe-pc-ui "^4.3.3"
 
 w3c-hr-time@^1.0.2:
   version "1.0.2"
