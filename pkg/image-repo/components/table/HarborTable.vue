@@ -5,6 +5,7 @@ import DropDownMenu from '@pkg/image-repo/components/DropDownMenu.vue';
 import paging from './paging';
 import filtering from './filtering';
 import { find } from 'lodash';
+import loading from '../../plugin/loading';
 
 export default {
   name:   'HarborTable',
@@ -228,7 +229,8 @@ export default {
     disableBulkActions() {
       return this.selectedRows.length === 0 || this.disableActionButton;
     },
-  }
+  },
+  directives: { loading }
 };
 </script>
 

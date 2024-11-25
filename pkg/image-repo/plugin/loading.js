@@ -1,17 +1,3 @@
-import Vue from 'vue';
-
-Vue.directive('loading', {
-  bind(el, binding) {
-    updateLoading(el, binding.value);
-  },
-  update(el, binding) {
-    updateLoading(el, binding.value);
-  },
-  unbind(el) {
-    updateLoading(el, false);
-  }
-});
-
 function updateLoading(el, isLoading) {
   const loadingOverlay = el?.querySelector('.v-loading-mask');
 
@@ -48,3 +34,17 @@ function updateLoading(el, isLoading) {
     }
   }
 }
+
+const loading = {
+  mounted(el, binding) {
+    updateLoading(el, binding.value);
+  },
+  updated(el, binding) {
+    updateLoading(el, binding.value);
+  },
+  beforeUnmount(el) {
+    updateLoading(el, false);
+  }
+};
+
+export default loading;

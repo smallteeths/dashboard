@@ -81,6 +81,7 @@
 <script>
 import ProgressBarMulti from '@shell/components/ProgressBarMulti';
 import access from '@pkg/image-repo/mixins/access.js';
+import loading from '../../plugin/loading';
 
 export default {
   components: { ProgressBarMulti },
@@ -204,7 +205,8 @@ export default {
     maintainerCount() {
       return this.summary?.maintainer_count || this.summary?.master_count;
     },
-  }
+  },
+  directives: { loading }
 };
 </script>
 <style lang="scss" scoped>

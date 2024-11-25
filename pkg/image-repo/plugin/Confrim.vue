@@ -45,6 +45,7 @@
 <script>
 import { escapeHtml, resourceNames } from '@shell/utils/string';
 import AsyncButton from '@shell/components/AsyncButton';
+import loading from './loading';
 
 export default {
   name:       'Dialog',
@@ -98,6 +99,8 @@ export default {
       this.loading = false;
     }
   },
+  directives: { loading }
+
 };
 </script>
 

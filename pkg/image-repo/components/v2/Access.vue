@@ -37,6 +37,7 @@
 <script>
 import Banner from '@pkg/image-repo/components/Banner';
 import access from '../../mixins/access.js';
+import loading from '../../plugin/loading';
 
 export default {
   components: { Banner },
@@ -103,7 +104,8 @@ export default {
         this.$emit('refresh');
       }
     }
-  }
+  },
+  directives: { loading }
 };
 </script>
 <style lang="scss" scoped>

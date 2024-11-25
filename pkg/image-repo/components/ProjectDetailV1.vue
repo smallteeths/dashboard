@@ -79,6 +79,7 @@ import Logs from '@pkg/image-repo/components/v1/Log.vue';
 import AccessComponent from '@pkg/image-repo/components/v2/Access.vue';
 import access from '@pkg/image-repo/mixins/access.js';
 import { concat } from 'lodash';
+import loading from '../plugin/loading';
 
 export default {
   components: {
@@ -218,7 +219,8 @@ export default {
     async refresh() {
       await this.init();
     },
-  }
+  },
+  directives: { loading }
 };
 </script>
 <style lang="scss" scoped>

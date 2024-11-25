@@ -37,6 +37,8 @@
 </template>
 
 <script>
+import loading from '../plugin/loading';
+
 export default {
   name:  'Dialog',
   emits: ['close', 'create'],
@@ -62,6 +64,7 @@ export default {
       this.$emit('create');
     }
   },
+  directives: { loading }
 };
 </script>
 

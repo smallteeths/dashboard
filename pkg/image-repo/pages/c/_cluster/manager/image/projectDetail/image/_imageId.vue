@@ -169,6 +169,7 @@ import LabelCheckbox from '@pkg/image-repo/components/form/LabelCheckbox.vue';
 import access from '@pkg/image-repo/mixins/access.js';
 import { mapGetters } from 'vuex';
 import { concat, cloneDeep } from 'lodash';
+import loading from '@/pkg/image-repo/plugin/loading';
 
 export default {
   components: {
@@ -708,7 +709,9 @@ export default {
         !this?.currentUser?.has_admin_role &&
         parseInt(this?.project?.current_user_role_id, 10) !== 4;
     }
-  }
+  },
+  directives: { loading }
+
 };
 
 </script>

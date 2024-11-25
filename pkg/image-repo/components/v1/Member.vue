@@ -110,6 +110,7 @@ import util from '../../mixins/util.js';
 import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
 import Schema from 'async-validator';
 import access from '@pkg/image-repo/mixins/access.js';
+import loading from '../../plugin/loading';
 
 export default {
   components: {
@@ -407,7 +408,8 @@ export default {
       this.saveUserLoading = false;
       await this.fetchMember();
     }
-  }
+  },
+  directives: { loading }
 };
 </script>
 <style lang="scss" scoped>

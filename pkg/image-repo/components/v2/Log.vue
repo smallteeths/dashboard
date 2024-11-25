@@ -24,6 +24,7 @@
 import { mapGetters } from 'vuex';
 import HarborTable from '@pkg/image-repo/components/table/HarborTable.vue';
 import util from '../../mixins/util.js';
+import loading from '../../plugin/loading';
 
 export default {
   components: { HarborTable },
@@ -143,6 +144,8 @@ export default {
       }
       this.fetchLogs();
     },
-  }
+  },
+  directives: { loading }
+
 };
 </script>

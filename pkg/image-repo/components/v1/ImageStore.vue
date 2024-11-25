@@ -83,6 +83,7 @@
 import HarborTable from '@pkg/image-repo/components/table/HarborTable.vue';
 import { PRODUCT_NAME } from '../../config/image-repo.js';
 import util from '../../mixins/util.js';
+import loading from '../../plugin/loading';
 
 export default {
   components: { HarborTable },
@@ -277,7 +278,8 @@ export default {
       document.execCommand('Copy');
       document.body.removeChild(input);
     },
-  }
+  },
+  directives: { loading }
 };
 </script>
 <style lang="scss" scoped>

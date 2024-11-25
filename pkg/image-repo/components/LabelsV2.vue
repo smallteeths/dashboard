@@ -165,6 +165,7 @@ import util from '../mixins/util.js';
 import Schema from 'async-validator';
 import { LabeledInput } from '@components/Form/LabeledInput';
 import Banner from '@pkg/image-repo/components/Banner';
+import loading from '../plugin/loading';
 
 const defaultForm = {
   name:        '',
@@ -547,7 +548,8 @@ export default {
 
       this.loading = false;
     }
-  }
+  },
+  directives: { loading }
 };
 </script>
 <style scoped>
