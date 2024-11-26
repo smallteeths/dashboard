@@ -333,12 +333,17 @@ export default {
 
       const templates = this.templateOptions;
       const vueKontainerTypes = getters['plugins/clusterDrivers'];
+      // Pandaria Remove cnrancher ack/tke/cce kontainer driver
+      const deprecatedKontainerDrivers = getters['plugins/deprecatedKontainerDrivers'];
       const machineTypes = this.nodeDrivers.filter((x) => x.spec.active && x.state === 'active');
 
       this.kontainerDrivers.filter((x) => (isImport ? x.showImport : x.showCreate)).forEach((obj) => {
+        // Pandaria ack/cce/tke is change to operatorsetting
+        const isDeprecated = deprecatedKontainerDrivers.includes(obj.driverName);
+
         if ( vueKontainerTypes.includes(obj.driverName) ) {
           addType(this.$plugin, obj.driverName, 'kontainer', false);
-        } else {
+        } else if (!isDeprecated) {
           addType(this.$plugin, obj.driverName, 'kontainer', false, (isImport ? obj.emberImportPath : obj.emberCreatePath));
         }
       });
