@@ -179,6 +179,15 @@ export const getters = {
     return [];
   },
 
+  deprecatedKontainerDrivers() {
+    // Pandaria deprecated kontainerdriver
+    return [
+      'aliyun',
+      'huaweicce',
+      'tencenttke'
+    ];
+  },
+
   schemaForDriver(state, getters, rootState, rootGetters) {
     return (name) => {
       const id = `rke-machine-config.cattle.io.${ name }config`;
