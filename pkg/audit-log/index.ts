@@ -2,6 +2,7 @@
 import { importTypes } from '@rancher/auto-import';
 import { IPlugin } from '@shell/core/types';
 import auditLogRoutes from './routes/audit-log-routes';
+
 import './styles/vxe-table.scss';
 
 // Init the package

@@ -1,18 +1,17 @@
-$vxe-table-header-font-weight: 400;
-$vxe-table-column-padding-default: 11px 0;
-$vxe-table-cell-padding-left: 5px;
-$vxe-table-cell-padding-right: 5px;
-$vxe-table-column-padding-default: 12px 0;
-$vxe-table-column-padding-medium: 12px 0;
-$vxe-table-column-padding-small: 12px 0;
-$vxe-table-column-padding-mini: 12px 0;
-$vxe-table-row-line-height: 1.15;
-$vxe-table-border-color: var(--border);
-$vxe-table-header-font-color: var(--body-text);
-$vxe-table-body-background-color: var(--sortable-table-row-bg);
-$vxe-table-row-hover-background-color: var(--sortable-table-hover-bg);
-
-@import 'vxe-table/styles/index.scss';
+@import 'vxe-table/styles/all.scss';
+:root {
+  --vxe-ui-table-header-font-weight: 400;
+  --vxe-ui-table-cell-padding-left: 5px;
+  --vxe-ui-table-cell-padding-right: 5px;
+  --vxe-ui-table-column-padding-default: 12px 0;
+  --vxe-ui-table-column-padding-medium: 12px 0;
+  --vxe-ui-table-column-padding-small: 12px 0;
+  --vxe-ui-table-column-padding-mini: 12px 0;
+  --vxe-ui-table-row-line-height: 1.15;
+  --vxe-ui-table-header-font-color: var(--body-text);
+  --vxe-ui-table-body-background-color: var(--sortable-table-row-bg);
+  --vxe-ui-table-row-hover-background-color: var(--sortable-table-hover-bg);
+}
 
 .vxe-table--render-default.border--default .vxe-table--header-wrapper, .vxe-table--render-default.border--full .vxe-table--header-wrapper, .vxe-table--render-default.border--outer .vxe-table--header-wrapper {
   background-color: var(--sortable-table-header-bg);

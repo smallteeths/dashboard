@@ -1,8 +1,9 @@
 <script>
 import { ROWS_PER_PAGE } from '@shell/store/prefs';
-import { Table as VxeTable, Column as VxeColumn } from 'vxe-table';
+import { Table as VxeTable, Column as VxeColumn, VxeUI } from 'vxe-table';
 import { HTTP_CODE } from '@pkg/config/constants.js';
 import PageTitle from './PageTitle.vue';
+import { mapGetters } from 'vuex';
 
 const DEFAULT_DATE_RANGE = '5';
 
@@ -42,6 +43,7 @@ export default {
     await Promise.all([this.fetchResources(), this.fetchLogs()]);
   },
   computed: {
+    ...mapGetters({ theme: 'prefs/theme' }),
     dateRanges() {
       const arr = [{
         label: this.t('auditLog.form.time.all'),
@@ -108,6 +110,14 @@ export default {
 
       return actions;
     }
+  },
+  watch: {
+    theme: {
+      handler(theme) {
+        VxeUI.setTheme(theme);
+      },
+      immediate: true
+    },
   },
   methods: {
     async fetchResources() {

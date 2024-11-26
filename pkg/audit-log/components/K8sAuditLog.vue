@@ -1,8 +1,9 @@
 <script>
 import { ROWS_PER_PAGE } from '@shell/store/prefs';
-import { Table as VxeTable, Column as VxeColumn } from 'vxe-table';
+import { Table as VxeTable, Column as VxeColumn, VxeUI } from 'vxe-table';
 import { Banner } from '@components/Banner';
 import PageTitle from './PageTitle.vue';
+import { mapGetters } from 'vuex';
 
 const DEFAULT_DATE_RANGE = '5';
 
@@ -38,6 +39,7 @@ export default {
     await this.fetchLogs();
   },
   computed: {
+    ...mapGetters({ theme: 'prefs/theme' }),
     clusterName() {
       const name = this.$route.query?.clusterName;
       const type = this.$route.query?.clusterType;
@@ -133,6 +135,14 @@ export default {
 
       return verbs;
     }
+  },
+  watch: {
+    theme: {
+      handler(theme) {
+        VxeUI.setTheme(theme);
+      },
+      immediate: true
+    },
   },
   methods: {
     async loadLogDetail(clusterID, auditID, stage) {

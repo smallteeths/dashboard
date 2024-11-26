@@ -1,6 +1,6 @@
 <script>
 import { ROWS_PER_PAGE } from '@shell/store/prefs';
-import { Table as VxeTable, Column as VxeColumn } from 'vxe-table';
+import { Table as VxeTable, Column as VxeColumn, VxeUI } from 'vxe-table';
 import { mapGetters } from 'vuex';
 import { PROJECT_ID } from '@shell/config/query-params';
 import { HTTP_CODE } from '@pkg/config/constants.js';
@@ -46,7 +46,9 @@ export default {
     await Promise.all([this.fetchResources(), this.fetchLogs()]);
   },
   computed: {
-    ...mapGetters(['currentCluster', 'currentProduct']),
+    ...mapGetters({
+      currentCluster: 'currentCluster', currentProduct: 'currentProduct', theme: 'prefs/theme'
+    }),
     dateRanges() {
       const arr = [{
         label: this.t('auditLog.form.time.all'),
@@ -122,6 +124,14 @@ export default {
         return ns.projectId === proejctName;
       });
     }
+  },
+  watch: {
+    theme: {
+      handler(theme) {
+        VxeUI.setTheme(theme);
+      },
+      immediate: true
+    },
   },
   methods: {
     async fetchResources() {
