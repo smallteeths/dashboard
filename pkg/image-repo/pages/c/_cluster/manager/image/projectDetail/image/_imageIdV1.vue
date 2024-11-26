@@ -125,6 +125,7 @@ import access from '@pkg/image-repo/mixins/access.js';
 import { mapGetters } from 'vuex';
 import { concat, cloneDeep } from 'lodash';
 import loading from '@/pkg/image-repo/plugin/loading';
+import useConfirm from '@/pkg/image-repo/plugin/confirm.js';
 
 export default {
   components: {
@@ -137,6 +138,11 @@ export default {
     util,
     access
   ],
+  setup() {
+    const { show } = useConfirm();
+
+    return { customConfirm: show };
+  },
   data() {
     return {
       loading:              false,
@@ -404,7 +410,7 @@ export default {
       this.fetchImage();
     },
     bulkRemove(record) {
-      this.$customConfrim({
+      this.customConfirm({
         type:           this.t('harborConfig.table.tag'),
         resources:      record,
         store:          this.$store,
@@ -412,7 +418,7 @@ export default {
         removeCallback: async() => {
           await this.removeTabs(record.map((item) => item.name));
         }
-      });
+      }, this._.appContext);
     },
     action(record, row) {
       this.currentRow = row;
@@ -426,7 +432,7 @@ export default {
 
         return;
       case 'remove':
-        this.$customConfrim({
+        this.customConfirm({
           type:           this.t('harborConfig.table.tag'),
           resources:      [row],
           propKey:        'name',
@@ -434,7 +440,7 @@ export default {
           removeCallback: async() => {
             await this.removeTabs([row].map((item) => item.name));
           }
-        });
+        }, this._.appContext);
       }
     },
     copyDigest(value) {

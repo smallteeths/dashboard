@@ -166,6 +166,7 @@ import Schema from 'async-validator';
 import { LabeledInput } from '@components/Form/LabeledInput';
 import Banner from '@pkg/image-repo/components/Banner';
 import loading from '../plugin/loading';
+import useConfirm from '../plugin/confirm.js';
 
 const defaultForm = {
   name:        '',
@@ -320,7 +321,11 @@ export default {
       default: true,
     }
   },
+  setup() {
+    const { show } = useConfirm();
 
+    return { customConfirm: show };
+  },
   data() {
     const descriptor = { name: { required: true, message: () => this.t('harborConfig.formTag.name.nameReq') } };
 
@@ -459,7 +464,7 @@ export default {
 
     async action(action, record) {
       if (action.value === 'delete' && record.id) {
-        this.$customConfrim({
+        this.customConfirm({
           type:           this.t('harborConfig.table.label'),
           resources:      [record],
           propKey:        'name',
@@ -468,7 +473,7 @@ export default {
             await this.apiRequest.removeLabels([record.id]);
             this.reloadData();
           }
-        });
+        }, this._.appContext);
 
         return;
       }
@@ -484,7 +489,7 @@ export default {
     bulkRemove(d) {
       const ids = d.map((item) => item.id);
 
-      this.$customConfrim({
+      this.customConfirm({
         type:           this.t('harborConfig.table.label'),
         resources:      d,
         propKey:        'name',
@@ -493,7 +498,7 @@ export default {
           await this.apiRequest.removeLabels(ids);
           this.reloadData();
         }
-      });
+      }, this._.appContext);
     },
     async createLabel() {
       this.loading = true;

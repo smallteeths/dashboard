@@ -112,6 +112,7 @@ import access from '@pkg/image-repo/mixins/access.js';
 import { mapGetters } from 'vuex';
 import { PRODUCT_NAME } from '../config/image-repo.js';
 import Schema from 'async-validator';
+import useConfirm from '../plugin/confirm.js';
 
 export default {
   components: {
@@ -140,6 +141,11 @@ export default {
       return;
     }
     await this.getProject();
+  },
+  setup() {
+    const { show } = useConfirm();
+
+    return { customConfirm: show };
   },
   data() {
     const nameReg = /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/;
@@ -348,7 +354,7 @@ export default {
     },
     action(action, record) {
       if (action.action === 'delete' && record.project_id) {
-        this.$customConfrim({
+        this.customConfirm({
           type:           this.t('harborConfig.image'),
           resources:      [record],
           propKey:        'name',
@@ -356,7 +362,7 @@ export default {
           removeCallback: async() => {
             await this.removeProjects([record.project_id]);
           }
-        });
+        }, this._.appContext);
       }
     },
     toggleAccessChange() {
@@ -409,7 +415,7 @@ export default {
         return project.project_id;
       });
 
-      this.$customConfrim({
+      this.customConfirm({
         type:           this.t('harborConfig.image'),
         resources:      record,
         propKey:        'name',
@@ -417,7 +423,7 @@ export default {
         removeCallback: async() => {
           await this.removeProjects(projectIDs);
         }
-      });
+      }, this._.appContext);
     },
     async removeProjects(projectIDs) {
       this.loading = true;

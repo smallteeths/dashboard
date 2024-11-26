@@ -111,6 +111,7 @@ import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
 import Schema from 'async-validator';
 import access from '@pkg/image-repo/mixins/access.js';
 import loading from '../../plugin/loading';
+import useConfirm from '../../plugin/confirm.js';
 
 export default {
   components: {
@@ -139,6 +140,11 @@ export default {
       type:     Object,
       required: true
     }
+  },
+  setup() {
+    const { show } = useConfirm();
+
+    return { customConfirm: show };
   },
   data() {
     const descriptor = { name: { required: true, message: () => 'The Name cannot be empty' } };
@@ -307,7 +313,7 @@ export default {
     },
     bulkRemove(records) {
       if (records?.length > 0) {
-        this.$customConfrim({
+        this.customConfirm({
           type:           this.t('harborConfig.tab.member'),
           resources:      records,
           propKey:        'entity_name',
@@ -315,7 +321,7 @@ export default {
           removeCallback: async() => {
             await this.removeMember(records);
           }
-        });
+        }, this._.appContext);
       }
     },
     sortChange({ field, order }) {

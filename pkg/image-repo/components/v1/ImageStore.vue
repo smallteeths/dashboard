@@ -84,6 +84,7 @@ import HarborTable from '@pkg/image-repo/components/table/HarborTable.vue';
 import { PRODUCT_NAME } from '../../config/image-repo.js';
 import util from '../../mixins/util.js';
 import loading from '../../plugin/loading';
+import useConfirm from '../../plugin/confirm.js';
 
 export default {
   components: { HarborTable },
@@ -97,6 +98,11 @@ export default {
       type:     Object,
       required: true
     },
+  },
+  setup() {
+    const { show } = useConfirm();
+
+    return { customConfirm: show };
   },
   data() {
     return {
@@ -225,7 +231,7 @@ export default {
     },
     action(action, record) {
       if (action.action === 'delete' && record.name) {
-        this.$customConfrim({
+        this.customConfirm({
           type:           this.t('harborConfig.tab.store'),
           resources:      [record],
           propKey:        'name',
@@ -233,7 +239,7 @@ export default {
           removeCallback: async() => {
             await this.removeImages([record.name]);
           }
-        });
+        }, this._.appContext);
       }
     },
     pageChange(record) {
@@ -246,7 +252,7 @@ export default {
       this.fetchImage();
     },
     bulkRemove(record) {
-      this.$customConfrim({
+      this.customConfirm({
         type:           this.t('harborConfig.tab.store'),
         resources:      record,
         propKey:        'name',
@@ -256,7 +262,7 @@ export default {
             return image.name;
           }));
         }
-      });
+      }, this._.appContext);
     },
     sortChange({ field, order }) {
       if (order) {
