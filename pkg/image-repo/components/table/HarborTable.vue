@@ -1,11 +1,12 @@
 <script>
-import { Table as VxeTable, Column as VxeColumn } from 'vxe-table';
+import { Table as VxeTable, Column as VxeColumn, VxeUI } from 'vxe-table';
 import { addObject } from '@shell/utils/array';
 import DropDownMenu from '@pkg/image-repo/components/DropDownMenu.vue';
 import paging from './paging';
 import filtering from './filtering';
 import { find } from 'lodash';
 import loading from '../../plugin/loading';
+import { mapGetters } from 'vuex';
 
 export default {
   name:   'HarborTable',
@@ -123,7 +124,13 @@ export default {
   watch: {
     loading() {
       this.selectedRows = [];
-    }
+    },
+    theme: {
+      handler(theme) {
+        VxeUI.setTheme(theme);
+      },
+      immediate: true
+    },
   },
   mounted() {
     // Set initial value;
@@ -226,6 +233,7 @@ export default {
     }
   },
   computed: {
+    ...mapGetters({ theme: 'prefs/theme' }),
     disableBulkActions() {
       return this.selectedRows.length === 0 || this.disableActionButton;
     },
