@@ -38,9 +38,9 @@ export default {
 </script>
 
 <template>
-  <n-link
+  <router-link
     :to="getStartedLink"
   >
     <span>{{ row.metadata.name }}</span>
-  </n-link>
+  </router-link>
 </template>

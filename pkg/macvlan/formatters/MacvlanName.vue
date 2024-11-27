@@ -37,9 +37,9 @@ export default {
 </script>
 
 <template>
-  <n-link
+  <router-link
     :to="getStartedLink"
   >
     <span v-tooltip="{ content: `<div style='font-size: 12px;line-height: 20px;'>${row.nameDisplay}<br>${t('macvlan.macvlanIp.totalCount')}：${totalCount}</div>`, html: true }">{{ row.metadata.name }}</span>
-  </n-link>
+  </router-link>
 </template>

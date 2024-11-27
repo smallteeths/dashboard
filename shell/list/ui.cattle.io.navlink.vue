@@ -54,10 +54,10 @@ export default {
         </a>
       </template>
       <template v-else-if="row.isIframe">
-        <n-link :to="row.link">
+        <router-link :to="row.link">
           {{ row.iframeSrc.replace(/^https:\/\//,'') }}
           <i class="icon icon-external-link" />
-        </n-link>
+        </router-link>
       </template>
       <template v-else-if="row.link">
         <a
