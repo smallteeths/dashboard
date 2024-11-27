@@ -86,7 +86,7 @@ export default {
         </div>
       </div>
     </div>
-    <v-popover
+    <v-dropdown
       v-else-if="routes.length > 1"
       trigger="click"
       placement="top"
@@ -151,7 +151,7 @@ export default {
       >
         ···
       </div>
-      <template #popover>
+      <template #popper>
         <div
           v-for="(route, index) in routes"
           :key="index"
@@ -207,7 +207,7 @@ export default {
           </div>
         </div>
       </template>
-    </v-popover>
+    </v-dropdown>
   </div>
 </template>
 <style lang='scss' scoped>

@@ -71,7 +71,7 @@ export default {
 
 <template>
   <div class="drop-down-menu-cn">
-    <v-popover
+    <v-dropdown
       :open="visible"
       trigger="manual"
       :placement="placement"
@@ -86,7 +86,7 @@ export default {
           <i class="icon icon-actions" />
         </button>
       </slot>
-      <template #popover>
+      <template #popper>
         <ul
           class="list-unstyled menu"
         >
@@ -115,7 +115,7 @@ export default {
           </li>
         </ul>
       </template>
-    </v-popover>
+    </v-dropdown>
   </div>
 </template>
 

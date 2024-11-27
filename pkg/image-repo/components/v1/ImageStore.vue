@@ -22,7 +22,7 @@
       @sort-change="sortChange"
     >
       <template>
-        <v-popover
+        <v-dropdown
           :placement="placement"
           popoverBaseClass="drop-down-menu-cn tooltip popover"
         >
@@ -34,7 +34,7 @@
               </span>
             </div>
           </template>
-          <template #popover>
+          <template #popper>
             <div class="push-image-content">
               <div style="padding:8px 5px; font-size:18px">
                 {{ t('harborConfig.table.pushImg.title') }}
@@ -65,7 +65,7 @@
               </div>
             </div>
           </template>
-        </v-popover>
+        </v-dropdown>
       </template>
       <template
         v-slot:name="{ row }"

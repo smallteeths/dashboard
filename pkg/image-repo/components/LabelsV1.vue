@@ -47,7 +47,7 @@
             :label="t('harborConfig.formTag.name.label')"
             required
           />
-          <v-popover
+          <v-dropdown
             trigger="click"
             placement="bottom-start"
           >
@@ -59,7 +59,7 @@
                 <i class="icon icon-chevron-down" />
               </div>
             </div>
-            <template #popover>
+            <template #popper>
               <div class="color-container">
                 <div
                   v-for="c in labelColors"
@@ -72,7 +72,7 @@
                 </div>
               </div>
             </template>
-          </v-popover>
+          </v-dropdown>
         </div>
         <LabeledInput
           v-model:value.trim="newForm.description"
@@ -101,7 +101,7 @@
             :label="t('harborConfig.formTag.name.label')"
             required
           />
-          <v-popover
+          <v-dropdown
             trigger="click"
             placement="bottom-start"
           >
@@ -113,7 +113,7 @@
                 <i class="icon icon-chevron-down" />
               </div>
             </div>
-            <template #popover>
+            <template #popper>
               <div class="color-container">
                 <div
                   v-for="c in labelColors"
@@ -126,7 +126,7 @@
                 </div>
               </div>
             </template>
-          </v-popover>
+          </v-dropdown>
         </div>
         <LabeledInput
           v-model:value.trim="editForm.description"

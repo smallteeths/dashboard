@@ -38,7 +38,7 @@ export default {
       </span>
     </div>
 
-    <v-popover
+    <v-dropdown
       v-else-if="ranges.length > 1"
       trigger="click"
       placement="top"
@@ -54,7 +54,7 @@ export default {
           ···
         </span>
       </div>
-      <template #popover>
+      <template #popper>
         <div
           v-for="(range, index) in ranges"
           :key="index"
@@ -65,7 +65,7 @@ export default {
           </div>
         </div>
       </template>
-    </v-popover>
+    </v-dropdown>
   </div>
 </template>
 <style lang='scss' scoped>

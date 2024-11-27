@@ -33,7 +33,7 @@
       @checkbox-change="selectChange"
     >
       <template #pullCommand="{row}">
-        <v-popover
+        <v-dropdown
           trigger="hover"
           placement="top"
         >
@@ -42,12 +42,12 @@
             class="icon icon-copy icon-lg guideLink"
             @click="copy(row.pullCommand)"
           />
-          <template #popover>
+          <template #popper>
             <div>
               Copy to Clipboard
             </div>
           </template>
-        </v-popover>
+        </v-dropdown>
       </template>
       <template #labels="{row}">
         <div
