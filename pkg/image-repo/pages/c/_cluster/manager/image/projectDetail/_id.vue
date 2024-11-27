@@ -1,23 +1,25 @@
 <template>
-  <PageHeader>
-    <template #title>
-      {{ t('harborConfig.image') }}
-    </template>
-  </PageHeader>
-  <VersionSwitchLayout>
-    <template #default="{apiRequest}">
-      <ProjectDetailV1
-        :project-id="projectId"
-        :api-request="apiRequest"
-      />
-    </template>
-    <template #v2="{apiRequest}">
-      <ProjectDetailV2
-        :project-id="projectId"
-        :api-request="apiRequest"
-      />
-    </template>
-  </VersionSwitchLayout>
+  <div>
+    <PageHeader>
+      <template #title>
+        {{ t('harborConfig.image') }}
+      </template>
+    </PageHeader>
+    <VersionSwitchLayout>
+      <template #default="{apiRequest}">
+        <ProjectDetailV1
+          :project-id="projectId"
+          :api-request="apiRequest"
+        />
+      </template>
+      <template #v2="{apiRequest}">
+        <ProjectDetailV2
+          :project-id="projectId"
+          :api-request="apiRequest"
+        />
+      </template>
+    </VersionSwitchLayout>
+  </div>
 </template>
 
 <script>
