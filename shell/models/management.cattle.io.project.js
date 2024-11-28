@@ -201,7 +201,7 @@ export default class Project extends HybridModel {
   get resourceQuota() {
     return (() => {
       this.currentRouter().push({
-        name:   'c-cluster-legacy-resourceQuota-page',
+        name:   'c-cluster-legacy-resourcequota-page',
         params: {
           cluster: this.$rootGetters['currentCluster'].id,
           page:    'project-resource-quota',

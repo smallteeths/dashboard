@@ -524,11 +524,10 @@ export default [
         component: () => interopDefault(import('@shell/pages/c/_cluster/_product/_resource/_namespace/_id.vue')),
         name:      'c-cluster-product-resource-namespace-id'
       }, {
-        path:      '/c/:cluster/legacy/resourceQuota/:page',
-        component: () => interopDefault(import('@shell/pages/c/_cluster/legacy/resourceQuota/_page.vue')),
-        name:      'c-cluster-legacy-resourceQuota-page',
+        path:      '/c/:cluster/:product/resourcequota/:page',
+        component: () => interopDefault(import('@shell/pages/c/_cluster/_product/resourcequota/_page.vue')),
+        name:      'c-cluster-legacy-resourcequota-page',
         params:    { product: 'explorer' },
-        meta:      { requiresAuthentication: true },
       }]
   },
   {
