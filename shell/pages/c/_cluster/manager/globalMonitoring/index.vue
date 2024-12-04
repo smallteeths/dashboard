@@ -1046,7 +1046,7 @@ export default {
       color="warning"
       :label="t('globalMonitoringPage.warning.undefindChart')"
     />
-    <template>
+    <div>
       <div class="chart__values__controls">
         <ButtonGroup
           v-model:value="formYamlOption"
@@ -1092,7 +1092,7 @@ export default {
           </template>
         </div>
       </div>
-    </template>
+    </div>
 
     <div>
       <Banner
