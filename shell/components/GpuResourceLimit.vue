@@ -102,7 +102,7 @@ import { mapFeature, VIRTAITECH_GPU_SERVICE_UI } from '@shell/store/features';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 
 export default {
-  emits: ['input'],
+  emits: ['update:value'],
   props: {
     mode: {
       type:     String,
@@ -188,7 +188,7 @@ export default {
   },
   methods: {
     updateGpuShared(v) {
-      this.$emit('input', {
+      this.$emit('update:value', {
         limitsGpu:         null,
         requestsGpu:       null,
         limitGpuDevice:    { name: this.gpuDevice.name },
@@ -198,7 +198,7 @@ export default {
       });
     },
     updateGpuSet(v) {
-      this.$emit('input', {
+      this.$emit('update:value', {
         limitGpuDevice:    { name: this.gpuDevice.name },
         requestGpuDevice:  { name: this.gpuDevice.name },
         limitsGpuShared:   null,
@@ -208,7 +208,7 @@ export default {
       });
     },
     updateGpuDevice(k, v) {
-      this.$emit('input', {
+      this.$emit('update:value', {
         limitsGpu:         null,
         requestsGpu:       null,
         limitsGpuShared:   null,
@@ -224,7 +224,7 @@ export default {
       });
     },
     updateVgpus(v) {
-      this.$emit('input', { limitsVgpu: v });
+      this.$emit('update:value', { limitsVgpu: v });
     }
   },
   watch: {
@@ -234,7 +234,7 @@ export default {
       } else if (m === 'set') {
         this.updateGpuSet(this.gpuSet);
       } else if (m === 'device') {
-        this.$emit('input', {
+        this.$emit('update:value', {
           limitsGpu:         null,
           requestsGpu:       null,
           limitsGpuShared:   null,
