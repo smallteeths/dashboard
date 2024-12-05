@@ -12,7 +12,7 @@ export const EDITOR_MODES = {
 
 export default {
   components: { CodeMirror, FileDiff },
-  emits:      ['input', 'onInput', 'onReady', 'onChanges'],
+  emits:      ['update:value', 'onInput', 'onReady', 'onChanges'],
   props:      {
     editorMode: {
       type:    String,
@@ -150,7 +150,7 @@ export default {
     },
 
     onInput(value) {
-      this.$emit('input', ...arguments);
+      this.$emit('update:value', ...arguments);
 
       this.$emit('onInput', ...arguments);
     },
