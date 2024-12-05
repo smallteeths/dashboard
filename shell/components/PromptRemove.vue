@@ -318,12 +318,7 @@ export default {
     },
     done() {
       if ( this.cachedDoneLocation && !isEmpty(this.cachedDoneLocation) ) {
-        // Only push if the route will change otherwise we'll get a `NavigationDuplicated` exception
-        const resolvedRoute = this.currentRouter.resolve(this.cachedDoneLocation);
-
-        if (resolvedRoute.resolved.fullPath !== this.$route.fullPath) {
-          this.currentRouter.push(this.cachedDoneLocation);
-        }
+        this.currentRouter.push(this.cachedDoneLocation);
       }
       this.close();
     },
