@@ -42,7 +42,7 @@
 <script>
 import ArrayList from '@shell/components/form/ArrayList';
 export default {
-  emits: ['input'],
+  emits: ['update:value'],
   props: {
     title: {
       type:    String,
@@ -70,7 +70,7 @@ export default {
   },
   methods: {
     update() {
-      this.$emit('input', this.data);
+      this.$emit('update:value', this.data);
     },
     onPaste(rows, index, event, update) {
       event.preventDefault();

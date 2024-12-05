@@ -78,6 +78,7 @@
       </template>
     </Card>
     <AppModal
+      v-if="showConfirm"
       class="confirm-modal"
       name="confirm-save"
       :width="350"
@@ -191,7 +192,7 @@ export default {
     confirm(result) {
       if (!result) {
         this.buttonDone(false);
-        this.$modal.hide('confirm-save');
+        this.showConfirm = false;
         this.close();
 
         return;
@@ -202,7 +203,6 @@ export default {
       this.$emit('close');
     },
     confirmSave(buttonDone) {
-      this.$modal.show('confirm-save');
       this.buttonDone = buttonDone;
       this.showConfirm = true;
       this.$nextTick(() => {
