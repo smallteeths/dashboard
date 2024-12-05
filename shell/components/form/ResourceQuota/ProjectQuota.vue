@@ -36,8 +36,8 @@ export default {
     this.value.spec = this.value.spec || {};
     this.value.spec.namespaceDefaultResourceQuota = this.value.spec.namespaceDefaultResourceQuota || { limit: {} };
     this.value.spec.resourceQuota = this.value.spec.resourceQuota || { limit: {} };
-    const quotaLimit = this.value.spec.resourceQuota.limit;
-    const nsQuotaLimit = this.value.spec.namespaceDefaultResourceQuota.limit;
+    const quotaLimit = this.value.spec.resourceQuota.limit ?? {};
+    const nsQuotaLimit = this.value.spec.namespaceDefaultResourceQuota.limit ?? {};
     const allTypes = [...new Set([...Object.keys(quotaLimit), ...Object.keys(nsQuotaLimit)])];
     const typeQuotas = allTypes.reduce((t, c) => {
       const limit = quotaLimit[c];
