@@ -29,10 +29,10 @@ export default {
       type:    Object,
       default: () => ({})
     },
-    // graphHeight: {
-    //   type:     String,
-    //   required: true
-    // },
+    graphHeight: {
+      type:     String,
+      required: true
+    },
     hasSummaryAndDetail: {
       type:    Boolean,
       default: true,
@@ -85,7 +85,7 @@ export default {
       <GrafanaDashboard
         v-if="graphOptions.type === 'detail'"
         key="'detail'"
-        style="height: 825px;"
+        :style="{height: graphHeight}"
         class="col span-12 detail"
         :background-color="graphBackgroundColor"
         :theme="theme"
@@ -99,7 +99,7 @@ export default {
         v-else
         key="'summary'"
         class="col span-12 summary"
-        style="height: 825px;"
+        :style="{height: graphHeight}"
         :background-color="graphBackgroundColor"
         :theme="theme"
         :refresh-rate="graphOptions.refreshRate"
