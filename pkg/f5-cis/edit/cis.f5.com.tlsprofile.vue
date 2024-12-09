@@ -49,7 +49,7 @@
             <div class="row mb-20">
               <div class="col span-6">
                 <ArrayList
-                  v-model:value="value.spec.hosts "
+                  v-model:value="value.spec.hosts"
                   :title="t('f5cis.tlsProfile.form.hosts.label')"
                   :add-label="t('f5cis.tlsProfile.form.hosts.addLabel')"
                   :mode="mode"
@@ -193,7 +193,7 @@ export default {
     }
 
     if (this.value.metadata.labels.f5cr !== 'true') {
-      this.value.metadata.labels.f5cr = true;
+      this.value.metadata.labels.f5cr = 'true';
     }
 
     this.registerBeforeHook(this.willSave, 'willSave');
@@ -228,7 +228,7 @@ export default {
       }
       this.removeEmptyProps(this.value);
       if (this.value.metadata.labels.f5cr !== 'true') {
-        this.value.metadata.labels.f5cr = true;
+        this.value.metadata.labels.f5cr = 'true';
       }
     },
     filterByCurrentResourceNamespace(resources) {

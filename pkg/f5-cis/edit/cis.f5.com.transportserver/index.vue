@@ -430,7 +430,7 @@ export default {
     }
 
     if (this.value.metadata.labels.f5cr !== 'true') {
-      this.value.metadata.labels.f5cr = true;
+      this.value.metadata.labels.f5cr = 'true';
     }
 
     this.registerBeforeHook(this.willSave, 'willSave');
@@ -500,7 +500,7 @@ export default {
       }
       this.removeEmptyProps(this.value);
       if (this.value.metadata.labels.f5cr !== 'true') {
-        this.value.metadata.labels.f5cr = true;
+        this.value.metadata.labels.f5cr = 'true';
       }
     },
     filterByCurrentResourceNamespace(resources) {

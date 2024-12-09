@@ -472,7 +472,7 @@ export default {
       this.addPool();
     }
     if (this.value.metadata.labels.f5cr !== 'true') {
-      this.value.metadata.labels.f5cr = true;
+      this.value.metadata.labels.f5cr = 'true';
     }
     this.value?.spec?.pools?.forEach((p) => {
       p[this.idKey] = this.genId();
@@ -544,7 +544,7 @@ export default {
       }
       this.removeEmptyProps(this.value);
       if (this.value.metadata.labels.f5cr !== 'true') {
-        this.value.metadata.labels.f5cr = true;
+        this.value.metadata.labels.f5cr = 'true';
       }
     },
     filterByCurrentResourceNamespace(resources) {
