@@ -58,33 +58,31 @@
       :show="addDialogVisible"
       @close="addDialogVisible = false"
     >
-      <template>
-        <div class="label">
-          <div class="mt-20">
-            <LabeledInput
-              v-model:value.trim="form.name"
-              :label="t('harborConfig.form.addMember.username.label')"
-              :placeholder="t('harborConfig.form.addMember.username.placeholder')"
-              required
-            />
-          </div>
-          <div class="mt-20">
-            <LabeledSelect
-              v-model:value="form.role"
-              :label="t('harborConfig.form.addMember.role.label')"
-              :options="options"
-            />
-          </div>
-          <div class="mt-20">
-            <Banner
-              v-for="(err, i) in errors"
-              :key="i"
-              color="error"
-              :label="err"
-            />
-          </div>
+      <div class="label">
+        <div class="mt-20">
+          <LabeledInput
+            v-model:value.trim="form.name"
+            :label="t('harborConfig.form.addMember.username.label')"
+            :placeholder="t('harborConfig.form.addMember.username.placeholder')"
+            required
+          />
         </div>
-      </template>
+        <div class="mt-20">
+          <LabeledSelect
+            v-model:value="form.role"
+            :label="t('harborConfig.form.addMember.role.label')"
+            :options="options"
+          />
+        </div>
+        <div class="mt-20">
+          <Banner
+            v-for="(err, i) in errors"
+            :key="i"
+            color="error"
+            :label="err"
+          />
+        </div>
+      </div>
       <template #createButton>
         <button
           v-loading="saveUserLoading"

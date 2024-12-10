@@ -72,10 +72,10 @@ export default {
 <template>
   <div class="drop-down-menu-cn">
     <v-dropdown
-      :open="visible"
-      trigger="manual"
+      :shown="visible"
+      :triggers="[]"
       :placement="placement"
-      popoverBaseClass="drop-down-menu-cn tooltip popover"
+      popperClass="drop-down-menu-cn tooltip popover"
       @auto-hide="hide"
     >
       <slot name="default">
@@ -86,7 +86,9 @@ export default {
           <i class="icon icon-actions" />
         </button>
       </slot>
-      <template #popper>
+      <template
+        #popper
+      >
         <ul
           class="list-unstyled menu"
         >
@@ -122,6 +124,7 @@ export default {
 <style lang="scss">
 .drop-down-menu-cn {
   margin-top: 0px !important;
+  border: 0px !important;
   .button-dropdown {
     background-color: transparent;
     color: var(--primary);
@@ -136,13 +139,11 @@ export default {
       opacity: 1;
     }
   }
-  .popover-inner {
+  .v-popper__inner {
     padding: 0px !important;
   }
-  .tooltip-arrow {
-    &::after {
-      bottom: 0px !important;
-    }
+  .v-popper__arrow-inner {
+    border-width: 0px !important;
   }
 
   .menu {

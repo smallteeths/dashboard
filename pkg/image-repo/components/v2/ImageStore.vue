@@ -70,11 +70,11 @@
       <template
         v-slot:name="{ row }"
       >
-        <nuxt-link
+        <router-link
           :to="row.to"
         >
           {{ row.name }}
-        </nuxt-link>
+        </router-link>
       </template>
     </HarborTable>
   </div>

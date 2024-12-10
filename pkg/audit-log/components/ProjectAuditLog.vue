@@ -266,9 +266,9 @@ export default {
     <PageTitle>
       <template #title>
         <h1 class="m-0">
-          <nuxt-link :to="{ name: 'c-cluster-product-projectsnamespaces' }">
+          <router-link :to="{ name: 'c-cluster-product-projectsnamespaces' }">
             {{ t('namespace.project.label') }}
-          </nuxt-link>: {{ t('auditLog.title') }}
+          </router-link>: {{ t('auditLog.title') }}
         </h1>
       </template>
     </PageTitle>
