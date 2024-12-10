@@ -331,9 +331,12 @@ export default {
                 v-else-if="th.slot"
                 :name="th.field"
                 :row="row"
+              />
+              <div
+                v-else
               >
                 {{ row[th.field] }}
-              </slot>
+              </div>
             </template>
           </VxeColumn>
         </VxeTable>

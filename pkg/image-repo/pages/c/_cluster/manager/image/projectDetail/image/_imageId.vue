@@ -1,11 +1,11 @@
 <template>
   <div>
     <h3>
-      <nuxt-link
+      <router-link
         :to="backTo"
       >
         {{ t('harborConfig.tab.store') }}
-      </nuxt-link>
+      </router-link>
       <span class="mr-5">
         >
       </span>

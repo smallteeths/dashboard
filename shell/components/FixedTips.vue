@@ -3,11 +3,11 @@
     v-if="showTips"
     class="fixed-tips"
   >
-    {{ t('mfa.bindApp.bindAppTips.desc') }} <nuxt-link
+    {{ t('mfa.bindApp.bindAppTips.desc') }} <router-link
       :to="{name: 'prefs'}"
     >
       {{ t('mfa.bindApp.bindAppTips.link') }}
-    </nuxt-link>
+    </router-link>
   </div>
 </template>
 <script>
