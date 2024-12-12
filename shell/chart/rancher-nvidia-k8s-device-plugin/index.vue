@@ -310,7 +310,7 @@ export default {
 };
 </script>
 <template>
-  <div>
+  <Tabbed :side-tabs="true">
     <Tab
       name="container-images"
       :label="t('rancher-nvidia-k8s-device-plugin.titles.image')"
@@ -580,7 +580,7 @@ export default {
         </div>
       </div>
     </Tab>
-  </div>
+  </Tabbed>
 </template>
 <style scoped>
 .side-tablist-controls {
