@@ -48,7 +48,7 @@
           </template>
         </v-dropdown>
       </template>
-      <template #tags="{row}">
+      <template #formartTags="{row}">
         <v-dropdown
           trigger="click"
           placement="top"
@@ -59,7 +59,7 @@
                 className="guideLink"
                 style="cursor: pointer"
               >
-                {{ row.tags }}
+                {{ row.formartTags }}
               </a>
             </div>
           </slot>
