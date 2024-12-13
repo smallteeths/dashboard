@@ -53,6 +53,7 @@ export default {
     const {
       dnsConfig = {}, hostname, subdomain, vlansubnet = {}
     } = this.value;
+
     const { nameservers, searches, options } = dnsConfig;
     const {
       network: vlansubnetNetwork, ip: vlansubnetIp, mac: vlansubnetMac, subnet: vlansubnetName, allowVlansubnet
@@ -175,12 +176,17 @@ export default {
     async fetchVlansubnets() {
       const clusterId = this.currentCluster.id;
 
+      this.enforcesUseV1 = false;
+      this.vlansubnetChoices = [];
+      this.unsupportVlansubnet = true;
+      this.vlansubnetNetwork = this.value?.vlansubnet?.network || DUAL_NETWORK_CARD;
+
       if (clusterId) {
         const inStore = this.$store.getters['currentStore'](NAMESPACE);
         const namespace = this.$store.getters[`${ inStore }/byId`](NAMESPACE, this.namespace);
         const projectId = namespace?.metadata?.annotations[PROJECT];
         const query = {
-          labelSelector: encodeURIComponent(`project in (${ projectId.replace(/[:]/g, '-') }, )`),
+          labelSelector: projectId ? encodeURIComponent(`project in (${ projectId.replace(/[:]/g, '-') }, )`) : '',
           limit:         50
         };
         const q = Object.entries(query).map((e) => `${ e[0] }=${ e[1] }`).join('&');
@@ -203,24 +209,27 @@ export default {
         }
 
         if (!this.enforcesUseV1) {
-          let query = '';
+          const formattedProjectId = projectId ? `${ projectId.replace(/[:]/g, '-') },` : '';
+          const query = { labelSelector: encodeURIComponent(`project in (${ formattedProjectId })`) };
+          const q = Object.entries(query).map((e) => `${ e[0] }=${ e[1] }`).join('&');
 
-          if (projectId) {
-            query = `?filter=metadata.labels.project=${ projectId.replace(/[:]/g, '-') }`;
+          try {
+            await this.$store.dispatch('management/request', { url: `/k8s/clusters/${ clusterId }/apis/flatnetwork.pandaria.io/v1/namespaces/cattle-flat-network/flatnetworksubnets${ q ? `?${ q }` : '' }` }).then((resp) => {
+              const items = resp.items.map((item) => ({
+                label: `${ item.metadata.name }(${ item.spec.cidr })`,
+                value: item.metadata.name
+              }));
+
+              this.vlansubnetChoices = items;
+              this.unsupportVlansubnet = false;
+              this.isFlatNetworkV2 = true;
+              if (this.vlansubnetNetwork === DUAL_NETWORK_CARD) {
+                this.vlansubnetNetwork = DUAL_NETWORK_CARD_V2;
+              }
+            });
+          } catch (e) {
+            this.isFlatNetworkV2 = false;
           }
-          await this.$store.dispatch('management/request', { url: `/k8s/clusters/${ clusterId }/apis/flatnetwork.pandaria.io/v1/namespaces/cattle-flat-network/flatnetworksubnets${ query }` }).then((resp) => {
-            const items = resp.items.map((item) => ({
-              label: `${ item.metadata.name }(${ item.spec.cidr })`,
-              value: item.metadata.name
-            }));
-
-            this.vlansubnetChoices = items;
-            this.unsupportVlansubnet = false;
-            this.isFlatNetworkV2 = true;
-            if (this.vlansubnetNetwork === DUAL_NETWORK_CARD) {
-              this.vlansubnetNetwork = DUAL_NETWORK_CARD_V2;
-            }
-          });
         }
       }
     },
