@@ -27,7 +27,6 @@ export const KONTAINER_TO_DRIVER = {
   aliyunkubernetescontainerservice: 'aliyun',
   baiducloudcontainerengine:        'baidu',
   opentelekomcloudcontainerengine:  'otccce',
-  ack:                              'aliyunv2',
   huawei:                           'huaweiccev2',
   tke:                              'tencenttkev2'
 };
