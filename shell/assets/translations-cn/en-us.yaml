@@ -451,7 +451,7 @@ authConfig:
           5: 'Upload the downloaded JSON file in the OAuth credentials box.'
       3:
         title: 'Create Service Account credentials'
-        introduction: 'Follow <a href="{docsBase}/admin-settings/authentication/google/#3-creating-service-account-credentials" target="_blank" rel="noopener noreferrer nofollow">this</a> guide to:'
+        introduction: 'Follow <a href="{docsBase}/how-to-guides/new-user-guides/authentication-permissions-and-global-configuration/authentication-config/configure-google-oauth#3-creating-service-account-credentials" target="_blank" rel="noopener noreferrer nofollow">this</a> guide to:'
         body:
           1: Create a service account.
           2: Generate a key for the service account.
@@ -550,6 +550,11 @@ authConfig:
       on: LDAP User and Group search has been configured
       show: Show details
       title: User and Group Search
+    sloOptions:
+      choose: Allow the user to choose one of the above in an additional log out step
+      logoutAll: Log out of Rancher and {name} (includes all other applications registered with {name})
+      onlyRancher: Log out of Rancher and not {name}
+    sloTitle: Log Out behavior
   azuread:
     tenantId:
       label: Tenant ID
@@ -855,7 +860,7 @@ backupRestoreOperator:
   encryption: Encryption
   encryptionConfigName:
     backuptip: 'Any secret in the <code>{ns}</code> namespace that has an <code>encryption-provider-config.yaml</code> key. <br/>The contents of this file are necessary to perform a restore from this backup, and are not stored by Rancher Backup.'
-    label: Encryption Config Secret
+    label: Encryption Configuration Secret
     options:
       none: Store the contents of the backup unencrypted
       secret: 'Encrypt backups using an <a target="_blank" rel="noopener noreferrer nofollow" href="https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/#understanding-the-encryption-at-rest-configuration">Encryption Config Secret</a> (Recommended)'
@@ -1107,9 +1112,9 @@ catalog:
         minWait:
           label: Min Wait Time (in Seconds)
           placeholder: 1 (default)
-      info: For better performance, add OCI URLs that contain ONLY helm charts. For example oci://test.rancher.io/charts or oci://test.rancher.io/charts/mychart. The list of charts available from the repository is updated every 6 hours. Scanning directories with a large number of artifacts may degrade performance considerably.
+      info: Add OCI URLs that contain ONLY helm charts. For large repositories containing many charts consider targeting a specific namespace or chart to improve performance, for example with oci://<registry-host>/<namespace> or oci://<registry-host>/<namespace>/<chart-name>. The list of charts available from the repository is updated every 6 hours.
       insecurePlainHttp: Insecure Plain Http
-      placeholder: e.g. oci://test.azure.io/test-namespace:test-tag
+      placeholder: e.g. oci://<registry-host>/<namespace>/<chart-name>:<tag>
       skipTlsVerifications: Skip TLS Verifications
       urlLabel: OCI Repository Host URL
   tools:
@@ -1168,7 +1173,7 @@ cis:
   alertNeeded: |-
     Alerting must be enabled within the CIS chart values.yaml.
     This requires that the <a tabindex="0" href="{link}">{vendor} Monitoring and Alerting app</a> is installed
-    and the Receivers and Routes are <a target="_blank" rel='noopener noreferrer nofollow' href='{docsBase}/monitoring-alerting/configuration/#alertmanager-configuration/'> configured to send out alerts.</a>
+    and the Receivers and Routes are <a target="_blank" rel='noopener noreferrer nofollow' href='{docsBase}/how-to-guides/advanced-user-guides/monitoring-v2-configuration-guides/advanced-configuration/alertmanager'> configured to send out alerts.</a>
   alertOnComplete: Alert on scan completion
   alertOnFailure: Alert on scan failure
   benchmarkVersion: Benchmark Version
@@ -1213,6 +1218,7 @@ cis:
   scheduling:
     disable: Run scan once
     enable: Run scan on a schedule
+    title: Scheduling
   scoreWarning:
     label: Scan state for "warn" results
     protip: Scans with no failures will be marked "Pass" by default even if some of the tests generate "warn" output. This behavior can be changed by selecting the "fail" option from this section.
@@ -1220,6 +1226,7 @@ cis:
   testsSkipped: Tests Skipped
   testsToSkip: Tests to Skip
   workerProfile: CIS Profile
+  alerting: Alerting
 cluster:
   addonChart:
     rancher-vsphere-cpi:
@@ -1271,7 +1278,7 @@ cluster:
       label: Google
     rancher-vsphere:
       label: vSphere
-      note: '<b>Important:</b> Configure the vSphere Cloud Provider and Storage Provider options in the Add-on tabs.'
+      note: '<b>Important:</b> Configure the vSphere Cloud Provider and Storage Provider options in the Add-on Configuration tab.'
     harvester:
       label: Harvester
   copyConfig: Copy KubeConfig to Clipboard
@@ -2060,7 +2067,7 @@ cluster:
       advanced: Configure advanced containerd mirroring and registry authentication options
     description: If enabled, Rancher will pull container images from this registry during cluster provisioning. By default, Rancher will also use this registry when installing Rancher's official Helm chart apps. If the cluster scoped registry is disabled, system images are pulled from the System Default Registry in the global settings.
     docsLinkK3s: For help configuring private registry mirrors, see the K3s <a href="https://docs.k3s.io/installation/private-registry" target="_blank">documentation.</a>
-    docsLinkRke2: For help configuring private registry mirrors, see the RKE2 <a href="https://docs.rke2.io/install/containerd_registry_configuration/" target="_blank">documentation.</a>
+    docsLinkRke2: For help configuring private registry mirrors, see the RKE2 <a href="https://docs.rke2.io/install/containerd_registry_configuration" target="_blank">documentation.</a>
     label: Enable cluster scoped container registry for Rancher system container images
     header: Registry for Rancher System Container Images
   provider:
@@ -2112,7 +2119,7 @@ cluster:
     pinganyunecs: Pinganyun ECS
     pnap: phoenixNAP
     rackspace: RackSpace
-    rancherkubernetesengine: RKE
+    rancherkubernetesengine: RKE1
     rke2: RKE2
     rke: RKE1
     rkeWindows: Windows (RKE1 only)
@@ -2363,8 +2370,8 @@ cluster:
   directoryConfig:
     checkboxText: Use the same path for System-agent, Provisioning and K8s Distro data directories configuration
     common:
-      label: Data directory configuration path
-      tooltip: Data directory configuration for System-agent, Provisioning and K8s Distro
+      label: Data directory base path
+      tooltip: Data directory base path. We will append the sub-directories appropriate for each directory (/agent, /provisioning and either /rke2 or /k3s)
     k8sDistro:
       label: K8s Distro directory path
       tooltip: Data directory for the k8s distro
@@ -2375,6 +2382,11 @@ cluster:
       label: System-agent directory path
       tooltip: Data directory for the system-agent connection info and plans
     title: Data directory configuration
+    banner: Data directory configuration can not be changed once the cluster has been created
+    radioInput:
+      commonLabel: Use a common base directory for data directory configuration (sub-directories will be used for the system-agent, provisioning and distro paths)
+      customLabel: Use custom data directories
+      defaultLabel: Use default data directory configuration
   jwtAuthentication:
     banner: Service Account access with JWT authentication can be configured after cluster creation from <br> <code>Cluster Management > Advanced > JWT Authentication</code>
   cloudCredentials:
@@ -3219,8 +3231,8 @@ landing:
     memoryUsed: Memory Used
     architecture: Architecture
     distro: Distro
-  seeWhatsNew: Learn more about the improvements and new capabilities in this version.
-  whatsNewLink: "What's new in 2.9"
+  seeWhatsNew: Learn more about the improvements and new capabilities in this version and read about the UI framework migration in 2.10
+  whatsNewLink: "What's new in 2.10"
   learnMore: Learn More
   gettingStarted:
     title: Getting Started
@@ -3566,6 +3578,7 @@ login:
     label: Remember Username
   specificError: 'An error occurred logging in: {msg}'
   loggedOutFromSso: You've been logged out of Rancher, however you may still be logged in to your single sign-on identity provider.
+  loggedOutFromSlo: You've been logged out of Rancher and from your single sign-on identity provider.
 managementNode:
   customName: Custom Name
 members:
@@ -3749,7 +3762,7 @@ monitoring:
       keyFilePath:
         label: Key File Path
         placeholder: e.g. ./key-file.pfx
-      secretsBanner: The file paths below must be referenced in <pre class="inline-block m-0 p-0 vertical-middle">alertmanager.alertmanagerSpec.secrets</pre> when deploying the Monitoring chart. For more information see our <a href="{docsBase}/monitoring-alerting/" target="_blank" rel="noopener noreferrer nofollow">documentation</a>.
+      secretsBanner: The file paths below must be referenced in <pre class="inline-block m-0 p-0 vertical-middle">alertmanager.alertmanagerSpec.secrets</pre> when deploying the Monitoring chart. For more information see our <a href="{docsBase}/how-to-guides/advanced-user-guides/monitoring-alerting-guides" target="_blank" rel="noopener noreferrer nofollow">documentation</a>.
   projectMonitoring:
     detail:
       error: "Unable to fetch Dashboard values with status: "
@@ -4297,6 +4310,7 @@ persistentVolume:
       quobyte-csi: Quobyte (CSI)
       rbd-csi-ceph-com: Ceph RBD (CSI)
       storageos: StorageOS (CSI)
+      lvm-driver-harvesterhci-io: LVM
     suffix: (CSI)
   cephfs:
     label: Ceph Filesystem (Unsupported)
@@ -5342,7 +5356,7 @@ setup:
     dockerSuffix: ""
     helmPrefix: 'For a Helm installation, run:'
     helmSuffix: ""
-  eula: By checking the box, you accept the <a href="https://rancher.com/eula" target="_blank" rel="noopener noreferrer nofollow">End User License Agreement & Terms & Conditions</a>
+  eula: By checking the box, you accept the <a href="https://www.suse.com/licensing/eula/download/suse_end_user_license_agreement_june_2024.pdf" target="_blank" rel="noopener noreferrer nofollow">End User License Agreement & Terms & Conditions</a>
   newPassword: New Password
   newUserSetPassword: The first order of business is to set a strong password. We suggest using this random one generated just for you, but enter your own if you like.
   serverUrl:
@@ -5350,7 +5364,7 @@ setup:
     skip: Skip
     tip: What URL should be used for this {vendor} installation? All the nodes in your clusters will need to be able to reach this.
   setPassword: The first order of business is to set a strong password for the default <code>{username}</code> user. We suggest using this random one generated just for you, but enter your own if you like.
-  telemetry: Allow collection of <a href="{docsBase}/faq/telemetry/" target="_blank" rel="noopener noreferrer nofollow">anonymous statistics</a> to help us improve {name}
+  telemetry: Allow collection of <a href="{docsBase}/faq/telemetry" target="_blank" rel="noopener noreferrer nofollow">anonymous statistics</a> to help us improve {name}
   useManual: Set a specific password to use
   useRandom: Use a randomly generated password
   welcome: Welcome to {vendor}!
@@ -6713,6 +6727,7 @@ workload:
       deployment: Deployment
       pod: Pod
       containers: Containers
+  error: Pod { name } Security Policy Violation { policy }
 harvesterManager:
   manage: Manage
   cluster:
@@ -7524,6 +7539,7 @@ advancedSettings:
     rotate-certs-if-expiring-in-days: Set the time for the rancher server to rotate certificates in advance（in days）.
     system-catalog: Configure Rancher to use System Chart Repo.
     agent-tls-mode: Rancher Certificate Verification. In `strict` mode the agents (system, cluster, fleet, etc) will only trust Rancher installations which are using a certificate signed by the CABundle in the `cacerts` setting. When the mode is system-store, the agents will trust any certificate signed by a CABundle in the operating system’s trust store.
+    k3s-based-upgrader-uninstall-concurrency: Defines the maximum number of clusters in which Rancher can concurrently uninstall the legacy `rancher-k3s-upgrader` or `rancher-rke2-upgrader` app from imported K3s or RKE2 clusters.
   editHelp:
     'ui-banners': This setting takes a JSON object containing 3 root parameters; <code>banner</code>, <code>showHeader</code>, <code>showFooter</code>. <code>banner</code> is an object containing; <code>textColor</code>, <code>background</code>, and <code>text</code>, where <code>textColor</code> and <code>background</code> are any valid CSS color value.
   enum:
@@ -7943,14 +7959,16 @@ plugins:
     updates: No updates available for installed Extensions
     images: No Extension Images installed
   error:
-    api: This Extension is not compatible with the current Extensions API version
+    api: Unable to load Extension. The version installed is not compatible with the current Extensions API version
     generic: Extension error
-    host: This Extension is not compatible with this application
+    host: Unable to load Extension. The version installed is not compatible with this application host
     load: An error occurred loading the code for this Extension
     message: Could not load extension code
     title: Error loading extension
-    version: This Extension is not compatible with this version of Rancher
+    version: Unable to load Extension. The version installed is not compatible with the current version of Rancher
     developerPkg: This Extension has been loaded internally, so we won't load the external version
+    apiAnnotationMissing: Unable to load Extension. The version installed is not compatible with the current Extensions API Version (Extension is missing the annotation catalog.cattle.io/ui-extensions-version which implies incompatibility with Rancher 2.10 and onwards)
+    kubeVersion: Unable to load Extension. The version installed is not compatible with the current Rancher kubernetes version
   helmError: An error occurred installing the extension via Helm
   info:
     detail: Detail
@@ -7960,7 +7978,8 @@ plugins:
     requiresKubeVersion: Requires Kube version {required}
     requiresRancherVersion: Requires Rancher {required}
     requiresExtensionApiVersion: Requires Extensions API version {required}
-    requiresHost: Requires a host that matches "{required}"
+    requiresHost: Requires a host that matches "{mainHost}"
+    requiresExtensionApiVersionMissing: Missing the annotation catalog.cattle.io/ui-extensions-version which implies incompatibility with Rancher 2.10 and onwards
   install:
     label: Install
     prompt: Are you sure that you want to install this Extension?
@@ -8097,6 +8116,7 @@ plugins:
   warnNoAuth: This version of the extension will be loaded before authentication and will have access to the login process.
   incompatibleHost: The latest version of this extension ({ version }) has a host of "{ required }" which is not compatible with this application "{ mainHost }".
   incompatibleUiExtensionsApiVersion: The latest version of this extension ({ version }) is not compatible with the current Extensions API version ({ required }).
+  incompatibleUiExtensionsApiVersionMissing: The latest version of this extension ({ version }) is missing the mandatory annotation catalog.cattle.io/ui-extensions-version from Rancher 2.10 and onwards.
 clusterConnectMode:
   actions:
     restartConfirm: Are You Sure You Want To Save Connect Mode And Restart {name} Cluster Controller？
@@ -8126,7 +8146,6 @@ clusterConnectMode:
 autoLogout:
   message: You have not operated in the last {autoLogoutTime} minutes, so we will auto log out
   title: Auto logout
-
 rancher-nvidia-k8s-device-plugin:
   titles:
     image: Container Images
@@ -8557,6 +8576,13 @@ gitPicker:
       tooltip: Username / Organization of the Git Repository
 logout:
   message: Logging Out...
+  error: 'An error occurred logging out: {msg}'
+  specificError:
+    500: |-
+      Server-side error.
+
+      Please contact your system administrator.
+    unknown: Unknown.\n\nPlease contact your system administrator.
 mfa:
   methods:
     app: authenticator app
@@ -8680,3 +8706,11 @@ hamiResourceReservation:
     name: HAMi Resource Name
     value: Limit To
   placeholder: e.g. 1
+promptSlo:
+  all:
+    active: Log out of {name}
+    waiting: Logging Out
+  rancher:
+    active: Only log out of Rancher
+  text: Log out of only Rancher, or all {name} applications.
+  title: Log out
