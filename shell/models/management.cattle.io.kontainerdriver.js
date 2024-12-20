@@ -27,9 +27,6 @@ export const KONTAINER_TO_DRIVER = {
   aliyunkubernetescontainerservice: 'aliyun',
   baiducloudcontainerengine:        'baidu',
   opentelekomcloudcontainerengine:  'otccce',
-  ack:                              'aliyunv2',
-  huawei:                           'huaweiccev2',
-  tke:                              'tencenttkev2'
 };
 
 // Pandaria: Although the Pandaria's self-developed kontainerDriver is external,
