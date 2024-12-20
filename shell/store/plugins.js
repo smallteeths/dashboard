@@ -184,7 +184,8 @@ export const getters = {
     return [
       'aliyun',
       'huaweicce',
-      'tencenttke'
+      'tencenttke',
+      'tencent',
     ];
   },
 
