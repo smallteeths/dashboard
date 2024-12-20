@@ -191,7 +191,11 @@ export default {
     },
 
     fleetAgentNamespace() {
-      return this.$store.getters['cluster/byId'](NAMESPACE, 'cattle-fleet-system');
+      if (this.currentCluster.isLocal) {
+        return this.$store.getters['cluster/canList'](WORKLOAD_TYPES.DEPLOYMENT) && this.$store.getters['cluster/canList'](WORKLOAD_TYPES.STATEFUL_SET) && this.$store.getters['cluster/byId'](NAMESPACE, 'cattle-fleet-system');
+      }
+
+      return this.$store.getters['cluster/canList'](WORKLOAD_TYPES.STATEFUL_SET) && this.$store.getters['cluster/byId'](NAMESPACE, 'cattle-fleet-system');
     },
 
     cattleAgentNamespace() {
@@ -199,7 +203,7 @@ export default {
         return;
       }
 
-      return this.$store.getters['cluster/byId'](NAMESPACE, 'cattle-system');
+      return this.$store.getters['cluster/canList'](WORKLOAD_TYPES.DEPLOYMENT) && this.$store.getters['cluster/byId'](NAMESPACE, 'cattle-system');
     },
 
     canViewAgents() {
