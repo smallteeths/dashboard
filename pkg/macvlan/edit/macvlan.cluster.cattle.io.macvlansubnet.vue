@@ -390,176 +390,178 @@ export default {
 </script>
 
 <template>
-  <CruResource
-    :done-route="doneRoute"
-    :validation-passed="fvFormIsValid"
-    :resource="config"
-    :mode="mode"
-    :errors="errors"
-    @finish="save"
-    @error="e=>errors = e"
-    @cancel="cancel"
-  >
-    <div>
-      <div class="row mb-20">
-        <div class="col span-3">
-          <LabeledInput
-            v-model:value="config.metadata.name"
-            required
-            label-key="generic.name"
-            placeholder-key="nameNsDescription.name.placeholder"
-            :mode="mode"
-            :disabled="isEdit"
-            :rules="fvGetAndReportPathRules('metadata.name')"
-          />
+  <div>
+    <CruResource
+      :done-route="doneRoute"
+      :validation-passed="fvFormIsValid"
+      :resource="config"
+      :mode="mode"
+      :errors="errors"
+      @finish="save"
+      @error="e=>errors = e"
+      @cancel="cancel"
+    >
+      <div>
+        <div class="row mb-20">
+          <div class="col span-3">
+            <LabeledInput
+              v-model:value="config.metadata.name"
+              required
+              label-key="generic.name"
+              placeholder-key="nameNsDescription.name.placeholder"
+              :mode="mode"
+              :disabled="isEdit"
+              :rules="fvGetAndReportPathRules('metadata.name')"
+            />
+          </div>
         </div>
+        <Tabbed
+          :side-tabs="true"
+          default-tab="general"
+          @changed="onTabChanged"
+        >
+          <Tab
+            name="general"
+            :label="t('macvlan.tabs.general')"
+            :weight="99"
+            :error="tabErrors.general"
+          >
+            <div class="row mb-20">
+              <div class="col span-6">
+                <LabeledInput
+                  v-model:value="config.spec.master"
+                  required
+                  label-key="macvlan.master.label"
+                  placeholder-key="macvlan.master.placeholder"
+                  :mode="mode"
+                  :disabled="isEdit"
+                  :rules="fvGetAndReportPathRules('spec.master')"
+                />
+              </div>
+              <div class="col span-6">
+                <LabeledInput
+                  v-model:value="vlan"
+                  label-key="macvlan.vlan.label"
+                  placeholder-key="macvlan.vlan.placeholder"
+                  :mode="mode"
+                  :disabled="isEdit"
+                  :rules="fvGetAndReportPathRules('spec.vlan')"
+                  @update:value="config.spec.vlan = Number($event)"
+                />
+              </div>
+            </div>
+
+            <div class="row mb-20">
+              <div class="col span-6">
+                <LabeledInput
+                  v-model:value="config.spec.cidr"
+                  required
+                  label-key="macvlan.cidr.label"
+                  placeholder-key="macvlan.cidr.placeholder"
+                  :mode="mode"
+                  :disabled="isEdit"
+                  :rules="fvGetAndReportPathRules('spec.cidr')"
+                />
+              </div>
+              <div class="col span-6">
+                <LabeledSelect
+                  v-model:value="config.spec.mode"
+                  :mode="mode"
+                  required
+                  label-key="macvlan.mode.label"
+                  :options="modeOptions"
+                  option-label="label"
+                  :disabled="isEdit"
+                />
+              </div>
+            </div>
+
+            <div class="row mb-20">
+              <div class="col span-6">
+                <LabeledInput
+                  v-model:value="config.spec.gateway"
+                  label-key="macvlan.gateway.label"
+                  placeholder-key="macvlan.gateway.placeholder"
+                  :mode="mode"
+                  :rules="fvGetAndReportPathRules('spec.gateway')"
+                  :disabled="isEdit"
+                />
+              </div>
+              <div class="col span-6">
+                <LabeledSelect
+                  v-model:value="config.metadata.labels.project"
+                  :mode="mode"
+                  required
+                  label-key="macvlan.project.label"
+                  :options="projectOptions"
+                  option-label="label"
+                  :disabled="isEdit"
+                />
+              </div>
+            </div>
+
+            <div class="row mb-20">
+              <div class="col span-6">
+                <LabeledInput
+                  v-model:value="ipDelayReuse"
+                  label-key="macvlan.ipReuse.label"
+                  placeholder-key="macvlan.ipReuse.placeholder"
+                  :mode="mode"
+                  :disabled="isEdit"
+                  type="number"
+                  min="1"
+                  max="3600"
+                  :rules="fvGetAndReportPathRules('ipDelayReuse')"
+                />
+              </div>
+            </div>
+          </Tab>
+          <Tab
+            name="advanced"
+            :label="t('macvlan.tabs.advanced')"
+            :weight="98"
+            :error="tabErrors.advanced"
+          >
+            <MacvlanIpRange
+              :value="config.spec.ranges"
+              :mode="mode"
+              :rules="fvGetAndReportPathRules('spec.ranges')"
+              :ip-ranges-existed-msg="ipRangesExistedMsg"
+            />
+            <MacvlanIpRoute
+              :value="config.spec.routes"
+              :mode="mode"
+              :rules="fvGetAndReportPathRules('spec.routes')"
+            />
+
+            <RadioGroup
+              v-model:value="config.spec.podDefaultGateway.enable"
+              :mode="mode"
+              name="forceFormatted"
+              label-key="macvlan.defaultGateway.label"
+              :labels="[t('macvlan.defaultGateway.no'),t('macvlan.defaultGateway.yes')]"
+              :options="[false, true]"
+              :disabled="value.forceFormatted"
+            />
+
+            <div class="row mb-20">
+              <div class="col span-6">
+                <LabeledInput
+                  v-model:value="config.spec.podDefaultGateway.serviceCidr"
+                  label-key="macvlan.defaultGateway.serviceCidr.label"
+                  placeholder-key="macvlan.defaultGateway.serviceCidr.placeholder"
+                  :disabled="!config.spec.podDefaultGateway.enable"
+                  required
+                  :mode="mode"
+                  :rules="fvGetAndReportPathRules('spec.podDefaultGateway.serviceCidr')"
+                />
+              </div>
+            </div>
+          </Tab>
+        </Tabbed>
       </div>
-      <Tabbed
-        :side-tabs="true"
-        default-tab="general"
-        @changed="onTabChanged"
-      >
-        <Tab
-          name="general"
-          :label="t('macvlan.tabs.general')"
-          :weight="99"
-          :error="tabErrors.general"
-        >
-          <div class="row mb-20">
-            <div class="col span-6">
-              <LabeledInput
-                v-model:value="config.spec.master"
-                required
-                label-key="macvlan.master.label"
-                placeholder-key="macvlan.master.placeholder"
-                :mode="mode"
-                :disabled="isEdit"
-                :rules="fvGetAndReportPathRules('spec.master')"
-              />
-            </div>
-            <div class="col span-6">
-              <LabeledInput
-                v-model:value="vlan"
-                label-key="macvlan.vlan.label"
-                placeholder-key="macvlan.vlan.placeholder"
-                :mode="mode"
-                :disabled="isEdit"
-                :rules="fvGetAndReportPathRules('spec.vlan')"
-                @update:value="config.spec.vlan = Number($event)"
-              />
-            </div>
-          </div>
-
-          <div class="row mb-20">
-            <div class="col span-6">
-              <LabeledInput
-                v-model:value="config.spec.cidr"
-                required
-                label-key="macvlan.cidr.label"
-                placeholder-key="macvlan.cidr.placeholder"
-                :mode="mode"
-                :disabled="isEdit"
-                :rules="fvGetAndReportPathRules('spec.cidr')"
-              />
-            </div>
-            <div class="col span-6">
-              <LabeledSelect
-                v-model:value="config.spec.mode"
-                :mode="mode"
-                required
-                label-key="macvlan.mode.label"
-                :options="modeOptions"
-                option-label="label"
-                :disabled="isEdit"
-              />
-            </div>
-          </div>
-
-          <div class="row mb-20">
-            <div class="col span-6">
-              <LabeledInput
-                v-model:value="config.spec.gateway"
-                label-key="macvlan.gateway.label"
-                placeholder-key="macvlan.gateway.placeholder"
-                :mode="mode"
-                :rules="fvGetAndReportPathRules('spec.gateway')"
-                :disabled="isEdit"
-              />
-            </div>
-            <div class="col span-6">
-              <LabeledSelect
-                v-model:value="config.metadata.labels.project"
-                :mode="mode"
-                required
-                label-key="macvlan.project.label"
-                :options="projectOptions"
-                option-label="label"
-                :disabled="isEdit"
-              />
-            </div>
-          </div>
-
-          <div class="row mb-20">
-            <div class="col span-6">
-              <LabeledInput
-                v-model:value="ipDelayReuse"
-                label-key="macvlan.ipReuse.label"
-                placeholder-key="macvlan.ipReuse.placeholder"
-                :mode="mode"
-                :disabled="isEdit"
-                type="number"
-                min="1"
-                max="3600"
-                :rules="fvGetAndReportPathRules('ipDelayReuse')"
-              />
-            </div>
-          </div>
-        </Tab>
-        <Tab
-          name="advanced"
-          :label="t('macvlan.tabs.advanced')"
-          :weight="98"
-          :error="tabErrors.advanced"
-        >
-          <MacvlanIpRange
-            :value="config.spec.ranges"
-            :mode="mode"
-            :rules="fvGetAndReportPathRules('spec.ranges')"
-            :ip-ranges-existed-msg="ipRangesExistedMsg"
-          />
-          <MacvlanIpRoute
-            :value="config.spec.routes"
-            :mode="mode"
-            :rules="fvGetAndReportPathRules('spec.routes')"
-          />
-
-          <RadioGroup
-            v-model:value="config.spec.podDefaultGateway.enable"
-            :mode="mode"
-            name="forceFormatted"
-            label-key="macvlan.defaultGateway.label"
-            :labels="[t('macvlan.defaultGateway.no'),t('macvlan.defaultGateway.yes')]"
-            :options="[false, true]"
-            :disabled="value.forceFormatted"
-          />
-
-          <div class="row mb-20">
-            <div class="col span-6">
-              <LabeledInput
-                v-model:value="config.spec.podDefaultGateway.serviceCidr"
-                label-key="macvlan.defaultGateway.serviceCidr.label"
-                placeholder-key="macvlan.defaultGateway.serviceCidr.placeholder"
-                :disabled="!config.spec.podDefaultGateway.enable"
-                required
-                :mode="mode"
-                :rules="fvGetAndReportPathRules('spec.podDefaultGateway.serviceCidr')"
-              />
-            </div>
-          </div>
-        </Tab>
-      </Tabbed>
-    </div>
-  </CruResource>
+    </CruResource>
+  </div>
 </template>
 
 <style lang="scss" scoped>

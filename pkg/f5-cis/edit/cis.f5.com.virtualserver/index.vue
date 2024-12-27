@@ -1,264 +1,199 @@
 <template>
-  <CruResource
-    ref="cru"
-    :done-route="doneRoute"
-    :mode="mode"
-    :resource="value"
-    :subtypes="[]"
-    :validation-passed="validationPassed"
-    :errors="errors"
-    @error="e=>errors = e"
-    @finish="save"
-    @cancel="done"
-  >
-    <NameNsDescription
-      :value="value"
+  <div>
+    <CruResource
+      ref="cru"
+      :done-route="doneRoute"
       :mode="mode"
-      :register-before-hook="registerBeforeHook"
-    />
-    <Tabbed
-      ref="verturlServerTabbed"
-      class="virtual-server-tabs"
-      :show-tabs-add-remove="true"
-      :default-tab="defaultTab"
-      :flat="true"
-      @changed="changed"
+      :resource="value"
+      :subtypes="[]"
+      :validation-passed="validationPassed"
+      :errors="errors"
+      @error="e=>errors = e"
+      @finish="save"
+      @cancel="done"
     >
-      <Tab
-        :label="t('f5cis.virtualServer.label')"
-        name="virtualServer"
-        :weight="Number.POSITIVE_INFINITY"
+      <NameNsDescription
+        :value="value"
+        :mode="mode"
+        :register-before-hook="registerBeforeHook"
+      />
+      <Tabbed
+        ref="verturlServerTabbed"
+        class="virtual-server-tabs"
+        :show-tabs-add-remove="true"
+        :default-tab="defaultTab"
+        :flat="true"
+        @changed="changed"
       >
-        <Tabbed :side-tabs="true">
-          <Tab
-            name="labels"
-            label-key="generic.labelsAndAnnotations"
-            :weight="98"
-          >
-            <Labels
-              v-model:value="value"
-              :mode="mode"
-            />
-          </Tab>
-          <Tab
-            :label="t('f5cis.virtualServer.titles.general')"
-            name="general"
-            :weight="99"
-            :error="tabErrors.general"
-          >
-            <div class="row mb-20">
-              <div class="col span-6">
-                <LabeledInput
-                  v-model:value="value.spec.virtualServerName"
-                  :mode="mode"
-                  :label="t('f5cis.virtualServer.form.virtualServerName.label')"
-                />
-              </div>
-              <div class="col span-6">
-                <LabeledInput
-                  v-model:value="value.spec.virtualServerAddress "
-                  :mode="mode"
-                  :label="t('f5cis.virtualServer.form.virtualServerAddress.label')"
-                />
-              </div>
-            </div>
-            <div class="row mb-20">
-              <div class="col span-6">
-                <LabeledInput
-                  v-model:value.number="value.spec.virtualServerHTTPSPort"
-                  type="number"
-                  :label="t('f5cis.virtualServer.form.virtualServerHTTPSPort.label')"
-                  :mode="mode"
-                />
-              </div>
-              <div class="col span-6">
-                <LabeledInput
-                  v-model:value.number="value.spec.virtualServerHTTPPort"
-                  type="number"
-                  :label="t('f5cis.virtualServer.form.virtualServerHTTPPort.label')"
-                  :mode="mode"
-                />
-              </div>
-            </div>
-            <div class="row mb-20">
-              <div class="col span-6">
-                <LabeledSelect
-                  v-model:value="value.spec.tlsProfileName"
-                  :label="t('f5cis.virtualServer.form.tlsProfileName.label')"
-                  :options="tlsProfileNameOptions"
-                  :mode="mode"
-                />
-              </div>
-              <div class="col span-6">
-                <LabeledInput
-                  v-model:value="value.spec.host"
-                  :mode="mode"
-                  :label="t('f5cis.virtualServer.form.host.label')"
-                />
-              </div>
-            </div>
-          </Tab>
-        </Tabbed>
-      </Tab>
-      <Tab
-        v-for="(p, i) in value.spec.pools"
-        :key="p[idKey] ?? i"
-        :label="p.name ? p.name : 'pool-' + i"
-        :name="'name-' + (p[idKey] ?? p.name)"
-        :weight="-p[idKey]"
-        :error="!!p[errorKey]"
-      >
-        <Tabbed :side-tabs="true">
-          <Tab
-            :label="t('f5cis.virtualServer.titles.general')"
-            name="general"
-            :weight="99"
-          >
-            <template
-              #tab-header-right
-              class="tab-content-controls"
+        <Tab
+          :label="t('f5cis.virtualServer.label')"
+          name="virtualServer"
+          :weight="Number.POSITIVE_INFINITY"
+        >
+          <Tabbed :side-tabs="true">
+            <Tab
+              name="labels"
+              label-key="generic.labelsAndAnnotations"
+              :weight="98"
             >
-              <button
-                v-if="value.spec.pools.length > 1 && !isView"
-                type="button"
-                class="btn-sm role-link"
-                @click="removePool(p)"
-              >
-                {{ t('f5cis.virtualServer.pool.removePool') }}
-              </button>
-            </template>
-            <div class="row mb-20">
-              <div class="col span-6">
-                <LabeledInput
-                  v-model:value="p.name"
-                  :mode="mode"
-                  :label="t('f5cis.virtualServer.form.pool.name.label')"
-                />
-              </div>
-              <div class="col span-6">
-                <LabeledInput
-                  v-model:value="p.path"
-                  :mode="mode"
-                  :label="t('f5cis.virtualServer.form.pool.path.label')"
-                  required
-                />
-              </div>
-            </div>
-            <div class="row mb-20">
-              <div class="col span-6">
-                <LabeledInput
-                  v-model:value="p.hostRewrite"
-                  :mode="mode"
-                  :label="t('f5cis.virtualServer.form.pool.hostRewrite.label')"
-                />
-              </div>
-              <div class="col span-6">
-                <LabeledInput
-                  v-model:value="p.rewrite"
-                  :mode="mode"
-                  :label="t('f5cis.virtualServer.form.pool.rewrite.label')"
-                />
-              </div>
-            </div>
-            <NamespaceServiceSelect
-              class="mb-20"
-              :namespaces="activeNamespaces"
-              :services="allServices"
-              :init-namespace="p.serviceNamespace"
-              :init-service="p.service"
-              :init-service-port="p.servicePort"
-              :mode="mode"
-              @update-namespace="p.serviceNamespace = $event"
-              @update-service="p.service = $event"
-              @update-service-port="p.servicePort = $event"
-            />
-          </Tab>
-          <Tab
-            :label="t('f5cis.virtualServer.titles.monitor')"
-            name="monitor"
-            :weight="98"
-          >
-            <div
-              v-if="p.monitor"
-              class="monitor"
+              <Labels
+                v-model:value="value"
+                :mode="mode"
+              />
+            </Tab>
+            <Tab
+              :label="t('f5cis.virtualServer.titles.general')"
+              name="general"
+              :weight="99"
+              :error="tabErrors.general"
             >
-              <button
-                type="button"
-                class="btn role-link close btn-sm remove"
-                @click="removeMonitor(p)"
-              >
-                <i class="icon icon-x" />
-              </button>
+              <div class="row mb-20">
+                <div class="col span-6">
+                  <LabeledInput
+                    v-model:value="value.spec.virtualServerName"
+                    :mode="mode"
+                    :label="t('f5cis.virtualServer.form.virtualServerName.label')"
+                  />
+                </div>
+                <div class="col span-6">
+                  <LabeledInput
+                    v-model:value="value.spec.virtualServerAddress "
+                    :mode="mode"
+                    :label="t('f5cis.virtualServer.form.virtualServerAddress.label')"
+                  />
+                </div>
+              </div>
+              <div class="row mb-20">
+                <div class="col span-6">
+                  <LabeledInput
+                    v-model:value.number="value.spec.virtualServerHTTPSPort"
+                    type="number"
+                    :label="t('f5cis.virtualServer.form.virtualServerHTTPSPort.label')"
+                    :mode="mode"
+                  />
+                </div>
+                <div class="col span-6">
+                  <LabeledInput
+                    v-model:value.number="value.spec.virtualServerHTTPPort"
+                    type="number"
+                    :label="t('f5cis.virtualServer.form.virtualServerHTTPPort.label')"
+                    :mode="mode"
+                  />
+                </div>
+              </div>
               <div class="row mb-20">
                 <div class="col span-6">
                   <LabeledSelect
-                    v-model:value="p.monitor.type"
-                    :label="t('f5cis.virtualServer.form.pool.monitor.type.label')"
-                    :options="monitorTypeOptions"
+                    v-model:value="value.spec.tlsProfileName"
+                    :label="t('f5cis.virtualServer.form.tlsProfileName.label')"
+                    :options="tlsProfileNameOptions"
                     :mode="mode"
-                    required
                   />
                 </div>
                 <div class="col span-6">
                   <LabeledInput
-                    v-model:value.number="p.monitor.interval"
-                    required
-                    type="number"
-                    :label="t('f5cis.virtualServer.form.pool.monitor.interval.label')"
+                    v-model:value="value.spec.host"
                     :mode="mode"
+                    :label="t('f5cis.virtualServer.form.host.label')"
                   />
                 </div>
               </div>
-              <div
-                class="row mb-20"
+            </Tab>
+          </Tabbed>
+        </Tab>
+        <Tab
+          v-for="(p, i) in value.spec.pools"
+          :key="p[idKey] ?? i"
+          :label="p.name ? p.name : 'pool-' + i"
+          :name="'name-' + (p[idKey] ?? p.name)"
+          :weight="-p[idKey]"
+          :error="!!p[errorKey]"
+        >
+          <Tabbed :side-tabs="true">
+            <Tab
+              :label="t('f5cis.virtualServer.titles.general')"
+              name="general"
+              :weight="99"
+            >
+              <template
+                #tab-header-right
+                class="tab-content-controls"
               >
+                <button
+                  v-if="value.spec.pools.length > 1 && !isView"
+                  type="button"
+                  class="btn-sm role-link"
+                  @click="removePool(p)"
+                >
+                  {{ t('f5cis.virtualServer.pool.removePool') }}
+                </button>
+              </template>
+              <div class="row mb-20">
                 <div class="col span-6">
                   <LabeledInput
-                    v-model:value="p.monitor.recv"
+                    v-model:value="p.name"
                     :mode="mode"
-                    :label="t('f5cis.virtualServer.form.pool.monitor.recv.label')"
+                    :label="t('f5cis.virtualServer.form.pool.name.label')"
                   />
                 </div>
                 <div class="col span-6">
                   <LabeledInput
-                    v-model:value="p.monitor.send"
-                    required
+                    v-model:value="p.path"
                     :mode="mode"
-                    :label="t('f5cis.virtualServer.form.pool.monitor.send.label')"
+                    :label="t('f5cis.virtualServer.form.pool.path.label')"
+                    required
                   />
                 </div>
               </div>
               <div class="row mb-20">
                 <div class="col span-6">
                   <LabeledInput
-                    v-model:value.number="p.monitor.targetPort"
-                    type="number"
-                    :label="t('f5cis.virtualServer.form.pool.monitor.targetPort.label')"
+                    v-model:value="p.hostRewrite"
                     :mode="mode"
+                    :label="t('f5cis.virtualServer.form.pool.hostRewrite.label')"
                   />
                 </div>
                 <div class="col span-6">
                   <LabeledInput
-                    v-model:value.number="p.monitor.timeout"
-                    type="number"
-                    :label="t('f5cis.virtualServer.form.pool.monitor.timeout.label')"
+                    v-model:value="p.rewrite"
                     :mode="mode"
+                    :label="t('f5cis.virtualServer.form.pool.rewrite.label')"
                   />
                 </div>
               </div>
-            </div>
-            <ArrayListGrouped
-              v-model:value="p.monitors"
-              class="mt-20"
-              :default-add-value="defaultMonitorValue"
-              :mode="mode"
-              :add-label="t('f5cis.virtualServer.form.pool.monitor.addLabel')"
+              <NamespaceServiceSelect
+                class="mb-20"
+                :namespaces="activeNamespaces"
+                :services="allServices"
+                :init-namespace="p.serviceNamespace"
+                :init-service="p.service"
+                :init-service-port="p.servicePort"
+                :mode="mode"
+                @update-namespace="p.serviceNamespace = $event"
+                @update-service="p.service = $event"
+                @update-service-port="p.servicePort = $event"
+              />
+            </Tab>
+            <Tab
+              :label="t('f5cis.virtualServer.titles.monitor')"
+              name="monitor"
+              :weight="98"
             >
-              <template #default="{row}">
+              <div
+                v-if="p.monitor"
+                class="monitor"
+              >
+                <button
+                  type="button"
+                  class="btn role-link close btn-sm remove"
+                  @click="removeMonitor(p)"
+                >
+                  <i class="icon icon-x" />
+                </button>
                 <div class="row mb-20">
                   <div class="col span-6">
                     <LabeledSelect
-                      v-model:value="row.value.type"
+                      v-model:value="p.monitor.type"
                       :label="t('f5cis.virtualServer.form.pool.monitor.type.label')"
                       :options="monitorTypeOptions"
                       :mode="mode"
@@ -267,7 +202,7 @@
                   </div>
                   <div class="col span-6">
                     <LabeledInput
-                      v-model:value.number="row.value.interval"
+                      v-model:value.number="p.monitor.interval"
                       required
                       type="number"
                       :label="t('f5cis.virtualServer.form.pool.monitor.interval.label')"
@@ -280,14 +215,14 @@
                 >
                   <div class="col span-6">
                     <LabeledInput
-                      v-model:value="row.value.recv"
+                      v-model:value="p.monitor.recv"
                       :mode="mode"
                       :label="t('f5cis.virtualServer.form.pool.monitor.recv.label')"
                     />
                   </div>
                   <div class="col span-6">
                     <LabeledInput
-                      v-model:value="row.value.send"
+                      v-model:value="p.monitor.send"
                       required
                       :mode="mode"
                       :label="t('f5cis.virtualServer.form.pool.monitor.send.label')"
@@ -297,7 +232,7 @@
                 <div class="row mb-20">
                   <div class="col span-6">
                     <LabeledInput
-                      v-model:value.number="row.value.targetPort"
+                      v-model:value.number="p.monitor.targetPort"
                       type="number"
                       :label="t('f5cis.virtualServer.form.pool.monitor.targetPort.label')"
                       :mode="mode"
@@ -305,32 +240,99 @@
                   </div>
                   <div class="col span-6">
                     <LabeledInput
-                      v-model:value.number="row.value.timeout"
+                      v-model:value.number="p.monitor.timeout"
                       type="number"
                       :label="t('f5cis.virtualServer.form.pool.monitor.timeout.label')"
                       :mode="mode"
                     />
                   </div>
                 </div>
-              </template>
-            </ArrayListGrouped>
-          </Tab>
-        </Tabbed>
-      </Tab>
-      <template #tab-row-extras>
-        <li class="tablist-controls">
-          <button
-            v-if="!isView"
-            type="button"
-            class="btn-sm role-link"
-            @click="addPool"
-          >
-            <i class="icon icon-plus pr-5" /> {{ t('f5cis.virtualServer.pool.addPool') }}
-          </button>
-        </li>
-      </template>
-    </Tabbed>
-  </CruResource>
+              </div>
+              <ArrayListGrouped
+                v-model:value="p.monitors"
+                class="mt-20"
+                :default-add-value="defaultMonitorValue"
+                :mode="mode"
+                :add-label="t('f5cis.virtualServer.form.pool.monitor.addLabel')"
+              >
+                <template #default="{row}">
+                  <div class="row mb-20">
+                    <div class="col span-6">
+                      <LabeledSelect
+                        v-model:value="row.value.type"
+                        :label="t('f5cis.virtualServer.form.pool.monitor.type.label')"
+                        :options="monitorTypeOptions"
+                        :mode="mode"
+                        required
+                      />
+                    </div>
+                    <div class="col span-6">
+                      <LabeledInput
+                        v-model:value.number="row.value.interval"
+                        required
+                        type="number"
+                        :label="t('f5cis.virtualServer.form.pool.monitor.interval.label')"
+                        :mode="mode"
+                      />
+                    </div>
+                  </div>
+                  <div
+                    class="row mb-20"
+                  >
+                    <div class="col span-6">
+                      <LabeledInput
+                        v-model:value="row.value.recv"
+                        :mode="mode"
+                        :label="t('f5cis.virtualServer.form.pool.monitor.recv.label')"
+                      />
+                    </div>
+                    <div class="col span-6">
+                      <LabeledInput
+                        v-model:value="row.value.send"
+                        required
+                        :mode="mode"
+                        :label="t('f5cis.virtualServer.form.pool.monitor.send.label')"
+                      />
+                    </div>
+                  </div>
+                  <div class="row mb-20">
+                    <div class="col span-6">
+                      <LabeledInput
+                        v-model:value.number="row.value.targetPort"
+                        type="number"
+                        :label="t('f5cis.virtualServer.form.pool.monitor.targetPort.label')"
+                        :mode="mode"
+                      />
+                    </div>
+                    <div class="col span-6">
+                      <LabeledInput
+                        v-model:value.number="row.value.timeout"
+                        type="number"
+                        :label="t('f5cis.virtualServer.form.pool.monitor.timeout.label')"
+                        :mode="mode"
+                      />
+                    </div>
+                  </div>
+                </template>
+              </ArrayListGrouped>
+            </Tab>
+          </Tabbed>
+        </Tab>
+        <template #tab-row-extras>
+          <li class="tablist-controls">
+            <button
+              v-if="!isView"
+              type="button"
+              class="btn-sm role-link"
+              @click="addPool"
+            >
+              <i class="icon icon-plus pr-5" /> {{ t('f5cis.virtualServer.pool.addPool') }}
+            </button>
+          </li>
+        </template>
+      </Tabbed>
+    </CruResource>
+  </div>
 </template>
 <script>
 import CreateEditView from '@shell/mixins/create-edit-view';
