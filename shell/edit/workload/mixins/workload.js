@@ -291,6 +291,10 @@ export default {
       this.cleanUpClonedJobData();
     }
 
+    // Pandaria init Harbor
+    this.$store.commit('harbor/setHarborImages', []);
+    this.$store.commit('harbor/setHarborImageTags', []);
+
     return {
       secondaryResourceData:      this.secondaryResourceDataConfig(),
       namespacedConfigMaps:       [],
@@ -720,23 +724,6 @@ export default {
 
       this.value['type'] = neu;
       delete this.value.apiVersion;
-    },
-
-    'container.imageTag'(neu) {
-      const tag = this.container.imageTag;
-
-      if (tag) {
-        const image = this.container.image;
-        const harborRepo = this.harbor?.harborRepo || '';
-        let repo = image;
-
-        if (repo.startsWith(`${ harborRepo }/`)) {
-          repo = repo.replace(`${ harborRepo }/`, '');
-        }
-        const index = repo.indexOf(':');
-
-        this.container.image = index > -1 ? `${ image.substr(0, image.lastIndexOf(':')) }:${ tag }` : `${ image }:${ tag }`;
-      }
     },
 
     harborImageTagsChoices() {

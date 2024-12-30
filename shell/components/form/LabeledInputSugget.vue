@@ -219,7 +219,7 @@ export default {
         (opt) => (optionKey ? get(opt, optionKey) : getOptionLabel(opt))
       "
       :get-option-label="(opt) => getOptionLabel(opt)"
-      @input="handleDropdown"
+      @update:modelValue="handleDropdown"
     />
   </div>
 </template>
