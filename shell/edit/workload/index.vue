@@ -78,6 +78,24 @@ export default {
           icon:    null
         }
       }), {});
+    },
+
+    // Pandaria
+    harborTagChange(container) {
+      const tag = container.imageTag;
+
+      if (tag) {
+        const image = container.image;
+        const harborRepo = this.harbor?.harborRepo || '';
+        let repo = image;
+
+        if (repo.startsWith(`${ harborRepo }/`)) {
+          repo = repo.replace(`${ harborRepo }/`, '');
+        }
+        const index = repo.indexOf(':');
+
+        this.container.image = index > -1 ? `${ image.substr(0, image.lastIndexOf(':')) }:${ tag }` : `${ image }:${ tag }`;
+      }
     }
   }
 };
@@ -245,16 +263,17 @@ export default {
                   </div>
                 </div>
                 <div
-                  v-show="container.image && harborImageTagsChoices && harborImageTagsChoices.length > 0"
+                  v-show="harbor?.harborRepo && allContainers[i].image?.startsWith(`${ harbor?.harborRepo }/`) && harborImageTagsChoices && harborImageTagsChoices.length > 0"
                   class="row mb-20"
                 >
                   <div class="col span-6">
                     <LabeledSelect
-                      v-model:value="container.imageTag"
+                      v-model:value="allContainers[i].imageTag"
                       :label="t('workload.container.tags')"
                       :options="harborImageTagsChoices"
                       :searchable="true"
                       :mode="mode"
+                      @selecting="harborTagChange(allContainers[i])"
                     />
                   </div>
                 </div>
