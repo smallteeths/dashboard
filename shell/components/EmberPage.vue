@@ -115,7 +115,7 @@ export default {
       const tfa = this.twoFactorAuthConfig?.value;
       const etf = this.enalbeTwoFactorAuth;
 
-      return tfa === 'true' && etf === false ? '2em' : '0';
+      return tfa === 'true' && etf === false ? '2em' : '0px';
     }
   },
 
