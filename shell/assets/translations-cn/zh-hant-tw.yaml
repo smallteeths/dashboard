@@ -521,6 +521,11 @@ authConfig:
     UID: UID 字段
     adfs: 配置 AD FS 賬號
     api: '{vendor} API Host'
+    sloTitle: 登出邏輯
+    sloOptions:
+      onlyRancher: 僅退出 Rancher，而不退出 {name}
+      logoutAll: 退出 Rancher 和 {name}（包括所有與 {name} 註冊的其他應用程序）
+      choose: 允許用戶在額外的退出步驟中選擇上述選項之一
     cert:
       label: 證書
       placeholder: 粘貼證書，以-----BEGIN CERTIFICATE----- 開始。
@@ -8629,3 +8634,12 @@ hamiResourceReservation:
     value: 限制
   placeholder: 例如：1
   keyConflictTips: HAMi 資源 nvidia.com/gpu 限制/預留 與 NVIDIA GPU 限制/預留重名，兩者會被同步修改。
+
+promptSlo:
+  title: "退出"
+  text: "僅退出 Rancher，還是退出所有 {name} 應用程序。"
+  rancher:
+    active: 僅退出 Rancher
+  all:
+    active: 退出 {name}
+    waiting: 正在退出
