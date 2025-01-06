@@ -833,11 +833,11 @@ export default {
         this.value.thanos.query.enabledClusterStores = this.monitoringSettings.enabledClusters;
       }
 
-      if (!app?.spec?.values.global?.version) {
+      if (!app?.spec?.values?.global?.version) {
         this.value.global.version = get(app, 'spec.chart.metadata.version') || this.version.version;
       }
 
-      if (!app?.spec?.values.global?.clusterId) {
+      if (!app?.spec?.values?.global?.clusterId) {
         this.value.global.clusterId = this.currentCluster?.id || 'local';
       }
 
