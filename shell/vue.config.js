@@ -120,11 +120,11 @@ const getLoaders = (SHELL_ABS) => {
   }
 
   return [
-    // Ensure there is a fallback for browsers that don't support web workers
+    // no fallback for pre-2013 browsers https://caniuse.com/webworkers
     {
       test:    /web-worker.[a-z-]+.js/i,
       loader:  'worker-loader',
-      options: { inline: 'fallback' },
+      options: { inline: 'no-fallback' },
     },
     // Handler for csv files (e.g. ec2 instance data)
     {
@@ -512,7 +512,7 @@ module.exports = function(dir, _appConfig) {
       config.resolve.alias['@pkg'] = path.join(dir, 'pkg');
       config.resolve.alias['./node_modules'] = path.join(dir, 'node_modules');
       config.resolve.alias['@components'] = COMPONENTS_DIR;
-      config.resolve.alias['vue$'] = path.resolve(process.cwd(), 'node_modules', 'vue', 'dist', dev ? 'vue.js' : 'vue.min.js');
+      config.resolve.alias['vue$'] = path.resolve(process.cwd(), 'node_modules', 'vue', 'dist', 'vue.js');
       config.resolve.modules.push(__dirname);
       config.plugins.push(getVirtualModules(dir, includePkg));
       config.plugins.push(getAutoImport());
