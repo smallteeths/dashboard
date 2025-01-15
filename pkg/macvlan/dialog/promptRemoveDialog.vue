@@ -73,15 +73,23 @@ export default {
       ];
     },
 
+    isFlatNetworkSubnet() {
+      if (!Array.isArray(this.resources) || this.resources.length === 0) {
+        return false;
+      }
+
+      return this.resources[0]?.kind === 'FlatNetworkSubnet';
+    },
+
     getLabel() {
       return {
-        type: this.resources[0]?.kind === 'FlatNetworkSubnet' ? v2TypeLabel : v1TypeLabel,
-        ip:   this.resources[0]?.kind === 'FlatNetworkSubnet' ? v2IpLabel : v1IpLabel,
+        type: this.isFlatNetworkSubnet ? v2TypeLabel : v1TypeLabel,
+        ip:   this.isFlatNetworkSubnet ? v2IpLabel : v1IpLabel,
       };
     },
 
     getAction() {
-      return { action: this.resources[0]?.kind === 'FlatNetworkSubnet' ? v2Action : v1Action };
+      return { action: this.isFlatNetworkSubnet ? v2Action : v1Action };
     }
   },
   methods: {
@@ -91,7 +99,11 @@ export default {
 
       for ( const resource of resources ) {
         try {
-          promises.push(this.$store.dispatch('flatnetwork/removeFlatnetwork', { cluster: this.currentCluster.id, resource }));
+          if (this.isFlatNetworkSubnet) {
+            promises.push(this.$store.dispatch('flatnetwork/removeFlatnetwork', { cluster: this.currentCluster.id, resource }));
+          } else {
+            promises.push(this.$store.dispatch('macvlan/removeMacvlan', { cluster: this.currentCluster.id, resource }));
+          }
         } catch (e) {
           this.errors = exceptionToErrorsArray(e);
         }
@@ -119,10 +131,15 @@ export default {
       return `${ ip || '' }${ type ? ` (${ type })` : '' }`;
     },
     async getPods(name) {
+      let labelSelector = 'flatnetwork.pandaria.io/subnet';
+
+      if (!this.isFlatNetworkSubnet) {
+        labelSelector = 'macvlan.pandaria.cattle.io/subnet';
+      }
       let pods = await this.$store.dispatch(this.getAction.action, {
         cluster: this.currentCluster.id,
         query:   {
-          labelSelector: { 'flatnetwork.pandaria.io/subnet': name },
+          labelSelector: { [labelSelector]: name },
           limit:         -1,
         }
       });
