@@ -95,11 +95,19 @@ export default {
     let showIPvlanFlag = false;
     let modeOptions = defualtModeOptions;
 
-    if (this.mode === 'edit' && config.spec.ipvlanFlag) {
-      showIPvlanFlag = true;
-    }
-    if (this.mode === 'edit' && config.spec.flatMode === 'ipvlan') {
-      modeOptions = LevelModeOptions;
+    if (this.value?.spec) {
+      const { ipvlanFlag, flatMode, mode } = this.value.spec;
+
+      if (ipvlanFlag) {
+        showIPvlanFlag = true;
+      }
+
+      if (flatMode === 'ipvlan') {
+        modeOptions = LevelModeOptions;
+      }
+
+      config.spec.mode = mode ?? config.spec.mode;
+      config.spec.ipvlanFlag = ipvlanFlag ?? config.spec.ipvlanFlag;
     }
 
     return {
@@ -282,7 +290,7 @@ export default {
         if (value.some((r) => !!r.via && !(ipv4RegExp.test(r.via) || ipv6RegExp.test(r.via)) )) {
           return this.t('macvlan.route.routeViaFormatError');
         }
-        if (value.some((r) => !!r.src && !(ipv4RegExp.test(r.via) || ipv6RegExp.test(r.via)) && !this.ipCIDRContains(this.config.spec.cidr, r.src) )) {
+        if (value.some((r) => !!r.src && !(ipv4RegExp.test(r.src) || ipv6RegExp.test(r.src)) && !this.ipCIDRContains(this.config.spec.cidr, r.src) )) {
           return this.t('macvlan.route.routeSrcFormatError');
         }
         if (value.some((r) => !!r.priority &&
@@ -302,7 +310,7 @@ export default {
       handler(value) {
         if (value === 'macvlan') {
           this.modeOptions = defualtModeOptions;
-          this.config.spec.mode = this.value?.spec?.mode || 'bridge';
+          this.config.spec.mode = 'bridge';
           this.showIPvlanFlag = false;
           if (this.config.spec.ipvlanFlag) {
             delete this.config.spec.ipvlanFlag;
@@ -310,13 +318,12 @@ export default {
         } else {
           if (!this.showIPvlanFlag) {
             this.showIPvlanFlag = true;
-            this.config.spec.ipvlanFlag = this.value?.spec?.ipvlanFlag || 'bridge';
+            this.config.spec.ipvlanFlag = 'bridge';
           }
           this.modeOptions = LevelModeOptions;
-          this.config.spec.mode = this.value?.spec?.mode || 'l2';
+          this.config.spec.mode = 'l2';
         }
       },
-      immediate: true,
     }
   },
 
