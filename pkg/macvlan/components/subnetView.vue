@@ -53,6 +53,13 @@ export default {
       return this.config?.spec?.routeSettings?.addClusterCIDR ||
         this.config?.spec?.routeSettings?.addServiceCIDR ||
         this.config?.spec?.routeSettings?.addNodeCIDR;
+    },
+    showAdvanced() {
+      return this.routes.length > 0 ||
+        this.ranges.length > 0 ||
+        this.showPodRouteSettings ||
+        this.config?.spec?.routeSettings?.addPodIPToHost ||
+        this.config?.spec?.routeSettings?.flatNetworkDefaultGateway;
     }
   }
 };
@@ -112,7 +119,7 @@ export default {
         </div>
       </Tab>
       <Tab
-        v-if="routes.length > 0 || ranges.length > 0"
+        v-if="showAdvanced"
         name="advanced"
         :label="t('macvlan.tabs.advanced')"
         :weight="98"
