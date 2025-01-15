@@ -101,11 +101,19 @@ export default {
     let showIPvlanFlag = false;
     let modeOptions = defualtModeOptions;
 
-    if (this.mode === 'edit' && config.spec.ipvlanFlag) {
-      showIPvlanFlag = true;
-    }
-    if (this.mode === 'edit' && config.spec.flatMode === 'ipvlan') {
-      modeOptions = LevelModeOptions;
+    if (this.value?.spec) {
+      const { ipvlanFlag, flatMode, mode } = this.value.spec;
+
+      if (ipvlanFlag) {
+        showIPvlanFlag = true;
+      }
+
+      if (flatMode === 'ipvlan') {
+        modeOptions = LevelModeOptions;
+      }
+
+      config.spec.mode = mode ?? config.spec.mode;
+      config.spec.ipvlanFlag = ipvlanFlag ?? config.spec.ipvlanFlag;
     }
 
     return {
@@ -288,7 +296,7 @@ export default {
         if (value.some((r) => !!r.via && !(ipv4RegExp.test(r.via) || ipv6RegExp.test(r.via)) )) {
           return this.t('macvlan.route.routeViaFormatError');
         }
-        if (value.some((r) => !!r.src && !(ipv4RegExp.test(r.via) || ipv6RegExp.test(r.via)) && !this.ipCIDRContains(this.config.spec.cidr, r.src) )) {
+        if (value.some((r) => !!r.src && !(ipv4RegExp.test(r.src) || ipv6RegExp.test(r.src)) && !this.ipCIDRContains(this.config.spec.cidr, r.src) )) {
           return this.t('macvlan.route.routeSrcFormatError');
         }
         if (value.some((r) => !!r.priority &&
@@ -322,7 +330,6 @@ export default {
           this.config.spec.mode = 'l2';
         }
       },
-      immediate: true,
     }
   },
 
