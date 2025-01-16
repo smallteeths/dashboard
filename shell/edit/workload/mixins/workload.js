@@ -76,6 +76,7 @@ const GPU_KEY = 'nvidia.com/gpu';
 const GPU_SHARED_KEY = 'rancher.io/gpu-mem';
 const VGPU_KEY = 'virtaitech.com/gpu';
 const DUAL_NETWORK_CARD = '[{"name":"static-macvlan-cni-attach","interface":"eth1"}]';
+const DUAL_NETWORK_CARDV2 = '[{"name":"rancher-flat-network","interface":"eth1"}]';
 const MACVLAN_SERVICE = 'macvlan.panda.io/macvlanService';
 const MACVLAN_ANNOTATION_MAP = {
   network:  'k8s.v1.cni.cncf.io/networks',
@@ -1244,7 +1245,9 @@ export default {
               return;
             }
 
-            if (a === 'ip' || a === 'mac') {
+            if (a === 'network') {
+              form[propMap[`${ annotationsForm[a] === DUAL_NETWORK_CARDV2 ? a : `${ a }0` }`]] = annotationsForm[a];
+            } else if (a === 'ip' || a === 'mac') {
               const key = a === 'ip' ? 'ipV2' : 'macV2';
 
               if (!annotationsForm[a]) {
