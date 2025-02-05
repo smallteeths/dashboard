@@ -10,7 +10,7 @@ describe('computed: groupedSubTypes', () => {
 
   it.each(testCases)('should be filtered out aliyun&tencenttke&huaweicce', (id, value) => {
     const localThis = {
-      subTypes: [
+      filteredSubTypes: [
         { id },
       ],
       $store: {
