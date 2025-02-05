@@ -2067,7 +2067,7 @@ cluster:
       advanced: Configure advanced containerd mirroring and registry authentication options
     description: If enabled, Rancher will pull container images from this registry during cluster provisioning. By default, Rancher will also use this registry when installing Rancher's official Helm chart apps. If the cluster scoped registry is disabled, system images are pulled from the System Default Registry in the global settings.
     docsLinkK3s: For help configuring private registry mirrors, see the K3s <a href="https://docs.k3s.io/installation/private-registry" target="_blank">documentation.</a>
-    docsLinkRke2: For help configuring private registry mirrors, see the RKE2 <a href="https://docs.rke2.io/install/containerd_registry_configuration" target="_blank">documentation.</a>
+    docsLinkRke2: For help configuring private registry mirrors, see the RKE2 <a href="https://docs.rke2.io/install/private_registry" target="_blank">documentation.</a>
     label: Enable cluster scoped container registry for Rancher system container images
     header: Registry for Rancher System Container Images
   provider:
@@ -8707,7 +8707,6 @@ hamiResourceReservation:
     value: Limit To
   placeholder: e.g. 1
   keyConflictTips: The HAMi resource nvidia.com/gpu Limit/Reservation is duplicated with the NVIDIA GPU Limit/Reservation , and both will be modified synchronously.
-
 promptSlo:
   all:
     active: Log out of {name}

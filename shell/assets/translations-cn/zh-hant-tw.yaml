@@ -92,7 +92,7 @@ generic:
   deprecated: 已棄用
   placeholder: "例如：{text}"
   moreInfo: 更多信息
-  ok: OK
+  ok: 確定
   reload: 重新加載
   dashboard: 儀表板
   selectors:
@@ -446,7 +446,7 @@ authConfig:
           5: '在 OAuth 憑證框中，上傳下載的 JSON 文件。'
       3:
         title: '創建 Service Account 憑證'
-        introduction: '參照本<a href="{docsBase}/admin-settings/authentication/google/#3-creating-service-account-credentials" target="_blank" rel="noopener noreferrer nofollow">指南</a>：'
+        introduction: '參照本<a href="{docsBase}/how-to-guides/new-user-guides/authentication-permissions-and-global-configuration/authentication-config/configure-google-oauth#3-creating-service-account-credentials" target="_blank" rel="noopener noreferrer nofollow">指南</a>：'
         body:
           1: 創建一個 Service Account。
           2: 為這個 Service Account 生成密鑰。
@@ -1101,7 +1101,7 @@ cis:
   alertNeeded: |-
     必須在 CIS Chart values.yaml 中開啟告警。
     這要求<a tabindex="0" href="{link}"> {vendor} 的 Monitoring 與 Alerting 應用</a>已經安裝
-    ，而且接收器和路由<a target="_blank" rel='noopener noreferrer nofollow' href='{docsBase}/monitoring-alerting/configuration/#alertmanager-configuration/'>已配置告警發送</a>。
+    ，而且接收器和路由<a target="_blank" rel='noopener noreferrer nofollow' href='{docsBase}/how-to-guides/advanced-user-guides/monitoring-v2-configuration-guides/advanced-configuration/alertmanager'>已配置告警發送</a>。
   alertOnComplete: 掃描完成告警
   alertOnFailure: 掃描失敗告警
   benchmarkVersion: Benchmark 版本
@@ -1951,7 +1951,7 @@ cluster:
       advanced: 配置高級容器 Mirror 和倉庫驗證選項
     description: 如果啟用，Rancher 將在集群配置期間從該鏡像倉庫中拉取容器鏡像。默認情況下，Rancher 在安裝 Rancher 的官方 Helm Chart 應用程序時也會使用此鏡像倉庫。如果集群級別的鏡像倉庫被禁用，將從全局設置中的系統默認鏡像倉庫中拉取系統鏡像。
     docsLinkK3s: 如需配置私有鏡像倉庫 mirror 的幫助，請參閱 K3s <a href="https://docs.k3s.io/installation/private-registry" target="_blank">文檔</a>。
-    docsLinkRke2: 如需配置私有鏡像倉庫 mirror 的幫助，請參閱 RKE2 <a href="https://docs.rke2.io/install/containerd_registry_configuration/" target="_blank">文檔</a>。
+    docsLinkRke2: 如需配置私有鏡像倉庫 mirror 的幫助，請參閱 RKE2 <a href="https://docs.rke2.io/install/private_registry" target="_blank">文檔</a>。
     label: 為 Rancher 系統容器鏡像啟用集群級別的容器鏡像倉庫
   provider:
     ack: ACK
@@ -3615,7 +3615,7 @@ monitoring:
       keyFilePath:
         label: 密鑰文件路徑
         placeholder: 例如：./key-file.pfx
-      secretsBanner: 部署 Monitoring Chart 時，必須在<<pre class="inline-block m-0 p-0 vertical-middle">alertmanager.alertmanagerSpec.secrets</pre>中引用以下文件路徑。詳情請查看<a href="{docsBase}/monitoring-alerting/" target="_blank" rel="noopener noreferrer nofollow">官方文檔</a>。
+      secretsBanner: 部署 Monitoring Chart 時，必須在<<pre class="inline-block m-0 p-0 vertical-middle">alertmanager.alertmanagerSpec.secrets</pre>中引用以下文件路徑。詳情請查看<a href="{docsBase}/how-to-guides/advanced-user-guides/monitoring-alerting-guides" target="_blank" rel="noopener noreferrer nofollow">官方文檔</a>。
   projectMonitoring:
     detail:
       error: "無法獲取具有狀態的儀表板值： "
@@ -5192,7 +5192,7 @@ setup:
     dockerSuffix: ""
     helmPrefix: 'Helm 安裝，運行：'
     helmSuffix: ""
-  eula: 選中此框，即表示你接受<a href="https://rancher.com/eula" target="_blank" rel="noopener noreferrer nofollow">最終用戶許可協議及條款和條件</a>
+  eula: 選中此框，即表示你接受<a href="https://www.suse.com/licensing/eula/download/suse_end_user_license_agreement_june_2024.pdf" target="_blank" rel="noopener noreferrer nofollow">最終用戶許可協議及條款和條件</a>
   newPassword: 新密碼
   newUserSetPassword: 請設置強密碼。建議使用生成的隨機密碼。你也可以自行設置。
   serverUrl:
@@ -5200,7 +5200,7 @@ setup:
     skip: 跳過
     tip: 此 {vendor} 安裝應使用什麼 URL？集群中的所有節點都需要能訪問該 URL。
   setPassword: 請為默認用戶 <code>{username}</code>設置強密碼。建議使用生成的隨機密碼。你也可以自行設置。
-  telemetry: 允許收集<a href="{docsBase}/faq/telemetry/" target="_blank" rel="noopener noreferrer nofollow">匿名統計數據</a>，以幫我們改進 {name}。
+  telemetry: 允許收集<a href="{docsBase}/faq/telemetry" target="_blank" rel="noopener noreferrer nofollow">匿名統計數據</a>，以幫我們改進 {name}。
   useManual: 設置密碼
   useRandom: 使用隨機生成的密碼
   welcome: 歡迎使用 {vendor}！
@@ -8634,7 +8634,6 @@ hamiResourceReservation:
     value: 限制
   placeholder: 例如：1
   keyConflictTips: HAMi 資源 nvidia.com/gpu 限制/預留 與 NVIDIA GPU 限制/預留重名，兩者會被同步修改。
-
 promptSlo:
   title: "退出"
   text: "僅退出 Rancher，還是退出所有 {name} 應用程序。"
