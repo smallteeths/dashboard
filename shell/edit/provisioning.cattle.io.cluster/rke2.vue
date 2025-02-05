@@ -251,6 +251,7 @@ export default {
       busy:                  false,
       machinePoolValidation: {}, // map of validation states for each machine pool
       machinePoolErrors:     {},
+      addonConfigValidation: {}, // validation state of each addon config (boolean of whether codemirror's yaml lint passed)
       allNamespaces:         [],
       extensionTabs:         getApplicableExtensionEnhancements(this, ExtensionPoint.TAB, TabLocation.CLUSTER_CREATE_RKE2, this.$route, this),
       labelForAddon
@@ -800,7 +801,9 @@ export default {
       // and in all of the validation statuses for each machine pool
       Object.values(this.machinePoolValidation).forEach((v) => (base = base && v));
 
-      return validRequiredPools && base;
+      const hasAddonConfigErrors = Object.values(this.addonConfigValidation).filter((v) => v === false).length > 0;
+
+      return validRequiredPools && base && !hasAddonConfigErrors;
     },
     generateName() {
       return this.registryHost || '';
@@ -1572,6 +1575,8 @@ export default {
      * 2) We're ready to cache any values the user provides for each addon
      */
     async initAddons() {
+      this.addonConfigValidation = {};
+
       for (const chartName of this.addonNames) {
         const entry = this.chartVersions[chartName];
 
@@ -2140,7 +2145,11 @@ export default {
           }
         }
       }
-    }
+    },
+
+    addonConfigValidationChanged(configName, isValid) {
+      this.addonConfigValidation[configName] = isValid;
+    },
   }
 };
 </script>
@@ -2437,6 +2446,7 @@ export default {
           :label="labelForAddon($store, v.name, false)"
           :weight="9"
           :showHeader="false"
+          :error="addonConfigValidation[v.name]===false"
           @active="showAddons(v.name)"
         >
           <AddOnConfig
@@ -2451,6 +2461,7 @@ export default {
             @update:value="$emit('input', $event)"
             @update-questions="syncChartValues"
             @update-values="updateValues"
+            @validationChanged="e => addonConfigValidationChanged(v.name, e)"
           />
         </Tab>
 

@@ -25,6 +25,8 @@ import ProductNavPo from '@/cypress/e2e/po/side-bars/product-side-nav.po';
 import TabbedPo from '@/cypress/e2e/po/components/tabbed.po';
 import LoadingPo from '@/cypress/e2e/po/components/loading.po';
 import { EXTRA_LONG_TIMEOUT_OPT, MEDIUM_TIMEOUT_OPT } from '@/cypress/support/utils/timeouts';
+import KontainerDriversPagePo from '@/cypress/e2e/po/pages/cluster-manager/kontainer-drivers.po';
+import DeactivateDriverDialogPo from '@/cypress/e2e/po/prompts/deactivateDriverDialog.po';
 
 // At some point these will come from somewhere central, then we can make tools to remove resources from this or all runs
 const runTimestamp = +new Date();
@@ -86,6 +88,68 @@ describe('Cluster Manager', { testIsolation: 'off', tags: ['@manager', '@adminUs
       // check that the nav group isn't visible anymore
       sideNav.navToSideMenuGroupByLabelExistence('RKE1 Configuration', 'not.exist');
     });
+  });
+
+  it('deactivating a kontainer driver should hide its card from the cluster creation page', () => {
+    const driversPage = new KontainerDriversPagePo();
+    const clusterCreatePage = new ClusterManagerCreatePagePo();
+
+    // deactivate the AKS driver
+    KontainerDriversPagePo.navTo();
+    driversPage.waitForPage();
+    driversPage.list().actionMenu('Azure AKS').getMenuItem('Deactivate').click();
+    const deactivateDialog = new DeactivateDriverDialogPo();
+
+    deactivateDialog.deactivate();
+
+    // verify that the AKS card is not shown
+    clusterList.goTo();
+    clusterList.checkIsCurrentPage();
+    clusterList.createCluster();
+    clusterCreatePage.gridElementExistanceByName('Azure AKS', 'not.exist');
+
+    // re-enable the AKS kontainer driver
+    KontainerDriversPagePo.navTo();
+    driversPage.waitForPage();
+    driversPage.list().actionMenu('Azure AKS').getMenuItem('Activate').click();
+
+    // verify that the AKS card is back
+    clusterList.goTo();
+    clusterList.checkIsCurrentPage();
+    clusterList.createCluster();
+    clusterCreatePage.gridElementExistanceByName('Azure AKS', 'exist');
+  });
+
+  it('deleting a kontainer driver should hide its card from the cluster creation page', () => {
+    // intercept get request for kontainer drivers
+    cy.intercept('GET', '/v1/management.cattle.io.kontainerdriver*', (req) => {
+      req.reply( {
+        type:         'collection',
+        resourceType: 'management.cattle.io.kontainerdriver',
+        count:        0,
+        data:         []
+      });
+    } ).as('kontainerDrivers');
+
+    const clusterCreatePage = new ClusterManagerCreatePagePo();
+
+    // verify that the AKS card is not shown
+    clusterList.goTo();
+    clusterList.checkIsCurrentPage();
+    clusterList.createCluster();
+
+    clusterCreatePage.waitForPage();
+    cy.wait('@kontainerDrivers');
+
+    clusterCreatePage.rkeToggleExistance('exist');
+    clusterCreatePage.gridElementExistanceByName('Azure AKS', 'not.exist');
+
+    clusterCreatePage.gridElementGroupTitles().should('have.length', 2);
+
+    clusterCreatePage.gridElementGroupTitles().eq(0).should('not.contain.text', 'Create a cluster');
+
+    clusterCreatePage.gridElementGroupTitles().eq(0).should('contain.text', 'Provision new nodes');
+    clusterCreatePage.gridElementGroupTitles().eq(1).should('contain.text', 'Use existing nodes');
   });
 
   describe('All providers', () => {
@@ -245,6 +309,31 @@ describe('Cluster Manager', { testIsolation: 'off', tags: ['@manager', '@adminUs
 
         editCreatedClusterPage.waitForPage('mode=edit', 'basic');
         editCreatedClusterPage.nameNsDescription().description().self().should('have.value', rke2CustomName);
+      });
+
+      it('will disbable saving if an addon config has invalid data', () => {
+        clusterList.goTo();
+
+        clusterList.checkIsCurrentPage();
+        clusterList.createCluster();
+
+        createRKE2ClusterPage.waitForPage();
+
+        createRKE2ClusterPage.rkeToggle().set('RKE2/K3s');
+
+        createRKE2ClusterPage.selectCustom(0);
+
+        createRKE2ClusterPage.nameNsDescription().name().set('abc');
+
+        createRKE2ClusterPage.clusterConfigurationTabs().clickTabWithSelector('#rke2-calico');
+
+        createRKE2ClusterPage.resourceDetail().createEditView().saveButtonPo().expectToBeEnabled();
+
+        createRKE2ClusterPage.calicoAddonConfig().yamlEditor().input().set('badvalue: -');
+        createRKE2ClusterPage.resourceDetail().createEditView().saveButtonPo().expectToBeDisabled();
+
+        createRKE2ClusterPage.calicoAddonConfig().yamlEditor().input().set('goodvalue: yay');
+        createRKE2ClusterPage.resourceDetail().createEditView().saveButtonPo().expectToBeEnabled();
       });
 
       it('can view cluster YAML editor', () => {
