@@ -312,7 +312,7 @@ export default class ProvCluster extends SteveModel {
 
     // imported KEv2
     // we can't rely on this.provisioner to determine imported-ness for these clusters, as it will return 'aks' 'eks' 'gke' for both provisioned and imported clusters
-    const kontainerConfigs = ['aksConfig', 'eksConfig', 'gkeConfig'];
+    const kontainerConfigs = ['aksConfig', 'eksConfig', 'gkeConfig', 'ackConfig', 'tkeConfig', 'cceConfig'];
 
     const isImportedKontainer = kontainerConfigs.filter((key) => {
       return this.mgmt?.spec?.[key]?.imported === true;
