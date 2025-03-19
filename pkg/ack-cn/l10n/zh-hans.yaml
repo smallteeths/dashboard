@@ -1,0 +1,30 @@
+ackCn:
+  label: ACK VUE
+  resourceGroup:
+    label: 资源组
+    all: 账号全部资源
+  region:
+    label: 区域
+  clusters:
+    managed: 托管Kubernetes
+    label: 集群类型
+  version:
+    label: Kubernetes版本
+    warningAliyun: “{version}”，此版本阿里云不在支持，如果继续部署将会导致集群部署失败，请更换其他版本。
+    warningRacher: “{version}”，此版本不在 Rancher 支持矩阵范围内，请更换其他版本。可参考
+    warningRancherTip: Rancher 支持矩阵。
+    warningEdited: 检测到 Kubernetes 版本被修改，其他配置项将暂时不支持修改。历史版本为 {version}。
+  clusterSpec:
+    pro: Pro 版
+    standard: 基础版本
+    label: 集群规格
+  vpcId:
+    label: 专有网络
+    prompt: 选择专有网络...
+    required: 必须选择专有网络
+    default: 默认专有网络
+  vswitchId:
+    label: 交换机
+    prompt: 选择交换机...
+    required: 必须选择交换机
+    default: 默认交换机

@@ -333,6 +333,7 @@ export default {
 
       const templates = this.templateOptions;
       const vueKontainerTypes = getters['plugins/clusterDrivers'];
+
       // Pandaria Remove cnrancher ack/tke/cce kontainer driver
       const deprecatedKontainerDrivers = getters['plugins/deprecatedKontainerDrivers'];
       const machineTypes = this.nodeDrivers.filter((x) => x.spec.active && x.state === 'active');
@@ -356,6 +357,14 @@ export default {
 
       if ( isImport ) {
         addType(this.$plugin, 'import', 'custom', false);
+        this.extensions.forEach((ext) => {
+          if (ext.id !== 'ack') {
+            return;
+          }
+          // Allow extensions to overwrite provisioners with the same id
+          console.log(ext.component);
+          addExtensionType(ext, getters);
+        });
       } else {
         templates.forEach((chart) => {
           out.push({
@@ -693,9 +702,9 @@ export default {
         />
       </div>
     </template>
-
+    <!-- ack cce tke ui支持导入 -->
     <Import
-      v-if="isImport"
+      v-if="isImport && !['ack', 'cce', 'tke'].includes(subType)"
       v-model:value="localValue"
       :mode="mode"
       :provider="subType"
@@ -710,6 +719,7 @@ export default {
         :initial-value="initialValue"
         :live-value="liveValue"
         :mode="mode"
+        :isImport="isImport"
         :provider="subType"
         :provider-config="selectedSubType.providerConfig"
         @update:value="$emit('input', $event)"

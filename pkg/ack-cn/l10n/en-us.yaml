@@ -1,0 +1,31 @@
+ackCn:
+  label: ACK VUE
+  resourceGroup:
+    label: Resource Group
+    all: Account's all Resources
+  region:
+    label: Region
+  clusters:
+    managed: Managed Kubernetes
+    label: Cluster Type
+  version:
+    label: Kubernetes Version
+    warningAliyun: “{version}”, Ali Cloud is not supported in this version. If you continue to deploy it, cluster deployment will fail, please replace it with another version.
+    warningRacher: “{version}”, This version is not supported by Rancher,  please replace it with another version for reference
+    warningRancherTip: Rancher supported versions.
+    warningEdited: It is detected that the Kubernetes version has been modified, and other configuration items will not support modification temporarily. Historical version is {vsersion}。
+  clusterSpec:
+    pro: Pro 
+    standard: STANDARD
+    label: Cluster specifications
+  vpcId:
+    label: VPC
+    prompt: Choose VPC...
+    required: VPC is required
+    default: Default VPC
+  vswitchId:
+    label: VSwitch
+    prompt: Choose VSwitch...
+    required: VSwitch is required
+    default: Default VSwitch
+  
