@@ -2,7 +2,7 @@ import { ref, computed } from 'vue';
 import { getAllValues } from '@shell/utils/object';
 import formRulesGenerator from '@shell/utils/validators/formRules/index';
 
-export function useFormValidation(value, store) {
+export function useFormValidation(value, store, fvExtraRules = { value: {} }) {
   const fvFormRuleSets = ref([]);
   const fvReportedValidationPaths = ref([]);
 
@@ -55,10 +55,6 @@ export function useFormValidation(value, store) {
 
     return messages;
   }
-
-  const fvExtraRules = computed(() => {
-    return {};
-  });
 
   const fvRulesets = computed(() => {
     const nullValidator = () => undefined;
@@ -116,7 +112,6 @@ export function useFormValidation(value, store) {
     fvGetAndReportPathRules,
     fvGetPathValues,
     fvGetPathErrors,
-    fvExtraRules,
     fvRulesets,
     fvUnreportedValidationErrors,
     fvValidationErrors,

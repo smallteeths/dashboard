@@ -82,6 +82,7 @@ export default {
   },
 
   async fetch() {
+    console.log(this.value);
     const hash = {
       // These aren't explicitly used, but need to be listening for change events
       mgmtClusters: this.$store.dispatch('management/findAll', { type: MANAGEMENT.CLUSTER }),
@@ -193,6 +194,8 @@ export default {
     const chart = this.$route.query[CHART] || null;
     const isImport = this.realMode === _IMPORT;
 
+    console.log(subType);
+
     return {
       nodeDrivers:      [],
       operatorDrivers:  [],
@@ -255,6 +258,7 @@ export default {
           return '';
         }
         if ( this.subType ) {
+          console.log(this.subType);
           // if driver type has a custom form component, don't load an ember page
           if (this.selectedSubType.component) {
             return '';

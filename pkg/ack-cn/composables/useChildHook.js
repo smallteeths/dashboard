@@ -36,7 +36,6 @@ export function useChildHook() {
     const out = {};
 
     for (const x of sortedHooks) {
-      console.debug('Applying hook', x.name); // eslint-disable-line no-console
       out[x.name] = await x.fn.apply(x.fnContext || null, args);
     }
 

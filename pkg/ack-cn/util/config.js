@@ -2,7 +2,6 @@ const K8S_1_28_15 = '1.28.15-aliyun.1';
 const K8S_1_30_7 = '1.30.7-aliyun.1';
 const K8S_1_31_1 = '1.31.1-aliyun.1';
 const DEFAULT_KUBERNETES_VERSION = K8S_1_31_1;
-const KUBERNETES = 'Kubernetes';
 const MANAGED = 'ManagedKubernetes';
 const ACK_CLUSTER_SPEC_STANDARD = 'ack.standard';
 const ACK_CLUSTER_SPEC_PRO = 'ack.pro.small';
@@ -19,7 +18,7 @@ const DEFAULTACKCONFIG = {
   serviceCidr:          '172.21.0.0/20',
   nodeCidrMask:         '26',
   snatEntry:            true,
-  endpointPublicAccess: false,
+  endpointPublicAccess: true,
   osType:               'Linux',
   resourceGroupId:      '',
   podVswitchIds:        [],
@@ -31,13 +30,36 @@ const DEFAULTACKCONFIG = {
   ]
 };
 
+const DEFAULTIMPORTACKCONFIG = {
+  imported:                 true,
+  aliyun_credential_secret: '',
+  cluster_id:               null,
+  cluster_name:             null,
+  regionId:                 'cn-beijing',
+};
+
+const DISKS = [
+  {
+    label: 'ackCn.disk.ssd',
+    value: 'cloud_ssd'
+  },
+  {
+    label: 'ackCn.disk.efficiency',
+    value: 'cloud_efficiency'
+  },
+  {
+    label: 'ackCn.disk.essd',
+    value: 'cloud_essd'
+  },
+];
+
 const DEFAULT_NODE_GROUP_CONFIG = {
   name:                 'default-nodepool',
   platform:             'AliyunLinux3',
-  system_disk_category: 'cloud_efficiency',
+  system_disk_category: '',
   system_disk_size:     120,
-  size:                 120,
-  category:             'cloud_efficiency',
+  size:                 0,
+  category:             '',
   instances_num:        3,
   key_pair:             null,
   instance_types:       '',
@@ -96,11 +118,96 @@ const ACK_CNI_OPTIONS = [
   }
 ];
 
+const MODES = [
+  {
+    value: 'iptables',
+    label: 'iptables',
+  },
+  {
+    value: 'ipvs',
+    label: 'IPVS',
+  }
+];
+
+const NODECIDRMASKS = [
+  {
+    label: 16,
+    value: '28'
+  },
+  {
+    label: 32,
+    value: '27'
+  },
+  {
+    label: 64,
+    value: '26'
+  },
+  {
+    label: 128,
+    value: '25'
+  },
+  {
+    label: 256,
+    value: '24'
+  }
+];
+
+const PLATFORMTYPES = [
+  {
+    label:  'Alibaba Cloud Linux',
+    value:  'AliyunLinux',
+    osType: 'Linux'
+  },
+  {
+    label:  'Alibaba Cloud Linux 3',
+    value:  'AliyunLinux3',
+    osType: 'Linux'
+  },
+  {
+    label:  'Alibaba Cloud Linux 3 ARM',
+    value:  'AliyunLinux3Arm64',
+    osType: 'Linux'
+  },
+  {
+    label:  'Alibaba Cloud Linux UEFI 2 Security',
+    value:  'AliyunLinuxUEFI',
+    osType: 'Linux'
+  },
+  {
+    label:  'ContainerOS',
+    value:  'ContainerOS',
+    osType: 'ContainerOS'
+  },
+  {
+    label:  'CentOS',
+    value:  'CentOS',
+    osType: 'Linux'
+  },
+  {
+    label:   'Windows Server 2019',
+    value:   'Windows',
+    osType:  'Windows',
+    managed: true
+  },
+  {
+    label:   'Windows Server Core, version 1909',
+    value:   'WindowsCore',
+    osType:  'Windows',
+    managed: true
+  }
+];
+
 export default {
   DEFAULTACKCONFIG,
   DEFAULT_NODE_GROUP_CONFIG,
   CLUSTER_TYPES,
   KUBERNETESVERSIONS,
+  DEFAULT_KUBERNETES_VERSION,
   ACK_CLUSTER_SPEC_OPTIONS,
-  ACK_CNI_OPTIONS
+  ACK_CNI_OPTIONS,
+  MODES,
+  NODECIDRMASKS,
+  DISKS,
+  PLATFORMTYPES,
+  DEFAULTIMPORTACKCONFIG
 };

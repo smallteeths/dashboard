@@ -9,7 +9,9 @@ import { handleConflict } from '@shell/plugins/dashboard-store/normalize';
 import { useChildHook, BEFORE_SAVE_HOOKS, AFTER_SAVE_HOOKS } from './useChildHook';
 
 export function useCreateEditView(props, context) {
-  const { emit, normanCluster, ackConfig } = context;
+  const {
+    emit, normanCluster, ackConfig, nodePools, state
+  } = context;
 
   // 数据状态
   const errors = ref([]);
@@ -147,14 +149,56 @@ export function useCreateEditView(props, context) {
       } else {
         errors.value = exceptionToErrorsArray(err);
       }
-      console.error('CreateEditView failed to save: ', err); // eslint-disable-line no-console
       buttonDone && buttonDone(false);
     }
   }
 
-  async function actuallySave(url) {
-    console.log(normanCluster.value);
-    console.log(ackConfig.value);
+  async function actuallySave() {
+    if (ackConfig.value.imported && ackConfig.value.cluster_id) {
+      normanCluster.value.ackConfig = ackConfig.value;
+      await normanCluster.value.save();
+
+      return await normanCluster.value.waitForCondition('InitialRolesPopulated');
+    }
+    ackConfig.value.node_pool_list = nodePools.value;
+    normanCluster.value.ackConfig = formatNodePoolList(ackConfig);
+    await normanCluster.value.save();
+
+    return await normanCluster.value.waitForCondition('InitialRolesPopulated');
+  }
+
+  function formatNodePoolList(ackConfig) {
+    const nodePools = ackConfig.value.node_pool_list;
+
+    ackConfig.value.node_pool_list = nodePools.map((item) => {
+      const node = {
+        ...item,
+        nodepool_id:          item.nodepool_id,
+        name:                 item.name,
+        instance_types:       [item.instance_types],
+        instances_num:        item.instances_num,
+        key_pair:             item.key_pair || this.config.keyPair,
+        platform:             item.platform,
+        system_disk_category: item.system_disk_category,
+        system_disk_size:     item.system_disk_size,
+        runtime:              item.runtime,
+        runtime_version:      item.runtime_version,
+        data_disk:            (!item.size || !item.category) ? [] : [{
+          size:     item.size,
+          category: item.category,
+        }],
+        v_switch_ids: state.value.vswitchIds
+      };
+
+      // 删除不必要的属性
+      delete node.isNew;
+      delete node.size;
+      delete node.category;
+
+      return node;
+    });
+
+    return ackConfig.value;
   }
 
   function setErrors(newErrors) {

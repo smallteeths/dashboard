@@ -58,7 +58,7 @@ function getAcceptLanguage() {
   return 'zh-CN';
 }
 
-async function fetchPage(url, query, store) {
+export async function fetchPage(url, query, store) {
   const req = {
     url:    `${ url }?${ getQueryParamsString(query) }`,
     method: 'GET',
@@ -94,4 +94,49 @@ function getQueryParamsString(params, deep = false) {
 
     return `${ key }${ deep ? encodeURIComponent('=') : '=' }${ encodeURIComponent(params[key]) }`;
   }).join(deep ? encodeURIComponent('&') : '&');
+}
+
+export async function fetchAvailableResources({
+  resource = '',
+  plural,
+  cloudCredentialId,
+  store,
+  externalParams = {},
+} = {}) {
+  const resourceName = normalizeResourceName(resource || plural);
+  const acceptLanguage = getAcceptLanguage();
+  const url = `${ window.location.origin }/meta/ack/${ resourceName }`;
+
+  try {
+    const res = await fetchPage(url, {
+      cloudCredentialId,
+      acceptLanguage,
+      ...externalParams,
+    }, store);
+
+    return getAvailableResources(res);
+  } catch (err) {
+    throw err?.detail || err;
+  }
+}
+
+function getAvailableResources(res) {
+  const results = [];
+  const zones = res['AvailableZones'];
+
+  if (!zones) {
+    return results;
+  }
+
+  zones.AvailableZone.forEach((zone) => {
+    zone['AvailableResources']['AvailableResource'].forEach((resource) => {
+      resource['SupportedResources']['SupportedResource'].forEach((support) => {
+        if ( support.Status === 'Available' && results.indexOf(support.Value) === -1 ) {
+          results.push(support.Value);
+        }
+      });
+    });
+  });
+
+  return results;
 }
