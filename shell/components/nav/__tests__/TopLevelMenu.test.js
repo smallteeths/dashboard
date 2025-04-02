@@ -1,69 +1,113 @@
 import TopLevelMenu from '@shell/components/nav/TopLevelMenu.vue';
-import { EXPLORER_HARVESTER_CLUSTER } from '@shell/store/features';
-
-describe('component: TopLevelMenu', () => {
-  it('should enalble explorerHarvesterCluster feature', () => {
-    const getFeature = jest.fn(() => true);
-    const localThis = { features: getFeature };
-
-    expect(TopLevelMenu.computed.explorerHarvesterClusterEnabled.call(localThis)).toBe(true);
-    expect(getFeature).toHaveBeenCalledWith(EXPLORER_HARVESTER_CLUSTER);
-  });
-  it('should disable explorerHarvesterCluster feature', () => {
-    const getFeature = jest.fn(() => false);
-    const localThis = { features: getFeature };
-
-    expect(TopLevelMenu.computed.explorerHarvesterClusterEnabled.call(localThis)).toBe(false);
-    expect(getFeature).toHaveBeenCalledWith(EXPLORER_HARVESTER_CLUSTER);
-  });
-
-  it('should contain harvester cluster', () => {
-    const getFeature = jest.fn(() => true);
-    const harvester = {
-      isHarvester: true,
-      id:          'harvester',
-      mgmt:        { id: 'harvester' }
-    };
-    const localThis = {
-      explorerHarvesterClusterEnabled: true,
-      features:                        getFeature,
-      $store:                          {
-        getters: {
-          'management/all':  jest.fn(() => [harvester]),
-          'management/byId': jest.fn(() => ({
-            value:
-            'false'
-          })),
-          'features/get': jest.fn(() => true)
+import { mount } from '@vue/test-utils';
+import { CAPI, COUNT, MANAGEMENT } from '@shell/config/types';
+import { nextTick } from 'vue';
+import { PINNED_CLUSTERS } from '@shell/store/prefs';
+/**
+ * `clusters` doubles up as both mgmt and prov clusters (don't shoot the messenger)
+ */
+const generateStore = (clusters, settings = [{}]) => {
+  return {
+    getters: {
+      'management/byId':              jest.fn(),
+      'management/schemaFor':         () => ({}),
+      'management/paginationEnabled': () => false,
+      'i18n/t':                       jest.fn(),
+      'features/get':                 jest.fn(),
+      'prefs/theme':                  jest.fn(),
+      defaultClusterId:               jest.fn(),
+      clusterId:                      jest.fn(),
+      'type-map/activeProducts':      [],
+      'management/all':               (type) => {
+        switch (type) {
+        case CAPI.RANCHER_CLUSTER:
+          return clusters;
+        case MANAGEMENT.CLUSTER:
+          return clusters;
+        case COUNT:
+          return [{ counts: { [MANAGEMENT.CLUSTER]: { summary: { count: clusters.length } } } }];
+        case MANAGEMENT.SETTING:
+          return settings;
         }
       },
-      hasProvCluster: true
-    };
+      'prefs/get': (pref) => {
+        if (pref === PINNED_CLUSTERS) {
+          return [];
+        }
+      },
+    },
+    dispatch: (action, args) => {
+      if (action === 'management/findAll' && args.type === CAPI.RANCHER_CLUSTER) {
+        return clusters;
+      }
+    }
+  };
+};
+const waitForIt = async() => {
+  jest.advanceTimersByTime(1000); // Wait for debounced call to fetch updated cluster list
+  await nextTick(); // Wait for changes to cluster list to trigger changes
+};
 
-    expect(TopLevelMenu.computed.clusters.call(localThis).map((c) => ({
-      id: c.id, isHarvester: c.isHarvester, mgmt: { id: c.id }
-    }))).toContainEqual(harvester);
+describe('component: TopLevelMenu', () => {
+  it('should contain harvester cluster', async() => {
+    const clusters = [{
+      isHarvester: true,
+      name:        'whatever',
+      id:          'harvester',
+      mgmt:        { id: 'harvester' }
+    }];
+    const store = generateStore(clusters);
+    const wrapper = mount(TopLevelMenu, {
+      global: {
+        mocks: {
+          $route: {},
+          $store: {
+            ...store,
+            gettters: {
+              ...store.getters,
+              'features/get': jest.fn(() => true),
+            }
+          },
+        },
+
+        stubs: ['BrandImage', 'router-link'],
+      }
+    });
+
+    await waitForIt();
+    const cluster = wrapper.find('[data-testid="top-level-menu-cluster-0"]');
+
+    expect(cluster.exists()).toBe(true);
   });
 
-  it('should not contain harvester cluster', () => {
-    const getFeature = jest.fn(() => false);
-    const harvester = {
+  it('should not contain harvester cluster', async() => {
+    const clusters = [{
       isHarvester: true,
+      name:        'whatever',
       id:          'harvester',
       status:      { provider: 'harvester' }
-    };
-    const localThis = {
-      explorerHarvesterClusterEnabled: false,
-      features:                        getFeature,
-      $store:                          {
-        getters: {
-          'management/all':  jest.fn(() => [harvester]),
-          'management/byId': jest.fn(),
-          'features/get':    jest.fn(() => false)
-        }
-      }
-    };
+    }];
+    const store = generateStore(clusters);
+    const wrapper = mount(TopLevelMenu, {
+      global: {
+        mocks: {
+          $route: {},
+          $store: {
+            ...store,
+            gettters: {
+              ...store.getters,
+              'features/get': jest.fn(() => false),
+            }
+          },
+        },
 
-    expect(TopLevelMenu.computed.clusters.call(localThis)).toHaveLength(0);
+        stubs: ['BrandImage', 'router-link'],
+      }
+    });
+
+    await waitForIt();
+    const cluster = wrapper.find('[data-testid="top-level-menu-cluster-0"]');
+
+    expect(cluster.exists()).toBe(false);
   });
 });

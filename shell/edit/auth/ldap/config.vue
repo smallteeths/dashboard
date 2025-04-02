@@ -306,10 +306,10 @@ export default {
         />
         <LabeledInput
           v-if="!isSamlProvider"
-          v-model:value="model.groupUniqueIdAttribute"
+          v-model:value="model.userUniqueIdAttribute"
           :mode="mode"
-          :label="t('authConfig.ldap.groupUniqueIdAttribute.label')"
-          :tooltip="t('authConfig.ldap.groupUniqueIdAttribute.tip')"
+          :label="t('authConfig.ldap.userUniqueIdAttribute.label')"
+          :tooltip="t('authConfig.ldap.userUniqueIdAttribute.tip')"
         />
       </div>
       <div class="schema-column">

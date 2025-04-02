@@ -187,14 +187,14 @@ export default {
       class="grid"
     >
       <component
-        :is="asLink ? 'a' : 'div'"
+        :is="asLink && !r.isIframe ? 'a' : 'div'"
         v-for="(r, idx) in pageData"
         :key="get(r, keyField)"
         :role="asLink ? 'link' : null"
         :aria-disabled="asLink && get(r, disabledField) === true ? true : null"
         :aria-label="get(r, nameField)"
         :tabindex="get(r, disabledField) === true ? -1 : 0"
-        :href="asLink ? get(r, linkField) : null"
+        :href="asLink ? get(r, !r.isIframe ? linkField : iframeSrcField) : null"
         :target="get(r, targetField)"
         :rel="rel"
         class="item"

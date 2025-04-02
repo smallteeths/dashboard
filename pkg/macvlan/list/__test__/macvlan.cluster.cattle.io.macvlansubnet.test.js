@@ -16,7 +16,8 @@ describe('component: macvlan', () => {
               'prefs/get':                  () => resource,
               'resource-fetch/refreshFlag': () => jest.fn(),
               'i18n/t':                     jest.fn(),
-              currentProduct:               'test'
+              currentProduct:               'test',
+              currentStore:                 jest.fn()
             }
           },
           $fetchState: {

@@ -66,7 +66,7 @@ describe('fx: fetchLinks', () => {
 
     const testCases = [
       ['cnforums', 'https://forums.rancher.cn/'],
-      ['forums', 'https://forums.rancher.com/'],
+      ['forums', 'https://forums.suse.com/'],
       ['mirror', 'https://mirror.rancher.cn/']
     ];
 

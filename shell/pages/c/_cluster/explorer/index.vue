@@ -839,7 +839,6 @@ export default {
           <AlertTable v-if="selectedTab === 'cluster-alerts'" />
         </Tab>
         <Tab
-          v-if="showCertificates"
           name="cluster-certs"
           :label="t('clusterIndexPage.sections.certs.label')"
           :weight="1"

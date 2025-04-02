@@ -2,6 +2,7 @@ import { mount } from '@vue/test-utils';
 import SelectIconGrid from '@shell/components/SelectIconGrid.vue';
 
 const row = {
+  name:      'test',
   isIframe:  true,
   iframeSrc: 'https://www.baidu.com',
   linkField: 'https://www.baidu.com',
@@ -23,7 +24,7 @@ describe('component: SelectIconGrid.vue', () => {
 
     });
 
-    const grid = wrapper.find('[data-testid="select-icon-grid-0"]');
+    const grid = wrapper.find('[data-testid="select-icon-grid-test"]');
 
     expect(grid.exists()).toBe(true);
 

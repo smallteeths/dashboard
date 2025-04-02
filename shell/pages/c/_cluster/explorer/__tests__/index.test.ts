@@ -33,7 +33,7 @@ describe('page: cluster dashboard', () => {
             'i18n/exists': jest.fn(),
             'i18n/t':      (label: string) => label === 'generic.provisioning' ? '—' : jest.fn()(),
 
-            'management/all': jest.fn(() => []),
+            'management/all': jest.fn(() => [])
           }
         }
       },
@@ -105,9 +105,6 @@ describe('page: cluster dashboard', () => {
       const options = clone(mountOptions);
 
       options.global.mocks.$store.getters.currentCluster.isLocal = isLocal;
-
-      // let's pass the canList now
-      options.global.mocks.$store.getters['cluster/canList'] = (type: string) => !!(type === WORKLOAD_TYPES.DEPLOYMENT) || !!(type === WORKLOAD_TYPES.STATEFUL_SET);
 
       const resources = agentResources.reduce((acc, r) => {
         const agent = {

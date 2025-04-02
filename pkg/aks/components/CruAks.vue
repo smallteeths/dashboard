@@ -343,11 +343,6 @@ export default defineComponent({
 
         errors.push(this.t('aks.errors.regions', { e: parsedError || err }));
       }
-
-      // once regions are loaded and a default selected, fetch resources that are region-scoped
-      this.getAksVersions();
-      this.getVmSizes();
-      this.getVirtualNetworks();
     },
 
     setClusterName(name: string): void {
