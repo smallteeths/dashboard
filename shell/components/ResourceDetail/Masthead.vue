@@ -101,6 +101,10 @@ export default {
   },
 
   computed: {
+    dev() {
+      return this.$store.getters['prefs/dev'];
+    },
+
     schema() {
       const inStore = this.storeOverride || this.$store.getters['currentStore'](this.resource);
 
@@ -383,6 +387,10 @@ export default {
     hideNamespaceLocation() {
       return this.$store.getters['currentProduct'].hideNamespaceLocation || this.value.namespaceLocation === null;
     },
+
+    resourceExternalLink() {
+      return this.value.resourceExternalLink;
+    },
   },
 
   methods: {
@@ -435,11 +443,14 @@ export default {
             <router-link
               v-if="location"
               :to="location"
+              role="link"
+              class="masthead-resource-list-link"
+              :aria-label="parent.displayName"
             >
               {{ parent.displayName }}:
             </router-link>
             <span v-else>{{ parent.displayName }}:</span>
-            <span v-if="value.detailPageHeaderActionOverride && value.detailPageHeaderActionOverride(realMode)">{{ value.detailPageHeaderActionOverride(realMode) }}</span>
+            <span v-if="value?.detailPageHeaderActionOverride && value?.detailPageHeaderActionOverride(realMode)">{{ value?.detailPageHeaderActionOverride(realMode) }}</span>
             <t
               v-else
               class="masthead-resource-title"
@@ -462,6 +473,16 @@ export default {
                 class="icon icon-sm icon-istio"
               />
             </span>
+            <a
+              v-if="dev && !!resourceExternalLink"
+              v-clean-tooltip="t(resourceExternalLink.tipsKey || 'generic.resourceExternalLinkTips')"
+              class="resource-external"
+              rel="nofollow noopener noreferrer"
+              target="_blank"
+              :href="resourceExternalLink.url"
+            >
+              <i class="icon icon-external-link" />
+            </a>
           </h1>
         </div>
         <div
@@ -483,10 +504,32 @@ export default {
               {{ namespace }}
             </span>
           </span>
-          <span v-if="parent.showAge">{{ t("resourceDetail.masthead.age") }}: <LiveDate
-            class="live-date"
-            :value="value.creationTimestamp"
-          /></span>
+          <span v-if="parent.showAge">
+            {{ t("resourceDetail.masthead.age") }}:
+            <LiveDate
+              class="live-date"
+              :value="value.creationTimestamp"
+            />
+          </span>
+          <span
+            v-if="value.showCreatedBy"
+            data-testid="masthead-subheader-createdBy"
+          >
+            {{ t("resourceDetail.masthead.createdBy") }}:
+            <router-link
+              v-if="value.createdBy.location"
+              :to="value.createdBy.location"
+              data-testid="masthead-subheader-createdBy-link"
+            >
+              {{ value.createdBy.displayName }}
+            </router-link>
+            <span
+              v-else
+              data-testid="masthead-subheader-createdBy_plain-text"
+            >
+              {{ value.createdBy.displayName }}
+            </span>
+          </span>
           <span v-if="value.showPodRestarts">{{ t("resourceDetail.masthead.restartCount") }}:<span class="live-data"> {{ value.restartCount }}</span></span>
         </div>
       </div>
@@ -521,7 +564,7 @@ export default {
             <button
               v-if="isView"
               ref="actions"
-              data-testid="mathead-action-menu"
+              data-testid="masthead-action-menu"
               aria-haspopup="true"
               type="button"
               class="btn role-multi-action actions"
@@ -567,10 +610,7 @@ export default {
 
   HEADER {
     margin: 0;
-
-    .title {
-      overflow: hidden;
-    }
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .primaryheader {
@@ -579,17 +619,20 @@ export default {
     align-items: center;
 
     h1 {
-      margin: 0;
-      overflow: hidden;
+      margin: 0 0 0 -5px;
+      overflow-x: hidden;
       display: flex;
       flex-direction: row;
       align-items: center;
 
       .masthead-resource-title {
-        padding: 0 8px;
         text-overflow: ellipsis;
         overflow: hidden;
         white-space: nowrap;
+      }
+
+      .masthead-resource-list-link {
+        margin: 5px;
       }
     }
   }
@@ -613,6 +656,7 @@ export default {
   }
 
   .masthead-state {
+    margin-left: 8px;
     font-size: initial;
   }
 
@@ -642,4 +686,7 @@ export default {
     justify-content: flex-end;
   }
 
+  .resource-external {
+    font-size: 18px;
+  }
 </style>

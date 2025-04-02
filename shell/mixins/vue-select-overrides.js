@@ -1,5 +1,8 @@
 
 export default {
+  data() {
+    return { overridesMixinPreventDoubleTriggerKeysOpen: false };
+  },
   methods: {
     mappedKeys(map, vm) {
       // Defaults found at - https://github.com/sagalbot/vue-select/blob/master/src/components/Select.vue#L947
@@ -13,35 +16,33 @@ export default {
         }
 
         e.preventDefault();
-
-        const optsLen = vm.filteredOptions.length;
-        const typeAheadPointer = vm.typeAheadPointer;
-
-        if (e.shiftKey) {
-          if (typeAheadPointer === 0) {
-            return vm.onEscape();
-          }
-
-          return vm.typeAheadUp();
-        }
-        if (typeAheadPointer + 1 === optsLen) {
-          return vm.onEscape();
-        }
-
-        return vm.typeAheadDown();
       });
 
+      // escape
       (out[27] = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
         vm.open = false;
         vm.search = '';
+
+        this.$refs.select.focus();
 
         return false;
       });
 
+      // enter
       (out[13] = (e, opt) => {
         if (!vm.open) {
           vm.open = true;
 
+          return;
+        }
+
+        // if the index of the option is -1
+        // it means are pressing enter on an invalid option
+        // we should exit
+        if (vm.typeAheadPointer === -1) {
           return;
         }
 
@@ -60,6 +61,9 @@ export default {
           vm.$emit('option:selected', option);
 
           if (vm.closeOnSelect) {
+            // this ties in to the Select component implementation
+            // so that the enter key handler doesn't open the dropdown again
+            this.overridesMixinPreventDoubleTriggerKeysOpen = true;
             vm.open = false;
             vm.typeAheadPointer = -1;
           }

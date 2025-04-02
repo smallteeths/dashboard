@@ -84,6 +84,7 @@ export default {
   async fetch() {
     await this.value.waitForProvisioner();
 
+    // Support for the 'provisioner' extension
     const extClass = this.$plugin.getDynamic('provisioner', this.value.machineProvider);
 
     if (extClass) {
@@ -94,9 +95,19 @@ export default {
         $plugin:  this.$store.app.$plugin,
         $t:       this.t
       });
+
       this.extDetailTabs = {
         ...this.extDetailTabs,
         ...this.extProvider.detailTabs
+      };
+      this.extCustomParams = { provider: this.value.machineProvider };
+    }
+
+    // Support for a model extension
+    if (this.value.customProvisionerHelper) {
+      this.extDetailTabs = {
+        ...this.extDetailTabs,
+        ...this.value.customProvisionerHelper.detailTabs
       };
       this.extCustomParams = { provider: this.value.machineProvider };
     }
@@ -379,7 +390,7 @@ export default {
     },
 
     showNodes() {
-      return !this.showMachines && this.haveNodes && !!this.nodes.length;
+      return !this.showMachines && this.haveNodes && !!this.nodes.length && this.extDetailTabs.machines;
     },
 
     showSnapshots() {
@@ -734,6 +745,12 @@ export default {
       color="error"
       :label="$fetchState.error"
     />
+
+    <Banner
+      v-if="value.isRke1"
+      color="warning"
+      label-key="cluster.banner.rke1DeprecationMessage"
+    />
     <ResourceTabs
       :value="value"
       :default-tab="defaultTab"
@@ -755,11 +772,11 @@ export default {
           :schema="machineSchema"
           :headers="machineHeaders"
           default-sort-by="name"
-          :groupable="false"
           :group-by="value.isCustom ? null : 'poolId'"
           group-ref="pool"
           :group-sort="['pool.nameDisplay']"
           :sort-generation-fn="machineSortGenerationFn"
+          :hide-grouping-controls="true"
         >
           <template #main-row:isFake="{fullColspan}">
             <tr class="main-row">
@@ -842,11 +859,11 @@ export default {
           :schema="mgmtNodeSchema"
           :headers="mgmtNodeSchemaHeaders"
           :rows="nodes"
-          :groupable="false"
           :group-by="value.isCustom ? null : 'spec.nodePoolName'"
           group-ref="pool"
           :group-sort="['pool.nameDisplay']"
           :sort-generation-fn="nodeSortGenerationFn"
+          :hide-grouping-controls="true"
         >
           <template #main-row:isFake="{fullColspan}">
             <tr class="main-row">

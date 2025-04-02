@@ -56,7 +56,7 @@ export default {
     };
   },
   computed: {
-    ...mapGetters(['currentCluster']),
+    ...mapGetters(['currentCluster', 'isStandaloneHarvester']),
 
     canViewMembers() {
       return canViewProjectMembershipEditor(this.$store);
@@ -136,7 +136,7 @@ export default {
             });
           }
 
-          // // we allow users with permissions for projectroletemplatebindings to be able to manage members on projects
+          // We allow users with permissions for projectroletemplatebindings to be able to manage members on projects
           if (this.membershipUpdate.save) {
             const norman = await this.value.norman;
 
@@ -226,7 +226,7 @@ export default {
         <ResourceQuota
           :value="value"
           :mode="canEditTabElements"
-          :types="isHarvester ? HARVESTER_TYPES : RANCHER_TYPES"
+          :types="isStandaloneHarvester ? HARVESTER_TYPES : RANCHER_TYPES"
           :storage-classes="storageClasses"
           @remove="removeQuota"
         />

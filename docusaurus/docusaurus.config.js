@@ -1,6 +1,7 @@
 // @ts-check
-const lightCodeTheme = require('prism-react-renderer/themes/github');
-const darkCodeTheme = require('prism-react-renderer/themes/dracula');
+const { themes } = require('prism-react-renderer');
+const lightCodeTheme = themes.github;
+const darkCodeTheme = themes.dracula;
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -42,6 +43,8 @@ const config = {
   ],
 
   plugins: [
+    [require.resolve('docusaurus-lunr-search'), { excludeRoutes: ['internal/*', 'internal/**/*', '/internal/*', '/internal/**/*', 'blog/*', 'blog/**/*', '/blog/*', '/blog/**/*'] }
+    ],
     [
       '@docusaurus/plugin-content-docs',
       {
@@ -54,7 +57,7 @@ const config = {
         lastVersion:        'current',
         versions:           {
           current: {
-            label: '3.x.x',
+            label: 'v3',
             path:  'next',
           },
         },
@@ -68,6 +71,23 @@ const config = {
         routeBasePath:      'internal',
         sidebarPath:        require.resolve('./internalSidebar.js'),
         showLastUpdateTime: true
+      },
+    ],
+    [
+      '@docusaurus/plugin-client-redirects',
+      {
+        createRedirects(existingPath) {
+          // This function is invoked once per existing doc page, and we
+          // must return the “old” routes that we want to map to that doc’s path
+          if (existingPath.startsWith('/extensions/next')) {
+            // Generate the "old" route we want to redirect from
+            const oldPath = existingPath.replace('/extensions/next', '/extensions');
+
+            return [oldPath];
+          }
+
+          return undefined; // Return a falsy value: no redirect created
+        },
       },
     ],
   ],

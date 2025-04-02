@@ -82,7 +82,7 @@ export const EFFECT = {
 export const STORAGE_CLASS_PROVISIONER = {
   name:     'storage_class_provisioner',
   labelKey: 'tableHeaders.storage_class_provisioner',
-  value:    'provisionerDisplay',
+  value:    'provisionerListDisplay',
   sort:     ['provisioner'],
 };
 
@@ -94,6 +94,9 @@ export const STORAGE_CLASS_DEFAULT = {
   formatter: 'Checked',
 };
 
+/**
+ * spec.csi.driver OR spec[known driver type]
+ */
 export const PERSISTENT_VOLUME_SOURCE = {
   name:     'persistent_volume_source',
   labelKey: 'tableHeaders.persistentVolumeSource',
@@ -101,13 +104,16 @@ export const PERSISTENT_VOLUME_SOURCE = {
   sort:     ['provisioner'],
 };
 
+/**
+ * Link to the PVC associated with PV
+ */
 export const PERSISTENT_VOLUME_CLAIM = {
   name:          'persistent-volume-claim',
   labelKey:      'tableHeaders.persistentVolumeClaim',
-  sort:          ['nameSort'],
+  sort:          ['claimName'],
   value:         'claimName',
   formatter:     'LinkDetail',
-  formatterOpts: { reference: 'claim.detailLocation' },
+  formatterOpts: { reference: 'claim.detailLocation' }
 };
 
 export const OUTPUT = {
@@ -267,6 +273,21 @@ export const DESCRIPTION = {
   width:    300,
 };
 
+export const NS_SNAPSHOT_QUOTA = {
+  name:          'NamespaceSnapshotQuota',
+  labelKey:      'harvester.tableHeaders.totalSnapshotQuota',
+  value:         'snapshotSizeQuota',
+  sort:          'snapshotSizeQuota',
+  align:         'center',
+  formatter:     'Si',
+  formatterOpts: {
+    opts: {
+      increment: 1024, addSuffix: true, suffix: 'i',
+    },
+    needParseSi: false
+  },
+};
+
 export const DURATION = {
   name:      'duration',
   labelKey:  'tableHeaders.duration',
@@ -313,15 +334,6 @@ export const POD_RESTARTS = {
   // This column is expensive to compute, so don't make it searchable
   search:       false,
   liveUpdates:  true
-};
-
-export const ENDPOINTS = {
-  name:      'endpoint',
-  labelKey:  'tableHeaders.endpoints',
-  value:     'status.endpoints',
-  formatter: 'Endpoints',
-  width:     60,
-  align:     'center',
 };
 
 export const SCALE = {
@@ -513,6 +525,12 @@ export const LAST_SEEN_TIME = {
   sort:     'lastTimestamp:desc',
   tooltip:  'tableHeaders.lastSeenTooltip'
 };
+
+export const EVENT_LAST_SEEN_TIME = {
+  ...LAST_SEEN_TIME,
+  defaultSort: true,
+};
+
 export const LAST_HEARTBEAT_TIME = {
   name:      'lastHeartbeatTime',
   labelKey:  'tableHeaders.lastSeen',
@@ -652,8 +670,8 @@ export const TARGET_PORT = {
   formatter: 'ServiceTargets',
   labelKey:  'tableHeaders.targetPort',
   name:      'targetPort',
-  sort:      `$['spec']['targetPort']`,
-  value:     `$['spec']['targetPort']`,
+  sort:      false,
+  value:     false,
 };
 
 export const SELECTOR = {
@@ -958,13 +976,24 @@ export const EXPIRES = {
   formatter: 'LiveExpiryDate'
 };
 
+export const LAST_USED = {
+  name:          'lastUsed',
+  value:         'lastUsedAt',
+  labelKey:      'tableHeaders.lastUsed',
+  align:         'left',
+  sort:          ['lastUsedAt'],
+  width:         200,
+  formatter:     'LiveExpiryDate',
+  formatterOpts: { missingKey: 'generic.unknown' },
+};
+
 export const RESTART = {
   name:      'restart',
   labelKey:  'tableHeaders.restart',
   value:     'restartRequired',
   sort:      ['restartRequired', 'nameSort'],
   formatter: 'Checked',
-  width:     75,
+  width:     125,
   align:     'center'
 };
 

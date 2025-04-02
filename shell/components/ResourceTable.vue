@@ -143,7 +143,6 @@ export default {
       type:    Function,
       default: null
     },
-
     ignoreFilter: {
       type:    Boolean,
       default: false
@@ -168,7 +167,7 @@ export default {
       default: false
     },
     /**
-     * Manaul force the update of live and delayed cells. Change this number to kick off the update
+     * Manual force the update of live and delayed cells. Change this number to kick off the update
      */
     forceUpdateLiveAndDelayed: {
       type:    Number,
@@ -183,21 +182,17 @@ export default {
     externalPaginationResult: {
       type:    Object,
       default: null
+    },
+
+    rowsPerPage: {
+      type:    Number,
+      default: null, // Default comes from the user preference
+    },
+
+    hideGroupingControls: {
+      type:    Boolean,
+      default: false
     }
-  },
-
-  mounted() {
-    /**
-     * v-shortkey prevents the event's propagation:
-     * https://github.com/fgr-araujo/vue-shortkey/blob/55d802ea305cadcc2ea970b55a3b8b86c7b44c05/src/index.js#L156-L157
-     *
-     * 'Enter' key press is handled via event listener in order to allow the event propagation
-     */
-    window.addEventListener('keyup', this.handleEnterKeyPress);
-  },
-
-  beforeUnmount() {
-    window.removeEventListener('keyup', this.handleEnterKeyPress);
   },
 
   data() {
@@ -425,12 +420,17 @@ export default {
     },
 
     computedGroupBy() {
+      // If we're not showing grouping options we shouldn't have a group by property
+      if (!this.showGrouping) {
+        return null;
+      }
+
       if ( this.groupBy ) {
         // This probably comes from the type-map config for the resource (see ResourceList)
         return this.groupBy;
       }
 
-      if ( this.group === 'namespace' && this.showGrouping ) {
+      if ( this.group === 'namespace' ) {
         // This switches to group rows by a key which is the label for the group (??)
         return 'groupByLabel';
       }
@@ -457,13 +457,16 @@ export default {
           tooltipKey: 'resourceTable.groupBy.none',
           icon:       'icon-list-flat',
           value:      'none',
-        },
-        {
+        }
+      ];
+
+      if (!this.options?.hiddenNamespaceGroupButton) {
+        standard.push( {
           tooltipKey: this.groupTooltip,
           icon:       'icon-folder',
           value:      'namespace',
-        },
-      ];
+        });
+      }
 
       // SUPPLEMENT (instead of REPLACE) defaults with listGroups (given listGroupsWillOverride is false)
       if (!!this.options?.listGroups?.length) {
@@ -571,6 +574,7 @@ export default {
     :paging="true"
     :paging-params="parsedPagingParams"
     :paging-label="pagingLabel"
+    :rows-per-page="rowsPerPage"
     :row-actions="rowActions"
     :table-actions="_showBulkActions"
     :overflow-x="overflowX"
@@ -589,9 +593,10 @@ export default {
     :mandatory-sort="_mandatorySort"
     @clickedActionButton="handleActionButtonClick"
     @group-value-change="group = $event"
+    @enter="handleEnterKeyPress"
   >
     <template
-      v-if="showGrouping"
+      v-if="!hideGroupingControls && showGrouping"
       #header-middle
     >
       <slot name="more-header-middle" />

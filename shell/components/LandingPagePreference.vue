@@ -94,7 +94,7 @@ export default {
       if (neu) {
         this.afterLoginRoute = neu;
       } else {
-        this.afterLoginRoute = this.routeFromDropdown?.value;
+        this.afterLoginRoute = this.routeFromDropdown?.value || this.routeDropdownOptions[0]?.value;
       }
     },
   }
@@ -113,17 +113,19 @@ export default {
       :options="routeRadioOptions"
       @update:value="updateLoginRoute"
     >
-      <template #2="{option, listeners}">
+      <template #2="{option}">
         <div class="custom-page">
           <RadioButton
             :label="option.label"
             :val="false"
             :value="afterLoginRoute=== 'home' || afterLoginRoute === 'last-visited'"
-            @update:value="afterLoginRoute = false"
-            v-on="listeners"
+            :v-bind="$attrs"
+            :prevent-focus-on-radio-groups="true"
+            @update:value="updateLoginRoute(null)"
           />
           <Select
             v-model:value="routeFromDropdown"
+            :aria-label="t('landing.landingPrefs.ariaLabelTakeMeToCluster')"
             :searchable="true"
             :disabled="afterLoginRoute === 'home' || afterLoginRoute === 'last-visited'"
             :clearable="false"

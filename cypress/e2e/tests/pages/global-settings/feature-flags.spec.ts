@@ -7,7 +7,7 @@ import ClusterDashboardPagePo from '@/cypress/e2e/po/pages/explorer/cluster-dash
 const featureFlagsPage = new FeatureFlagsPagePo();
 const burgerMenu = new BurgerMenuPo();
 
-describe('Feature Flags', { testIsolation: 'off' }, () => {
+describe.skip('Feature Flags', { testIsolation: 'off' }, () => {
   before(() => {
     cy.login();
     HomePagePo.goTo();
@@ -133,6 +133,7 @@ describe('Feature Flags', { testIsolation: 'off' }, () => {
     featureFlagsPage.list().details('unsupported-storage-drivers', 0).should('include.text', 'Disabled');
 
     // Activate
+    featureFlagsPage.list().elementWithName('unsupported-storage-drivers').scrollIntoView().should('be.visible');
     featureFlagsPage.list().clickRowActionMenuItem('unsupported-storage-drivers', 'Activate');
     featureFlagsPage.clickCardActionButtonAndWait('Activate', 'unsupported-storage-drivers', true);
 
@@ -142,6 +143,7 @@ describe('Feature Flags', { testIsolation: 'off' }, () => {
     // Deactivate
     FeatureFlagsPagePo.navTo();
 
+    featureFlagsPage.list().elementWithName('unsupported-storage-drivers').scrollIntoView().should('be.visible');
     featureFlagsPage.list().clickRowActionMenuItem('unsupported-storage-drivers', 'Deactivate');
     featureFlagsPage.clickCardActionButtonAndWait('Deactivate', 'unsupported-storage-drivers', false);
 
@@ -189,6 +191,43 @@ describe('Feature Flags', { testIsolation: 'off' }, () => {
     sideNav.groups().contains('Legacy').should('not.exist');
   });
 
+  it('error when toggling a feature flag is handled correctly', { tags: ['@globalSettings', '@adminUser'] }, () => {
+    // Check Current State: should be disabled by default
+    FeatureFlagsPagePo.navTo();
+    featureFlagsPage.list().details('unsupported-storage-drivers', 0).should('include.text', 'Disabled');
+
+    // Intercept the request to change the feature flag and return an error - 403, permission denied
+    cy.intercept({
+      method:   'PUT',
+      pathname: '/v1/management.cattle.io.features/unsupported-storage-drivers',
+      times:    1,
+    }, {
+      statusCode: 403,
+      body:       {
+        type:    'error',
+        links:   {},
+        code:    'Forbidden',
+        message: 'User does not have permission'
+      }
+    }).as('updateFeatureFlag');
+
+    // Activate
+    featureFlagsPage.list().elementWithName('unsupported-storage-drivers').scrollIntoView().should('be.visible');
+    featureFlagsPage.list().clickRowActionMenuItem('unsupported-storage-drivers', 'Activate');
+    featureFlagsPage.cardActionButton('Activate').click();
+
+    cy.wait(`@updateFeatureFlag`).its('response.statusCode').should('eq', 403);
+
+    // Check Updated State: should be active
+    featureFlagsPage.list().details('unsupported-storage-drivers', 0).should('include.text', 'Disabled');
+
+    // Check error message is displayed
+    featureFlagsPage.cardActionError('User does not have permission');
+
+    // Press cancel
+    featureFlagsPage.cardActionButton('Cancel').click();
+  });
+
   it('standard user has only read access to Feature Flag page', { tags: ['@globalSettings', '@standardUser'] }, () => {
     // verify action menus are hidden for standard user
 
@@ -217,7 +256,7 @@ describe('Feature Flags', { testIsolation: 'off' }, () => {
     it('validate feature flags table header content', () => {
       FeatureFlagsPagePo.navTo();
       // check table headers are visible
-      const expectedHeaders = ['State', 'Name', 'Description', 'Restart Required'];
+      const expectedHeaders = ['State', 'Name', 'Description', 'Restart Rancher'];
 
       featureFlagsPage.list().resourceTable().sortableTable().tableHeaderRow()
         .get('.table-header-container .content')

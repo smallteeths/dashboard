@@ -41,21 +41,6 @@ describe('Users', { tags: ['@usersAndAuths', '@adminUser'] }, () => {
     userCreate.saveAndWaitForRequests('POST', '/v3/globalrolebindings');
   });
 
-  it('can create Restricted Admin', () => {
-    const restrictedAdminUsername = `${ runPrefix }-restrictedAdmin-user`;
-    const restrictedAdminPassword = 'restrictedAdmin-password';
-
-    usersPo.goTo();
-    usersPo.list().create();
-
-    userCreate.waitForPage();
-    userCreate.username().set(restrictedAdminUsername);
-    userCreate.newPass().set(restrictedAdminPassword);
-    userCreate.confirmNewPass().set(restrictedAdminPassword);
-    userCreate.selectCheckbox('Restricted Administrator').set();
-    userCreate.saveAndWaitForRequests('POST', '/v3/globalrolebindings');
-  });
-
   it('can create User-Base', () => {
     const userBasePassword = 'userBase-password';
 
@@ -122,11 +107,10 @@ describe('Users', { tags: ['@usersAndAuths', '@adminUser'] }, () => {
     const mgmtUserEditPo = new MgmtUserEditPo();
 
     mgmtUserEditPo.globalRoleBindings().globalOptions().then((list) => {
-      expect(list.length).to.eq(4);
+      expect(list.length).to.eq(3);
       expect(list[0]).to.eq('Administrator');
-      expect(list[1]).to.eq('Restricted Administrator');
-      expect(list[2]).to.eq('Standard User');
-      expect(list[3]).to.eq('User-Base');
+      expect(list[1]).to.eq('Standard User');
+      expect(list[2]).to.eq('User-Base');
     });
   });
 
@@ -140,13 +124,23 @@ describe('Users', { tags: ['@usersAndAuths', '@adminUser'] }, () => {
 
   describe('Action Menu', () => {
     it('can Deactivate and Activate user', () => {
-      // Deactivate user and check state is Inactive
       usersPo.goTo();
-      usersPo.list().clickRowActionMenuItem(standardUsername, 'Disable');
+
+      let menu = usersPo.list().actionMenu(standardUsername);
+
+      // Deactivate user and check state is Inactive
+      menu.checkVisible();
+      menu.getMenuItem('Disable').click();
+      menu.checkNotExists();
+
       usersPo.list().details(standardUsername, 1).find('i').should('have.class', 'icon-user-xmark');
 
       // Activate user and check state is Active
-      usersPo.list().clickRowActionMenuItem(standardUsername, 'Enable');
+      menu = usersPo.list().actionMenu(standardUsername);
+      menu.checkVisible();
+      menu.getMenuItem('Enable').click();
+      menu.checkNotExists();
+
       usersPo.list().details(standardUsername, 1).find('i').should('have.class', 'icon-user-check');
     });
 

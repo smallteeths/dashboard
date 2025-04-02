@@ -19,10 +19,11 @@ import { NAME as EXPLORER } from '@shell/config/product/explorer';
 import { TYPE_MODES } from '@shell/store/type-map';
 import { NAME as NAVLINKS } from '@shell/config/product/navlinks';
 import Group from '@shell/components/nav/Group';
+import LocaleSelector from '@shell/components/LocaleSelector';
 
 export default {
   name:       'SideNav',
-  components: { Group },
+  components: { Group, LocaleSelector },
   data() {
     return {
       groups:        [],
@@ -124,8 +125,8 @@ export default {
 
   computed: {
     ...mapState(['managementReady', 'clusterReady']),
-    ...mapGetters(['productId', 'clusterId', 'currentProduct', 'rootProduct', 'isSingleProduct', 'namespaceMode', 'isExplorer', 'isVirtualCluster']),
-    ...mapGetters({ locale: 'i18n/selectedLocaleLabel', availableLocales: 'i18n/availableLocales' }),
+    ...mapGetters(['isStandaloneHarvester', 'productId', 'clusterId', 'currentProduct', 'rootProduct', 'isSingleProduct', 'namespaceMode', 'isExplorer', 'isVirtualCluster']),
+    ...mapGetters({ locale: 'i18n/selectedLocaleLabel', hasMultipleLocales: 'i18n/hasMultipleLocales' }),
     ...mapGetters('type-map', ['activeProducts']),
     ...mapGetters({ isAdmin: 'auth/isAdmin', me: 'auth/me' }),
 
@@ -385,10 +386,6 @@ export default {
       });
     },
 
-    switchLocale(locale) {
-      this.$store.dispatch('i18n/switchTo', locale);
-    },
-
     syncNav() {
       const refs = this.$refs.groups;
 
@@ -452,6 +449,8 @@ export default {
       <router-link
         :to="supportLink"
         class="pull-right"
+        role="link"
+        :aria-label="t('nav.support', {hasSupport: true})"
       >
         {{ t('nav.support', {hasSupport: true}) }}
       </router-link>
@@ -464,36 +463,11 @@ export default {
       </span>
 
       <!-- locale selector -->
-      <span v-if="isSingleProduct">
-        <v-dropdown
-          popperClass="localeSelector"
-          placement="top"
-          :triggers="['click']"
-        >
-          <a
-            data-testid="locale-selector"
-            class="locale-chooser"
-          >
-            {{ locale }}
-          </a>
-
-          <template #popper>
-            <ul
-              class="list-unstyled dropdown"
-              style="margin: -1px;"
-            >
-              <li
-                v-for="(label, name) in availableLocales"
-                :key="name"
-                class="hand"
-                @click="switchLocale(name)"
-              >
-                {{ label }}
-              </li>
-            </ul>
-          </template>
-        </v-dropdown>
-      </span>
+      <LocaleSelector
+        v-if="isSingleProduct && hasMultipleLocales && !isStandaloneHarvester"
+        mode="login"
+        :show-icon="false"
+      />
     </div>
     <!-- SideNav footer alternative -->
     <div
@@ -503,6 +477,8 @@ export default {
       <router-link
         v-if="singleProductAbout"
         :to="singleProductAbout"
+        role="link"
+        :aria-label="t('nav.ariaLabel.productAboutPage')"
       >
         {{ displayVersion }}
       </router-link>

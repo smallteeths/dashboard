@@ -1,6 +1,6 @@
 <script>
 import { mapGetters } from 'vuex';
-import { defineAsyncComponent } from 'vue';
+import { defineAsyncComponent, useTemplateRef, onMounted, onBeforeUnmount } from 'vue';
 import day from 'dayjs';
 import isEmpty from 'lodash/isEmpty';
 import { dasherize, ucFirst } from '@shell/utils/string';
@@ -23,6 +23,7 @@ import LabeledSelect from '@shell/components/form/LabeledSelect';
 import { getParent } from '@shell/utils/dom';
 import { FORMATTERS } from '@shell/components/SortableTable/sortable-config';
 import ButtonMultiAction from '@shell/components/ButtonMultiAction.vue';
+import ActionMenu from '@shell/components/ActionMenuShell.vue';
 
 // Uncomment for table performance debugging
 // import tableDebug from './debug';
@@ -42,7 +43,14 @@ import ButtonMultiAction from '@shell/components/ButtonMultiAction.vue';
 export default {
   name: 'SortableTable',
 
-  emits: ['clickedActionButton', 'pagination-changed', 'group-value-change', 'selection', 'rowClick'],
+  emits: [
+    'clickedActionButton',
+    'pagination-changed',
+    'group-value-change',
+    'selection',
+    'rowClick',
+    'enter',
+  ],
 
   components: {
     THead,
@@ -51,6 +59,7 @@ export default {
     ActionDropdown,
     LabeledSelect,
     ButtonMultiAction,
+    ActionMenu,
   },
   mixins: [
     filtering,
@@ -361,7 +370,13 @@ export default {
     externalPaginationResult: {
       type:    Object,
       default: null
+    },
+
+    manualRefreshButtonSize: {
+      type:    String,
+      default: ''
     }
+
   },
 
   data() {
@@ -374,8 +389,10 @@ export default {
       eventualSearchQuery = this.$route.query?.q;
     }
 
+    const isLoading = this.loading || false;
+
     return {
-      refreshButtonPhase:         ASYNC_BUTTON_STATES.WAITING,
+      refreshButtonPhase:         isLoading ? ASYNC_BUTTON_STATES.WAITING : ASYNC_BUTTON_STATES.ACTION,
       expanded:                   {},
       searchQuery,
       eventualSearchQuery,
@@ -386,7 +403,7 @@ export default {
       /**
        * The is the bool the DOM uses to show loading state. it's proxied from `loading` to avoid blipping the indicator (see usages)
        */
-      isLoading:                  false,
+      isLoading
     };
   },
 
@@ -498,7 +515,7 @@ export default {
           if (neu) {
             this._altLoadingDelayTimer = setTimeout(() => {
               this.isLoading = true;
-            }, 200); // this should be higher than the targetted quick response
+            }, 200); // this should be higher than the targeted quick response
           } else {
             clearTimeout(this._altLoadingDelayTimer);
             this.isLoading = false;
@@ -509,6 +526,23 @@ export default {
       },
       immediate: true
     },
+  },
+  setup(_props, { emit }) {
+    const table = useTemplateRef('table');
+
+    const handleEnterKey = (event) => {
+      if (event.key === 'Enter' && !event.target?.classList?.contains('checkbox-custom')) {
+        emit('enter', event);
+      }
+    };
+
+    onMounted(() => {
+      table.value.addEventListener('keyup', handleEnterKey);
+    });
+
+    onBeforeUnmount(() => {
+      table.value.removeEventListener('keyup', handleEnterKey);
+    });
   },
 
   created() {
@@ -529,9 +563,6 @@ export default {
 
     manualRefreshLoadingFinished() {
       const res = !!(!this.isLoading && this._didinit && this.rows?.length && !this.isManualRefreshLoading);
-
-      // Always ensure the Refresh button phase aligns with loading state (regardless of if manualRefreshLoadingFinished has changed or not)
-      this.refreshButtonPhase = !res || this.loading ? ASYNC_BUTTON_STATES.WAITING : ASYNC_BUTTON_STATES.ACTION;
 
       return res;
     },
@@ -569,11 +600,13 @@ export default {
     },
 
     showHeaderRow() {
+      // All of these are used to show content in the header
       return this.search ||
         this.tableActions ||
-        this.$slots['header-left']?.() ||
-        this.$slots['header-middle']?.() ||
-        this.$slots['header-right']?.();
+        this.$slots['header-left'] ||
+        this.$slots['header-middle'] ||
+        this.$slots['header-right'] ||
+        this.isTooManyItemsToAutoUpdate;
     },
 
     columns() {
@@ -1049,6 +1082,7 @@ export default {
                 :disabled="!act.enabled"
                 :data-testid="componentTestid + '-' + act.action"
                 @click="applyTableAction(act, null, $event)"
+                @keydown.enter.stop
                 @mouseover="setBulkActionOfInterest(act)"
                 @mouseleave="setBulkActionOfInterest(null)"
               >
@@ -1140,8 +1174,8 @@ export default {
           <slot name="header-right" />
           <AsyncButton
             v-if="isTooManyItemsToAutoUpdate"
-            class="manual-refresh"
             mode="manual-refresh"
+            :size="manualRefreshButtonSize"
             :current-phase="refreshButtonPhase"
             @click="debouncedRefreshTableData"
           />
@@ -1206,6 +1240,7 @@ export default {
             v-model="eventualSearchQuery"
             type="search"
             class="input-sm search-box"
+            :aria-label="t('sortableTable.searchLabel')"
             :placeholder="t('sortableTable.search')"
           >
           <slot name="header-button" />
@@ -1213,9 +1248,11 @@ export default {
       </div>
     </div>
     <table
+      ref="table"
       class="sortable-table"
       :class="classObject"
       width="100%"
+      role="table"
     >
       <THead
         v-if="showHeaders"
@@ -1290,6 +1327,7 @@ export default {
         v-for="(groupedRows) in displayRows"
         v-else
         :key="groupedRows.key"
+        tabindex="-1"
         :class="{ group: groupBy }"
       >
         <slot
@@ -1341,11 +1379,13 @@ export default {
                   class="row-check"
                   align="middle"
                 >
-                  {{ row.mainRowKey }}<Checkbox
+                  {{ row.mainRowKey }}
+                  <Checkbox
                     class="selection-checkbox"
                     :data-node-id="row.key"
                     :data-testid="componentTestid + '-' + i + '-checkbox'"
                     :value="selectedRows.includes(row.row)"
+                    :alternate-label="t('sortableTable.genericRowCheckbox', { item: row && row.row ? row.row.id : '' })"
                   />
                 </td>
                 <td
@@ -1431,20 +1471,16 @@ export default {
                 </template>
                 <td
                   v-if="rowActions"
-                  align="middle"
                 >
                   <slot
                     name="row-actions"
                     :row="row.row"
+                    :index="i"
                   >
-                    <ButtonMultiAction
-                      :id="`actionButton+${i}+${(row.row && row.row.name) ? row.row.name : ''}`"
-                      :ref="`actionButton${i}`"
-                      aria-haspopup="true"
-                      aria-expanded="false"
+                    <ActionMenu
+                      :resource="row.row"
                       :data-testid="componentTestid + '-' + i + '-action-button'"
-                      :borderless="true"
-                      @click="handleActionButtonClick(i, $event)"
+                      :button-aria-label="t('sortableTable.tableActionsLabel', { resource: row?.row?.id || '' })"
                     />
                   </slot>
                 </td>
@@ -1568,10 +1604,6 @@ export default {
     opacity: 0.5;
     pointer-events: none;
   }
-
-  .manual-refresh {
-    height: 40px;
-  }
   .advanced-filter-group {
     position: relative;
     margin-left: 10px;
@@ -1672,7 +1704,7 @@ export default {
         margin-right: 10px;
         font-size: 11px;
       }
-     .cross {
+      .cross {
         font-size: 12px;
         font-weight: bold;
         cursor: pointer;
@@ -1746,7 +1778,6 @@ export default {
     min-width: 400px;
     border-radius: 5px 5px 0 0;
     outline: 1px solid var(--border);
-    overflow: hidden;
     background: var(--sortable-table-bg);
     border-radius: 4px;
 

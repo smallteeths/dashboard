@@ -32,6 +32,7 @@ import loadPlugins from '@shell/plugins/plugin';
 import Loading from '@shell/components/Loading';
 import { getGlobalBannerFontSizes } from '@shell/utils/banners';
 import { encryptPassword } from '@shell/utils/auth';
+import { HARVESTER_NAME as HARVESTER } from '@shell/config/features';
 
 export default {
   name:       'Login',
@@ -67,7 +68,10 @@ export default {
   },
 
   computed: {
-    ...mapGetters({ t: 'i18n/t', loginCooldown: 'auth/loginCooldown' }),
+    ...mapGetters(['isSingleProduct']),
+    ...mapGetters({
+      t: 'i18n/t', hasMultipleLocales: 'i18n/hasMultipleLocales', loginCooldown: 'auth/loginCooldown'
+    }),
 
     loggedOutSuccessMsg() {
       if (this.isSlo) {
@@ -77,6 +81,10 @@ export default {
       }
 
       return this.t('login.loggedOut');
+    },
+
+    isHarvester() {
+      return this.isSingleProduct?.productName === HARVESTER;
     },
 
     singleProvider() {
@@ -102,6 +110,10 @@ export default {
         return this.t('login.clientError');
       } else if (this.err === LOGIN_ERRORS.CLIENT || this.err === LOGIN_ERRORS.SERVER) {
         return this.t('login.error');
+      } else if (this.err === LOGIN_ERRORS.NONCE) {
+        return this.t('login.invalidResponseError');
+      } else if (this.err === LOGIN_ERRORS.USER_UNAUTHORIZED) {
+        return this.t('login.userUnauthorized');
       }
 
       return this.err?.length ? this.t('login.specificError', { msg: this.err }) : '';
@@ -473,7 +485,6 @@ export default {
               <div class="mb-20">
                 <LabeledInput
                   v-if="!firstLogin"
-                  id="username"
                   ref="username"
                   v-model:value.trim="username"
                   data-testid="local-login-username"
@@ -483,7 +494,6 @@ export default {
               </div>
               <div class="">
                 <Password
-                  id="password"
                   ref="password"
                   v-model:value="password"
                   data-testid="local-login-password"
@@ -544,7 +554,7 @@ export default {
           </div>
         </template>
         <div
-          v-if="showLocaleSelector"
+          v-if="showLocaleSelector && hasMultipleLocales && !isHarvester"
           class="locale-selector"
         >
           <LocaleSelector

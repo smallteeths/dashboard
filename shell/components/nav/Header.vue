@@ -1,12 +1,13 @@
 <script>
 import { mapGetters } from 'vuex';
 import debounce from 'lodash/debounce';
-import { NORMAN, STEVE } from '@shell/config/types';
+import { MANAGEMENT, NORMAN, STEVE } from '@shell/config/types';
+import { HARVESTER_NAME as HARVESTER } from '@shell/config/features';
 import { ucFirst } from '@shell/utils/string';
 import { isAlternate, isMac } from '@shell/utils/platform';
 import Import from '@shell/components/Import';
 import BrandImage from '@shell/components/BrandImage';
-import { getProduct } from '@shell/config/private-label';
+import { getProduct, getVendor } from '@shell/config/private-label';
 import ClusterProviderIcon from '@shell/components/ClusterProviderIcon';
 import ClusterBadge from '@shell/components/ClusterBadge';
 import AppModal from '@shell/components/AppModal';
@@ -14,6 +15,7 @@ import { LOGGED_OUT, IS_SSO } from '@shell/config/query-params';
 import NamespaceFilter from './NamespaceFilter';
 import WorkspaceSwitcher from './WorkspaceSwitcher';
 import TopLevelMenu from './TopLevelMenu';
+
 import Jump from './Jump';
 import { allHash } from '@shell/utils/promise';
 import { ActionLocation, ExtensionPoint } from '@shell/core/types';
@@ -22,6 +24,12 @@ import IconOrSvg from '@shell/components/IconOrSvg';
 import { wait } from '@shell/utils/async';
 import { configType } from '@shell/models/management.cattle.io.authconfig';
 import HeaderPageActionMenu from './HeaderPageActionMenu.vue';
+import {
+  RcDropdown,
+  RcDropdownItem,
+  RcDropdownSeparator,
+  RcDropdownTrigger
+} from '@components/RcDropdown';
 
 export default {
 
@@ -37,6 +45,10 @@ export default {
     IconOrSvg,
     AppModal,
     HeaderPageActionMenu,
+    RcDropdown,
+    RcDropdownItem,
+    RcDropdownSeparator,
+    RcDropdownTrigger,
   },
 
   props: {
@@ -69,7 +81,7 @@ export default {
       extensionHeaderActions: getApplicableExtensionEnhancements(this, ExtensionPoint.ACTION, ActionLocation.HEADER, this.$route),
       ctx:                    this,
       showImportModal:        false,
-      showSearchModal:        false,
+      showSearchModal:        false
     };
   },
 
@@ -86,7 +98,8 @@ export default {
       'pageActions',
       'isSingleProduct',
       'isRancherInHarvester',
-      'showTopLevelMenu'
+      'showTopLevelMenu',
+      'isMultiCluster'
     ]),
 
     samlAuthProviderEnabled() {
@@ -108,6 +121,12 @@ export default {
 
     appName() {
       return getProduct();
+    },
+
+    vendor() {
+      this.$store.getters['management/all'](MANAGEMENT.SETTING)?.find((setting) => setting.id === 'ui-pl');
+
+      return getVendor();
     },
 
     authEnabled() {
@@ -219,6 +238,9 @@ export default {
       };
     },
 
+    isHarvester() {
+      return this.$store.getters['currentProduct'].inStore === HARVESTER;
+    },
   },
 
   watch: {
@@ -379,8 +401,9 @@ export default {
     data-testid="header"
   >
     <div>
-      <TopLevelMenu v-if="showTopLevelMenu" />
+      <TopLevelMenu v-if="isRancherInHarvester || isMultiCluster || !isSingleProduct" />
     </div>
+
     <div
       class="menu-spacer"
       :class="{'isSingleProduct': isSingleProduct }"
@@ -388,13 +411,25 @@ export default {
       <router-link
         v-if="isSingleProduct && !isRancherInHarvester"
         :to="singleProductLogoRoute"
+        role="link"
+        :alt="t('branding.logos.home')"
       >
+        <BrandImage
+          v-if="isSingleProduct.supportCustomLogo && isHarvester"
+          class="side-menu-logo"
+          file-name="harvester.svg"
+          :support-custom-logo="true"
+          :alt="t('branding.logos.label')"
+        />
         <img
+          v-else
           class="side-menu-logo"
           :src="isSingleProduct.logo"
+          :alt="t('branding.logos.label')"
         >
       </router-link>
     </div>
+
     <div
       v-if="!simple"
       ref="product"
@@ -409,13 +444,19 @@ export default {
           v-if="isSingleProduct && !isRancherInHarvester"
           class="product-name"
         >
-          {{ t(isSingleProduct.productNameKey) }}
+          <template v-if="isSingleProduct.supportCustomLogo">
+            {{ vendor }}
+          </template>
+          <template v-else>
+            {{ t(isSingleProduct.productNameKey) }}
+          </template>
         </div>
         <template v-else>
           <ClusterProviderIcon
             v-if="currentCluster"
             :cluster="currentCluster"
             class="mr-10"
+            :alt="t('branding.logos.label')"
           />
           <div
             v-if="currentCluster"
@@ -428,6 +469,7 @@ export default {
             v-if="currentCluster"
             :cluster="currentCluster"
             class="ml-10"
+            :alt="t('branding.logos.label')"
           />
           <div
             v-if="!currentCluster"
@@ -436,6 +478,7 @@ export default {
             <BrandImage
               class="side-menu-logo-img"
               file-name="rancher-logo.svg"
+              :alt="t('branding.logos.label')"
             />
           </div>
         </template>
@@ -450,12 +493,14 @@ export default {
           :src="currentProduct.iconHeader"
           class="cluster-os-logo mr-10"
           style="width: 44px; height: 36px;"
+          :alt="t('branding.logos.label')"
         >
         <div class="product-name">
           {{ prod }}
         </div>
       </div>
     </div>
+
     <div
       v-else
       class="simple-title"
@@ -473,8 +518,9 @@ export default {
       >
         <BrandImage
           class="side-menu-logo-img"
-          data-testid="header-side-menu__brand-img"
+          data-testid="header__brand-img"
           file-name="rancher-logo.svg"
+          :alt="t('branding.logos.label')"
         />
       </div>
     </div>
@@ -502,6 +548,9 @@ export default {
             type="button"
             class="btn header-btn role-tertiary"
             data-testid="header-action-import-yaml"
+            role="button"
+            tabindex="0"
+            :aria-label="t('nav.import')"
             @click="openImport()"
           >
             <i class="icon icon-upload icon-lg" />
@@ -529,6 +578,9 @@ export default {
             :disabled="!shellEnabled"
             type="button"
             class="btn header-btn role-tertiary"
+            role="button"
+            tabindex="0"
+            :aria-label="t('nav.shellShortcut', {key:''})"
             @shortkey="currentCluster.openShell()"
             @click="currentCluster.openShell()"
           >
@@ -542,6 +594,9 @@ export default {
             type="button"
             class="btn header-btn role-tertiary"
             data-testid="btn-download-kubeconfig"
+            role="button"
+            tabindex="0"
+            :aria-label="t('nav.kubeconfig.download')"
             @click="currentCluster.downloadKubeConfig()"
           >
             <i class="icon icon-file icon-lg" />
@@ -554,6 +609,9 @@ export default {
             type="button"
             class="btn header-btn role-tertiary"
             data-testid="btn-copy-kubeconfig"
+            role="button"
+            tabindex="0"
+            :aria-label="t('nav.kubeconfig.copy')"
             @click="copyKubeConfig($event)"
           >
             <i
@@ -569,11 +627,15 @@ export default {
 
         <button
           v-if="showSearch"
+          id="header-btn-search"
           v-clean-tooltip="t('nav.resourceSearch.toolTip', {key: searchShortcut})"
           v-shortkey="{windows: ['ctrl', 'k'], mac: ['meta', 'k']}"
           type="button"
           class="btn header-btn role-tertiary"
           data-testid="header-resource-search"
+          role="button"
+          tabindex="0"
+          :aria-label="t('nav.resourceSearch.toolTip', {key: ''})"
           @shortkey="openSearch()"
           @click="openSearch()"
         >
@@ -585,6 +647,8 @@ export default {
           name="searchModal"
           width="50%"
           height="auto"
+          :trigger-focus-trap="true"
+          return-focus-selector="#header-btn-search"
           @close="hideSearch()"
         >
           <Jump @closeSearch="hideSearch()" />
@@ -605,6 +669,9 @@ export default {
           type="button"
           class="btn header-btn role-tertiary"
           :data-testid="`extension-header-action-${ action.labelKey || action.label }`"
+          role="button"
+          tabindex="0"
+          :aria-label="action.label"
           @shortkey="handleExtensionAction(action, $event)"
           @click="handleExtensionAction(action, $event)"
         >
@@ -617,27 +684,18 @@ export default {
         </button>
       </div>
 
-      <header-page-action-menu v-if="showPageActions" />
-
-      <div class="header-spacer" />
-      <div
-        v-if="showUserMenu"
-        class="user user-menu"
-        data-testid="nav_header_showUserMenu"
-        tabindex="0"
-        @blur="showMenu(false)"
-        @click="showMenu(true)"
-        @focus.capture="showMenu(true)"
-      >
-        <v-dropdown
-          :triggers="[]"
-          :shown="isUserMenuOpen"
-          :autoHide="false"
-          :flip="false"
-          :container="false"
-          :placement="'bottom-end'"
+      <div class="center-self">
+        <header-page-action-menu v-if="showPageActions" />
+        <rc-dropdown
+          v-if="showUserMenu"
+          :aria-label="t('nav.userMenu.label')"
         >
-          <div class="user-image text-right hand">
+          <rc-dropdown-trigger
+            ghost
+            small
+            data-testid="nav_header_showUserMenu"
+            :aria-label="t('nav.userMenu.button.label')"
+          >
             <img
               v-if="principal && principal.avatarSrc"
               :src="principal.avatarSrc"
@@ -649,88 +707,47 @@ export default {
               v-else
               class="icon icon-user icon-3x avatar"
             />
-          </div>
-          <template #popper>
-            <div
-              class="user-menu"
+          </rc-dropdown-trigger>
+          <template #dropdownCollection>
+            <template v-if="authEnabled">
+              <div class="user-info">
+                <div class="user-name">
+                  <i class="icon icon-lg icon-user" /> {{ principal.loginName }}
+                </div>
+                <div class="text-small">
+                  <template v-if="principal.loginName !== principal.name">
+                    {{ principal.name }}
+                  </template>
+                </div>
+              </div>
+              <rc-dropdown-separator />
+            </template>
+            <rc-dropdown-item
+              v-if="showPreferencesLink"
+              @click="$router.push({ name: 'prefs'})"
             >
-              <ul
-                class="list-unstyled dropdown"
-                data-testid="user-menu-dropdown"
-                @click.stop="showMenu(false)"
-              >
-                <li
-                  v-if="authEnabled"
-                  class="user-info"
-                >
-                  <div class="user-name">
-                    <i class="icon icon-lg icon-user" /> {{ principal.loginName }}
-                  </div>
-                  <div class="text-small pt-5 pb-5">
-                    <template v-if="principal.loginName !== principal.name">
-                      {{ principal.name }}
-                    </template>
-                  </div>
-                </li>
-                <router-link
-                  v-if="showPreferencesLink"
-                  v-slot="{ href, navigate }"
-                  custom
-                  :to="{name: 'prefs'}"
-                >
-                  <li
-                    class="user-menu-item"
-                    @click="navigate"
-                    @keypress.enter="navigate"
-                  >
-                    <a :href="href">{{ t('nav.userMenu.preferences') }}</a>
-                  </li>
-                </router-link>
-                <router-link
-                  v-if="showAccountAndApiKeyLink"
-                  v-slot="{ href, navigate }"
-                  custom
-                  :to="{name: 'account'}"
-                >
-                  <li
-                    class="user-menu-item"
-                    @click="navigate"
-                    @keypress.enter="navigate"
-                  >
-                    <a :href="href">{{ t('nav.userMenu.accountAndKeys', {}, true) }}</a>
-                  </li>
-                </router-link>
-                <!-- SLO modal -->
-                <li
-                  v-if="authEnabled && shouldShowSloLogoutModal"
-                  class="user-menu-item no-link"
-                  @click="showSloModal"
-                  @keypress.enter="showSloModal"
-                >
-                  <span>{{ t('nav.userMenu.logOut') }}</span>
-                </li>
-                <!-- logout -->
-                <router-link
-                  v-else-if="authEnabled"
-                  v-slot="{ href, navigate }"
-                  custom
-                  :to="generateLogoutRoute"
-                >
-                  <li
-                    class="user-menu-item"
-                    @click="navigate"
-                    @keypress.enter="navigate"
-                  >
-                    <a
-                      :href="href"
-                      @blur="showMenu(false)"
-                    >{{ t('nav.userMenu.logOut') }}</a>
-                  </li>
-                </router-link>
-              </ul>
-            </div>
+              {{ t('nav.userMenu.preferences') }}
+            </rc-dropdown-item>
+            <rc-dropdown-item
+              v-if="showAccountAndApiKeyLink"
+              @click="$router.push({ name: 'account'})"
+            >
+              {{ t('nav.userMenu.accountAndKeys', {}, true) }}
+            </rc-dropdown-item>
+            <rc-dropdown-item
+              v-if="authEnabled && shouldShowSloLogoutModal"
+              @click="showSloModal"
+            >
+              {{ t('nav.userMenu.logOut') }}
+            </rc-dropdown-item>
+            <rc-dropdown-item
+              v-else-if="authEnabled"
+              @click="$router.push(generateLogoutRoute)"
+            >
+              {{ t('nav.userMenu.logOut') }}
+            </rc-dropdown-item>
           </template>
-        </v-dropdown>
+        </rc-dropdown>
       </div>
     </div>
   </header>
@@ -933,7 +950,7 @@ export default {
         width: 40px;
       }
 
-      :deep() > div > .btn.role-tertiary {
+      :deep() div .btn.role-tertiary {
         border: 1px solid var(--header-btn-bg);
         border: none;
         background: var(--header-btn-bg);
@@ -986,8 +1003,9 @@ export default {
         position: relative;
       }
 
-      .user.user-menu {
-        padding-top: 9.5px;
+      .avatar-round {
+        border: 0;
+        border-radius: 50%;
       }
 
       > .user {
@@ -1023,11 +1041,14 @@ export default {
         }
 
         background-color: var(--header-bg);
+      }
 
-        .avatar-round {
-          border: 0;
-          border-radius: 50%;
-        }
+      > .center-self {
+        align-self: center;
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        padding-right: 1rem;
       }
     }
   }
@@ -1039,14 +1060,17 @@ export default {
         justify-content: space-between;
         padding: 10px;
       }
+    }
+  }
 
-      &.user-info {
-        display: block;
-        margin-bottom: 10px;
-        padding: 10px 20px;
-        border-bottom: solid 1px var(--border);
-        min-width: 200px;
-      }
+  div {
+    &.user-info {
+      padding: 0 8px;
+      margin: 0 9px;
+      min-width: 200px;
+      display: flex;
+      gap: 5px;
+      flex-direction: column;
     }
   }
 
@@ -1128,4 +1152,5 @@ export default {
       }
     }
   }
+
 </style>

@@ -110,6 +110,25 @@ class VSphereUtils {
   }
 
   /**
+   * Check that system is setup to handle vsphere secrets syncing downstream
+   *
+   * Do this via checking the provider and that the required FF is enabled.
+   */
+  private handleVsphereSecret({ $store, provider }: { $store: any, provider: string}): boolean {
+    if (provider !== VMWARE_VSPHERE) {
+      return false;
+    }
+
+    const isPrebootstrapEnabled = $store.getters['features/get'](PROVISIONING_PRE_BOOTSTRAP);
+
+    if (!isPrebootstrapEnabled) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
     * Create upstream vsphere cpi secret to sync downstream
     */
   async handleVsphereCpiSecret(rke2Component: Rke2Component) {

@@ -255,168 +255,139 @@ export default {
       color="info"
       label-key="authConfig.ldap.oktaSchema"
     />
-    <div class="row">
-      <div class="col span-6">
+    <div class="schema-container">
+      <div class="schema-column">
         <h4>{{ t('authConfig.ldap.users') }}</h4>
-      </div>
-      <div class="col span-6">
-        <h4>{{ t('authConfig.ldap.groups') }}</h4>
-      </div>
-    </div>
-    <div class="row mb-20">
-      <div class="col span-6">
         <LabeledInput
           v-model:value="model.userObjectClass"
           :mode="mode"
           :label="t('authConfig.ldap.objectClass')"
         />
-      </div>
-      <div class="col span-6">
-        <LabeledInput
-          v-model:value="model.groupObjectClass"
-          :mode="mode"
-          :label="t('authConfig.ldap.objectClass')"
-        />
-      </div>
-    </div>
-    <div class="row mb-20">
-      <div class="col span-6">
         <LabeledInput
           v-model:value="model.userNameAttribute"
           :mode="mode"
           :label="t('authConfig.ldap.usernameAttribute')"
         />
-      </div>
-      <div class="col span-6">
         <LabeledInput
-          v-model:value="model.groupNameAttribute"
+          v-model:value="model.userLoginAttribute"
           :mode="mode"
-          :label="t('authConfig.ldap.nameAttribute')"
+          :label="t('authConfig.ldap.loginAttribute')"
         />
-      </div>
-    </div>
-    <div
-      v-if="!isSamlProvider"
-      class="row mb-20"
-    >
-      <div class="col span-6">
         <LabeledInput
-          v-model:value="model.userUniqueIdAttribute"
+          v-model:value="model.userMemberAttribute"
           :mode="mode"
-          :label="t('authConfig.ldap.userUniqueIdAttribute.label')"
-          :tooltip="t('authConfig.ldap.userUniqueIdAttribute.tip')"
+          :label="t('authConfig.ldap.userMemberAttribute')"
         />
-      </div>
-      <div class="col span-6">
         <LabeledInput
+          v-model:value="model.userLoginFilter"
+          data-testid="user-login-filter"
+          :mode="mode"
+          :label="t('authConfig.ldap.userLoginFilter')"
+        />
+        <LabeledInput
+          v-model:value="model.userSearchAttribute"
+          :mode="mode"
+          :label="t('authConfig.ldap.searchAttribute')"
+        />
+        <LabeledInput
+          v-model:value="model.userSearchFilter"
+          :mode="mode"
+          :label="t('authConfig.ldap.searchFilter')"
+        />
+        <LabeledInput
+          v-model:value="model.userEnabledAttribute"
+          :mode="mode"
+          :label="t('authConfig.ldap.userEnabledAttribute')"
+        />
+        <LabeledInput
+          v-model:value="model.disabledStatusBitmask"
+          :mode="mode"
+          :label="t('authConfig.ldap.disabledStatusBitmask')"
+        />
+        <LabeledInput
+          v-if="!isSamlProvider"
           v-model:value="model.groupUniqueIdAttribute"
           :mode="mode"
           :label="t('authConfig.ldap.groupUniqueIdAttribute.label')"
           :tooltip="t('authConfig.ldap.groupUniqueIdAttribute.tip')"
         />
       </div>
-    </div>
-    <div class="row mb-20">
-      <div class="col span-6">
+      <div class="schema-column">
+        <h4>{{ t('authConfig.ldap.groups') }}</h4>
         <LabeledInput
-          v-model:value="model.userLoginAttribute"
+          v-model:value="model.groupObjectClass"
           :mode="mode"
-          :label="t('authConfig.ldap.loginAttribute')"
+          :label="t('authConfig.ldap.objectClass')"
         />
-      </div>
-      <div class="col span-6">
+        <LabeledInput
+          v-model:value="model.groupNameAttribute"
+          :mode="mode"
+          :label="t('authConfig.ldap.nameAttribute')"
+        />
         <LabeledInput
           v-model:value="model.groupMemberUserAttribute"
           :mode="mode"
           :label="t('authConfig.ldap.groupMemberUserAttribute')"
         />
-      </div>
-    </div>
-    <div class="row mb-20">
-      <div class="col span-6">
-        <LabeledInput
-          v-model:value="model.userMemberAttribute"
-          :mode="mode"
-          :label="t('authConfig.ldap.userMemberAttribute')"
-        />
-      </div>
-      <div class="col span-6">
         <LabeledInput
           v-model:value="model.groupSearchAttribute"
           :mode="mode"
           :label="t('authConfig.ldap.searchAttribute')"
         />
-      </div>
-    </div>
-    <div class="row mb-20">
-      <div class="col span-6">
-        <LabeledInput
-          v-model:value="model.userSearchAttribute"
-          :mode="mode"
-          :label="t('authConfig.ldap.searchAttribute')"
-        />
-      </div>
-      <div class="col span-6">
         <LabeledInput
           v-model:value="model.groupSearchFilter"
           :mode="mode"
           :label="t('authConfig.ldap.searchFilter')"
         />
-      </div>
-    </div>
-    <div class="row mb-20">
-      <div class="col span-6">
-        <LabeledInput
-          v-model:value="model.userSearchFilter"
-          :mode="mode"
-          :label="t('authConfig.ldap.searchFilter')"
-        />
-      </div>
-      <div class="col span-6">
         <LabeledInput
           v-model:value="model.groupMemberMappingAttribute"
           :mode="mode"
           :label="t('authConfig.ldap.groupMemberMappingAttribute')"
         />
-      </div>
-    </div>
-    <div class="row mb-20">
-      <div class="col span-6">
-        <LabeledInput
-          v-model:value="model.userEnabledAttribute"
-          :mode="mode"
-          :label="t('authConfig.ldap.userEnabledAttribute')"
-        />
-      </div>
-      <div class="col span-6">
         <LabeledInput
           v-model:value="model.groupDNAttribute"
           :mode="mode"
           :label="t('authConfig.ldap.groupDNAttribute')"
         />
-      </div>
-    </div>
-    <div class="row mb-20">
-      <div class="col span-6">
         <LabeledInput
-          v-model:value="model.disabledStatusBitmask"
+          v-if="!isSamlProvider"
+          v-model:value="model.groupUniqueIdAttribute"
           :mode="mode"
-          :label="t('authConfig.ldap.disabledStatusBitmask')"
+          :label="t('authConfig.ldap.groupUniqueIdAttribute.label')"
+          :tooltip="t('authConfig.ldap.groupUniqueIdAttribute.tip')"
         />
-      </div>
-      <div
-        v-if="!isSamlProvider"
-        class=" col span-6"
-      >
-        <RadioGroup
-          v-model:value="model.nestedGroupMembershipEnabled"
-          :mode="mode"
-          name="nested"
-          class="full-height"
-          :options="[true, false]"
-          :labels="[t('authConfig.ldap.nestedGroupMembership.options.nested'), t('authConfig.ldap.nestedGroupMembership.options.direct')]"
-        />
+        <template
+          v-if="!isSamlProvider"
+        >
+          <RadioGroup
+            v-model:value="model.nestedGroupMembershipEnabled"
+            :mode="mode"
+            name="nested"
+            class="full-height"
+            :options="[true, false]"
+            :labels="[t('authConfig.ldap.nestedGroupMembership.options.nested'), t('authConfig.ldap.nestedGroupMembership.options.direct')]"
+          />
+        </template>
       </div>
     </div>
   </div>
 </template>
+
+<style lang="scss" scoped>
+  .schema-container {
+    display: flex;
+    gap: 1.75%;
+    flex-wrap: wrap;
+  }
+
+  .schema-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 16rem;
+
+    > :not(:first-child) {
+      margin-bottom: 20px;
+    }
+  }
+</style>

@@ -9,7 +9,8 @@ module.exports = {
   },
   plugins: [
     'jest',
-    '@typescript-eslint'
+    '@typescript-eslint',
+    'local-rules'
   ],
   extends: [
     'standard',
@@ -18,7 +19,8 @@ module.exports = {
     '@vue/standard',
     '@vue/typescript/recommended',
     'plugin:vue/vue3-recommended',
-    'plugin:cypress/recommended'
+    'plugin:cypress/recommended',
+    'plugin:local-rules/all'
   ],
   rules: {
     'semi-spacing':          'off',
@@ -190,7 +192,7 @@ module.exports = {
     'vue/one-component-per-file':       'off',
     'vue/no-deprecated-slot-attribute': 'off',
     'vue/require-explicit-emits':       'error',
-    'vue/v-on-event-hyphenation':       'off'
+    'vue/v-on-event-hyphenation':       'off',
   },
   overrides: [
     {

@@ -4,9 +4,14 @@ import isEmpty from 'lodash/isEmpty';
 import { addObject, removeObject, findBy } from '@shell/utils/array';
 import { sortBy } from '@shell/utils/sort';
 import findIndex from 'lodash/findIndex';
+import { ExtensionPoint, TabLocation } from '@shell/core/types';
+import { getApplicableExtensionEnhancements } from '@shell/core/plugin-helpers';
+import Tab from '@shell/components/Tabbed/Tab';
 
 export default {
   name: 'Tabbed',
+
+  components: { Tab },
 
   emits: ['changed', 'addTab', 'removeTab'],
 
@@ -82,9 +87,19 @@ export default {
   },
 
   data() {
+    const extensionTabs = getApplicableExtensionEnhancements(this, ExtensionPoint.TAB, TabLocation.RESOURCE_DETAIL, this.$route, this, this.extensionParams) || [];
+
+    const parsedExtTabs = extensionTabs.map((item) => {
+      return {
+        ...item,
+        active: false
+      };
+    });
+
     return {
-      tabs:          [],
-      activeTabName: null,
+      tabs:          [...parsedExtTabs],
+      extensionTabs: parsedExtTabs,
+      activeTabName: null
     };
   },
 
@@ -209,7 +224,7 @@ export default {
 
         if (nxt >= tabsLength) {
           return 0;
-        } else if (nxt <= 0) {
+        } else if (nxt < 0) {
           return tabsLength - 1;
         } else {
           return nxt;
@@ -243,13 +258,14 @@ export default {
       role="tablist"
       class="tabs"
       :class="{'clearfix':!sideTabs, 'vertical': sideTabs, 'horizontal': !sideTabs}"
-      tabindex="0"
       data-testid="tabbed-block"
+      tabindex="0"
       @keydown.right.prevent="selectNext(1)"
       @keydown.left.prevent="selectNext(-1)"
       @keydown.down.prevent="selectNext(1)"
       @keydown.up.prevent="selectNext(-1)"
     >
+      <!-- This is the tabs link... tabs appear here because they are injected from the "Tab" component -->
       <li
         v-for="tab in sortedTabs"
         :id="tab.name"
@@ -262,8 +278,10 @@ export default {
           :data-testid="`btn-${tab.name}`"
           :aria-controls="'#' + tab.name"
           :aria-selected="tab.active"
+          :aria-label="tab.labelDisplay || ''"
           role="tab"
           @click.prevent="select(tab.name, $event)"
+          @keyup.enter.space="select(tab.name, $event)"
         >
           <span>{{ tab.labelDisplay }}</span>
           <span
@@ -319,7 +337,26 @@ export default {
         'tab-container--flat': !!flat,
       }"
     >
+      <!-- This is where "normal" tab content goes... -->
       <slot />
+      <!-- Extension tabs content goes here... -->
+      <Tab
+        v-for="tab, i in extensionTabs"
+        :key="`${tab.name}${i}`"
+        :name="tab.name"
+        :label="tab.label"
+        :label-key="tab.labelKey"
+        :weight="tab.weight"
+        :tooltip="tab.tooltip"
+        :show-header="tab.showHeader"
+        :display-alert-icon="tab.displayAlertIcon"
+        :error="tab.error"
+        :badge="tab.badge"
+      >
+        <component
+          :is="tab.component"
+        />
+      </Tab>
     </div>
   </div>
 </template>
@@ -329,6 +366,15 @@ export default {
   list-style-type: none;
   margin: 0;
   padding: 0;
+
+  &:focus-visible {
+    outline: none;
+
+    .tab.active {
+      @include focus-outline;
+      outline-offset: -2px;
+    }
+  }
 
   &.horizontal {
     border: solid thin var(--border);
@@ -345,12 +391,8 @@ export default {
     }
   }
 
-  &:focus {
-    outline: none;
-
-    & .tab.active a span {
-      text-decoration: underline;
-    }
+  &:focus .tab.active a span {
+    text-decoration: underline;
   }
 
   .tab {

@@ -125,7 +125,11 @@ export const checkSchemasForFindAllHash = (types, store) => {
     const validSchema = value.schemaValidator ? value.schemaValidator(schema) : !!schema;
 
     if (validSchema) {
-      hash[key] = store.dispatch(`${ value.inStoreType }/findAll`, { type: value.type, opt: value.opt } );
+      const res = store.dispatch(`${ value.inStoreType }/findAll`, { type: value.type, opt: value.opt } );
+
+      if (!value.skipWait) {
+        hash[key] = res;
+      }
     }
   }
 
@@ -319,6 +323,10 @@ export function isLoggedIn(store, me) {
  */
 export function notLoggedIn(store, redirect, route) {
   store.commit('auth/hasAuth', true);
+
+  if (!route.name.includes('auth')) {
+    store.commit('prefs/setAuthRedirect', route);
+  }
 
   if ( route.name === 'index' ) {
     return redirect('/auth/login');

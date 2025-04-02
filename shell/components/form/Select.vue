@@ -117,11 +117,24 @@ export default {
       calculatePosition(dropdownList, component, width, this.placement);
     },
 
-    focus() {
-      this.focusSearch();
-    },
-
     focusSearch() {
+      // we need this override as in a "closeOnSelect" type of component
+      // if we don't have this override, it would open again
+      if (this.overridesMixinPreventDoubleTriggerKeysOpen) {
+        this.$nextTick(() => {
+          const el = this.$refs['select'];
+
+          if ( el ) {
+            el.focus();
+          }
+
+          this.overridesMixinPreventDoubleTriggerKeysOpen = false;
+        });
+
+        return;
+      }
+      this.$refs['select-input'].open = true;
+
       this.$nextTick(() => {
         const el = this.$refs['select-input']?.searchEl;
 
@@ -179,6 +192,11 @@ export default {
     },
     report(e) {
       alert(e);
+    },
+    handleDropdownOpen(args) {
+      // function that prevents the "opening dropdown on focus"
+      // default behaviour of v-select
+      return args.noDrop || args.disabled ? false : args.open;
     }
   },
   computed: {
@@ -230,7 +248,7 @@ export default {
     ref="select"
     class="unlabeled-select"
     :class="{
-      disabled: disabled && !isView,
+      disabled: disabled || isView,
       focused,
       [mode]: true,
       [status]: status,
@@ -239,7 +257,11 @@ export default {
       'compact-input': compact,
       [$attrs.class]: $attrs.class
     }"
-    @focus="focusSearch"
+    :tabindex="disabled || isView ? -1 : 0"
+    @click="focusSearch"
+    @keydown.enter="focusSearch"
+    @keydown.down.prevent="focusSearch"
+    @keydown.space.prevent="focusSearch"
   >
     <v-select
       ref="select-input"
@@ -261,7 +283,9 @@ export default {
       :searchable="isSearchable"
       :selectable="selectable"
       :modelValue="value != null ? value : ''"
-
+      :dropdownShouldOpen="handleDropdownOpen"
+      :tabindex="-1"
+      role="listbox"
       @update:modelValue="$emit('update:value', $event)"
       @search:blur="onBlur"
       @search:focus="onFocus"

@@ -6,6 +6,8 @@ const chartsPage = new ChartsPage();
 
 describe('Apps/Charts', { tags: ['@explorer', '@adminUser'] }, () => {
   beforeEach(() => {
+    cy.intercept('GET', '/v1/catalog.cattle.io.clusterrepos/**').as('fetchChartData');
+
     cy.login();
     chartsPage.goTo();
     chartsPage.waitForPage();
@@ -95,6 +97,9 @@ describe('Apps/Charts', { tags: ['@explorer', '@adminUser'] }, () => {
   it('should call fetch when route query changes with valid parameters', () => {
     const chartName = 'Logging';
 
+    cy.wait('@fetchChartData');
+    cy.get('@fetchChartData.all').should('have.length.at.least', 3);
+
     chartsPage.getChartByName(chartName)
       .should('exist')
       .scrollIntoView()
@@ -106,15 +111,18 @@ describe('Apps/Charts', { tags: ['@explorer', '@adminUser'] }, () => {
     chartPage.waitForPage();
 
     // Set up intercept for the network request triggered by $fetch
-    cy.intercept('GET', '**/v1/catalog.cattle.io.clusterrepos/**').as('fetchChartData');
+    cy.intercept('GET', '**/v1/catalog.cattle.io.clusterrepos/**').as('fetchChartDataAfterSelect');
 
-    chartPage.selectVersion('105.2.1+up4.10.0');
+    chartPage.selectVersion('105.1.0+up4.10.0');
 
-    cy.wait('@fetchChartData').its('response.statusCode').should('eq', 200);
+    cy.wait('@fetchChartDataAfterSelect').its('response.statusCode').should('eq', 200);
   });
 
   it('should not call fetch when navigating back to charts page', () => {
     const chartName = 'Logging';
+
+    cy.wait('@fetchChartData');
+    cy.get('@fetchChartData.all').should('have.length.at.least', 3);
 
     chartsPage.getChartByName(chartName)
       .should('exist')
@@ -134,5 +142,30 @@ describe('Apps/Charts', { tags: ['@explorer', '@adminUser'] }, () => {
     cy.intercept('GET', '**/v1/catalog.cattle.io.clusterrepos/**').as('fetchChartDataAfterBack');
 
     cy.get('@fetchChartDataAfterBack.all').should('have.length', 0);
+  });
+
+  it('A disabled repo should NOT be listed on the repos dropdown', () => {
+    const disabledRepoId = 'disabled-repo';
+
+    cy.intercept('GET', '/v1/catalog.cattle.io.clusterrepos?exclude=metadata.managedFields', (req) => {
+      req.reply({
+        statusCode: 200,
+        body:       {
+          data: [
+            { id: disabledRepoId, spec: { enabled: false } }, // disabled
+            { id: 'enabled-repo-1', spec: { enabled: true } }, // enabled
+            { id: 'enabled-repo-2', spec: {} } // enabled
+          ]
+        }
+      });
+    }).as('getRepos');
+
+    cy.wait('@getRepos');
+
+    chartsPage.chartsFilterReposSelect().toggle();
+    chartsPage.chartsFilterReposSelect().isOpened();
+    chartsPage.chartsFilterReposSelect().getOptions().should('have.length', 3); // should include three options: All, enabled-repo-1 and enabled-repo-2
+    chartsPage.chartsFilterReposSelect().getOptions().contains(disabledRepoId)
+      .should('not.exist');
   });
 });

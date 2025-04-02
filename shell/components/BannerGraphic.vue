@@ -51,14 +51,6 @@ export default {
       data-testid="banner-title"
       class="title"
     />
-    <div
-      v-if="pref"
-      class="close-button"
-      data-testid="graphic-banner-close"
-      @click="hide()"
-    >
-      <i class="icon icon-close" />
-    </div>
   </div>
 </template>
 
@@ -68,30 +60,6 @@ export default {
 
   .banner-graphic {
     position: relative;
-
-    .close-button {
-      position: absolute;
-      visibility: hidden;
-    }
-
-    &:hover .close-button {
-      visibility: visible;
-      position: absolute;
-      right: 4px;
-      top: 4px;
-      font-size: 16px;
-      padding: 4px;
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-      opacity: 0.4;
-
-      &:hover {
-        background-color: var(--accent-btn-hover);
-        color: var(--accent-btn-hover-text);
-        opacity: 1;
-      }
-    }
 
     .graphic {
       display: flex;

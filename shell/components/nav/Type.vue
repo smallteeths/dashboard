@@ -138,7 +138,10 @@ export default {
         {{ type.labelKey ? t(type.labelKey) : (type.labelDisplay || type.label) }}
       </TabTitle>
       <a
+        role="link"
+        :aria-label="type.labelKey ? t(type.labelKey) : (type.labelDisplay || type.label)"
         :href="href"
+        class="type-link"
         @click="selectType(); navigate($event);"
         @mouseenter="setNear(true)"
         @mouseleave="setNear(false)"
@@ -181,9 +184,11 @@ export default {
     data-testid="link-type"
   >
     <a
+      role="link"
       :href="type.link"
       :target="type.target"
       rel="noopener noreferrer nofollow"
+      :aria-label="type.label"
     >
       <span class="label">{{ type.label }}&nbsp;<i class="icon icon-external-link" /></span>
     </a>
@@ -196,6 +201,16 @@ export default {
 <style lang="scss" scoped>
   .ns-and-icon {
     margin-right: 4px;
+  }
+
+  .type-link:focus-visible span.label {
+    @include focus-outline;
+    outline-offset: 2px;
+  }
+
+  .nav-link a:focus-visible .label {
+    @include focus-outline;
+    outline-offset: 2px;
   }
 
   .child {

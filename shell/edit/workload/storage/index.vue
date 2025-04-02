@@ -306,6 +306,7 @@ export default {
           :button-label="t('workload.storage.addVolume')"
           :dropdown-options="volumeTypeOptions"
           size="sm"
+          data-testid="dropdown-button-storage-volume"
           @click-action="e=>addVolume(e.value)"
         />
       </template>

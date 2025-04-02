@@ -231,7 +231,7 @@ export default {
     />
     <div>
       <PercentageBar
-        v-tooltip="tooltip"
+        v-clean-tooltip="tooltip"
         class="percentage-bar"
         :value="percentageUsed"
         :slices="slices"

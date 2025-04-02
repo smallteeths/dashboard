@@ -46,6 +46,11 @@ export default {
     enalbeTwoFactorAuth: mapPref(ENABLE_TWO_FACTOR_AUTH),
 
     ...mapGetters(['isSingleProduct']),
+    ...mapGetters({ hasMultipleLocales: 'i18n/hasMultipleLocales' }),
+
+    isHarvester() {
+      return this.isSingleProduct?.productName === 'harvester';
+    },
 
     theme: {
       get() {
@@ -202,19 +207,25 @@ export default {
     </h1>
 
     <!-- Language -->
-    <div class="mt-10 mb-10">
-      <h4 v-t="'prefs.language'" />
+    <div
+      v-if="hasMultipleLocales && !isHarvester"
+      class="mt-10 mb-10"
+    >
+      <h4
+        id="prefs-language"
+        v-t="'prefs.language'"
+      />
       <div class="row">
         <div class="col span-4">
           <LocaleSelector
             data-testid="prefs__languageSelector"
+            aria-labelledby="prefs-language"
           />
         </div>
       </div>
     </div>
     <!-- Theme -->
     <div class="mt-10 mb-10">
-      <hr>
       <h4 v-t="'prefs.theme.label'" />
       <ButtonGroup
         v-model:value="theme"
@@ -295,7 +306,10 @@ export default {
       </div>
     </div>
     <!-- Confirmation setting -->
-    <div class="col adv-features mt-10 mb-10">
+    <div
+      v-if="!isSingleProduct"
+      class="col adv-features mt-10 mb-10"
+    >
       <hr>
       <h4 v-t="'prefs.confirmationSetting.title'" />
       <Checkbox
@@ -315,13 +329,15 @@ export default {
         :label="t('prefs.advFeatures.viewInApi', {}, true)"
         class="mt-10"
       />
-      <br>
-      <Checkbox
-        v-model:value="allNamespaces"
-        data-testid="prefs__allNamespaces"
-        :label="t('prefs.advFeatures.allNamespaces', {}, true)"
-        class="mt-20"
-      />
+      <template v-if="!isHarvester">
+        <br>
+        <Checkbox
+          v-model:value="allNamespaces"
+          data-testid="prefs__allNamespaces"
+          :label="t('prefs.advFeatures.allNamespaces', {}, true)"
+          class="mt-20"
+        />
+      </template>
       <br>
       <Checkbox
         v-model:value="themeShortcut"

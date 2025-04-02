@@ -11,7 +11,6 @@ import { getVendor, getProduct, setVendor } from '@shell/config/private-label';
 import { RadioGroup } from '@components/Form/Radio';
 import { setSetting } from '@shell/utils/settings';
 import { SETTING } from '@shell/config/settings';
-import { isDevBuild } from '@shell/utils/version';
 import { exceptionToErrorsArray } from '@shell/utils/error';
 import Password from '@shell/components/form/Password';
 import PasswordStrength from '@shell/components/PasswordStrength';
@@ -68,7 +67,6 @@ export default {
       v3User:             null,
       serverUrl:          null,
       mcmEnabled:         null,
-      telemetry:          null,
       eula:               false,
       principals:         null,
       errors:             []
@@ -103,16 +101,7 @@ export default {
   },
 
   async fetch() {
-    const telemetrySetting = this.$store.getters['management/byId'](MANAGEMENT.SETTING, SETTING.TELEMETRY);
     const serverUrlSetting = this.$store.getters['management/byId'](MANAGEMENT.SETTING, SETTING.SERVER_URL);
-    const rancherVersionSetting = this.$store.getters['management/byId'](MANAGEMENT.SETTING, SETTING.VERSION_RANCHER);
-    let telemetry = true;
-
-    if (telemetrySetting?.value && telemetrySetting.value !== 'prompt') {
-      telemetry = telemetrySetting.value !== 'out';
-    } else if (!rancherVersionSetting?.value || isDevBuild(rancherVersionSetting?.value)) {
-      telemetry = false;
-    }
 
     let plSetting;
 
@@ -143,7 +132,7 @@ export default {
       type: MANAGEMENT.FEATURE, id: 'multi-cluster-management', opt: { url: `/v1/${ MANAGEMENT.FEATURE }/multi-cluster-management` }
     });
 
-    const mcmEnabled = mcmFeature?.spec?.value || mcmFeature?.status?.default;
+    const mcmEnabled = (mcmFeature?.spec?.value || mcmFeature?.status?.default) && productName !== 'Harvester';
 
     let serverUrl;
 
@@ -165,7 +154,6 @@ export default {
     this['v3User'] = v3User;
     this['serverUrl'] = serverUrl;
     this['mcmEnabled'] = mcmEnabled;
-    this['telemetry'] = telemetry;
     this['principals'] = principals;
     this['passwordStrength'] = 0;
   },
@@ -253,7 +241,6 @@ export default {
 
         if (this.isFirstLogin) {
           promises.push( setSetting(this.$store, SETTING.EULA_AGREED, (new Date()).toISOString()) );
-          promises.push( setSetting(this.$store, SETTING.TELEMETRY, this.telemetry ? 'in' : 'out') );
 
           if ( this.mcmEnabled && this.serverUrl ) {
             promises.push( setSetting(this.$store, SETTING.SERVER_URL, this.serverUrl) );
@@ -424,20 +411,6 @@ export default {
               </div>
             </template>
 
-            <div class="checkbox mt-40">
-              <Checkbox
-                id="checkbox-telemetry"
-                v-model:value="telemetry"
-              >
-                <template #label>
-                  <t
-                    k="setup.telemetry"
-                    :raw="true"
-                    :name="productName"
-                  />
-                </template>
-              </Checkbox>
-            </div>
             <div class="checkbox pt-10 eula">
               <Checkbox
                 id="checkbox-eula"
@@ -478,6 +451,9 @@ export default {
               {{ err }}
             </h4>
           </div>
+        </div>
+        <div>
+          &nbsp;
         </div>
       </div>
       <BrandImage
@@ -535,10 +511,13 @@ export default {
       width: 51%;
 
       & > div:first-of-type {
-        flex:3;
+        flex: 3;
       }
       & > div:nth-of-type(2) {
         flex: 9;
+      }
+      & > div:nth-of-type(3) {
+        flex: 2;
       }
     }
 

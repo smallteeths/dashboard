@@ -9,7 +9,6 @@ import { NodesPagePo } from '@/cypress/e2e/po/pages/explorer/nodes.po';
 import { EventsPagePo } from '@/cypress/e2e/po/pages/explorer/events.po';
 import * as path from 'path';
 import { eventsNoDataset } from '@/cypress/e2e/blueprints/explorer/cluster/events';
-import HomePagePo from '@/cypress/e2e/po/pages/home.po';
 
 const configMapYaml = `apiVersion: v1
 kind: ConfigMap
@@ -49,16 +48,15 @@ describe('Cluster Dashboard', { testIsolation: 'off', tags: ['@explorer', '@admi
 
     clusterDashboard.waitForPage(undefined, 'cluster-events');
 
-    // check if burguer menu nav is highlighted correctly for local cluster
+    // check if burger menu nav is highlighted correctly for local cluster
     BurgerMenuPo.checkIfClusterMenuLinkIsHighlighted('local');
   });
 
-  // it.skip('[Vue3 Skip]: has the correct title', () => {
-  //   clusterDashboard.goTo('local');
-  //   clusterDashboard.waitForPage(undefined, 'cluster-events');
+  it('has the correct title', () => {
+    ClusterDashboardPagePo.navTo();
 
-  //   cy.title().should('eq', 'Rancher - local - Cluster Dashboard');
-  // });
+    cy.title().should('eq', 'Rancher - local - Cluster Dashboard');
+  });
 
   it('shows fleet controller status', () => {
     ClusterDashboardPagePo.navTo();
@@ -259,39 +257,47 @@ describe('Cluster Dashboard', { testIsolation: 'off', tags: ['@explorer', '@admi
   });
 
   it('can view events table empty if no events', { tags: ['@vai', '@adminUser'] }, () => {
-    const events = new EventsPagePo('local');
-
-    HomePagePo.goTo();
-
     eventsNoDataset();
-    ClusterDashboardPagePo.navTo();
+    clusterDashboard.goTo();
+
     cy.wait('@eventsNoData');
     clusterDashboard.waitForPage(undefined, 'cluster-events');
 
     clusterDashboard.eventsList().resourceTable().sortableTable().checkRowCount(true, 1);
 
-    const expectedHeaders = ['Reason', 'Object', 'Message', 'Name', 'Date'];
+    let expectedHeaders = ['Reason', 'Object', 'Message', 'Name', 'Date'];
 
-    clusterDashboard.eventsList().resourceTable().sortableTable().tableHeaderRow()
-      .within('.table-header-container .content')
-      .each((el, i) => {
-        expect(el.text().trim()).to.eq(expectedHeaders[i]);
-      });
+    cy.isVaiCacheEnabled().then((isVaiCacheEnabled) => {
+      if (isVaiCacheEnabled) {
+        expectedHeaders = ['Reason', 'Object', 'Message', 'Name', 'First Seen', 'Last Seen', 'Count'];
+      }
 
-    clusterDashboard.fullEventsLink().click();
-    cy.wait('@eventsNoData');
-    events.waitForPage();
+      clusterDashboard.eventsList().resourceTable().sortableTable().tableHeaderRow()
+        .self()
+        .scrollIntoView();
+      clusterDashboard.eventsList().resourceTable().sortableTable().tableHeaderRow()
+        .within('.table-header-container .content')
+        .each((el, i) => {
+          expect(el.text().trim()).to.eq(expectedHeaders[i]);
+        });
 
-    events.eventslist().resourceTable().sortableTable().checkRowCount(true, 1);
+      clusterDashboard.fullEventsLink().click();
+      cy.wait('@eventsNoData');
+      const events = new EventsPagePo('local');
 
-    const expectedFullHeaders = ['State', 'Last Seen', 'Type', 'Reason', 'Object',
-      'Subobject', 'Source', 'Message', 'First Seen', 'Count', 'Name', 'Namespace'];
+      events.waitForPage();
 
-    events.eventslist().resourceTable().sortableTable().tableHeaderRow()
-      .within('.table-header-container .content')
-      .each((el, i) => {
-        expect(el.text().trim()).to.eq(expectedFullHeaders[i]);
-      });
+      events.eventslist().resourceTable().sortableTable().checkRowCount(true, 1);
+
+      const expectedFullHeaders = ['State', 'Last Seen', 'Type', 'Reason', 'Object',
+        'Subobject', 'Source', 'Message', 'First Seen', 'Count', 'Name', 'Namespace'];
+
+      events.eventslist().resourceTable().sortableTable().tableHeaderRow()
+        .within('.table-header-container .content')
+        .each((el, i) => {
+          expect(el.text().trim()).to.eq(expectedFullHeaders[i]);
+        });
+    });
   });
 
   describe('Cluster dashboard with limited permissions', () => {

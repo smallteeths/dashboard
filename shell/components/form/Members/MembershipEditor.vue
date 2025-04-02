@@ -1,6 +1,7 @@
 <script>
 import { MANAGEMENT, NORMAN } from '@shell/config/types';
 import ArrayList from '@shell/components/form/ArrayList';
+import Principal from '@shell/components/auth/Principal';
 import Loading from '@shell/components/Loading';
 import { _CREATE, _VIEW } from '@shell/config/query-params';
 import { get, set } from '@shell/utils/object';
@@ -18,7 +19,9 @@ export function canViewMembershipEditor(store, needsProject = false) {
 export default {
   emits: ['membership-update'],
 
-  components: { ArrayList, Loading },
+  components: {
+    ArrayList, Loading, Principal
+  },
 
   props: {
     addMemberDialogName: {
@@ -203,14 +206,17 @@ export default {
         </div>
       </div>
     </template>
-    <template #columns="{row}">
+    <template #columns="{row, i}">
       <div class="columns row">
         <div class="col span-6">
           <Principal
             :value="row.value.principalId"
           />
         </div>
-        <div class="col span-6 role">
+        <div
+          :data-testid="`role-item-${i}`"
+          class="col span-6 role"
+        >
           {{ row.value.roleDisplay }}
         </div>
       </div>
@@ -218,7 +224,8 @@ export default {
     <template #add>
       <button
         type="button"
-        class="btn btn-sm role-primary mt-10"
+        class="btn role-primary mt-10"
+        data-testid="add-item"
         @click="addMember"
       >
         {{ t('generic.add') }}
@@ -226,28 +233,25 @@ export default {
     </template>
     <template #remove-button="{remove, i, row}">
       <span v-if="(isCreate && i === 0) || isView" />
-      <div
+      <button
         v-else
-        class="role"
+        type="button"
+        :disabled="isView"
+        class="btn role-link"
+        :data-testid="`remove-item-${i}`"
+        @click="remove"
       >
-        <button
-          type="button"
-          :disabled="isView"
-          class="btn btn-sm role-link"
-          @click="remove"
-        >
-          <i class="icon icon-trash" />
-        </button>
-        <button
-          v-if="editMemberDialogName"
-          type="button"
-          :disabled="isView"
-          class="btn btn-sm role-link"
-          @click="editMember(row, remove)"
-        >
-          <i class="icon icon-edit" />
-        </button>
-      </div>
+        {{ t('generic.remove') }}
+      </button>
+      <button
+        v-if="editMemberDialogName"
+        type="button"
+        :disabled="isView"
+        class="btn btn-sm role-link"
+        @click="editMember(row, remove)"
+      >
+        <i class="icon icon-edit" />
+      </button>
     </template>
   </ArrayList>
 </template>

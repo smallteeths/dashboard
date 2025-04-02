@@ -76,7 +76,7 @@ export default {
     <div>{{ value }}</div>
     <span
       v-if="networks"
-      v-tooltip.bottom="networks"
+      v-clean-tooltip.bottom="networks"
       class="plus-more"
     >{{ t('macvlan.more') }}</span>
   </div>

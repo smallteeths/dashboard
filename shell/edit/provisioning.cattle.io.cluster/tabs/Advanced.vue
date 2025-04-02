@@ -130,7 +130,7 @@ export default {
             <h3>
               {{ t('cluster.advanced.argInfo.machineSelector.subTitle') }}
               <i
-                v-tooltip="t('cluster.advanced.argInfo.machineSelector.protip', null, true)"
+                v-clean-tooltip="t('cluster.advanced.argInfo.machineSelector.protip', null, true)"
                 class="icon icon-info"
               />
             </h3>
@@ -143,7 +143,7 @@ export default {
               class="icon icon-info"
             />
             <i
-              v-tooltip="t('cluster.advanced.argInfo.machineSelector.protip', null, true)"
+              v-clean-tooltip="t('cluster.advanced.argInfo.machineSelector.protip', null, true)"
               class="icon icon-info"
             />
           </h3>

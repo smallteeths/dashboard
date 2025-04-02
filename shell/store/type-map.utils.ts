@@ -1,4 +1,4 @@
-import { SchemaAttribute, SchemaAttributeColumn } from '@shell/plugins/steve/schema';
+import { Schema, SchemaAttribute, SchemaAttributeColumn } from '@shell/plugins/steve/schema';
 import { TableColumn } from '@shell/types/store/type-map';
 import { VuexStoreGetters } from '@shell/types/store/vuex';
 import { findBy, insertAt, removeObject } from '@shell/utils/array';
@@ -117,6 +117,23 @@ export function createHeaders(
   }
 
   return out;
+}
+
+/**
+ * Given a schema's attribute.column value create a header
+ */
+export function headerFromSchemaColString(colName: string, schema: Schema, rootGetters: VuexStoreGetters, pagination: boolean, ageColumn: TableColumn): TableColumn {
+  if (!schema) {
+    throw new Error(`Unable to create header for column '${ colName }' from schema: schema is missing`);
+  }
+
+  const col = schema.attributes.columns.find((c) => c.name === colName);
+
+  if (!col) {
+    throw new Error(`Unable to find column '${ colName }' in schema '${ schema.id }'`);
+  }
+
+  return headerFromSchemaCol(col, rootGetters, pagination, ageColumn);
 }
 
 /**

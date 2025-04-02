@@ -6,7 +6,7 @@ import { _EDIT } from '@shell/config/query-params';
 export default {
   components: { LabeledInput },
 
-  emits: ['update:value'],
+  emits: ['update:value', 'update:validation', 'change', 'blur'],
 
   props: {
     /**
@@ -133,7 +133,12 @@ export default {
     delay: {
       type:    Number,
       default: 0
-    }
+    },
+
+    positive: {
+      type:    Boolean,
+      default: false,
+    },
   },
 
   computed: {
@@ -202,6 +207,10 @@ export default {
     update(inputValue) {
       let out = inputValue === '' ? null : inputValue;
 
+      if (this.positive && inputValue < 0) {
+        out = 0;
+      }
+
       if (this.outputModifier) {
         out = out === null ? null : `${ inputValue }${ this.unit }`;
       } else if ( this.outputAs === 'string' ) {
@@ -249,7 +258,6 @@ export default {
 
 <style lang="scss" scoped>
   .addon.with-tooltip {
-    position: relative;
-    right: 30px;
+    padding-right: 42px;
   }
 </style>

@@ -5,10 +5,10 @@ import { get } from '@shell/utils/object';
 import { LabeledTooltip } from '@components/LabeledTooltip';
 import VueSelectOverrides from '@shell/mixins/vue-select-overrides';
 import { onClickOption, calculatePosition } from '@shell/utils/select';
+import { generateRandomAlphaString } from '@shell/utils/string';
 import LabeledSelectPagination from '@shell/components/form/labeled-select-utils/labeled-select-pagination';
 import { LABEL_SELECT_NOT_OPTION_KINDS } from '@shell/types/components/labeledSelect';
-
-// In theory this would be nicer as LabeledSelect/index.vue, however that would break a lot of places where we import this (which includes extensions)
+import { mapGetters } from 'vuex';
 
 export default {
   name: 'LabeledSelect',
@@ -23,7 +23,7 @@ export default {
     LabeledSelectPagination
   ],
 
-  emits: ['on-open', 'on-close', 'selecting', 'update:validation', 'update:value'],
+  emits: ['on-open', 'on-close', 'selecting', 'deselecting', 'search', 'update:validation', 'update:value'],
 
   props: {
     appendToBody: {
@@ -117,11 +117,13 @@ export default {
   data() {
     return {
       selectedVisibility: 'visible',
-      shouldOpen:         true
+      shouldOpen:         true,
+      uid:                generateRandomAlphaString(10)
     };
   },
 
   computed: {
+    ...mapGetters({ t: 'i18n/t' }),
     hasLabel() {
       return this.isCompact ? false : !!this.label || !!this.labelKey || !!this.$slots.label;
     },
@@ -144,16 +146,36 @@ export default {
 
       return rest;
     },
+
+    // update placeholder text to inform user they can add their own opts when none are found
+    showTagPrompts() {
+      return !this.options.length && this.$attrs.taggable && this.isSearchable;
+    }
   },
 
   methods: {
     // resizeHandler = in mixin
     focusSearch() {
-      const blurredAgo = Date.now() - this.blurred;
-
-      if (!this.focused && blurredAgo < 250) {
+      if (this.isView || this.disabled || this.loading) {
         return;
       }
+
+      // we need this override as in a "closeOnSelect" type of component
+      // if we don't have this override, it would open again
+      if (this.overridesMixinPreventDoubleTriggerKeysOpen) {
+        this.$nextTick(() => {
+          const el = this.$refs['select'];
+
+          if ( el ) {
+            el.focus();
+          }
+
+          this.overridesMixinPreventDoubleTriggerKeysOpen = false;
+        });
+
+        return;
+      }
+      this.$refs['select-input'].open = true;
 
       this.$nextTick(() => {
         const el = this.$refs['select-input']?.searchEl;
@@ -233,7 +255,7 @@ export default {
       return noDrop ? false : open && shouldOpen && !mutableLoading;
     },
 
-    onSearch(newSearchString) {
+    onSearch(newSearchString, loading) {
       if (this.canPaginate) {
         this.setPaginationFilter(newSearchString);
       } else {
@@ -241,6 +263,7 @@ export default {
           this.dropdownShouldOpen(this.$refs['select-input'], true);
         }
       }
+      this.$emit('search', newSearchString, loading);
     },
 
     getOptionKey(opt) {
@@ -272,14 +295,20 @@ export default {
         'no-label': !hasLabel
       }
     ]"
+    :tabindex="isView || disabled ? -1 : 0"
     @click="focusSearch"
-    @focus="focusSearch"
+    @keydown.enter="focusSearch"
+    @keydown.down.prevent="focusSearch"
+    @keydown.space.prevent="focusSearch"
   >
     <div
       :class="{ 'labeled-container': true, raised, empty, [mode]: true }"
       :style="{ border: 'none' }"
     >
-      <label v-if="hasLabel">
+      <label
+        v-if="hasLabel"
+        :id="`labeled-select-uid-${uid}`"
+      >
         <t
           v-if="labelKey"
           :k="labelKey"
@@ -294,6 +323,7 @@ export default {
     </div>
     <v-select
       ref="select-input"
+      :aria-labelledby="hasLabel ? `labeled-select-uid-${uid}` : ''"
       v-bind="filteredAttrs"
       class="inline"
       :append-to-body="appendToBody"
@@ -313,17 +343,24 @@ export default {
       :selectable="selectable"
       :modelValue="value != null && !loading ? value : ''"
       :dropdown-should-open="dropdownShouldOpen"
-
+      :tabindex="-1"
+      role="listbox"
       @update:modelValue="$emit('selecting', $event); $emit('update:value', $event)"
       @search:blur="onBlur"
       @search:focus="onFocus"
       @search="onSearch"
       @open="onOpen"
       @close="onClose"
-      @option:selected="$emit('selecting', $event)"
+      @option:selecting="$emit('selecting', $event)"
+      @option:deselecting="$emit('deselecting', $event)"
     >
       <template #option="option">
-        <template v-if="option.kind === 'group'">
+        <template v-if="showTagPrompts">
+          <div class="only-user-opts">
+            {{ t('labeledSelect.pressEnter', {input:getOptionLabel(option.label)}) }}
+          </div>
+        </template>
+        <template v-else-if="option.kind === 'group'">
           <div class="vs__option-kind-group">
             <i
               v-if="option.icon"
@@ -372,7 +409,7 @@ export default {
 
       <template #list-footer>
         <div
-          v-if="canPaginate && totalResults"
+          v-if="canPaginate && totalResults && pages > 1"
           class="pagination-slot"
         >
           <div class="load-more">
@@ -395,8 +432,11 @@ export default {
       </template>
       <template #no-options="{ search }">
         <div class="no-options-slot">
+          <template v-if="showTagPrompts">
+            <span v-if="!searching">{{ t('labeledSelect.startTyping') }}</span>
+          </template>
           <div
-            v-if="paginating"
+            v-else-if="paginating"
             class="paginating"
           >
             <i class="icon icon-spinner icon-spin" />
@@ -674,4 +714,10 @@ $icon-size: 18px;
   }
 }
 
+.vs__dropdown-menu .vs__dropdown-option .only-user-opts{
+    color: var(--dropdown-text);
+    background-color: var(--dropdown-bg);
+    margin: 0px calc(-#{$input-padding-sm}/2);
+    padding: 3px 20px;
+}
 </style>

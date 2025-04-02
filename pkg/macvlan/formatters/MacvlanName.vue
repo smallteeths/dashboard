@@ -40,6 +40,6 @@ export default {
   <router-link
     :to="getStartedLink"
   >
-    <span v-tooltip="{ content: `<div style='font-size: 12px;line-height: 20px;'>${row.nameDisplay}<br>${t('macvlan.macvlanIp.totalCount')}：${totalCount}</div>`, html: true }">{{ row.metadata.name }}</span>
+    <span v-clean-tooltip="{ content: `<div style='font-size: 12px;line-height: 20px;'>${row.nameDisplay}<br>${t('macvlan.macvlanIp.totalCount')}：${totalCount}</div>`, html: true }">{{ row.metadata.name }}</span>
   </router-link>
 </template>

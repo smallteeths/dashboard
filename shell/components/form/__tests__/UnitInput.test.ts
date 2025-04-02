@@ -17,6 +17,7 @@ describe('component: UnitInput', () => {
 
     await input.setValue(2);
     await input.setValue(4);
+    input.trigger(event);
 
     expect(wrapper.emitted('update:value')).toBeTruthy();
     expect(wrapper.emitted('update:value')[2]).toStrictEqual([4]);
@@ -183,7 +184,7 @@ describe('component: UnitInput', () => {
     input.trigger('blur');
 
     expect(wrapper.emitted('update:value')).toBeTruthy();
-    expect(wrapper.emitted('update:value')[4][0]).toBe(value);
+    expect(wrapper.emitted('update:value')[3][0]).toBe(value);
   });
 
   describe.each([

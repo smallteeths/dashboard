@@ -2131,7 +2131,6 @@ fleet:
       notReady: 未就绪
       waitApplied: 等待应用
   gitRepo:
-    createLocalBanner: 将 Git 仓库部署到本地工作区时，你无法定位任何集群或集群组
     tabs:
       resources: 资源
       unready: 未就绪
@@ -2721,8 +2720,6 @@ landing:
       other {核}}
     cpuUsed: 已用 CPU
     memoryUsed: 已用内存
-  seeWhatsNew: 点击右侧链接，了解此版本的新功能和优化。
-  whatsNewLink: "2.8 的新功能"
   learnMore: 了解更多
   support: 支持
   community:
@@ -4555,9 +4552,6 @@ rbac:
       admin:
         label: 管理员
         description: 管理员可以完全控制整个安装以及所有集群中的所有资源。
-      restricted-admin:
-        label: 受限管理员
-        description: 受限管理员可以完全控制所有下游集群的所有资源，但不能访问本地集群。
       user:
         label: 普通用户
         description: 普通用户可以创建集群，并管理其授权访问的集群和项目。
@@ -4966,7 +4960,6 @@ setup:
     skip: 跳过
     tip: 此 {vendor} 安装应使用什么 URL？集群中的所有节点都需要能访问该 URL。
   setPassword: 请为默认用户 <code>{username}</code>设置强密码。建议使用生成的随机密码。你也可以自行设置。
-  telemetry: 允许收集<a href="{docsBase}/faq/telemetry" target="_blank" rel="noopener noreferrer nofollow">匿名统计数据</a>，以帮我们改进 {name}。
   useManual: 设置密码
   useRandom: 使用随机生成的密码
   welcome: 欢迎使用 {vendor}！
@@ -7013,7 +7006,6 @@ advancedSettings:
     'ui-dashboard-index': '{appName} UI 的 HTML 索引位置。'
     'ui-offline-preferred': '控制 UI 资产是由服务器容器在本地提供，还是从 ui-index 和 ui-dashboard-index 设置中定义的远程 URL 提供。`动态` 选项将在 {appName} 的生产版本中使用本地资产。'
     'ui-pl': '自有品牌公司名称。'
-    'telemetry-opt': '遥测报告加入。'
     'auth-user-info-max-age-seconds': '在同步验证提供程序组成员之前，用户验证 Token 的最长存活时间。'
     'auth-user-info-resync-cron': '重新同步验证提供程序组成员的默认 cron 调度。'
     'cluster-template-enforcement': '非管理员只能通过预先批准的 RKE 模板启动集群。'
@@ -7034,10 +7026,6 @@ advancedSettings:
     'ui-default-landing':
       ember: Cluster Manager
       vue: 集群浏览器
-    'telemetry-opt':
-      prompt: 提示
-      in: 加入遥测
-      out: 退出遥测
     'ui-offline-preferred':
       dynamic: 动态
       true: 本地
@@ -7318,7 +7306,7 @@ support:
       text: 我们的开发人员会快速解决问题，因此你可以放心使用 SUSE Rancher 的产品。
     three:
       title: 故障排除
-      text: 无论你使用的 Rancher Labs 产品、Kubernetes、Docker 还是底层基础架构出现问题，我们都会努力找到问题的根本原因。
+      text: 无论你使用的 SUSE 产品、Kubernetes、Docker 还是底层基础架构出现问题，我们都会努力找到问题的根本原因。
     four:
       title: 自由创新
       text: 基于我们与众多 Kubernetes 供应商、操作系统和开源软件认证的兼容性，实现自主创新。

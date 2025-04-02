@@ -55,7 +55,6 @@ export const SETTING = {
   INGRESS_IP_DOMAIN:                    'ingress-ip-domain',
   SERVER_URL:                           'server-url',
   RKE_METADATA_CONFIG:                  'rke-metadata-config',
-  TELEMETRY:                            'telemetry-opt',
   EULA_AGREED:                          'eula-agreed',
   AUTH_USER_INFO_MAX_AGE_SECONDS:       'auth-user-info-max-age-seconds',
   AUTH_USER_SESSION_TTL_MINUTES:        'auth-user-session-ttl-minutes',
@@ -95,41 +94,46 @@ export const SETTING = {
   THEME:                                'ui-theme',
   SYSTEM_NAMESPACES:                    'system-namespaces',
 
-  SYSTEM_GPU_MANAGEMENT_SCHEDULER_NAME: 'system-gpu-management-scheduler-name',
-  UI_SESSION_LOGOUT_MINUTES:            'ui-session-logout-minutes',
-  DISABLE_PASSWORD_ENCRYPT:             'disable-password-encrypt',
-  AUDIT_LOG_SERVER_URL:                 'auditlog-server-url',
-  WHITELIST_DOMAIN:                     'whitelist-domain',
-  DOWNLOAD_FILE_SIZE_LIMIT:             'download-file-size-limit',
-  PANDARIA_ENABLE_HEALTHCHECK_API:      'pandaria-enable-healthcheck-api',
-  RESTRICTED_DEFAULT_ADMIN:             'restricted-default-admin',
-  ROTATE_CERTS_IF_EXPIRING_IN_DAYS:     'rotate-certs-if-expiring-in-days',
-  SYSTEM_CATALOG:                       'system-catalog',
-  GLOBAL_MONITORING_ENABLED:            'global-monitoring-enabled',
-  GLOBAL_MONITORING_ENABLED_V2:         'global-monitoring-enabled-v2',
-  GLOBAL_MONITORING_CLUSTER_ID:         'global-monitoring-cluster-id',
-  GLOBAL_MONITORING_V2:                 'global-monitoring-v2',
+  SYSTEM_GPU_MANAGEMENT_SCHEDULER_NAME:          'system-gpu-management-scheduler-name',
+  UI_SESSION_LOGOUT_MINUTES:                     'ui-session-logout-minutes',
+  DISABLE_PASSWORD_ENCRYPT:                      'disable-password-encrypt',
+  AUDIT_LOG_SERVER_URL:                          'auditlog-server-url',
+  WHITELIST_DOMAIN:                              'whitelist-domain',
+  DOWNLOAD_FILE_SIZE_LIMIT:                      'download-file-size-limit',
+  PANDARIA_ENABLE_HEALTHCHECK_API:               'pandaria-enable-healthcheck-api',
+  RESTRICTED_DEFAULT_ADMIN:                      'restricted-default-admin',
+  ROTATE_CERTS_IF_EXPIRING_IN_DAYS:              'rotate-certs-if-expiring-in-days',
+  SYSTEM_CATALOG:                                'system-catalog',
+  GLOBAL_MONITORING_ENABLED:                     'global-monitoring-enabled',
+  GLOBAL_MONITORING_ENABLED_V2:                  'global-monitoring-enabled-v2',
+  GLOBAL_MONITORING_CLUSTER_ID:                  'global-monitoring-cluster-id',
+  GLOBAL_MONITORING_V2:                          'global-monitoring-v2',
+  THEME:                                         'ui-theme',
+  SYSTEM_NAMESPACES:                             'system-namespaces',
   /**
    * Cluster Agent configuration
    */
-  CLUSTER_AGENT_DEFAULT_AFFINITY:       'cluster-agent-default-affinity',
-  FLEET_AGENT_DEFAULT_AFFINITY:         'fleet-agent-default-affinity',
+  CLUSTER_AGENT_DEFAULT_AFFINITY:                'cluster-agent-default-affinity',
+  FLEET_AGENT_DEFAULT_AFFINITY:                  'fleet-agent-default-affinity',
   /**
    * manage rancher repositories in extensions (official, partners repos)
   */
-  ADD_EXTENSION_REPOS_BANNER_DISPLAY:   'display-add-extension-repos-banner',
-  AGENT_TLS_MODE:                       'agent-tls-mode',
+  ADD_EXTENSION_REPOS_BANNER_DISPLAY:            'display-add-extension-repos-banner',
+  AGENT_TLS_MODE:                                'agent-tls-mode',
   /**
    * User retention settings
    */
-  USER_RETENTION_CRON:                  'user-retention-cron',
-  USER_RETENTION_DRY_RUN:               'user-retention-dry-run',
-  USER_LAST_LOGIN_DEFAULT:              'user-last-login-default',
-  DISABLE_INACTIVE_USER_AFTER:          'disable-inactive-user-after',
-  DELETE_INACTIVE_USER_AFTER:           'delete-inactive-user-after',
-  K3S_UPGRADER_UNINSTALL_CONCURRENCY:   'k3s-based-upgrader-uninstall-concurrency',
-  TWO_FACTOR_AUTH_CONFIG:               'two-factor-authenticator-config',
-  AUTH_USER_OPT_SESSION_TTL_MINUTES:    'auth-user-otp-session-ttl-minutes'
+  USER_RETENTION_CRON:                           'user-retention-cron',
+  USER_RETENTION_DRY_RUN:                        'user-retention-dry-run',
+  USER_LAST_LOGIN_DEFAULT:                       'user-last-login-default',
+  DISABLE_INACTIVE_USER_AFTER:                   'disable-inactive-user-after',
+  DELETE_INACTIVE_USER_AFTER:                    'delete-inactive-user-after',
+  K3S_UPGRADER_UNINSTALL_CONCURRENCY:            'k3s-based-upgrader-uninstall-concurrency',
+  IMPORTED_CLUSTER_VERSION_MANAGEMENT:           'imported-cluster-version-management',
+  CLUSTER_AGENT_DEFAULT_PRIORITY_CLASS:          'cluster-agent-default-priority-class',
+  CLUSTER_AGENT_DEFAULT_POD_DISTRIBUTION_BUDGET: 'cluster-agent-default-pod-disruption-budget',
+  TWO_FACTOR_AUTH_CONFIG:                        'two-factor-authenticator-config',
+  AUTH_USER_OPT_SESSION_TTL_MINUTES:             'auth-user-otp-session-ttl-minutes'
 } as const;
 
 // These are the settings that are allowed to be edited via the UI
@@ -177,12 +181,8 @@ export const ALLOWED_SETTINGS: GlobalSetting = {
   },
   [SETTING.BRAND]:                        { canReset: true },
   [SETTING.CLUSTER_TEMPLATE_ENFORCEMENT]: { kind: 'boolean' },
-  [SETTING.TELEMETRY]:                    {
-    kind:    'enum',
-    options: ['prompt', 'in', 'out']
-  },
-  [SETTING.HIDE_LOCAL_CLUSTER]: { kind: 'boolean' },
-  [SETTING.AGENT_TLS_MODE]:     {
+  [SETTING.HIDE_LOCAL_CLUSTER]:           { kind: 'boolean' },
+  [SETTING.AGENT_TLS_MODE]:               {
     kind:    'enum',
     options: ['strict', 'system-store'],
     warning: 'agent-tls-mode'
@@ -210,9 +210,14 @@ export const ALLOWED_SETTINGS: GlobalSetting = {
     kind:    'enum',
     options: ['harden', 'true', 'false']
   },
-  [SETTING.AUTH_USER_OPT_SESSION_TTL_MINUTES]: {},
+  [SETTING.AUTH_USER_OPT_SESSION_TTL_MINUTES]:             {},
+  [SETTING.IMPORTED_CLUSTER_VERSION_MANAGEMENT]:           { kind: 'boolean' },
+  [SETTING.CLUSTER_AGENT_DEFAULT_PRIORITY_CLASS]:          { kind: 'json' },
+  [SETTING.CLUSTER_AGENT_DEFAULT_POD_DISTRIBUTION_BUDGET]: { kind: 'json' }
+
 };
 
+export const PROVISIONING_SETTINGS = ['engine-iso-url', 'engine-install-url', 'imported-cluster-version-management', 'cluster-agent-default-priority-class', 'cluster-agent-default-pod-disruption-budget'];
 /**
  * Settings on how to handle warnings returning in api responses, specifically which to show as growls
  */
@@ -289,20 +294,10 @@ export const DEFAULT_PERF_SETTING: PerfSettings = {
     }
   },
   serverPagination: {
-    enabled: false,
-    stores:  {
-      cluster: {
-        resources: {
-          enableAll:  false,
-          enableSome: {
-            enabled: ['configmap', 'secret', 'pod', 'node'],
-            generic: true,
-          }
-        }
-      }
-    }
+    enabled:          false,
+    useDefaultStores: true,
+    stores:           undefined,
   }
-
 };
 
 export const DEFAULT_GMV2_SETTING = {

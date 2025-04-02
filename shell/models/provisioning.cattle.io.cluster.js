@@ -10,6 +10,7 @@ import { compare } from '@shell/utils/version';
 import { AS, MODE, _VIEW, _YAML } from '@shell/config/query-params';
 import { HARVESTER_NAME as HARVESTER } from '@shell/config/features';
 import { CAPI as CAPI_ANNOTATIONS, NODE_ARCHITECTURE } from '@shell/config/labels-annotations';
+import { KEV1 } from '@shell/models/management.cattle.io.kontainerdriver';
 
 /**
  * Class representing Cluster resource.
@@ -196,7 +197,33 @@ export default class ProvCluster extends SteveModel {
       });
     }
 
-    return actions.concat(out);
+    const all = actions.concat(out);
+
+    // If the cluster is a KEV1 cluster then prevent edit
+    if (this.isKev1) {
+      const edit = all.find((action) => action.action === 'goToEdit');
+
+      if (edit) {
+        edit.enabled = false;
+      }
+    }
+
+    // If we have a helper that wants to modify the available actions, let it do it
+    if (this.customProvisionerHelper?.availableActions) {
+      // Provider can either modify the provided list or return one of its own
+      return this.customProvisionerHelper?.availableActions(this, all) || all;
+    }
+
+    return all;
+  }
+
+  get detailLocation() {
+    // Prevent going to detail page for a KEV1 cluster
+    if (this.isKev1) {
+      return undefined;
+    }
+
+    return super.detailLocation;
   }
 
   get normanCluster() {
@@ -263,7 +290,7 @@ export default class ProvCluster extends SteveModel {
   }
 
   get canDelete() {
-    return super.canDelete && this.stateObj.name !== 'removing';
+    return super.canDelete && this.stateObj?.name !== 'removing';
   }
 
   get canEditYaml() {
@@ -297,6 +324,11 @@ export default class ProvCluster extends SteveModel {
 
   get isLocal() {
     return this.mgmt?.isLocal;
+  }
+
+  // Is the cluster a legacy (unsupported) KEV1 cluster?
+  get isKev1() {
+    return KEV1.includes(this.mgmt?.spec?.genericEngineConfig?.driverName);
   }
 
   get isImported() {
@@ -367,19 +399,11 @@ export default class ProvCluster extends SteveModel {
   }
 
   get mgmtClusterId() {
-    return this.mgmt?.id || this.id?.replace(`${ this.metadata.namespace }/`, '');
+    return this.status?.clusterName;
   }
 
   get mgmt() {
-    const name = this.status?.clusterName;
-
-    if ( !name ) {
-      return null;
-    }
-
-    const out = this.$rootGetters['management/byId'](MANAGEMENT.CLUSTER, name);
-
-    return out;
+    return this.$rootGetters['management/byId'](MANAGEMENT.CLUSTER, this.mgmtClusterId);
   }
 
   get isReady() {
@@ -427,6 +451,11 @@ export default class ProvCluster extends SteveModel {
   }
 
   get provisionerDisplay() {
+    // Allow a model extension to override the display of the provisioner
+    if (this.customProvisionerHelper?.provisionerDisplay) {
+      return this.customProvisionerHelper?.provisionerDisplay(this);
+    }
+
     let provisioner = (this.provisioner || '').toLowerCase();
 
     // RKE provisioner can actually do K3s too...
@@ -522,6 +551,10 @@ export default class ProvCluster extends SteveModel {
   }
 
   get machineProviderDisplay() {
+    if (this.customProvisionerHelper?.machineProviderDisplay) {
+      return this.customProvisionerHelper?.machineProviderDisplay(this);
+    }
+
     if ( this.isImported ) {
       return null;
     }
@@ -980,6 +1013,24 @@ export default class ProvCluster extends SteveModel {
     if ( res?._status === 204 ) {
       await this.$dispatch('ws.resource.remove', { data: this });
     }
+
+    // If this cluster has a custom provisioner, allow it to do custom deletion
+    if (this.customProvisionerHelper?.postDelete) {
+      return this.customProvisionerHelper?.postDelete(this);
+    }
+  }
+
+  /**
+   * Get the custom provisioner helper for this model
+   */
+  get customProvisionerHelper() {
+    // Find the first model extension that says it can be used for this model
+    return this.modelExtensions.find((modelExt) => modelExt.useFor ? modelExt.useFor(this) : false);
+  }
+
+  get groupByParent() {
+    // Customer helper can report if the cluster has a parent cluster
+    return this.customProvisionerHelper?.parentCluster?.(this) || this.t('resourceTable.groupLabel.notInACluster');
   }
 
   editConnectMode() {

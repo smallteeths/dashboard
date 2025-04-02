@@ -109,7 +109,7 @@ export default {
       {{ t('macvlan.ipRange.label') }}
       <i
         v-if="!!validationMessage"
-        v-tooltip="validationMessage"
+        v-clean-tooltip="validationMessage"
         class="hover icon status-icon icon-warning"
       />
     </h3>

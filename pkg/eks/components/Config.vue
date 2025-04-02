@@ -4,6 +4,8 @@ import { EKSConfig, AWS } from '../types';
 import { _EDIT, _VIEW, _CREATE } from '@shell/config/query-params';
 import semver from 'semver';
 import { Store, mapGetters } from 'vuex';
+import { sortable } from '@shell/utils/version';
+import { sortBy } from '@shell/utils/sort';
 
 import { MANAGEMENT } from '@shell/config/types';
 import { SETTING } from '@shell/config/settings';
@@ -180,7 +182,7 @@ export default defineComponent({
       return this.versionOptions.filter((opt) => !opt.disabled).length > 1;
     },
 
-    versionOptions(): {value: string, label: string, disabled?:boolean}[] {
+    versionOptions(): {value: string, label: string, sort?: string, disabled?:boolean}[] {
       return this.allKubernetesVersions.reduce((versions, v: string) => {
         const coerced = semver.coerce(v);
 
@@ -201,8 +203,13 @@ export default defineComponent({
           }
         }
 
-        return versions;
-      }, [] as {value: string, label: string, disabled?:boolean}[]);
+        // Generate sort field for each version
+        versions.forEach((v) => {
+          v.sort = sortable(v.value);
+        });
+
+        return sortBy(versions, 'sort', true);
+      }, [] as {value: string, label: string, sort?: string, disabled?:boolean}[]);
     },
 
     kmsOptions(): string[] {
@@ -388,17 +395,16 @@ export default defineComponent({
       </div>
     </div>
 
-    <div class="col span-6">
+    <div class="col span-6 mt-20">
       <KeyValue
         :value="tags"
         :mode="mode"
-        :title="t('eks.tags.label')"
         :as-map="true"
         :read-allowed="false"
         @update:value="$emit('update:tags', $event)"
       >
         <template #title>
-          <label class="text-label">{{ t('eks.tags.label') }}</label>
+          <h3 v-t="'eks.tags.label'" />
         </template>
       </KeyValue>
     </div>

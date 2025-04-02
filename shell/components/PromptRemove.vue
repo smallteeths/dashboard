@@ -1,4 +1,5 @@
 <script>
+import { shallowRef } from 'vue';
 import { mapState, mapGetters } from 'vuex';
 import { get, isEmpty } from '@shell/utils/object';
 import { escapeHtml, resourceNames } from '@shell/utils/string';
@@ -40,7 +41,7 @@ export default {
       error:               '',
       warning:             '',
       preventDelete:       false,
-      removeComponent:     this.$store.getters['type-map/importCustomPromptRemove'](resource),
+      removeComponent:     shallowRef(this.$store.getters['type-map/importCustomPromptRemove'](resource)),
       chartsToRemoveIsApp: false,
       chartsDeleteCrd:     false,
       showModal:           false,
@@ -51,7 +52,7 @@ export default {
       return !!this.toRemove.find((item) => item.state === 'terminating');
     },
     names() {
-      return this.toRemove.map((obj) => obj.nameDisplay).slice(0, 5);
+      return this.toRemove.map((obj) => obj.nameDisplay);
     },
 
     nameToMatchPosition() {
@@ -95,12 +96,6 @@ export default {
       const first = this.toRemove[0];
 
       return first?.confirmRemove;
-    },
-
-    plusMore() {
-      const remaining = this.toRemove.length - this.names.length;
-
-      return this.t('promptRemove.andOthers', { count: remaining });
     },
 
     // if the current route ends with the ID of the resource being deleted, whatever page this is wont be valid after successful deletion: navigate away
@@ -172,7 +167,7 @@ export default {
       if (show) {
         const selected = this.toRemove[0];
 
-        if (this.currentRouter?.currentRoute?.name === 'c-cluster-explorer-tools' &&
+        if (this.currentRouter?.currentRoute?.value?.name === 'c-cluster-explorer-tools' &&
             selected.type === CATALOG.APP &&
             selected.spec?.chart?.metadata?.annotations[CATALOG_ANNOTATIONS.AUTO_INSTALL]) {
           this.chartsToRemoveIsApp = true;
@@ -188,7 +183,7 @@ export default {
 
         this.hasCustomRemove = this.$store.getters['type-map/hasCustomPromptRemove'](resource);
 
-        this.removeComponent = this.$store.getters['type-map/importCustomPromptRemove'](resource);
+        this.removeComponent = shallowRef(this.$store.getters['type-map/importCustomPromptRemove'](resource));
       } else {
         this.showModal = false;
       }
@@ -391,7 +386,7 @@ export default {
         <div class="mb-10">
           <template v-if="!hasCustomRemove">
             {{ t('promptRemove.attemptingToRemove', { type }) }} <span
-              v-clean-html="resourceNames(names, plusMore, t)"
+              v-clean-html="resourceNames(names, t)"
             />
           </template>
 
@@ -400,7 +395,7 @@ export default {
             v-if="hasCustomRemove"
             ref="customPrompt"
             v-model:value="toRemove"
-            v-bind="_data"
+            v-bind="$data"
             :close="close"
             :needs-confirm="needsConfirm"
             :value="toRemove"
@@ -426,6 +421,7 @@ export default {
             v-focus
             :data-testid="componentTestid + '-input'"
             type="text"
+            :aria-label="t('promptRemove.confirmName', { nameToMatch: escapeHtml(nameToMatch) })"
           />
           <div class="text-warning mb-10 mt-10">
             {{ warning }}
@@ -439,29 +435,36 @@ export default {
           >
             {{ protip }}
           </div>
-          <Checkbox
-            v-if="chartsToRemoveIsApp"
-            v-model:value="chartsDeleteCrd"
-            label-key="promptRemoveApp.removeCrd"
-            class="mt-10 type"
-            @update:value="chartAddCrdToRemove"
-          />
-          <Checkbox
-            v-if="hasTerminatingState"
-            v-model:value="removeFinalizers"
-            label-key="promptForceRemove.forceDelete"
-            class="mt-10 type"
-            @update:value="finalizersToRemove"
-          />
         </template>
+
         <div v-else-if="!hasCustomRemove">
-          <div class="text-warning mb-10 mt-10">
+          <div
+            v-if="warning"
+            class="text-warning mb-10 mt-10"
+          >
             {{ warning }}
           </div>
-          <div class="text-error mb-10 mt-10">
+          <div
+            v-if="error"
+            class="text-error mb-10 mt-10"
+          >
             {{ error }}
           </div>
         </div>
+        <Checkbox
+          v-if="chartsToRemoveIsApp"
+          v-model:value="chartsDeleteCrd"
+          label-key="promptRemoveApp.removeCrd"
+          class="mt-10 type"
+          @update:value="chartAddCrdToRemove"
+        />
+        <Checkbox
+          v-if="hasTerminatingState"
+          v-model:value="removeFinalizers"
+          label-key="promptForceRemove.forceDelete"
+          class="mt-10 type"
+          @update:value="finalizersToRemove"
+        />
       </template>
       <template #actions>
         <button

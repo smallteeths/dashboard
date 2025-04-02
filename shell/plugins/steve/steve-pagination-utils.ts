@@ -1,12 +1,32 @@
 import { ActionFindPageArgs } from '@shell/types/store/dashboard-store.types';
 import { PaginationParam, PaginationFilterField, PaginationParamProjectOrNamespace, PaginationParamFilter } from '@shell/types/store/pagination.types';
 import { NAMESPACE_FILTER_ALL_SYSTEM, NAMESPACE_FILTER_ALL_USER, NAMESPACE_FILTER_P_FULL_PREFIX } from '@shell/utils/namespace-filter';
-import Namespace from '@shell/models/namespace';
+import ModelNamespace from '@shell/models/namespace';
 import { uniq } from '@shell/utils/array';
 import {
-  CONFIG_MAP, MANAGEMENT, NAMESPACE, NODE, POD
+  CAPI,
+  CATALOG,
+  CONFIG_MAP, MANAGEMENT, EVENT, NAMESPACE, NODE, POD, PVC,
+  PV,
+  STORAGE_CLASS,
+  SERVICE,
+  INGRESS,
+  WORKLOAD_TYPES,
+  HPA,
+  SECRET
 } from '@shell/config/types';
-import { Schema } from 'plugins/steve/schema';
+import { CAPI as CAPI_LAB_AND_ANO, CATTLE_PUBLIC_ENDPOINTS } from '@shell/config/labels-annotations';
+import { Schema } from '@shell/plugins/steve/schema';
+import { PaginationSettingsStore } from '@shell/types/resources/settings';
+
+/**
+ * This is a workaround for a ts build issue found in check-plugins-build.
+ *
+ * The build would error on <ns>.name, it somehow doesn't know about the steve model's properties (they are included in typegen)
+ */
+interface Namespace extends ModelNamespace {
+  name: string;
+}
 
 class NamespaceProjectFilters {
   /**
@@ -107,8 +127,8 @@ class StevePaginationUtils extends NamespaceProjectFilters {
     '': [// all types
       { field: 'metadata.name' },
       { field: 'metadata.namespace' },
-      // { field: 'id' }, // Pending API support
-      // { field: 'metadata.state.name' }, // Pending API support
+      { field: 'id' },
+      { field: 'metadata.state.name' },
       { field: 'metadata.creationTimestamp' },
     ],
     [NODE]: [
@@ -122,12 +142,95 @@ class StevePaginationUtils extends NamespaceProjectFilters {
     [MANAGEMENT.NODE]: [
       { field: 'status.nodeName' },
     ],
+    [MANAGEMENT.NODE_POOL]: [
+      { field: 'spec.clusterName' },
+    ],
+    [MANAGEMENT.NODE_TEMPLATE]: [
+      { field: 'spec.clusterName' },
+    ],
+    [MANAGEMENT.CLUSTER]: [
+      { field: 'spec.internal' },
+      { field: 'spec.displayName' },
+      { field: `status.provider` },
+      { field: `metadata.labels["${ CAPI_LAB_AND_ANO.PROVIDER }]` },
+      { field: `status.connected` },
+    ],
     [CONFIG_MAP]: [
       { field: 'metadata.labels[harvesterhci.io/cloud-init-template]' }
     ],
     [NAMESPACE]: [
       { field: 'metadata.labels[field.cattle.io/projectId]' }
+    ],
+    [CAPI.MACHINE]: [
+      { field: 'spec.clusterName' }
+    ],
+    [EVENT]: [
+      { field: '_type' },
+      { field: 'reason' },
+      { field: 'involvedObject.kind' },
+      // { field: 'involvedObject.uid' }, // Pending API Support - https://github.com/rancher/rancher/issues/48603
+      { field: 'message' },
+    ],
+    [CATALOG.CLUSTER_REPO]: [
+      { field: 'spec.gitRepo' },
+      { field: 'spec.gitBranch' },
+      { field: `metadata.annotations[clusterrepo.cattle.io/hidden]` }
+    ],
+    [CATALOG.OPERATION]: [
+      { field: 'status.action' },
+      { field: 'status.namespace' },
+      { field: 'status.releaseName' },
+    ],
+    [CAPI.RANCHER_CLUSTER]: [
+      { field: `metadata.labels[${ CAPI_LAB_AND_ANO.PROVIDER }]` },
+      { field: `status.provider` },
+      { field: 'status.clusterName' },
+      { field: `metadata.annotations[${ CAPI_LAB_AND_ANO.HUMAN_NAME }]` }
+    ],
+    [SERVICE]: [
+      { field: 'spec.type' },
+      // { field: 'spec.clusterIP' }, // Pending API support  (blocked https://github.com/rancher/rancher/issues/48473 (index fields)
+    ],
+    [INGRESS]: [
+      // { field: 'spec.rules.host' }, // Pending API support  (blocked https://github.com/rancher/rancher/issues/48473 (index fields)
+      // { field: 'spec.ingressClassName' }, // Pending API support  (blocked https://github.com/rancher/rancher/issues/48473 (index fields)
+    ],
+    [HPA]: [
+      // { field: 'spec.scaleTargetRef.name' }, // Pending API support https://github.com/rancher/rancher/issues/48473 (hpa filtering fix)
+      // { field: 'spec.minReplicas' }, // Pending API support https://github.com/rancher/rancher/issues/48473 (hpa filtering fix)
+      // { field: 'spec.maxReplicas' }, // Pending API support https://github.com/rancher/rancher/issues/48473 (hpa filtering fix)
+      // { field: 'spec.currentReplicas' }, // Pending API support https://github.com/rancher/rancher/issues/48473 (hpa filtering fix)
+    ],
+    [PVC]: [
+      { field: 'spec.volumeName' },
+    ],
+    [PV]: [
+      { field: 'status.reason' },
+      { field: 'spec.persistentVolumeReclaimPolicy' },
+    ],
+    [STORAGE_CLASS]: [
+      { field: 'provisioner' },
+      // { field: `metadata.annotations[STORAGE.DEFAULT_STORAGE_CLASS]` }, // Pending API Support - https://github.com/rancher/rancher/issues/48453
+    ],
+    [CATALOG.APP]: [
+      { field: 'spec.chart.metadata.name' }
+    ],
+    [WORKLOAD_TYPES.CRON_JOB]: [
+      { field: `metadata.annotations[${ CATTLE_PUBLIC_ENDPOINTS }]` }
+    ],
+    [WORKLOAD_TYPES.DAEMON_SET]: [
+      { field: `metadata.annotations[${ CATTLE_PUBLIC_ENDPOINTS }]` }
+    ],
+    [WORKLOAD_TYPES.DEPLOYMENT]: [
+      { field: `metadata.annotations[${ CATTLE_PUBLIC_ENDPOINTS }]` }
+    ],
+    [WORKLOAD_TYPES.JOB]: [
+      { field: `metadata.annotations[${ CATTLE_PUBLIC_ENDPOINTS }]` }
+    ],
+    [WORKLOAD_TYPES.STATEFUL_SET]: [
+      { field: `metadata.annotations[${ CATTLE_PUBLIC_ENDPOINTS }]` }
     ]
+
   }
 
   private convertArrayPath(path: string): string {
@@ -295,18 +398,21 @@ class StevePaginationUtils extends NamespaceProjectFilters {
     state.checked.push(field);
 
     // First check in our hardcoded list of supported filters
-    if ([
-      StevePaginationUtils.VALID_FIELDS[''], // Global
-      StevePaginationUtils.VALID_FIELDS[schema.id], // Type specific
-    ].find((fields) => fields?.find((f) => {
-      if (f.startsWith) {
-        if (field.startsWith(f.field)) {
-          return true;
+    if (
+      process.env.NODE_ENV === 'dev' &&
+      [
+        StevePaginationUtils.VALID_FIELDS[''], // Global
+        StevePaginationUtils.VALID_FIELDS[schema.id], // Type specific
+      ].find((fields) => fields?.find((f) => {
+        if (f.startsWith) {
+          if (field.startsWith(f.field)) {
+            return true;
+          }
+        } else {
+          return field === f.field;
         }
-      } else {
-        return field === f.field;
-      }
-    }))) {
+      }))
+    ) {
       return;
     }
 
@@ -338,9 +444,15 @@ class StevePaginationUtils extends NamespaceProjectFilters {
               // Check if the API supports filtering by this field
               this.validateField(validateFields, schema, field.field);
 
-              const exactPartial = field.exact ? `'${ field.value }'` : field.value;
+              const value = encodeURIComponent(field.value);
 
-              return `${ this.convertArrayPath(field.field) }${ field.equals ? '=' : '!=' }${ exactPartial }`;
+              // = exact match (equals + exact)
+              // ~ partial match (equals + !exact)
+              // != not exact match (!equals + exact)
+              // !~ not partial match (!equals + !exact)
+              const operator = `${ field.equals ? '' : '!' }${ field.exact ? '=' : '~' }`;
+
+              return `${ this.convertArrayPath(field.field) }${ operator }${ value }`;
             }
 
             return field.value;
@@ -364,5 +476,38 @@ class StevePaginationUtils extends NamespaceProjectFilters {
     return res;
   }
 }
+
+export const PAGINATION_SETTINGS_STORE_DEFAULTS: PaginationSettingsStore = {
+  cluster: {
+    resources: {
+      enableAll:  false,
+      enableSome: {
+        // if a resource list is shown by a custom resource list component or has specific list headers then it's not generically shown
+        // and must be included here.
+        enabled: [
+          NODE, EVENT,
+          WORKLOAD_TYPES.CRON_JOB, WORKLOAD_TYPES.DAEMON_SET, WORKLOAD_TYPES.DEPLOYMENT, WORKLOAD_TYPES.JOB, WORKLOAD_TYPES.STATEFUL_SET, POD,
+          CATALOG.APP, CATALOG.CLUSTER_REPO, CATALOG.OPERATION,
+          HPA, INGRESS, SERVICE,
+          PV, CONFIG_MAP, STORAGE_CLASS, PVC, SECRET,
+          WORKLOAD_TYPES.REPLICA_SET, WORKLOAD_TYPES.REPLICATION_CONTROLLER
+        ],
+        generic: true,
+      }
+    }
+  },
+  management: {
+    resources: {
+      enableAll:  false,
+      enableSome: {
+        enabled: [
+          { resource: CAPI.RANCHER_CLUSTER, context: ['home', 'side-bar'] },
+          { resource: MANAGEMENT.CLUSTER, context: ['side-bar'] },
+        ],
+        generic: false,
+      }
+    }
+  }
+};
 
 export default new StevePaginationUtils();

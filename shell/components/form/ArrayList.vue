@@ -48,6 +48,10 @@ export default {
       type:    Boolean,
       default: false,
     },
+    addIcon: {
+      type:    String,
+      default: '',
+    },
     addLabel: {
       type:    String,
       default: '',
@@ -89,7 +93,7 @@ export default {
       type:      Array,
       // we only want functions in the rules array
       validator: (rules) => rules.every((rule) => ['function'].includes(typeof rule))
-    }
+    },
   },
   data() {
     const input = (Array.isArray(this.value) ? this.value : []).slice();
@@ -368,8 +372,8 @@ export default {
           @click="add()"
         >
           <i
-            v-if="loading"
-            class="mr-5 icon icon-spinner icon-spin icon-lg"
+            class="mr-5 icon"
+            :class="loading ? ['icon-lg', 'icon-spinner','icon-spin']: [addIcon]"
           />
           {{ _addLabel }}
         </button>
@@ -407,5 +411,9 @@ export default {
       float: right;
       padding: 5px 0;
     }
+  }
+
+  .required {
+    color: var(--error);
   }
 </style>

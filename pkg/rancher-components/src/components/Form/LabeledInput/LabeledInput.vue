@@ -2,7 +2,7 @@
 import { defineComponent, inject } from 'vue';
 import TextAreaAutoGrow from '@components/Form/TextArea/TextAreaAutoGrow.vue';
 import LabeledTooltip from '@components/LabeledTooltip/LabeledTooltip.vue';
-import { escapeHtml } from '@shell/utils/string';
+import { escapeHtml, generateRandomAlphaString } from '@shell/utils/string';
 import cronstrue from 'cronstrue';
 import { isValidCron } from 'cron-validator';
 import { debounce } from 'lodash';
@@ -105,8 +105,19 @@ export default defineComponent({
     class: {
       type:    String,
       default: ''
+    },
+
+    /**
+     * Optionally use this to comply with a11y IF there's no label
+     * associated with the input
+     */
+    ariaLabel: {
+      type:    String,
+      default: ''
     }
   },
+
+  emits: ['change', 'update:value', 'blur', 'update:validation'],
 
   setup(props, { emit }) {
     const {
@@ -137,6 +148,7 @@ export default defineComponent({
     return {
       updated:          false,
       validationErrors: '',
+      inputId:          `input-${ generateRandomAlphaString(12) }`
     };
   },
 
@@ -177,14 +189,28 @@ export default defineComponent({
       if (this.type !== 'cron' || !this.value) {
         return;
       }
+
+      // TODO - #13202: This is required due use of 2 libraries and 3 different libraries through the code.
+      const predefined = [
+        '@yearly',
+        '@annually',
+        '@monthly',
+        '@weekly',
+        '@daily',
+        '@midnight',
+        '@hourly'
+      ];
+      const isPredefined = predefined.includes(this.value as string);
+
       // refer https://github.com/GuillaumeRochat/cron-validator#readme
-      if (!isValidCron(this.value as string, {
+      if (!isPredefined && !isValidCron(this.value as string, {
         alias:              true,
         allowBlankDay:      true,
         allowSevenAsSunday: true,
       })) {
         return this.t('generic.invalidCron');
       }
+
       try {
         const hint = cronstrue.toString(this.value as string || '', { verbose: true });
 
@@ -221,6 +247,14 @@ export default defineComponent({
 
     className() {
       return this.class;
+    }
+  },
+
+  mounted() {
+    const id = this.$attrs?.id as string | undefined;
+
+    if (id) {
+      this.inputId = id;
     }
   },
 
@@ -314,7 +348,10 @@ export default defineComponent({
     }"
   >
     <slot name="label">
-      <label v-if="hasLabel">
+      <label
+        v-if="hasLabel"
+        :for="inputId"
+      >
         <t
           v-if="labelKey"
           :k="labelKey"
@@ -333,8 +370,10 @@ export default defineComponent({
     <slot name="field">
       <TextAreaAutoGrow
         v-if="type === 'multiline' || type === 'multiline-password'"
+        :id="inputId"
         ref="value"
         v-bind="$attrs"
+        v-stripped-aria-label="!hasLabel && ariaLabel ? ariaLabel : undefined"
         :maxlength="_maxlength"
         :disabled="isDisabled"
         :value="value || ''"
@@ -347,7 +386,10 @@ export default defineComponent({
       />
       <input
         v-else
+        :id="inputId"
         ref="value"
+        v-stripped-aria-label="!hasLabel && ariaLabel ? ariaLabel : undefined"
+        role="textbox"
         :class="{ 'no-label': !hasLabel }"
         v-bind="$attrs"
         :maxlength="_maxlength"
@@ -366,12 +408,14 @@ export default defineComponent({
     </slot>
 
     <slot name="suffix" />
+    <!-- informational tooltip about field -->
     <LabeledTooltip
-      v-if="hasTooltip && !focused"
+      v-if="hasTooltip"
       :hover="hoverTooltip"
       :value="tooltipValue"
       :status="status"
     />
+    <!-- validation tooltip -->
     <LabeledTooltip
       v-if="!!validationMessage"
       :hover="hoverTooltip"
@@ -380,9 +424,12 @@ export default defineComponent({
     <div
       v-if="cronHint || subLabel"
       class="sub-label"
+      data-testid="sub-label"
     >
       <div
         v-if="cronHint"
+        role="alert"
+        :aria-label="cronHint"
       >
         {{ cronHint }}
       </div>

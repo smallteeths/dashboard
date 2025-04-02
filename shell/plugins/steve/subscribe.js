@@ -506,7 +506,7 @@ const sharedActions = {
   },
 
   unwatch(ctx, {
-    type, id, namespace, selector
+    type, id, namespace, selector, all
   }) {
     const { commit, getters, dispatch } = ctx;
 
@@ -521,16 +521,26 @@ const sharedActions = {
         stop: true, // Stops the watch on a type
       };
 
+      const unwatch = (obj) => {
+        if (getters['watchStarted'](obj)) {
+          // Set that we don't want to watch this type
+          // Otherwise, the dispatch to unwatch below will just cause a re-watch when we
+          // detect the stop message from the backend over the web socket
+          commit('setWatchStopped', obj);
+          dispatch('watch', obj); // Ask the backend to stop watching the type
+          // Make sure anything in the pending queue for the type is removed, since we've now removed the type
+          commit('clearFromQueue', type);
+        }
+      };
+
       if (isAdvancedWorker(ctx)) {
         dispatch('watch', obj); // Ask the backend to stop watching the type
+      } else if (all) {
+        getters['watchesOfType'](type).forEach((obj) => {
+          unwatch(obj);
+        });
       } else if (getters['watchStarted'](obj)) {
-        // Set that we don't want to watch this type
-        // Otherwise, the dispatch to unwatch below will just cause a re-watch when we
-        // detect the stop message from the backend over the web socket
-        commit('setWatchStopped', obj);
-        dispatch('watch', obj); // Ask the backend to stop watching the type
-        // Make sure anything in the pending queue for the type is removed, since we've now removed the type
-        commit('clearFromQueue', type);
+        unwatch(obj);
       }
     }
   },
@@ -1092,6 +1102,10 @@ const defaultMutations = {
 const defaultGetters = {
   inError: (state) => (obj) => {
     return state.inError[keyForSubscribe(obj)];
+  },
+
+  watchesOfType: (state) => (type) => {
+    return state.started.filter((entry) => type === (entry.resourceType || entry.type));
   },
 
   watchStarted: (state) => (obj) => {

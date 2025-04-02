@@ -120,6 +120,11 @@ export default {
       default: () => []
     },
 
+    stepsOptions: {
+      type:    Object,
+      default: () => ({ editFirstStep: true })
+    },
+
     // The set of labels to display for the finish AsyncButton
     finishMode: {
       type:    String,
@@ -485,7 +490,12 @@ export default {
             class="subtype-banner"
             :class="{ selected: subtype.id === _selectedSubtype }"
             :data-testid="`subtype-banner-item-${subtype.id}`"
+            tabindex="0"
+            :aria-disabled="false"
+            :aria-label="subtype.description ? `${subtype.label} - ${subtype.description}` : subtype.label"
+            role="link"
             @click="selectType(subtype.id, $event)"
+            @keyup.enter.space="selectType(subtype.id, $event)"
           >
             <slot name="subtype-content">
               <div class="subtype-container">
@@ -562,6 +572,7 @@ export default {
             ref="Wizard"
             :header-mode="mode"
             :steps="steps"
+            :edit-first-step="stepsOptions.editFirstStep"
             :errors="errors"
             :finish-mode="finishMode"
             class="wizard"
@@ -818,6 +829,10 @@ export default {
   .subtype-banner {
     .round-image {
       background-color: var(--primary);
+    }
+
+    &:focus-visible {
+      @include focus-outline;
     }
   }
 }
