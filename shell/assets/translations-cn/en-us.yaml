@@ -110,12 +110,33 @@ generic:
   podSecurityAdmission: Pod Security Admission
   here: here
   upload: Upload
+  actionMenu: action menu
+  ariaLabel:
+    key: Key {index}
+    value: Value {index}
+  ascending: ascending
+  basic: Basic
+  clearFilters: clear filters
+  clearSearch: clear search
+  colorPicker: Color picker
+  copiedToClipboard: Text copied to Clipboard
+  copyToClipboard: Copy text to Clipboard
+  descending: descending
+  filterNamespaces: filter namespaces
+  inProgress: In Progress
+  namespaceFilter: namespace filter menu
+  readFromFileArea: Read from File - {area}
+  split: Split
+  unified: Unified
+  userAvatar: user avatar
+  userMenu: user menu
 locale:
   en-us: English
   zh-hans: 简体中文
   zh-hant: 繁體中文
   zh-hant-tw: 台灣繁體
   none: (None)
+  menu: Locale selector menu
 nav:
   backToRancher: Cluster Manager
   clusterTools: Cluster Tools
@@ -189,6 +210,7 @@ nav:
     placeholder: Filter clusters by...
     noResults: No matching clusters
     clusters: clusters
+    ariaLabel: Filter clusters on main menu
   resourceSearch:
     label: Resource Search
     toolTip: Resource Search {key}
@@ -196,10 +218,14 @@ nav:
   header:
     setLoginPage: Set as login page
     restoreCards: Restore hidden cards
+    showHideBanner: Show/Hide Banner
   userMenu:
     preferences: Preferences
     accountAndKeys: Account & API Keys
     logOut: Log Out
+    button:
+      label: Open user menu
+    label: User menu
   failWhale:
     reload: Reload
     separator: or
@@ -231,6 +257,30 @@ nav:
     desc: Extra Dashboards For Rancher
     appInstall:
       label: Install
+  actionMenu:
+    button:
+      label: Open page actions menu
+    label: Page actions menu
+  alt:
+    mainMenuIcon: Main menu icon
+    mainMenuRancherLogo: Main menu Rancher logo
+  ariaLabel:
+    about: About page link
+    cluster: Cluster menu item
+    clusterIconKeyCombo: Cluster keyboard shortcut combination icon
+    clusterProvIcon: Cluster {cluster} provider icon
+    collapseExpand: Collapse/Expand menu group
+    configurationApps: Main menu configuration app menu item
+    harvesterCluster: Harvester cluster menu item
+    homePage: Home page navigation menu
+    localClusterIcon: Local Cluster icon
+    multiClusterApps: Main menu multi cluster app menu item
+    pinCluster: Pin/Unpin {cluster} cluster
+    productAboutPage: Product about page link
+    seeAll: See all clusters menu item
+    support: Support page link
+    topLevelMenu: Main menu
+  expandCollapseAppBar: Expand/Collapse the Application Bar
 product:
   apps: Apps
   auth: Users & Authentication
@@ -521,6 +571,7 @@ authConfig:
       ldap: LDAP
       starttls: Start TLS
       tls: LDAPS (TLS)
+    userLoginFilter: User Login Filter
   saml:
     entityID: Entity ID Field
     UID: UID Field
@@ -627,6 +678,9 @@ authConfig:
     tokenEndpoint: Token Endpoint
     url: URL
     userInfoEndpoint: User Info Endpoint
+    groupSearch:
+      label: Enable group search
+      tooltip: Allows users with appropriate permissions to search and view all groups within the OIDC provider's realm. This can be useful for administrators who need to assign global roles to groups that they are not currently a member of.
   stateBanner:
     disabled: 'The {provider} authentication provider is currently disabled.'
     enabled: 'The {provider} authentication provider is currently enabled.'
@@ -910,6 +964,16 @@ backupRestoreOperator:
     useBackup: Use the s3 location specified on the Backup CR
     useDefault: Use the default storage location configured during installation
   targetBackup: Target Backup
+  backup:
+    description: The Resource Set determines which resources the backup-restore-operator collects in a backup
+    enableEncryptionWarning: Enabling encryption is highly recommended when using <b><i>Full Rancher backup resource set</i></b>, otherwise sensitive information will be backed up as plain-text. <a target="_blank" rel="noopener noreferrer nofollow" href="https://ranchermanager.docs.rancher.com/reference-guides/backup-restore-configuration/backup-configuration#resourcesets">Read more</a>.
+    label: Resource Set
+    missingResourceSetWarning: The <b><i>{resourceSet}</i></b> resource set doesn't exist, it's possible it has been deleted. Please select a different option.
+    resourceSetOptions:
+      custom: Custom
+      customResourceSetLabel: Custom Resource Set
+      rancher-resource-set-basic: Basic Rancher backup resource set
+      rancher-resource-set-full: Full Rancher backup resource set
 catalog:
   app:
     managed: Managed
@@ -922,6 +986,8 @@ catalog:
         label: Resources
         busy: The related resources will appear when {app} is fully installed.
       values: Values YAML
+    upgrade:
+      uncertainUpgradeWarningTooltip: Unable to determine if an upgrade is available (can not identify the repository and chart used to deploy this application)
   chart:
     header:
       charts: Charts
@@ -971,10 +1037,16 @@ catalog:
       all: All Operating Systems
       linux: Linux
       windows: Windows
-    search: Filter
+    search: Filter charts results
     featuredCharts: Featured Charts
     deprecatedChartsFilter:
       label: Show deprecated apps
+    browseAriaLabel: Show only charts grid
+    browseBtn: Browse
+    featuredAriaLabel: Show Featured Charts Carousel and charts grid
+    featuredBtn: Featured
+    iconAlt: Icon for {app} card/grid item
+    refresh: refresh charts
   install:
     action:
       goToUpgrade: Edit/Upgrade
@@ -1068,7 +1140,7 @@ catalog:
       linux: '{ver} (Linux-only)'
       windows: '{ver} (Windows-only)'
     warning:
-      managed: Warning, Rancher manages deployment and upgrade of the {name} app. Upgrading this app is not supported.<br> {version, select, null { } other { Under most circumstances, no user intervention should be needed to ensure that the {version} version is compatible with the version of Rancher that you are running.} }
+      managed: Warning, {manager} manages deployment and upgrade of the {name} app. Upgrading this app is not supported.<br> {version, select, null { } other { Under most circumstances, no user intervention should be needed to ensure that the {version} version is compatible with the version of Rancher that you are running.} }
   operation:
     tableHeaders:
       action: Action
@@ -1094,7 +1166,7 @@ catalog:
       git: Git repository containing Helm chart or cluster template definitions
       http: http(s) URL to an index generated by Helm
       label: Target
-      oci: OCI Repository <span class="oci-experimental-badge text-bold ml-5">Experimental</span>
+      oci: OCI Repository
     url:
       label: Index URL
       placeholder: 'e.g. https://charts.rancher.io'
@@ -1105,18 +1177,22 @@ catalog:
         label: Exponential Back Off
         maxRetries:
           label: Max Number of Retries
-          placeholder: 5 (default)
+          placeholder: 'default: 5'
         maxWait:
-          label: Max Wait Time (in Seconds)
-          placeholder: 5 (default)
+          label: Max Wait Time
+          placeholder: 'default: 5'
         minWait:
-          label: Min Wait Time (in Seconds)
-          placeholder: 1 (default)
-      info: Add OCI URLs that contain ONLY helm charts. For large repositories containing many charts consider targeting a specific namespace or chart to improve performance, for example with oci://<registry-host>/<namespace> or oci://<registry-host>/<namespace>/<chart-name>. The list of charts available from the repository is updated every 6 hours.
+          label: Min Wait Time
+          placeholder: 'default: 1'
+      info: For large repositories containing many charts consider targeting a specific namespace or chart to improve performance, for example with oci://<registry-host>/<namespace> or oci://<registry-host>/<namespace>/<chart-name>.
       insecurePlainHttp: Insecure Plain Http
       placeholder: e.g. oci://<registry-host>/<namespace>/<chart-name>:<tag>
       skipTlsVerifications: Skip TLS Verifications
       urlLabel: OCI Repository Host URL
+      warning: OCI URLs must ONLY target helm chart/s.
+    refreshInterval:
+      label: Refresh Interval
+      placeholder: 'default: {hours}'
   tools:
     header: Cluster Tools
     noTools: "No Cluster Tools found"
@@ -1126,12 +1202,13 @@ catalog:
       edit: Edit
       remove: Remove
       manage: Manage
+    iconAlt: Icon for {app} Cluster Tool
   os:
     versionIncompatible: "This version is not compatible with Windows nodes."
     chartIncompatible: "This chart is not compatible with Windows nodes."
   delete:
     warning:
-      managed: Warning, Rancher manages deployment and upgrade of the {name} app. Deleting this app is not supported.
+      managed: Warning, {manager} manages deployment and upgrade of the {name} app. Deleting this app is not supported.
 changePassword:
   title: Change Password
   cancel: Cancel
@@ -1301,11 +1378,12 @@ cluster:
     registrationCommand:
       label: Registration Command
       linuxDetail: Run this command on each of the existing Linux machines you want to register.
-      windowsDetail: Run this command in PowerShell on each of the existing Windows machines you want to register. Windows nodes can only be workers.
-      windowsNotReady: The cluster must be up and running with Linux etcd, control plane, and worker nodes before the registration command for adding Windows workers will display.
+      windowsDetail: Run this command in PowerShell on each of the existing Windows machines you want to register.
+      windowsNotReady: The cluster must be up and running with Linux etcd, control plane, and worker nodes before the registration command for adding Windows workers will display.<br /> <br /><b>Windows nodes can only be workers.</b>
       windowsWarning: Workload pods, including some deployed by Rancher charts, will be scheduled on both Linux and Windows nodes by default. Edit NodeSelector in the chart to direct them to be placed onto a compatible node.
       windowsDeprecatedForRKE1: Windows support is being deprecated for RKE1. We suggest migrating to RKE2.
       insecure: "Insecure: Select this to skip TLS verification if your server has a self-signed certificate."
+      windowsWorkersOnly: <b>Windows nodes can only be workers.</b>
   credential:
     banner:
       createCredential: |-
@@ -1986,6 +2064,8 @@ cluster:
     cloudProviderAddConfig: On Kubernetes 1.27 or greater, the <b>Amazon</b> Cloud Provider requires additional configuration. See <a href="https://ranchermanager.docs.rancher.com/how-to-guides/new-user-guides/kubernetes-clusters-in-rancher-setup/set-up-cloud-providers/amazon" target="_blank" rel="noopener noreferrer nofollow">the documentation</a> for more information.
     cloudProviderMigrateAzure: On Kubernetes 1.30 or greater, the <b>Azure</b> Cloud Provider has been removed. To upgrade Kubernetes, the cluster should be migrated to External provider first.<br> See <a href="https://ranchermanager.docs.rancher.com/how-to-guides/new-user-guides/kubernetes-clusters-in-rancher-setup/set-up-cloud-providers/azure" target="_blank" rel="noopener noreferrer nofollow">the documentation</a> for more information.
     cloudProviderUnsupportedAzure: On Kubernetes 1.30 or greater, the <b>Azure</b> Cloud Provider has been removed. See <a href="https://ranchermanager.docs.rancher.com/how-to-guides/new-user-guides/kubernetes-clusters-in-rancher-setup/set-up-cloud-providers/azure" target="_blank" rel="noopener noreferrer nofollow">the documentation</a> for more information.
+    rke1DeprecationMessage: Rancher Kubernetes Engine (RKE / RKE1) will reach end of life on July 31, 2025. Rancher 2.12.0 and later will no longer support provisioning or managing downstream RKE1 clusters. We recommend replatforming RKE1 clusters to RKE2 to ensure continued support and security updates. Learn more about the transition <a href="https://www.suse.com/support/kb/doc/?id=000021518" target="_blank" rel="noopener noreferrer nofollow">here</a>.
+    rke1DeprecationShortMessage: Rancher Kubernetes Engine (RKE / RKE1) will reach end of life on July 31, 2025. Rancher 2.12.0 and later will no longer support provisioning or managing downstream RKE1 clusters.
   rkeTemplateUpgrade: Template revision {name} available for upgrade
   detail:
     provisioner: Provisioner
@@ -2070,6 +2150,8 @@ cluster:
     docsLinkRke2: For help configuring private registry mirrors, see the RKE2 <a href="https://docs.rke2.io/install/private_registry" target="_blank">documentation.</a>
     label: Enable cluster scoped container registry for Rancher system container images
     header: Registry for Rancher System Container Images
+    importedDescription: By default, Rancher will also use this registry when installing Rancher's official Helm chart apps. If the cluster scoped registry is disabled, system images are pulled from the System Default Registry in the global settings.
+    privateRegistryUrlError: A registry must be a valid url. Scheme is optional.
   provider:
     ack: ACK
     ackoperatorsetting: Alibaba ACK
@@ -2083,7 +2165,7 @@ cluster:
     azure: Azure
     azureaks: Azure AKS
     aks: Azure AKS
-    azurekubernetesservice: Azure AKS
+    azurekubernetesservice: Azure AKS (Unsupported Kev1)
     baiducloudcontainerengine: Baidu CCE
     baidu: Baidu CCE
     cloudca: Cloud.ca
@@ -2136,6 +2218,8 @@ cluster:
     machineinventoryselectortemplate: Elemental Cluster
     huawei: Hua Wei
     ovhcloudmks: OVHcloud MKS
+    amazonelasticcontainerservice: Amazon EKS (Unsupported Kev1)
+    googlekubernetesengine: Google GKE (Unsupported Kev1)
   providerTag:
     rke2:
       harvester: '{tag}'
@@ -2150,7 +2234,7 @@ cluster:
     register-custom: Import any Kubernetes cluster
   rke2:
     snapshots:
-      suffix: Snapshots per node
+      suffix: Snapshots
     systemService:
       rke2-coredns: 'CoreDNS'
       rke2-ingress-nginx: 'NGINX Ingress'
@@ -2186,6 +2270,7 @@ cluster:
     workerConcurrency:
       label: Worker Concurrency
       toolTip: "This can be either a fixed number of nodes (e.g. 1) at a time or a percentage (e.g. 10%)"
+      header: Worker Nodes
     drain:
       label: Drain Nodes
       toolTip: Draining preemptively removes the pods on each node so there are no running workloads on the nodes being upgraded.  Upgrading without draining is faster and causes less shuffling around, but pods may still be restarted depending on the upgrade being performed.
@@ -2220,6 +2305,7 @@ cluster:
         label: TLS Alternate Names
       fqdn:
         toolTip: A FQDN which will resolve to the healthy control plane nodes of the cluster.
+        label: FQDN
       caCerts:
         label: CA Certificates
         toolTip: Certificates required for the client to successfully verify the validity of the certificate returned by the endpoint.
@@ -2228,15 +2314,18 @@ cluster:
         enable: Enable IPv6 support
     etcd:
       disableSnapshots:
-        label: Automatic Snapshots
+        label: Automatic Backups
       snapshotScheduleCron:
         label: Cron Schedule
       snapshotRetention:
-        label: Keep the last
+        label: Snapshot retention count
+        tooltip: Each backup records 1 snapshot per etcd node. If you specify 3 snapshots and you have 3 etcd nodes you will only retain 1 full backup.
       exportMetric:
         label: Metrics
         false: Only available inside the cluster
         true: Exposed to the public interface
+      s3backups:
+        label: Save Backups to S3
     cisProfile:
       option: (None)
     defaultPodSecurityAdmissionConfigurationTemplateName:
@@ -2302,7 +2391,7 @@ cluster:
       message: "Error requesting snapshot {name}"
   tabs:
     ace: Authorized Endpoint
-    addons: Add-On Config
+    addons: Add-on Configuration
     advanced: Advanced
     agentEnv: Agent Environment Vars
     basic: Basics
@@ -2349,9 +2438,15 @@ cluster:
       podRequestsAndLimits: Requests and Limits
       podTolerations: Tolerations
       selector: Selector
+      schedulingCustomization: Scheduling Customization
     subGroups:
       nodeAffinity: Node Affinity
       podAffinityAnti: Pod Affinity/Anti-Affinity
+      schedulingCustomization:
+        banner: This feature has been enabled with settings that are different from the global default settings.
+        description: This ensures that the cluster agent pod is not evicted due to node pressure, resource constraints or scheduler policies.
+        innerCheckbox: Apply global settings for Priority Class and Pod Disruption Budget
+        label: Prevent Rancher cluster agent pod eviction
     tabs:
       cluster: Cluster Agent
       fleet: Fleet Agent
@@ -2410,6 +2505,7 @@ clusterIndexPage:
         =1 {core}
         other {cores}}
     limit: Limit
+    allocated: Allocated
   header: Cluster Dashboard
   resourceGauge:
     totalResources: Total Resources
@@ -2445,6 +2541,20 @@ clusterIndexPage:
       cattle: Cattle
       fleet: Fleet
       noRows: There are no unhealthy nodes to show.
+      component:
+        cattle:
+          label: Cattle
+        controller-manager:
+          label: Controller Manager
+        etcd:
+          label: Etcd
+        fleet:
+          label: Fleet
+        scheduler:
+          label: Scheduler
+      tooltip:
+        disconnected: Agent disconnected
+        unavailableReplicas: Replicas not available
     certs:
       label: Certificates
 configmap:
@@ -2540,6 +2650,9 @@ fleet:
   cluster:
     summary: Resource Summary
     nonReady: Non-Ready Bundles
+    hideLabels: Show less
+    labels: Labels
+    showLabels: Show more
   clusters:
     harvester: |-
       There {count, plural,
@@ -2578,6 +2691,7 @@ fleet:
       label: Authentication
       git: Git Authentication
       helm: Helm Authentication
+      title: Authentication
     caBundle:
       label: Certificates
       placeholder: "Paste in one or more certificates, starting with -----BEGIN CERTIFICATE----"
@@ -2601,10 +2715,26 @@ fleet:
           subtext: 'Define repository details'
           description: Fleet will continuously monitor the Git Repository you configure below and synchronise the resources contained in it to the configured targets.
         targetInfo:
-          label: Target Details
+          label: Target details
           title: Specify which target to synchronise this repository to
           subtext: 'Define target details'
           description: You can configure which clusters will be used as the target of synchronisation with the resources in the repository.
+        advanced:
+          description: Fleet will use the authentication settings and polling to synchronise the resources contained in it.
+          info: These settings are for advanced usage and optional. You can skip them and finish the creation process.
+          label: Advanced
+          subtext: Define advanced settings
+          title: Specify advanced settings like authenticaion credentials and polling
+        metadata:
+          description: Git repository basic info
+          label: Metadata
+          subtext: Define metadata details
+          title: Specify the Git Repository name and labels/annotations
+        repo:
+          description: Fleet will continuously monitor the Git Repository you configure below and synchronise the resources contained in it to the configured targets.
+          label: Repository details
+          subtext: Define repository details
+          title: Specify the Git Repository to add to fleet
     ref:
       label: Watch
       branch: A Branch
@@ -2645,13 +2775,40 @@ fleet:
       label: Workspace
       addWorkspace: Create a workspace
     resources:
-      keepResources: Always Keep Resources
+      keepResources: Always keep resources
       label: Resource Handling
       resourceBanner: When enabled above, resources will be kept when deleting a GitRepo or Bundle - only Helm release secrets will be deleted.
-      correctDrift: Enable Self-Healing
+      correctDrift: Enable self-healing
       correctDriftTooltip: When enabled, Fleet will ensure that the cluster resources are kept in sync with the git repository. All resource changes made on the cluster will be lost.
       keepResourcesTooltip: When enabled, resources will be kept when deleting a GitRepo or Bundle - only Helm release secrets will be deleted.
     helmRepoURLRegex: Helm Repos (URL Regex)
+    actions:
+      disablePolling:
+        label: Disable Polling
+      enablePolling:
+        label: Enable Polling
+      forceUpdate:
+        label: Force Update
+        promptNames: 'You are attempting to update: '
+        promptTitle: Force Update
+        promptWarning: |-
+          {
+            count, plural,
+            =1 {Force update could be a long running process, the repository will be cloned again.}
+            other {Force update could be a long running process, the repositories will be cloned again.}
+          }
+      pause:
+        label: Pause
+      unpause:
+        label: Unpause
+    polling:
+      enable: Enable Polling
+      label: Polling
+      pollingInterval:
+        label: Polling Interval
+        minimumValuewarning: The recommended minimum Polling Interval is 15 seconds. To avoid performance issues with GitRepos that contain a large amount of resources please consider increasing this value.
+        tooltip: Polling Interval is the time between a push to the Repository and Fleet's reaction to it.
+        webhookWarning: A webhook is configured in Rancher to reconcile Git updates and GitRepo resources. The Polling Interval will automatically be adjusted to 1 hour.
   clusterGroup:
     selector:
       label: Cluster Selectors
@@ -2680,6 +2837,8 @@ fleet:
     tabs:
       restrictions: Allowed Target Namespaces
     timeout: Workspace creation timeout. It's possible the workspace was created. We suggest checking the workspace page before trying to create another.
+    remove:
+      warning: Deleting a Workspace also deletes all resources in the Workspace. This includes GitRepos but also Clusters.<br><br>Deleted Clusters will be removed from {vendor}, and if {vendor} manages the life-cycle of the Cluster it's underlying infrastructure will also be deleted.
 footer:
   docs: Docs
   download: Download CLI
@@ -2766,6 +2925,8 @@ clusterBadge:
   customize: Customize
   customizeAppearance: Customize Appearance
   setClusterAppearance: Cluster Appearance
+  badgeAppearance: Cluster Badge Appearance
+  clusterComment: Cluster comment - {text}
 grafanaDashboard:
   failedToLoad: Failed to load graph
   reload: Reload
@@ -2884,6 +3045,8 @@ import:
     =1 {1 Resource}
     other {# Resources}
     }
+  editor:
+    label: YAML Editor
 ingress:
   certificates:
     addCertificate: Add Certificate
@@ -3233,8 +3396,8 @@ landing:
     memoryUsed: Memory Used
     architecture: Architecture
     distro: Distro
-  seeWhatsNew: Learn more about the improvements and new capabilities in this version and read about the UI framework migration in 2.10
-  whatsNewLink: "What's new in 2.10"
+  seeWhatsNew: Learn more about the improvements and new capabilities in {version}
+  whatsNewLink: "What's new in {version}"
   learnMore: Learn More
   gettingStarted:
     title: Getting Started
@@ -3255,6 +3418,7 @@ landing:
       homePage: Take me to the home page
       lastVisited: Take me to the area I last visited
       custom: "Take me to cluster:"
+    ariaLabelTakeMeToCluster: Select which cluster to take me to after login
   welcomeToRancher: 'Welcome to {vendor}'
   deprecatedPsp: Pod Security Policies are deprecated as of Kubernetes v1.21, and have been removed in Kubernetes v1.25. You have one or more PodSecurityPolicy resource(s) in this cluster.
   psps: PSPs
@@ -3464,6 +3628,9 @@ logging:
       certificate: Connection
       labels: Labels
       configuration: Configuration
+    tips:
+      multipleProviders: This output is configured with providers we do not support yet. You can view or edit the YAML.
+      singleProvider: This output is configured with multiple providers. We currently only support a single provider per output. You can view or edit the YAML.
   outputProviders:
     elasticsearch: Elasticsearch
     splunkHec: Splunk
@@ -3581,6 +3748,8 @@ login:
   specificError: 'An error occurred logging in: {msg}'
   loggedOutFromSso: You've been logged out of Rancher, however you may still be logged in to your single sign-on identity provider.
   loggedOutFromSlo: You've been logged out of Rancher and from your single sign-on identity provider.
+  invalidResponseError: Invalid response received to login request. Please try again.
+  userUnauthorized: You are not authorized to use this system.
 managementNode:
   customName: Custom Name
 members:
@@ -3618,6 +3787,7 @@ members:
   clusterMemebership: Cluster Membership
   projectMembership: Project Membership
   clusterMembership: Cluster Membership
+  memberRoles: Member Roles
 membershipEditor:
   label: Members
   user: User
@@ -4007,6 +4177,9 @@ namespace:
       stateName: 'Inactive'
       shortDescription: Deployment is paused
       longDescription: Deployment is paused. Pausing stops the controller from deploying revisions.
+  snapshots:
+    label: Snapshots
+    totalSnapshotSize: Total Snapshot Size
 namespaceFilter:
   noMatchingOptions: No matching options
   more: "+{more}"
@@ -4717,6 +4890,7 @@ projectNamespaces:
   noNamespaces: There are no namespaces defined.
   noProjectNoNamespaces: All namespaces are in a project
   isIstioInjectionEnabled: Istio automatic sidecar injection is enabled for this namespace
+  tableActionsLabel: More actions for project { resource }
 prometheusRule:
   alertingRules:
     addLabel: Add Alert
@@ -5049,6 +5223,7 @@ resourceDetail:
       This {type} is managed by {hasName, select,
         no {a {managedBy} app}
         yes {the {managedBy} app {appName}}}; changes made here will likely be overwritten the next time {managedBy} runs.
+    createdBy: Created by
 resourceList:
   head:
     create: Create
@@ -5067,6 +5242,7 @@ resourceTable:
     node: Group by Node
     cluster: Group by Cluster
     role: Group by Role
+    device: Group by Device
   groupLabel:
     cluster: "<span>Cluster:</span> {name}"
     namespace: "<span>Namespace:</span> {name}"
@@ -5138,6 +5314,17 @@ secret:
     publicPlaceholder: "Paste in your public key"
     private: Private Key
     privatePlaceholder: "Paste in your private key"
+    editKnownHosts:
+      entries: |-
+        {entries, plural,
+          =0 {Empty}
+          =1 {1 Entry}
+          other {{entries} Entries}
+        }
+      title: SSH Known Hosts Configuration
+    keysAndHosts: Keys and Known Hosts
+    knownHosts: Known Hosts
+    knownHostsPlaceholder: Known hosts metadata, one per line
   serviceAcct:
     ca: CA Certificate
     token: Token
@@ -5209,9 +5396,12 @@ selectOrCreateAuthSecret:
     password: Password
   namespaceGroup: "Namespace: {name}"
   chooseExisting: "Choose an existing secret:"
-  createSsh: Create a SSH Key Secret
-  createBasic: Create a HTTP Basic Auth Secret
-  createS3: Create a S3-Compatible Auth Secret
+  createSsh: Create an SSH Key Secret
+  createBasic: Create an HTTP Basic Auth Secret
+  createS3: Create an S3-Compatible Auth Secret
+  createRKE: Create an RKE Auth Config Secret
+  rke:
+    info: An RKE Auth Config secret contains the username and password concatenated and base64 encoded into the secret's 'auth' key
 serviceAccount:
   automount: Automount Service Account Token
   imagePullSecrets: Image Pull Secrets
@@ -5402,6 +5592,11 @@ sortableTable:
     groupBy: Group by
     noFilter: This column cannot be filtered by
     show: Show
+  genericGroupCheckbox: Table group selection checkbox
+  genericRowCheckbox: Table row selection checkbox for item {item}
+  searchLabel: Filter table results
+  tableActionsImgAlt: More actions icon
+  tableActionsLabel: More actions - { resource }
 storageClass:
   actions:
     setAsDefault: Set as Default
@@ -5922,6 +6117,10 @@ tableHeaders:
   repoPerClusterState: Cluster State
   repoPerClusterStateTooltip: The state of the repo on the cluster
   userState: Enabled
+  lastUsed: Last Used
+  restartSystem: Restart { vendor }
+  restore: Restore
+  totalSnapshotQuota: Total Snapshot Quota
 target:
   router:
     label: Router
@@ -6154,6 +6353,8 @@ validation:
   invalidCidr: Invalid CIDR
   invalidIP: Invalid IP
   alphanumeric: '"{key}" must be alphanumeric'
+  git:
+    repository: Repository URL must be a HTTP(s) or SSH url with no trailing spaces
 wizard:
   previous: Previous
   finish: Finish
@@ -6194,13 +6395,28 @@ wm:
     search: Filter
     timestamps: Show Timestamps
     wrap: Wrap Lines
+    expand: Expand additional container logs options
+    logActionMenu: Logs action menu
+    options: Additional container logs options
+    searchLogs: Search/filter logs
   containerShell:
     clear: Clear
     containerName: "Container: {label}"
     permissionDenied:
       message: Permission Denied
       title: Error Open Shell
-    failed: "Unable to open a shell to the container (none of the shell commmands succeeded)\n\r"
+    failed: "Unable to open a shell to the container (none of the shell commands succeeded)\n\r"
+    closeShellTab: Close Shell tab - {tab}
+    escapeText: Press Shift+Escape to blur from terminal
+    logLevel:
+      debug: DEBUG
+      error: ERROR
+      info: INFO
+      warning: WARN
+    logMessage:
+      containerError: '{ logLevel }: Container missing shell executable (/bin/sh)'
+    resizeShellWindow: Resize Shell window - use arrow keys {arrow1} and {arrow2} to resize with keyboard
+    tabIcon: Shell tab icon
   kubectlShell:
     title: "Kubectl: {name}"
 workload:
@@ -6619,6 +6835,7 @@ workload:
           shared: Shared
       drivers:
         driver.longhorn.io: Longhorn
+        driver-longhorn-io: Longhorn
       fsType: Filesystem Type
       shareName: Share Name
       secretName: Secret Name
@@ -6730,6 +6947,11 @@ workload:
       pod: Pod
       containers: Containers
   error: Pod { name } Security Policy Violation { policy }
+  healthScaleToggle: Toggle/Expand workloads scaling/health
+  healthWorkloads: Jobs/Pods health status
+  minus: Scale down workload
+  plus: Scale up workload
+  scaleWorkloads: Scale workloads
 harvesterManager:
   manage: Manage
   cluster:
@@ -7431,6 +7653,7 @@ action:
   suspend: Suspend
   resume: Resume
   forceUpdate: Force Update Machine Plan
+  editQuota: Edit Quota
 unit:
   sec: secs
   min: mins
@@ -7499,6 +7722,7 @@ advancedSettings:
     value: Value
     useDefault: Use the default value
     invalidJSON: Invalid JSON - please check and correct your input before saving
+    moreActions: More actions for setting - { setting }
   descriptions:
     'cacerts': "CA Certificates needed to verify the server's certificate."
     'password-min-length': 'Define minimum characters required for an user password.'
@@ -7542,6 +7766,7 @@ advancedSettings:
     system-catalog: Configure Rancher to use System Chart Repo.
     agent-tls-mode: Rancher Certificate Verification. In `strict` mode the agents (system, cluster, fleet, etc) will only trust Rancher installations which are using a certificate signed by the CABundle in the `cacerts` setting. When the mode is system-store, the agents will trust any certificate signed by a CABundle in the operating system’s trust store.
     k3s-based-upgrader-uninstall-concurrency: Defines the maximum number of clusters in which Rancher can concurrently uninstall the legacy `rancher-k3s-upgrader` or `rancher-rke2-upgrader` app from imported K3s or RKE2 clusters.
+    imported-cluster-version-management: Enables version management for imported RKE2/K3s clusters, and the local cluster if it is an RKE2/K3s cluster. The per-cluster version management setting overrides this global setting at the cluster level. For existing clusters where the cluster-level version management is set to 'system-default', changing this flag will trigger a redeployment of the cluster agent during the next reconciliation (by default every 5 minutes, or as soon as the cluster is edited, whichever comes first).
   editHelp:
     'ui-banners': This setting takes a JSON object containing 3 root parameters; <code>banner</code>, <code>showHeader</code>, <code>showFooter</code>. <code>banner</code> is an object containing; <code>textColor</code>, <code>background</code>, and <code>text</code>, where <code>textColor</code> and <code>background</code> are any valid CSS color value.
   enum:
@@ -7577,6 +7802,10 @@ advancedSettings:
   modified: Modified
   warnings:
     agent-tls-mode: Changing this setting will cause all agents to be redeployed.
+  hideShow: Hide/show setting
+  provisioning:
+    header: Cluster provisioning
+  setEnv: Set by Environment Variable
 featureFlags:
   label: Feature Flags
   warning: |-
@@ -7586,10 +7815,11 @@ featureFlags:
     This will result in a short outage of the API and UI, but not affect running clusters or workloads.
   promptActivate: Please confirm that you want to activate the feature flag "{flag}"
   promptDeactivate: Please confirm that you want to deactivate the feature flag "{flag}"
-  restartRequired: "Note: Updating this feature flag requires a restart"
+  restartRequired: "Note: Updating this feature flag will restart {vendor}"
   restart:
     title: Waiting for Restart
     wait: This may take a few moments
+  title: Are you sure?
 performance:
   label: UI Performance Settings
   settingName: Performance
@@ -7659,7 +7889,7 @@ performance:
     inputLabel: Inactivity timeout (minutes)
     title: Inactivity
   serverPagination:
-    applicable: This applies to the following resource types
+    applicable: Server-side pagination applies to Resource Types
     checkboxLabel: Enable Server-side Pagination
     description: By default Lists will fetch all resources and paginate in the browser (create the page given sorting and filtering settings). Change this setting to enable pagination server-side. This should help the responsiveness of the UI in systems with a lot of resources.
     featureFlag: The&nbsp;<a href="{ffUrl}">Feature Flag</a>&nbsp;`ui-sql-cache` must be enabled to use this feature
@@ -7668,6 +7898,8 @@ performance:
     resources:
       all: All Resources
       generic: most resources in the cluster's 'More Resources' section
+    experimental: This setting is experimental and may be removed or updated in future versions. We do not recommend enabling this setting in production environments.
+  deprecatedForSSP: The <i class="mr-5">"{setting}"</i> setting is now deprecated and will be removed in a future release.
 banner:
   label: Fixed Banners
   settingName: Banners
@@ -7711,6 +7943,7 @@ branding:
     uploadLight: Upload Light Logo
     uploadDark: Upload Dark Logo
     useCustom: Use a Custom Logo
+    home: Product main page
   favicon:
     label: Favicon
     tip: 'Upload an icon to replace the Rancher favicon in the browser tab. Max file size is 20KB.'
@@ -7851,7 +8084,7 @@ support:
       text: Run SUSE Rancher products with confidence, knowing that the developers who built them are available to quickly resolve issues.
     three:
       title: Troubleshooting
-      text: We focus on uncovering the root cause of any issue, whether it is related to Rancher Labs products, Kubernetes, Docker or your underlying infrastructure.
+      text: We focus on uncovering the root cause of any issue, whether it is related to SUSE products, Kubernetes, Docker or your underlying infrastructure.
     four:
       title: Innovate with Freedom
       text: Take advantage of our certified compatibility with a wide range of Kubernetes providers, operating systems, and open source software.
@@ -7917,6 +8150,8 @@ auth:
 vncConsole:
   error:
     message: Web VNC console connection is disconnected
+  reconnecting:
+    message: Web VNC console reconnection attempt
 customLinks:
   addLink: Add Link
   defaults:
@@ -7928,6 +8163,7 @@ customLinks:
     slack: Slack
     mirror: Download Mirror
     suseCollective: SUSE Collective
+    appCo: SUSE Application Collection
   description: Configure the links to display on the home page. You can define your own custom links as well as show or hide default links.
   displayTitle: Links
   label: Home Links
@@ -7995,6 +8231,8 @@ plugins:
     third-party: Third-Party
     uninstalling: Uninstalling ...
     image: Image
+    menu: Extensions menu
+    reloadRancher: Reload Rancher
   loadError: An error occurred loading the code for this extension
   manageRepos: Manage Repositories
   reload: Extensions changed - reload required
@@ -8048,6 +8286,7 @@ plugins:
     installed: Installed
     updates: Updates
     images: Images
+    builtin: Built-in
   title: Extensions
   uninstall:
     label: Uninstall
@@ -8119,6 +8358,9 @@ plugins:
   incompatibleHost: The latest version of this extension ({ version }) has a host of "{ required }" which is not compatible with this application "{ mainHost }".
   incompatibleUiExtensionsApiVersion: The latest version of this extension ({ version }) is not compatible with the current Extensions API version ({ required }).
   incompatibleUiExtensionsApiVersionMissing: The latest version of this extension ({ version }) is missing the mandatory annotation catalog.cattle.io/ui-extensions-version from Rancher 2.10 and onwards.
+  altIcon: Icon for {extension} extension card
+  closePluginPanel: Close plugin description panel
+  viewVersionDetails: View extension {name} version {version} details/Readme
 clusterConnectMode:
   actions:
     restartConfirm: Are You Sure You Want To Save Connect Mode And Restart {name} Cluster Controller？
@@ -8637,6 +8879,7 @@ codeMirror:
   keymap:
     indicatorToolip: 'Key mapping: {name}'
     tooltip: Key mapping preference.
+  escapeText: Press Shift+Escape to blur from editor
 drivers:
   actions:
     refresh: Refresh Kubernetes Metadata
@@ -8717,3 +8960,12 @@ promptSlo:
     active: Only log out of Rancher
   text: Log out of only Rancher, or all {name} applications.
   title: Log out
+carousel:
+  controlItem: Go to slide nº {number}
+  next: Next
+  previous: Previous
+labeledSelect:
+  pressEnter: Press enter to add "{input}"
+  startTyping: Start typing to define an item
+windowmanager:
+  closeTab: Close tab {tabId}
