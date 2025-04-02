@@ -1071,7 +1071,7 @@ export default {
         border-bottom-left-radius: 0;
         border-bottom-right-radius: 0;
         border-color: var(--primary-border);
-        z-index: $dropdown-z-index;
+        z-index: z-index('dropdownContent');
       }
 
       > .ns-values {

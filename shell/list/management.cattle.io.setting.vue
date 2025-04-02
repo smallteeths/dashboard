@@ -73,11 +73,7 @@ export default {
   },
 
   data() {
-    const experimentalItems = ['two-factor-authenticator-config'];
-
-    return {
-      settings: null, provisioningSettings: null, experimentalItems
-    };
+    return { settings: null, provisioningSettings: null };
   },
   computed: { ...mapGetters({ t: 'i18n/t' }) }
 };

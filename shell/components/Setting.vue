@@ -14,6 +14,11 @@ export default {
     ...mapGetters({ t: 'i18n/t' }),
     ...mapGetters({ options: 'action-menu/optionsArray' }),
   },
+  data() {
+    const experimentalItems = ['two-factor-authenticator-config'];
+
+    return { experimentalItems };
+  }
 };
 </script>
 
@@ -26,7 +31,7 @@ export default {
       <div class="title">
         <h1>
           {{ value.id }}
-          <strong v-if="experimentalItems.includes(setting.id)">({{ t('generic.experimental') }})</strong>
+          <strong v-if="experimentalItems.includes(value.id)">({{ t('generic.experimental') }})</strong>
           <span
             v-if="value.fromEnv"
             class="modified"
@@ -68,7 +73,7 @@ export default {
         <pre v-if="value.kind === 'json'">{{ value.json }}</pre>
         <pre v-else-if="value.kind === 'multiline'">{{ value.data.value || value.data.default }}</pre>
         <pre v-else-if="value.kind === 'enum'">{{ t(value.enum) }}</pre>
-        <pre v-else-if="setting.kind === 'enum-map'">{{ setting.enumMap }}</pre>
+        <pre v-else-if="value.kind === 'enum-map'">{{ value.enumMap }}</pre>
         <pre v-else-if="value.data.value || value.data.default">{{ value.data.value || value.data.default }}</pre>
         <pre
           v-else
