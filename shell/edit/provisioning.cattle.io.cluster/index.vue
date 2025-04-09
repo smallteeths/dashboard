@@ -82,6 +82,7 @@ export default {
   },
 
   async fetch() {
+    console.log(this.value);
     const hash = {
       // These aren't explicitly used, but need to be listening for change events
       mgmtClusters: this.$store.dispatch('management/findAll', { type: MANAGEMENT.CLUSTER }),
@@ -193,6 +194,8 @@ export default {
     const chart = this.$route.query[CHART] || null;
     const isImport = this.realMode === _IMPORT;
 
+    console.log(subType);
+
     return {
       nodeDrivers:      [],
       operatorDrivers:  [],
@@ -255,6 +258,7 @@ export default {
           return '';
         }
         if ( this.subType ) {
+          console.log(this.subType);
           // if driver type has a custom form component, don't load an ember page
           if (this.selectedSubType.component) {
             return '';
@@ -333,6 +337,7 @@ export default {
 
       const templates = this.templateOptions;
       const vueKontainerTypes = getters['plugins/clusterDrivers'];
+
       // Pandaria Remove cnrancher ack/tke/cce kontainer driver
       const deprecatedKontainerDrivers = getters['plugins/deprecatedKontainerDrivers'];
       const machineTypes = this.nodeDrivers.filter((x) => x.spec.active && x.state === 'active');
@@ -356,6 +361,14 @@ export default {
 
       if ( isImport ) {
         addType(this.$plugin, 'import', 'custom', false);
+        this.extensions.forEach((ext) => {
+          if (ext.id !== 'ack') {
+            return;
+          }
+          // Allow extensions to overwrite provisioners with the same id
+          console.log(ext.component);
+          addExtensionType(ext, getters);
+        });
       } else {
         templates.forEach((chart) => {
           out.push({
@@ -693,9 +706,9 @@ export default {
         />
       </div>
     </template>
-
+    <!-- ack cce tke ui支持导入 -->
     <Import
-      v-if="isImport"
+      v-if="isImport && !['ack', 'cce', 'tke'].includes(subType)"
       v-model:value="localValue"
       :mode="mode"
       :provider="subType"
@@ -710,6 +723,7 @@ export default {
         :initial-value="initialValue"
         :live-value="liveValue"
         :mode="mode"
+        :isImport="isImport"
         :provider="subType"
         :provider-config="selectedSubType.providerConfig"
         @update:value="$emit('input', $event)"

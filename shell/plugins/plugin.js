@@ -5,6 +5,7 @@ import { getKubeVersionData, getVersionData } from '@shell/config/version';
 import versions from '@shell/utils/versions';
 
 export default async function(context) {
+  console.log('=========================');
   if (process.env.excludeOperatorPkg === 'true') {
     return;
   }
