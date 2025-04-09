@@ -1,0 +1,103 @@
+ackCn:
+  label: ACK VUE
+  updateWarn: 集群正在升级，编辑可能导致未知错误
+  changedHistoryK8sVerison: 集群版本变更之后，无法编辑节点池
+  resourceGroup:
+    label: 资源组
+    all: 账号全部资源
+  region:
+    label: 区域
+  clusters:
+    managed: 托管Kubernetes
+    label: 集群类型
+  version:
+    label: Kubernetes版本
+    warningAliyun: “{version}”，此版本阿里云不在支持，如果继续部署将会导致集群部署失败，请更换其他版本。
+    warningRacher: “{version}”，此版本不在 Rancher 支持矩阵范围内，请更换其他版本。可参考
+    warningRancherTip: Rancher 支持矩阵。
+    warningEdited: 检测到 Kubernetes 版本被修改，其他配置项将暂时不支持修改。历史版本为 {version}。
+    toggle: 切换
+  clusterSpec:
+    pro: Pro 版
+    standard: 基础版本
+    label: 集群规格
+  vpcId:
+    label: 专有网络
+    prompt: 选择专有网络...
+    required: 必须选择专有网络
+    default: 默认专有网络
+  vswitchId:
+    label: 交换机
+    prompt: 选择交换机...
+    required: 必须选择交换机
+    default: 默认交换机
+  cni:
+    label: 网络插件
+  proxyMode:
+    label: kube-proxy 代理模式
+  nodeCidrMask:
+    label: 节点 IP 数量
+  containerCidr:
+    label: Pod 网络 CIDR
+    required: 必须输入Pod 网络 CIDR
+    invalid: Pod 网络 CIDR 网段格式不合法
+    placeholder: "请填写有效的私有网段，即以下网段及其子网：10.0.0.0/8，172.16-31.0.0/12-16，192.168.0.0/16。不能与VPC及VPC内已有kubernetes集群使用的网段重复"
+  serviceCidr:
+    label: Service CIDR
+    required: 必须输入Service CIDR
+    invalid: Service CIDR 网段不可选
+    placeholder: "可选范围：10.0.0.0/16-24，172.16-31.0.0/16-24，192.168.0.0/16-24。不能与VPC及VPC内已有kubernetes集群使用的网段重复"
+  snatEntry:
+    label: 配置 SNAT
+    placeholder: 为专有网络配置 SNAT
+  endpointPublicAccess:
+    label: 公网访问
+    placeholder: 使用 EIP 暴露 API Server
+  nodePoolName:
+    label: 节点池名称
+    placeholder: e.g. nodepool
+    required: 必须设置worker节点池名称
+    unique: 节点池名称重复
+  runtime:
+    label: Containerd 版本
+  instanceType:
+    label: 实例类型
+    required: 实例类型必须设置
+    placeholder: 节点实例类型
+  numOfNodes:
+    label: Worker 节点数
+    placeholder: '例如: 3'
+    required: 实例数量必须大于等于 0
+  rootSize:
+    label: 根磁盘大小
+    placeholder: '例如: 120'
+    required: 根磁盘大小必须大于等于 40GB
+  rootType:
+    label: 根磁盘类型
+    required: 根磁盘类型必须配置
+  storageType:
+    label: 数据磁盘类型
+    required: 数据磁盘类型必须配置
+  storageSize:
+    label: 数据磁盘大小
+    placeholder: '例如: 120'
+  disk:
+    cloud: 普通云盘
+    ephemeralSsd: 本地SSD盘
+    efficiency: 高效云盘
+    ssd: SSD 云盘
+    essd: ESSD 云盘
+    cloudAuto: ESSD AutoPL 云盘
+  platform:
+    label: 操作系统
+  keyPair:
+    label: 密钥对
+    required: 必须选择密钥对
+  clusterSelect:
+    title: 选择集群
+    detail: 选择要注册的 ACK 集群
+    next: 注册集群
+    importCluster: 集群
+    required: 必须设置需要导入的集群
+    placeholder: '请选择'
+    

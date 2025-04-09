@@ -1,0 +1,103 @@
+ackCn:
+  label: ACK VUE
+  updateWarn: The cluster is currently being upgraded, and editing may result in unknown errors.
+  changedHistoryK8sVerison: After the cluster version changes, the node pool cannot be edited.
+  resourceGroup:
+    label: Resource Group
+    all: Account's all Resources
+  region:
+    label: Region
+  clusters:
+    managed: Managed Kubernetes
+    label: Cluster Type
+  version:
+    label: Kubernetes Version
+    warningAliyun: “{version}”, Ali Cloud is not supported in this version. If you continue to deploy it, cluster deployment will fail, please replace it with another version.
+    warningRacher: “{version}”, This version is not supported by Rancher,  please replace it with another version for reference
+    warningRancherTip: Rancher supported versions.
+    warningEdited: It is detected that the Kubernetes version has been modified, and other configuration items will not support modification temporarily. Historical version is {vsersion}。
+    toggle: Switch Mode
+  clusterSpec:
+    pro: Pro 
+    standard: STANDARD
+    label: Cluster specifications
+  vpcId:
+    label: VPC
+    prompt: Choose VPC...
+    required: VPC is required
+    default: Default VPC
+  vswitchId:
+    label: VSwitch
+    prompt: Choose VSwitch...
+    required: VSwitch is required
+    default: Default VSwitch
+  cni:
+    label: Network Plugin
+  proxyMode:
+    label: Kube-Proxy Mode
+  nodeCidrMask:
+    label: IP Addresses per Node
+  containerCidr:
+    label: Pod CIDR Block
+    required: Pod CIDR Block is required
+    invalid: Pod CIDR Block is invalid
+    placeholder: "Specify a valid CIDR block that contains only internal IP addresses, namely one of the following CIDR blocks or their subnets: 10.0.0.0/8 172.16-31.0.0/12-16 and 192.168.0.0/16.Cannot be duplicated with the VPC and the network segment used by the existing kubernetes cluster in the VPC"
+  serviceCidr:
+    label: Service CIDR
+    required: Service CIDR is required
+    invalid: Service CIDR is invalid
+    placeholder: "Valid CIDR blocks include: 10.0.0.0/8 172.16-31.0.0/12-16 and 192.168.0.0/16.Cannot be duplicated with the VPC and the network segment used by the existing kubernetes cluster in the VPC"
+  snatEntry:
+    label: Configure SNAT
+    placeholder: Configure SNAT for VPC
+  endpointPublicAccess:
+    label: Public Access
+    placeholder: Expose API Server with EIP
+  nodePoolName:
+    label: Nood Pool Name
+    placeholder: e.g. nodepool
+    required: Worker Node Name is required
+    unique: Node pool names must be unique.
+  runtime:
+    label: Containerd Version
+  instanceType:
+    label: Instance Type
+    required: Instance Type is required
+    placeholder: Configure instance type for node
+  numOfNodes:
+    label: Worker Nodes Count
+    placeholder: e.g. 3
+    minRequired: The number of instances must be greater than or equal to 0.
+  rootSize:
+    label: Root Disk Size
+    placeholder: e.g. 120
+    minRequired: The number of root size must be greater than or equal to 40 GB.
+  rootType:
+    label: Root Disk Type
+    required: Root Disk Type is required
+  storageType:
+    label: Data Disk Type
+    required: Data Disk Type is required
+  storageSize:
+    label: Data Disk Size
+    placeholder: e.g. 120
+  disk:
+    cloud: Ordinary Disk
+    ephemeralSsd: Local SSD Disk
+    efficiency: Ultra Disk
+    ssd: SSD Disk
+    essd: ESSD Disk
+    cloudAuto: ESSD AutoPL Disk
+  platform:
+    label: Operating System
+  keyPair:
+    label: Key Pair
+    required: Key Pair is required
+  clusterSelect:
+    title: Select Cluster
+    detail: Select the ACK cluster you want to register
+    next: Register Cluster
+    importCluster: Cluster
+    required: Import Cluster is required
+    placeholder: 'Choose'
+  
