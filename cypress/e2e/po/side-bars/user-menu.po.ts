@@ -91,15 +91,6 @@ export default class UserMenuPo extends ComponentPo {
    * @param label
    * @returns
    */
-  getMenuItem(label: 'Preferences' | 'Account & API Keys' | 'Log Out') {
-    return this.ensureOpen().then(() => this.getMenuItems().contains(label));
-  }
-
-  /**
-   * label: 'Preferences', 'Account & API Keys', or 'Log Out'
-   * @param label
-   * @returns
-   */
   clickMenuItem(label: 'Preferences' | 'Account & API Keys' | 'Log Out') {
     this.getMenuItem(label).click();
 

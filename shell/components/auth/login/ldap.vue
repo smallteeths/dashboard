@@ -19,9 +19,7 @@ export default {
   },
 
   data() {
-    return {
-      username: '', password: '', disabledEncryption: null
-    };
+    return { username: '', password: '' };
   },
 
   methods: {

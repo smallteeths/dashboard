@@ -126,9 +126,12 @@ describe('Cluster Manager', { testIsolation: 'off', tags: ['@manager', '@adminUs
 
     // verify that the AKS card is not shown
     clusterList.goTo();
+    clusterList.checkIsCurrentPage();
+    clusterList.createCluster();
     clusterCreatePage.gridElementExistanceByName('Azure AKS', 'not.exist');
 
     // re-enable the AKS kontainer driver
+    KontainerDriversPagePo.navTo();
     driversPage.waitForPage();
     driversPage.list().actionMenu('Azure AKS').getMenuItem('Activate').click();
     cy.wait('@activateDriver').its('response.statusCode').should('eq', 200).then(() => {

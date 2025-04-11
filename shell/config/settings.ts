@@ -108,8 +108,6 @@ export const SETTING = {
   GLOBAL_MONITORING_ENABLED_V2:                  'global-monitoring-enabled-v2',
   GLOBAL_MONITORING_CLUSTER_ID:                  'global-monitoring-cluster-id',
   GLOBAL_MONITORING_V2:                          'global-monitoring-v2',
-  THEME:                                         'ui-theme',
-  SYSTEM_NAMESPACES:                             'system-namespaces',
   /**
    * Cluster Agent configuration
    */

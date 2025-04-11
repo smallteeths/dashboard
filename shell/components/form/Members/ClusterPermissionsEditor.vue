@@ -191,7 +191,6 @@ export default {
         opt:  { url: `/v3/principals/${ principalId }` }
       }, { root: true });
     },
-
     customPermissionsUpdate() {
       return this.customPermissions.reduce((acc, customPermissionsItem) => {
         const lockedExist = this.roleTemplates.find((roleTemplateItem) => roleTemplateItem.id === customPermissionsItem.key);

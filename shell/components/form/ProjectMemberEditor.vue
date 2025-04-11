@@ -205,7 +205,6 @@ export default {
         }
       ];
     },
-
     customPermissionsUpdate() {
       return this.customPermissions.reduce((acc, customPermissionsItem) => {
         const lockedExist = this.roleTemplates.find((roleTemplateItem) => roleTemplateItem.id === customPermissionsItem.key);

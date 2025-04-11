@@ -95,20 +95,6 @@ class VSphereUtils {
     };
   }
 
-  private handleVsphereSecret({ $store, provider }: { $store: any, provider: string}): boolean {
-    if (provider !== VMWARE_VSPHERE) {
-      return false;
-    }
-
-    const isPrebootstrapEnabled = $store.getters['features/get'](PROVISIONING_PRE_BOOTSTRAP);
-
-    if (!isPrebootstrapEnabled) {
-      return false;
-    }
-
-    return true;
-  }
-
   /**
    * Check that system is setup to handle vsphere secrets syncing downstream
    *
