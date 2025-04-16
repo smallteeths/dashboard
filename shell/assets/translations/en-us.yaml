@@ -2096,7 +2096,8 @@ cluster:
         title: Save Machine Configurations
         body: Machine Configurations define how machines in Pools are deployed.<br><br> They will be saved upfront to ensure valid Cluster YAML can be saved.
     snapshots:
-      suffix: Snapshots
+      suffix: Snapshots per node
+      s3Suffix: Snapshots
     systemService:
       rke2-coredns: 'CoreDNS'
       rke2-ingress-nginx: 'NGINX Ingress'
@@ -2397,6 +2398,8 @@ drivers:
       =1 { {warningDrivers} Resources in the corresponding provider will not be automatically removed.}
       other { {warningDrivers} Resources in the corresponding providers will not be automatically removed.}
       }
+  error:
+    activate: Failed to activate { name } driver
 
 detailText:
   collapse: Hide
@@ -2776,6 +2779,7 @@ hpa:
       label: Metric Name
       placeholder: e.g. packets-per-second
     selector:
+      header: Metric Selector
       label: Add Selector
   metricTarget:
     averageVal:

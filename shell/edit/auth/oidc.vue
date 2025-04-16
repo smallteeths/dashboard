@@ -141,8 +141,17 @@ export default {
         return;
       }
 
+      if (!this.oidcUrls.url) {
+        this.model.issuer = '';
+        if (isKeycloak) {
+          this.model.authEndpoint = '';
+        }
+
+        return;
+      }
+
       const url = this.oidcUrls.url.replaceAll(' ', '');
-      const realmsPath = isKeycloak ? 'auth/realms' : 'realms';
+      const realmsPath = 'realms';
 
       this.model.issuer = `${ url }/${ realmsPath }/${ this.oidcUrls.realm || '' }`;
 
