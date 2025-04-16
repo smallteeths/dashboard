@@ -29,6 +29,8 @@ import {
   setVendor
 } from '@shell/config/private-label';
 import loadPlugins from '@shell/plugins/plugin';
+// 仿造 loadPlugins 在登录之后重新加载下 operator-setting 上对应的 plugin
+import loadOperatorSetting from '@shell/plugins/operator-setting';
 import Loading from '@shell/components/Loading';
 import { getGlobalBannerFontSizes } from '@shell/utils/banners';
 import { encryptPassword } from '@shell/utils/auth';
@@ -316,6 +318,12 @@ export default {
         // so we manually load them here - other SSO auth providers bounce out and back to the Dashboard, so on the bounce-back
         // the plugins will load via the boot-time plugin
         await loadPlugins({
+          app:     this.$store.app,
+          store:   this.$store,
+          $plugin: this.$store.$plugin
+        });
+        // pandaria
+        await loadOperatorSetting({
           app:     this.$store.app,
           store:   this.$store,
           $plugin: this.$store.$plugin

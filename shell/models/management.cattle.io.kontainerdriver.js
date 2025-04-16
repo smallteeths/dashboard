@@ -41,6 +41,8 @@ export const DRIVER_TO_IMPORT = {
   aliyun:    'ack',
   huawei:    'huawei',
   tencent:   'tke',
+  // vue 版本 provider name
+  ack:       'ack',
 };
 
 export default class KontainerDriver extends HybridModel {
