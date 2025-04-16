@@ -2234,7 +2234,8 @@ cluster:
     register-custom: Import any Kubernetes cluster
   rke2:
     snapshots:
-      suffix: Snapshots
+      suffix: Snapshots per node
+      s3Suffix: Snapshots
     systemService:
       rke2-coredns: 'CoreDNS'
       rke2-ingress-nginx: 'NGINX Ingress'
@@ -2965,6 +2966,7 @@ hpa:
       placeholder: e.g. packets-per-second
     selector:
       label: Add Selector
+      header: Metric Selector
   metricTarget:
     averageVal:
       label: Average Value
@@ -8149,7 +8151,7 @@ auth:
   roleTemplate: Role Templates
 vncConsole:
   error:
-    message: Web VNC console connection is disconnected
+    message: Web VNC console is disconnected
   reconnecting:
     message: Web VNC console reconnection attempt
 customLinks:
@@ -8925,6 +8927,8 @@ drivers:
     title: Node Drivers
   operatorsetting:
     title: Operator Configuration
+  error:
+    activate: Failed to activate { name } driver
 jwt:
   actions:
     activate: Enable
