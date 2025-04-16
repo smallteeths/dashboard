@@ -6,18 +6,18 @@ typeLabel:
     }
   flatnetwork.pandaria.io.flatnetworksubnet: |-
     {count, plural,
-      one { 扁平網絡 (V2 實驗性) }
-      other { 扁平網絡 (V2 實驗性) }
+      one { 扁平網絡 (V2) }
+      other { 扁平網絡 (V2) }
     }
 macvlan:
-  titleV2: 扁平網絡 (V2 實驗性)
+  titleV2: 扁平網絡 (V2)
   deprecated: Rancher Macvlan (V1) 已經廢棄，請按照官方文檔遷移到 V2
   nav:
     label: 扁平網絡（V1）
-    labelV2: 扁平網絡 (V2 實驗性)
+    labelV2: 扁平網絡 (V2)
   chart:
     title: 扁平網絡
-    titleV2: 扁平網絡 (實驗性)
+    titleV2: 扁平網絡
     description: 'Macvlan 是一種虛擬網絡技術，它允許一個主機擁有多個 MAC 地址，允許在一個物理網絡中創建虛擬網絡。Macvlan 通過將一個普通的網絡接口分割為多個虛擬接口來實現，這些虛擬接口擁有不同的 MAC 地址。Macvlan 的優勢在於可以在網絡中實現虛擬隔離，並且在同一物理網絡中。'
     appInstall:
       button: 安裝 Macvlan

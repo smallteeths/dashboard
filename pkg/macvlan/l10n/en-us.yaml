@@ -6,18 +6,18 @@ typeLabel:
     }
   flatnetwork.pandaria.io.flatnetworksubnet: |-
     {count, plural,
-      one { Rancher FlatNetwork (V2 Experimental) }
-      other { Rancher FlatNetwork (V2 Experimental) }
+      one { Rancher FlatNetwork (V2) }
+      other { Rancher FlatNetwork (V2) }
     }
 macvlan:
-  titleV2: Rancher FlatNetwork (V2 Experimental)
+  titleV2: Rancher FlatNetwork (V2)
   deprecated: Rancher Macvlan (V1) has been deprecated. Please migrate to V2 according to the official documentation
   nav:
     label: Rancher Macvlan (V1)
-    labelV2: Rancher FlatNetwork (V2 Experimental)
+    labelV2: Rancher FlatNetwork (V2)
   chart:
     title: Rancher Macvlan (Deprecated)
-    titleV2: Rancher FlatNetwork (Experimental)
+    titleV2: Rancher FlatNetwork
     description: 'Macvlan is a virtual networking technology that allows a host to have multiple MAC addresses and create virtual networks in a physical network. Macvlan is achieved by splitting a regular network interface into multiple virtual interfaces, each with a different MAC address. The advantage of Macvlan is that it can achieve virtual isolation in the network and in the same physical network.'
     appInstall:
       button: Install Macvlan
