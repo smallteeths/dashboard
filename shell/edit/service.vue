@@ -577,9 +577,6 @@ export default {
               "
               :label="t('servicesPage.affinity.timeout.label')"
               :placeholder="t('servicesPage.affinity.timeout.placeholder')"
-              @update:value="
-                (e) => value.spec.sessionAffinityConfig.clientIP.timeoutSeconds = e
-              "
             />
           </div>
         </div>

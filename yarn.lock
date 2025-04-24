@@ -15464,6 +15464,11 @@ xe-utils@^3.5.11, xe-utils@^3.5.32:
   resolved "https://registry.npmjs.org/xe-utils/-/xe-utils-3.5.32.tgz#a5f5194c024b64e249b8cd2c6b43a452722457b0"
   integrity sha512-R8ZT2lRnRBQO3pchM1za/Aru+/29DVDWD/OmOFODWWGkiQYz0iVIr8Bq8uKXS6zMhEsSqVCrn46bXzfe/Agjcw==
 
+ws@^8.18.0:
+  version "8.18.0"
+  resolved "https://registry.yarnpkg.com/ws/-/ws-8.18.0.tgz#0d7505a6eafe2b0e712d232b42279f53bc289bbc"
+  integrity sha512-8VbfWfHLbbwu3+N6OKsOMpBdT4kXPDDB9cJk2bJ6mh9ucxdlnNvH1e+roYkKmN9Nxw2yjz7VzeO9oOz2zJ04Pw==
+
 xml-name-validator@^3.0.0:
   version "3.0.0"
   resolved "https://registry.npmjs.org/xml-name-validator/-/xml-name-validator-3.0.0.tgz#6ae73e06de4d8c6e47f9fb181f78d648ad457c6a"
