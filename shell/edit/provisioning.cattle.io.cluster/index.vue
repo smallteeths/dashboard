@@ -371,6 +371,11 @@ export default {
       this.operatorDrivers.filter((x) => x.state === 'active').forEach((obj) => {
         const provider = `${ obj.id.substring(0, obj.id.lastIndexOf('operatorsetting')) }`;
 
+        // ack change to ui plugin
+        if (obj.id === 'ackoperatorsetting') {
+          return;
+        }
+
         addType(this.$plugin, obj.name, 'kontainer', false, (isImport ? `/g/clusters/add/launch/import?importProvider=${ provider }` : `/g/clusters/add/launch/${ obj.id }`));
       });
       if (!isImport) {
