@@ -173,6 +173,13 @@ export default {
     },
 
     async fetchVlansubnets() {
+      const canList = this.$store?.getters?.['management/canList'];
+      const macvlanV1Installed = typeof canList === 'function' ? canList('macvlan.cluster.cattle.io.macvlansubnet') : false;
+      const macvlanV2Installed = typeof canList === 'function' ? canList('flatnetwork.pandaria.io.flatnetworksubnet') : false;
+
+      if (!macvlanV1Installed && !macvlanV2Installed) {
+        return;
+      }
       const clusterId = this.currentCluster.id;
 
       this.enforcesUseV1 = false;
@@ -190,24 +197,26 @@ export default {
         };
         const q = Object.entries(query).map((e) => `${ e[0] }=${ e[1] }`).join('&');
 
-        try {
-          await this.$store.dispatch('management/request', { url: `/k8s/clusters/${ clusterId }/apis/macvlan.cluster.cattle.io/v1/namespaces/kube-system/macvlansubnets${ q ? `?${ q }` : '' }` }).then((resp) => {
-            const items = resp.items.map((item) => ({
-              label: `${ item.metadata.name }(${ item.spec.cidr })`,
-              value: item.metadata.name
-            }));
+        if (macvlanV1Installed) {
+          try {
+            await this.$store.dispatch('management/request', { url: `/k8s/clusters/${ clusterId }/apis/macvlan.cluster.cattle.io/v1/namespaces/kube-system/macvlansubnets${ q ? `?${ q }` : '' }` }).then((resp) => {
+              const items = resp.items.map((item) => ({
+                label: `${ item.metadata.name }(${ item.spec.cidr })`,
+                value: item.metadata.name
+              }));
 
-            this.vlansubnetChoices = items;
-            this.unsupportVlansubnet = false;
-            if (this.mode === 'edit' && (this.vlansubnetNetwork === DUAL_NETWORK_CARD || this.vlansubnetNetwork === SINGLE_NETWORK_CARD)) {
-              this.enforcesUseV1 = true;
-            }
-          });
-        } catch (e) {
-          this.enforcesUseV1 = false;
+              this.vlansubnetChoices = items;
+              this.unsupportVlansubnet = false;
+              if (this.mode === 'edit' && (this.vlansubnetNetwork === DUAL_NETWORK_CARD || this.vlansubnetNetwork === SINGLE_NETWORK_CARD)) {
+                this.enforcesUseV1 = true;
+              }
+            });
+          } catch (e) {
+            this.enforcesUseV1 = false;
+          }
         }
 
-        if (!this.enforcesUseV1) {
+        if (!this.enforcesUseV1 && macvlanV2Installed) {
           const formattedProjectId = projectId ? `${ projectId.replace(/[:]/g, '-') },` : '';
           const query = { labelSelector: encodeURIComponent(`project in (${ formattedProjectId })`) };
           const q = Object.entries(query).map((e) => `${ e[0] }=${ e[1] }`).join('&');
