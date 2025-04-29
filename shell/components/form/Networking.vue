@@ -178,15 +178,20 @@ export default {
         };
         const q = Object.entries(query).map((e) => `${ e[0] }=${ e[1] }`).join('&');
 
-        await this.$store.dispatch('management/request', { url: `/k8s/clusters/${ clusterId }/apis/macvlan.cluster.cattle.io/v1/namespaces/kube-system/macvlansubnets${ q ? `?${ q }` : '' }` }).then((resp) => {
-          const items = resp.items.map((item) => ({
-            label: `${ item.metadata.name }(${ item.spec.cidr })`,
-            value: item.metadata.name
-          }));
+        try {
+          await this.$store.dispatch('management/request', { url: `/k8s/clusters/${ clusterId }/apis/macvlan.cluster.cattle.io/v1/namespaces/kube-system/macvlansubnets${ q ? `?${ q }` : '' }` }).then((resp) => {
+            const items = resp.items.map((item) => ({
+              label: `${ item.metadata.name }(${ item.spec.cidr })`,
+              value: item.metadata.name
+            }));
 
-          this.vlansubnetChoices = items;
-          this.unsupportVlansubnet = false;
-        });
+            this.vlansubnetChoices = items;
+            this.unsupportVlansubnet = false;
+          });
+        } catch (e) {
+          this.vlansubnetChoices = [];
+          this.unsupportVlansubnet = true;
+        }
       }
     },
 
