@@ -165,8 +165,10 @@ export default {
 
     async fetchVlansubnets() {
       const clusterId = this.currentCluster.id;
+      const canList = this.$store?.getters?.['management/canList'];
+      const macvlanV1Installed = typeof canList === 'function' ? canList('macvlan.cluster.cattle.io.macvlansubnet') : false;
 
-      if (clusterId) {
+      if (clusterId && macvlanV1Installed) {
         const inStore = this.$store.getters['currentStore'](NAMESPACE);
         const namespace = this.$store.getters[`${ inStore }/byId`](NAMESPACE, this.namespace);
         const projectId = namespace?.metadata?.annotations[PROJECT];
