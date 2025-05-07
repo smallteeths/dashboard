@@ -9,7 +9,7 @@
       </div>
       <div class="dialog-body">
         {{ t('promptRemove.attemptingToRemove', { type }) }} <span
-          v-clean-html="resourceNames(names, plusMore, t)"
+          v-clean-html="resourceNames(names, t, { plusMore })"
         />
       </div>
       <div class="dialog-footer">
@@ -109,7 +109,7 @@ export default {
   background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   z-index: 20;
 
   .dialog-content {
