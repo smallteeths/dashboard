@@ -175,7 +175,7 @@ export default {
     },
 
     async fetchVlansubnets() {
-      const canList = this.$store?.getters?.['management/canList'];
+      const canList = this.$store?.getters?.['cluster/canList'];
       const macvlanV1Installed = typeof canList === 'function' ? canList('macvlan.cluster.cattle.io.macvlansubnet') : false;
       const macvlanV2Installed = typeof canList === 'function' ? canList('flatnetwork.pandaria.io.flatnetworksubnet') : false;
 
