@@ -130,8 +130,9 @@ export default {
               if (resp.target.response) {
                 try {
                   const respJson = JSON.parse(String.fromCharCode.apply(null, new Uint8Array(resp.target.response)));
+                  const message = respJson && respJson.message ? respJson.message : '';
 
-                  errorMessage = respJson && respJson.message ? respJson.message : '';
+                  errorMessage = this.handleData(message);
                 } catch (error) {
                   errorMessage = '';
                 }
@@ -176,6 +177,47 @@ export default {
         buttonCb(false);
       }
     },
+    base64ToUint8Array(b64) {
+      const binStr = atob(b64);
+      const len    = binStr.length;
+      const arr    = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        arr[i] = binStr.charCodeAt(i);
+      }
+      return arr;
+    },
+    isValidUTF8(bytes) {
+      try {
+        new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    decodeAuto(bytes) {
+      if (this.isValidUTF8(bytes)) {
+        return new TextDecoder('utf-8').decode(bytes);
+      } else {
+        return new TextDecoder('gbk').decode(bytes);
+      }
+    },
+    handleData(message) {
+      const { prefix, b64 } =this.splitPrefixAndPayload(message);
+      const bytes = this.base64ToUint8Array(b64);
+      const msg   = this.decodeAuto(bytes);
+
+      return prefix + msg;
+    },
+    splitPrefixAndPayload(raw) {
+      const idx = raw.indexOf(': ');
+      if (idx === -1) {
+        return { prefix: '', b64: raw };
+      }
+      return {
+        prefix: raw.slice(0, idx + 2),
+        b64:    raw.slice(idx + 2),
+      };
+    }
   }
 };
 </script>
