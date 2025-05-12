@@ -15,6 +15,9 @@ export const WORKLOAD_PRIORITY = {
   [WORKLOAD_TYPES.REPLICATION_CONTROLLER]: 7,
 };
 
+const multusCNIV3 = 'k8s.v1.cni.cncf.io/networks-status';
+const multusCNIV4 = 'k8s.v1.cni.cncf.io/network-status';
+
 export default class Pod extends WorkloadService {
   _os = undefined;
 
@@ -351,8 +354,10 @@ export default class Pod extends WorkloadService {
   }
 
   get macvlanIpv6() {
-    const annotations = this.metadata?.annotations || {};
-    const networkStatusStr = annotations?.['k8s.v1.cni.cncf.io/networks-status'];
+    const anno = this.metadata?.annotations;
+    const annotations = (anno && typeof anno === 'object') ? anno : {};
+    const { [multusCNIV4]: v4, [multusCNIV3]: v3 } = annotations;
+    const networkStatusStr = v4 || v3 || '';
 
     if (!networkStatusStr) {
       return '';
@@ -386,8 +391,10 @@ export default class Pod extends WorkloadService {
   }
 
   get macvlanIpWithoutType() {
-    const annotations = this.metadata?.annotations || {};
-    const networkStatusStr = annotations && annotations['k8s.v1.cni.cncf.io/networks-status'];
+    const anno = this.metadata?.annotations;
+    const annotations = (anno && typeof anno === 'object') ? anno : {};
+    const { [multusCNIV4]: v4, [multusCNIV3]: v3 } = annotations;
+    const networkStatusStr = v4 || v3 || '';
 
     if (!networkStatusStr) {
       return '';
