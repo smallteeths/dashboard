@@ -1,13 +1,10 @@
 import CruAck from './components/CruAck.vue';
-import { mapDriver } from '@shell/store/plugins';
-import { MANAGEMENT } from '@shell/config/types';
 
 class AckProvisioner {
   static ID = 'ack';
 
   constructor(context) {
     this.context = context;
-    mapDriver(this.id, 'azure');
   }
 
   get id() {
@@ -35,9 +32,7 @@ class AckProvisioner {
   }
 
   get hidden() {
-    const kontainerDriver = this.context.getters['management/byId'](MANAGEMENT.KONTAINER_DRIVER, 'azurekubernetesservice');
-
-    return !kontainerDriver?.spec?.active;
+    return false;
   }
 
   get detailTabs() {
