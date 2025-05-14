@@ -138,6 +138,7 @@ export default {
       drivers.push(...operatorDrivers);
       let types = uniq(drivers.map((x) => this.$store.getters['plugins/credentialDriverFor'](x)));
 
+      console.log(types)
       if ( !this.rke2Enabled ) {
         types = types.filter((x) => rke1Supports.includes(x));
       }

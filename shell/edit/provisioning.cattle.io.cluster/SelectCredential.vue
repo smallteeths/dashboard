@@ -99,6 +99,7 @@ export default {
       // Map providers that share a common credential to one driver
       driver = this.$store.getters['plugins/credentialDriverFor'](driver);
 
+      console.log(driver)
       return driver;
     },
 
