@@ -71,7 +71,7 @@ ackCn:
   rootSize:
     label: 根磁碟大小
     placeholder: '例如: 120'
-    required: 根磁碟大小必須大於或等於 40GB
+    minRequired: 磁碟大小必須大於或等於 10GB
   rootType:
     label: 根磁碟類型
     required: 根磁碟類型必須配置

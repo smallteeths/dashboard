@@ -8,7 +8,7 @@ export async function fetchResources({
   pageSize = 50,
 } = {}) {
   const resourceName = normalizeResourceName(resource || plural);
-  const acceptLanguage = getAcceptLanguage();
+  const acceptLanguage = getAcceptLanguage(store);
   const url = `${ window.location.origin }/meta/ack/${ resourceName }`;
   const results = [];
 
@@ -54,8 +54,14 @@ function normalizeResourceName(name) {
   return normalized === 'vSwitch' ? 'vswitch' : normalized;
 }
 
-function getAcceptLanguage() {
-  return 'zh-CN';
+function getAcceptLanguage(store) {
+  let acceptLanguage = 'zh-CN';
+
+  if (store.getters['i18n/current']() === 'en-us') {
+    acceptLanguage = 'en-US';
+  }
+
+  return acceptLanguage;
 }
 
 export async function fetchPage(url, query, store) {
@@ -104,7 +110,7 @@ export async function fetchAvailableResources({
   externalParams = {},
 } = {}) {
   const resourceName = normalizeResourceName(resource || plural);
-  const acceptLanguage = getAcceptLanguage();
+  const acceptLanguage = getAcceptLanguage(store);
   const url = `${ window.location.origin }/meta/ack/${ resourceName }`;
 
   try {

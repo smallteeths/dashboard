@@ -158,6 +158,14 @@ async function fetchCategoryOptions(instanceType) {
   state.value.categoryOptionsloading = false;
 }
 
+function updateInstancesNum(num) {
+  if (num === '') {
+    emit('update:instancesNum', 0);
+  } else {
+    emit('update:instancesNum', num);
+  }
+}
+
 watch(() => props.instanceTypes, async(instanceTypes) => {
   await fetchCategoryOptions(instanceTypes);
   if (options.value.categoryOptions?.length > 0 && instanceTypes) {
@@ -228,8 +236,9 @@ watch(() => props.instanceTypes, async(instanceTypes) => {
           type="number"
           data-testid="ack-node-instances-num"
           :rules="rules.instancesNum"
+          min="0"
           required
-          @update:value="emit('update:instancesNum', $event)"
+          @update:value="updateInstancesNum"
         />
       </div>
     </div>

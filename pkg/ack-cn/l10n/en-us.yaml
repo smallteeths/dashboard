@@ -71,7 +71,7 @@ ackCn:
   rootSize:
     label: Root Disk Size
     placeholder: e.g. 120
-    minRequired: The number of root size must be greater than or equal to 40 GB.
+    minRequired: The number of disk size must be greater than or equal to 10 GB.
   rootType:
     label: Root Disk Type
     required: Root Disk Type is required
