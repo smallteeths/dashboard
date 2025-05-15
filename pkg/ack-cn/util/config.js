@@ -16,7 +16,7 @@ const DEFAULTACKCONFIG = {
   displayName:          null,
   regionId:             'cn-beijing',
   serviceCidr:          '172.21.0.0/20',
-  nodeCidrMask:         '26',
+  nodeCidrMask:         26,
   snatEntry:            true,
   endpointPublicAccess: true,
   osType:               'Linux',
@@ -50,6 +50,18 @@ const DISKS = [
   {
     label: 'ackCn.disk.essd',
     value: 'cloud_essd'
+  },
+  {
+    label: 'ackCn.disk.cloudessdentry',
+    value: 'cloud_essd_entry'
+  },
+  {
+    label: 'ackCn.disk.cloudAuto',
+    value: 'cloud_auto'
+  },
+  {
+    label: 'ackCn.disk.cloud',
+    value: 'cloud'
   },
 ];
 
@@ -132,23 +144,23 @@ const MODES = [
 const NODECIDRMASKS = [
   {
     label: 16,
-    value: '28'
+    value: 28
   },
   {
     label: 32,
-    value: '27'
+    value: 27
   },
   {
     label: 64,
-    value: '26'
+    value: 26
   },
   {
     label: 128,
-    value: '25'
+    value: 25
   },
   {
     label: 256,
-    value: '24'
+    value: 24
   }
 ];
 

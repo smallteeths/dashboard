@@ -88,6 +88,7 @@ ackCn:
     ssd: SSD 云盘
     essd: ESSD 云盘
     cloudAuto: ESSD AutoPL 云盘
+    cloudessdentry: ESSD Entry 云盘
   platform:
     label: 操作系统
   keyPair:

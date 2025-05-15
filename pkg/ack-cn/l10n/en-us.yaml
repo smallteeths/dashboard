@@ -88,6 +88,7 @@ ackCn:
     ssd: SSD Disk
     essd: ESSD Disk
     cloudAuto: ESSD AutoPL Disk
+    cloudessdentry: ESSD Entry Disk
   platform:
     label: Operating System
   keyPair:
