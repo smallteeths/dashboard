@@ -83,7 +83,7 @@ const props = defineProps({
   mode: { type: String, default: 'edit' },
 });
 const store = useStore();
-const options = ref({ categoryOptions: [] });
+const options = ref({ categoryOptions: CONFIG_ENV.DISKS });
 const state = ref({ categoryOptionsloading: false });
 const isDefaultNodePool = ref(false);
 
