@@ -1226,7 +1226,7 @@ cluster:
         label: 访问密钥
         placeholder: 你的阿里云访问密钥
       secretKey:
-        label: SecretKey
+        label: 访问密文密钥
         placeholder: 你的阿里云密文密钥
     tke:
       accessKeyId:
@@ -1303,7 +1303,7 @@ cluster:
         placeholder: 你的 Linode API 访问 Token
     name:
       label: 凭证名称
-      placeholder: 此凭证的名称（可选）
+      placeholder: 此凭证的名称
     s3:
       accessKey:
         label: Access Key

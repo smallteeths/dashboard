@@ -201,7 +201,7 @@ const instancesNumRequired = (nodePools, intl) => {
       return null;
     }
 
-    return !!nodePools.value?.find((pool) => !pool.instances_num || isNaN(pool.instances_num) || pool.instances_num < 0) ? intl.value('ackCn.numOfNodes.minRequired') : null;
+    return !!nodePools.value?.find((pool) => isNaN(pool.instances_num) || pool.instances_num < 0) ? intl.value('ackCn.numOfNodes.minRequired') : null;
   };
 };
 
@@ -220,7 +220,7 @@ const diskSizeRequired = (nodePools, intl) => {
     if (quantity !== undefined) {
       if (isNaN(quantity)) {
         return intl.value('validation.required', { key: intl.value('ackCn.rootSize.label') });
-      } else if (quantity < 40) {
+      } else if (quantity < 10) {
         return intl.value('ackCn.rootSize.minRequired');
       }
 
@@ -236,7 +236,7 @@ const dataDiskSizeRequired = (nodePools, intl) => {
     if (quantity !== undefined) {
       if (isNaN(quantity)) {
         return intl.value('validation.required', { key: intl.value('ackCn.rootSize.label') });
-      } else if (quantity < 40 && parseInt(quantity, 10) !== 0) {
+      } else if (quantity < 10 && parseInt(quantity, 10) !== 0) {
         return intl.value('ackCn.rootSize.minRequired');
       }
 

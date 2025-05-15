@@ -209,12 +209,16 @@ async function fetchALiyunResource() {
       })),
     ];
 
-    const regionOptions = await fetchResources({
+    const regions = await fetchResources({
       resource:          'Region',
       plural:            'Regions',
       cloudCredentialId: ackConfig.value.aliyun_credential_secret,
       store,
     });
+    const regionOptions = regions.map((region) => ({
+      ...region,
+      label: region.raw?.LocalName ?? region.label,
+    }));
 
     options.value.regionOptions = regionOptions;
   } catch (err) {
@@ -228,12 +232,16 @@ async function fetchImportALiyunResource() {
   state.value.importClusterRegion = true;
   state.value.errors = [];
   try {
-    const regionOptions = await fetchResources({
+    const regions = await fetchResources({
       resource:          'Region',
       plural:            'Regions',
       cloudCredentialId: ackConfig.value.aliyun_credential_secret,
       store,
     });
+    const regionOptions = regions.map((region) => ({
+      ...region,
+      label: region.raw?.LocalName ?? region.label,
+    }));
 
     options.value.regionOptions = regionOptions;
   } catch (err) {
@@ -336,7 +344,10 @@ async function fetchInstanceType(regionId) {
       store,
     });
     const allInstanceTypeOptions = instanceTypeOptions.map((instanceType) => {
-      return { ...instanceType };
+      return {
+        ...instanceType,
+        label: `${ instanceType.raw.InstanceTypeId } ( ${ instanceType.raw.CpuCoreCount } ${ instanceType.raw.CpuCoreCount > 1 ? 'Cores' : 'Core' } ${ instanceType.raw.MemorySize }GB RAM )`,
+      };
     });
     const externalParamsForAvailable = {
       regionId,
@@ -1084,15 +1095,17 @@ watch(() => normanCluster.value.name, (name) => {
           </Tab>
         </Tabbed>
       </div>
-      <Accordion
-        class="mb-20"
-        :title="t('generic.labelsAndAnnotations')"
-      >
-        <Labels
-          v-model:value="normanCluster"
-          :mode="mode"
-        />
-      </Accordion>
+      <div>
+        <Accordion
+          class="mb-20"
+          :title="intl('generic.labelsAndAnnotations')"
+        >
+          <Labels
+            v-model:value="normanCluster"
+            :mode="mode"
+          />
+        </Accordion>
+      </div>
     </div>
     <template
       v-if="!hasCredential"
