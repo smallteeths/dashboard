@@ -158,11 +158,9 @@ async function fetchCategoryOptions(instanceType) {
   state.value.categoryOptionsloading = false;
 }
 
-function updateInstancesNum(num) {
+function blurInstancesNum(num) {
   if (num === '') {
     emit('update:instancesNum', 0);
-  } else {
-    emit('update:instancesNum', num);
   }
 }
 
@@ -238,7 +236,8 @@ watch(() => props.instanceTypes, async(instanceTypes) => {
           :rules="rules.instancesNum"
           min="0"
           required
-          @update:value="updateInstancesNum"
+          @blur="blurInstancesNum(instancesNum)"
+          @update:value="$emit('update:instancesNum', $event)"
         />
       </div>
     </div>
