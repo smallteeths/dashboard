@@ -227,7 +227,7 @@ const diskSizeRequired = (nodePools, intl) => {
       return null;
     }
 
-    return !!nodePools.value?.find((pool) => !pool.system_disk_size || isNaN(pool.system_disk_size) || pool.system_disk_size < 40) ? intl.value('ackCn.rootSize.minRequired') : null;
+    return !!nodePools.value?.find((pool) => !pool.system_disk_size || isNaN(pool.system_disk_size) || pool.system_disk_size < 10) ? intl.value('ackCn.rootSize.minRequired') : null;
   };
 };
 
@@ -243,7 +243,7 @@ const dataDiskSizeRequired = (nodePools, intl) => {
       return null;
     }
 
-    return !!nodePools.value?.find((pool) => isNaN(pool.system_disk_size) || (pool.system_disk_size < 40 && parseInt(pool.system_disk_size, 10) !== 0) ) ? intl.value('ackCn.rootSize.minRequired') : null;
+    return !!nodePools.value?.find((pool) => isNaN(pool.size) || (pool.size < 10 && parseInt(pool.size, 10) !== 0) ) ? intl.value('ackCn.rootSize.minRequired') : null;
   };
 };
 

@@ -1226,7 +1226,7 @@ cluster:
         label: 訪問密鑰
         placeholder: 你的阿里雲訪問密鑰
       secretKey:
-        label: 訪問密文密鑰
+        label: 密文密鑰
         placeholder: 你的阿里雲密文密鑰
     tke:
       accessKeyId:

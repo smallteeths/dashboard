@@ -1402,7 +1402,7 @@ cluster:
         label: Access Key
         placeholder: Your Aliyun Access Key
       secretKey:
-        label: SecretKey
+        label: Secret Key
         placeholder: Your Aliyun Secret Key
     tke:
       accessKeyId:
