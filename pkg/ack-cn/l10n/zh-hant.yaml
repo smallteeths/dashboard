@@ -78,6 +78,7 @@ ackCn:
   storageType:
     label: 數據磁碟類型
     required: 數據磁碟類型必須配置
+    minRequired: 磁碟大小必須等於 0GB 或大於等於 10GB
   storageSize:
     label: 數據磁碟大小
     placeholder: '例如: 120'

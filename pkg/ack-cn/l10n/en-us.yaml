@@ -81,6 +81,7 @@ ackCn:
   storageSize:
     label: Data Disk Size
     placeholder: e.g. 120
+    minRequired: Disk size must be either 0 GB or at least 10 GB.
   disk:
     cloud: Ordinary Disk
     ephemeralSsd: Local SSD Disk

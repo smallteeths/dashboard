@@ -237,13 +237,20 @@ const dataDiskSizeRequired = (nodePools, intl) => {
       if (isNaN(quantity)) {
         return intl.value('validation.required', { key: intl.value('ackCn.rootSize.label') });
       } else if (quantity < 10 && parseInt(quantity, 10) !== 0) {
-        return intl.value('ackCn.rootSize.minRequired');
+        return intl.value('ackCn.storageSize.minRequired');
       }
 
       return null;
     }
 
-    return !!nodePools.value?.find((pool) => isNaN(pool.size) || (pool.size < 10 && parseInt(pool.size, 10) !== 0) ) ? intl.value('ackCn.rootSize.minRequired') : null;
+    return !!nodePools.value?.find((pool) => {
+      // Pool size can be omitted. When provided, it must be an integer value exceeding 10.
+      if (pool.size === undefined) {
+        return false;
+      }
+
+      return isNaN(pool.size) || (pool.size < 10 && parseInt(pool.size, 10) !== 0);
+    }) ? intl.value('ackCn.storageSize.minRequired') : null;
   };
 };
 
