@@ -81,6 +81,7 @@ ackCn:
   storageSize:
     label: 数据磁盘大小
     placeholder: '例如: 120'
+    minRequired: 磁盘大小必须等于 0GB 或者大于等于 10GB
   disk:
     cloud: 普通云盘
     ephemeralSsd: 本地SSD盘
