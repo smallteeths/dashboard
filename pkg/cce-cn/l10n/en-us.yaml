@@ -1,103 +1,107 @@
-ackCn:
-  label: Alibaba ACK
-  updateWarn: The cluster is currently being upgraded, and editing may result in unknown errors.
-  changedHistoryK8sVerison: After the cluster version changes, the node pool cannot be edited.
-  resourceGroup:
-    label: Resource Group
-    all: Account's all Resources
+cceCn:
+  label: Huawei CCE
   region:
     label: Region
-  clusters:
-    managed: Managed Kubernetes
+    helpText: You can find instructions on how to obtain Region <a href="https://developer.huaweicloud.com/endpoint" target="_blank">here</a>.
+    required: Region is required.
+    cn_north_1: CN North-Beijing1
+    cn_north_4: CN North-Beijing4
+    cn_east_3: CN East-Shanghai1
+    cn_east_2: CN East-Shanghai2
+    cn_south_1: CN South-Guangzhou
+    cn_southwest_2: CN Southwest-Guiyang1
+    ap_southeast_1: AP-Hong-Kong
+    ap_southeast_2: AP-Bangkok
+    ap_southeast_3: AP-Singapore
+    af_south_1: AF-Johannesburg
+    sa_brazil_1: LA-Sao Paulo1
+    la_south_2: LA-Santiago
+    cn_north_9: North-乌兰察布一
+    eu_west_0: Europe-Paris
+    eu_west_101: Europe-Dublin
+    tr_west_1: Turkey-Istanbul
+    ae_ad_1: Middle-East-Abu-Dhabi-OP5
+  clusterType:
     label: Cluster Type
+    VirtualMachine:
+      label: VirtualMachine
+    BareMetal:
+      label: BareMetal
+    ARM64:
+      label: ARM64
   version:
-    label: Kubernetes Version
-    warningAliyun: “{version}”, Ali Cloud is not supported in this version. If you continue to deploy it, cluster deployment will fail, please replace it with another version.
-    warningRacher: “{version}”, This version is not supported by Rancher,  please replace it with another version for reference
-    warningRancherTip: Rancher supported versions.
-    warningEdited: It is detected that the Kubernetes version has been modified, and other configuration items will not support modification temporarily. Historical version is {vsersion}。
-    toggle: Switch Mode
-  clusterSpec:
-    pro: Pro 
-    standard: STANDARD
-    label: Cluster specifications
+    label: Master Version
+    warningNotRecommend: “{version}”，This version of Huawei CCE is not recommended. For details, see huawei official documents.
+    warningRacher: “{version}”，This version is not supported by Rancher. Reference
+    warningRancherTip: Rancher support matrix.
+  managementScale:
+    label: Management Scale count
+  containerNetworkMode:
+    label: Container Network Mode
+    none: No config
+    overlay:
+      label: overlay_l2
+    underlayIpvlan:
+      label: underlay_ipvlan
+    vpcRouter:
+      label: vpc-router
+    eni:
+      label: eni
   vpcId:
-    label: VPC
-    prompt: Choose VPC...
-    required: VPC is required
+    label: VPC Name
     default: Default VPC
-  vswitchId:
-    label: VSwitch
-    prompt: Choose VSwitch...
-    required: VSwitch is required
-    default: Default VSwitch
-  cni:
-    label: Network Plugin
-  proxyMode:
-    label: Kube-Proxy Mode
-  nodeCidrMask:
-    label: IP Addresses per Node
-  containerCidr:
-    label: Pod CIDR Block
-    required: Pod CIDR Block is required
-    invalid: Pod CIDR Block is invalid
-    placeholder: "Specify a valid CIDR block that contains only internal IP addresses, namely one of the following CIDR blocks or their subnets: 10.0.0.0/8 172.16-31.0.0/12-16 and 192.168.0.0/16.Cannot be duplicated with the VPC and the network segment used by the existing kubernetes cluster in the VPC"
-  serviceCidr:
-    label: Service CIDR
-    required: Service CIDR is required
-    invalid: Service CIDR is invalid
-    placeholder: "Valid CIDR blocks include: 10.0.0.0/8 172.16-31.0.0/12-16 and 192.168.0.0/16.Cannot be duplicated with the VPC and the network segment used by the existing kubernetes cluster in the VPC"
-  snatEntry:
-    label: Configure SNAT
-    placeholder: Configure SNAT for VPC
-  endpointPublicAccess:
-    label: Public Access
-    placeholder: Expose API Server with EIP
-  nodePoolName:
-    label: Nood Pool Name
-    placeholder: e.g. nodepool
-    required: Worker Node Name is required
-    unique: Node pool names must be unique.
-  runtime:
-    label: Containerd Version
-  instanceType:
-    label: Instance Type
-    required: Instance Type is required
-    placeholder: Configure instance type for node
-  numOfNodes:
-    label: Worker Nodes Count
-    placeholder: e.g. 3
-    minRequired: The number of instances must be greater than or equal to 0.
-  rootSize:
-    label: Root Disk Size
-    placeholder: e.g. 120
-    minRequired: The number of root size must be greater than or equal to 40 GB.
-  rootType:
-    label: Root Disk Type
-    required: Root Disk Type is required
-  storageType:
-    label: Data Disk Type
-    required: Data Disk Type is required
-  storageSize:
-    label: Data Disk Size
-    placeholder: e.g. 120
-  disk:
-    cloud: Ordinary Disk
-    ephemeralSsd: Local SSD Disk
-    efficiency: Ultra Disk
-    ssd: SSD Disk
-    essd: ESSD Disk
-    cloudAuto: ESSD AutoPL Disk
-  platform:
-    label: Operating System
-  keyPair:
-    label: Key Pair
-    required: Key Pair is required
-  clusterSelect:
-    title: Select Cluster
-    detail: Select the ACK cluster you want to register
-    next: Register Cluster
-    importCluster: Cluster
-    required: Import Cluster is required
-    placeholder: 'Choose'
-  
+    placeholder: Please select a VPC
+  subnetId:
+    label: Subnet Name
+    none: No subnet in this VPC
+    default: Default Subnet
+    placeholder: Please select a subnet
+  containerNetworkCidr:
+    label: Container CIDR Block
+    placeholder: e.g. 172.16.0.0/16
+    none: No config
+    cidrFormatError: '"Container CIDR Block" format error'
+  eniNetworkCidr:
+    label: Eni Network
+    placeholder: Subnet ID
+  kubernetesSvcIPRange:
+    label: Service CIDR Block
+    placeholder: e.g. 10.247.0.0/16
+    none: No config
+    cidrFormatError: '"Service CIDR Block" format error'
+  securityGroup:
+    label: Security Group
+    required: Security Group is required
+    default: Default Security Group
+  kubeProxyMode:
+    label: Request Forwarding
+  publicAccess:
+    label: Use Public Network Access
+  eipSelection:
+    none: Disabled
+    new: Create Eip
+    exist: Select Existed Eip
+  eipIds:
+    label: Eip
+    none: No available Eip
+    countError: The count of selected or created must be equal to the count of nodes
+  eipType:
+    label: Eip Type
+    bgp: Dynamic BGP
+    sbgp: Static BGP
+  eipChargeMode:
+    label: Eip Charge Mode
+    bandwidth: Billing by bandwidth
+    traffic: Billing by traffic
+  eipBandwidthSize:
+    label: Eip Bandwidth Size
+  authentiactionMode:
+    label: Certificate Authentication
+    rbac: Default
+    authenticating_proxy: Custom
+  authenticatingProxyCa:
+    label: CA Root Certificate
+  authenticatingProxyCert:
+    label: Client Certificate
+  authenticatingProxyPrivateKey:
+    label: Client Certificate Private Key

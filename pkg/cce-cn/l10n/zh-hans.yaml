@@ -1,2 +1,107 @@
 cceCn:
   label: Huawei CCE
+  region:
+    label: 区域
+    helpText: 获取区域参考<a href="https://developer.huaweicloud.com/endpoint" target="_blank">这里</a>。
+    required: 区域必须填写
+    cn_north_1: 华北-北京一
+    cn_north_4: 华北-北京四
+    cn_east_3: 华东-上海一
+    cn_east_2: 华东-上海二
+    cn_south_1: 华南-广州
+    cn_southwest_2: 西南-贵阳一
+    ap_southeast_1: 亚太-香港
+    ap_southeast_2: 亚太-曼谷
+    ap_southeast_3: 亚太-新加坡
+    af_south_1: 非洲-约翰内斯堡
+    sa_brazil_1: 拉美-圣保罗一
+    la_south_2: 拉美-圣地亚哥
+    cn_north_9: 华北-乌兰察布一
+    eu_west_0: 欧洲-巴黎
+    eu_west_101: 欧洲-都柏林
+    tr_west_1: 土耳其-伊斯坦布尔
+    ae_ad_1: 中东-阿布扎比-OP5
+  clusterType:
+    label: 集群类型
+    VirtualMachine:
+      label: 混合集群
+    BareMetal:
+      label: 裸金属集群
+    ARM64:
+      label: 鲲鹏集群
+  version:
+    label: 版本
+    warningNotRecommend: “{version}”，此版本华为 CCE 不推荐使用。具体请查阅华为官方文档。
+    warningRacher: “{version}”，此版本不在 Rancher 支持矩阵范围内。可参考
+    warningRancherTip: Rancher 支持矩阵。
+  managementScale:
+    label: 集群管理规模
+  containerNetworkMode:
+    label: 网络模型
+    none: 无配置
+    overlay:
+      label: 容器隧道网络
+    underlayIpvlan:
+      label: 'Underlay l2网络'
+    vpcRouter:
+      label: VPC网络
+    eni:
+      label: eni
+  vpcId:
+    label: 虚拟私有云
+    default: 自动创建
+    placeholder: 请选择一个 VPC
+  subnetId:
+    label: 所在子网
+    none: 无可用子网
+    default: 自动创建
+    placeholder: 请选择一个子网
+  containerNetworkCidr:
+    label: 容器网段
+    placeholder: '例如: 172.16.0.0/16'
+    none: 无配置
+    cidrFormatError: '"容器网段" 格式错误'
+  eniNetworkCidr:
+    label: Eni Network
+    placeholder: 子网ID
+  kubernetesSvcIPRange:
+    label: 服务网段
+    placeholder: '例如: 10.247.0.0/16'
+    none: 无配置
+    cidrFormatError: '"服务网段" 格式错误'
+  securityGroup:
+    label: 安全组
+    required: 请选择安全组
+    default: 默认安全组
+  publicAccess:
+    label: 使用公网访问
+  kubeProxyMode:
+    label: 服务转发模式
+  eipSelection:
+    none: 暂不使用
+    new: 创建新的
+    exist: 使用已有
+  eipIds:
+    label: 弹性 IP
+    none: 无可用弹性 IP
+    countError: 已选或新建的弹性 IP数量必须和节点数保持一致
+  eipType:
+    label: Eip 类型
+    bgp: 全动态BGP
+    sbgp: 静态BGP
+  eipChargeMode:
+    label: 计费模式
+    bandwidth: 按带宽计费
+    traffic: 按流量计费
+  eipBandwidthSize:
+    label: 带宽
+  authentiactionMode:
+    label: 证书认证
+    rbac: 系统默认
+    authenticating_proxy: 自定义
+  authenticatingProxyCa:
+    label: CA 根证书
+  authenticatingProxyCert:
+    label: 客户端证书
+  authenticatingProxyPrivateKey:
+    label: 客户端证书私钥

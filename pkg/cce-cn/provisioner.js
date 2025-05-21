@@ -1,17 +1,14 @@
-import CruAck from './components/CruAck.vue';
-import { mapDriver } from '@shell/store/plugins';
-import { MANAGEMENT } from '@shell/config/types';
+import CruCce from './components/CruCce.vue';
 
-class AckProvisioner {
-  static ID = 'ack';
+class CceProvisioner {
+  static ID = 'cce';
 
   constructor(context) {
     this.context = context;
-    mapDriver(this.id, 'azure');
   }
 
   get id() {
-    return AckProvisioner.ID;
+    return CceProvisioner.ID;
   }
 
   get icon() {
@@ -23,11 +20,11 @@ class AckProvisioner {
   }
 
   get label() {
-    return this.context.t('ackCn.label');
+    return this.context.t('cceCn.label');
   }
 
   get component() {
-    return CruAck;
+    return CruCce;
   }
 
   get showImport() {
@@ -35,9 +32,7 @@ class AckProvisioner {
   }
 
   get hidden() {
-    const kontainerDriver = this.context.getters['management/byId'](MANAGEMENT.KONTAINER_DRIVER, 'azurekubernetesservice');
-
-    return !kontainerDriver?.spec?.active;
+    return false;
   }
 
   get detailTabs() {
@@ -53,4 +48,4 @@ class AckProvisioner {
   }
 }
 
-export { AckProvisioner };
+export { CceProvisioner };

@@ -99,7 +99,6 @@ export default {
       // Map providers that share a common credential to one driver
       driver = this.$store.getters['plugins/credentialDriverFor'](driver);
 
-      console.log(driver)
       return driver;
     },
 
@@ -167,6 +166,7 @@ export default {
       if ( val === _NEW || val === _NONE ) {
         this.$emit('update:value', null);
       } else {
+        console.log(val);
         this.$emit('update:value', val);
       }
     },

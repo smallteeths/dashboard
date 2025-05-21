@@ -1,5 +1,5 @@
 import { importTypes } from '@rancher/auto-import';
-import { AckProvisioner } from './provisioner';
+import { CceProvisioner } from './provisioner';
 
 // Init the package
 export default function(plugin) {
@@ -10,7 +10,7 @@ export default function(plugin) {
   plugin.metadata = require('./package.json');
 
   // Register custom provisioner object
-  plugin.register('provisioner', AckProvisioner.ID, AckProvisioner);
+  plugin.register('provisioner', CceProvisioner.ID, CceProvisioner);
 
   // Built-in icon
   plugin.metadata.icon = require('./icon.svg');

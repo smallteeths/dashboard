@@ -752,7 +752,7 @@ watch(() => normanCluster.value.name, (name) => {
   >
     <SelectCredential
       v-model:value="ackConfig.aliyun_credential_secret"
-      data-testid="cruaks-select-credential"
+      data-testid="cruack-select-credential"
       :mode="mode === VIEW ? VIEW : CREATE"
       provider="aliyun"
       :default-on-cancel="true"
@@ -763,7 +763,7 @@ watch(() => normanCluster.value.name, (name) => {
     <div
       v-if="hasCredential"
       class="mt-10"
-      data-testid="cruaks-form"
+      data-testid="cruack-form"
     >
       <div
         v-if="isImport"
