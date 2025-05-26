@@ -7,10 +7,11 @@ import { clear } from '@shell/utils/array';
 import { DEFAULT_WORKSPACE } from '@shell/config/types';
 import { handleConflict } from '@shell/plugins/dashboard-store/normalize';
 import { useChildHook, BEFORE_SAVE_HOOKS, AFTER_SAVE_HOOKS } from './useChildHook';
+import { base64Encode } from '@shell/utils/crypto';
 
 export function useCreateEditView(props, context) {
   const {
-    emit, normanCluster, ackConfig, nodePools, state
+    emit, normanCluster, cceConfig, nodePools, state
   } = context;
 
   const errors = ref([]);
@@ -149,51 +150,148 @@ export function useCreateEditView(props, context) {
   }
 
   async function actuallySave() {
-    if (ackConfig.value.imported && ackConfig.value.cluster_id) {
-      normanCluster.value.ackConfig = ackConfig.value;
+    if (cceConfig.value.imported && cceConfig.value.cluster_id) {
+      normanCluster.value.cceConfig = cceConfig.value;
       await normanCluster.value.save();
 
       return await normanCluster.value.waitForCondition('InitialRolesPopulated');
     }
-    ackConfig.value.node_pool_list = nodePools.value;
-    normanCluster.value.ackConfig = formatNodePoolList(ackConfig);
-    await normanCluster.value.save();
+    normanCluster.value.cceConfig = formatCceConfig();
 
-    return await normanCluster.value.waitForCondition('InitialRolesPopulated');
+    console.log(normanCluster.value);
+    // await normanCluster.value.save();
+
+    // return await normanCluster.value.waitForCondition('InitialRolesPopulated');
   }
 
-  function formatNodePoolList(ackConfig) {
-    const nodePools = ackConfig.value.node_pool_list;
+  function formatCceConfig() {
+    const nodePoolList = [];
+    const {
+      regionID,
+      huaweiCredentialSecret,
+      category,
+      containerNetworkCidr,
+      kubernetesSvcIPRange,
+      containerNetworkMode,
+      version,
+      clusterFlavor,
+      vpcId,
+      subnetId,
+      description,
+      tags,
+      authentiactionMode,
+      eipType,
+      eipChargeMode,
+      eipBandwidthSize,
+      securityGroup,
+      clusterExternalIP,
+      kubeProxyMode
+    } = cceConfig.value;
+    const eniNetwork = { subnets: state.value.eniNetworks };
+    const eipSelection = state.value.eipSelection;
 
-    ackConfig.value.node_pool_list = nodePools.map((item) => {
-      const node = {
-        ...item,
-        nodepool_id:          item.nodepool_id,
-        name:                 item.name,
-        instance_types:       [item.instance_types],
-        instances_num:        item.instances_num,
-        key_pair:             item.key_pair || this.config.keyPair,
-        platform:             item.platform,
-        system_disk_category: item.system_disk_category,
-        system_disk_size:     item.system_disk_size,
-        runtime:              item.runtime,
-        runtime_version:      item.runtime_version,
-        data_disk:            (!item.size || !item.category) ? [] : [{
-          size:     item.size,
-          category: item.category,
-        }],
-        // All nodepools use the same v_switch_ids
-        v_switch_ids: state.value.vswitchIds
+    nodePools.value.forEach((nodePool) => {
+      const out = {
+        name:             nodePool.nodePoolName,
+        type:             'vm',
+        initialNodeCount: nodePool.initialNodeCount,
+        nodeTemplate:     {
+          flavor:          nodePool.flavor,
+          availableZone:   nodePool.availableZone,
+          operatingSystem: nodePool.operatingSystem,
+          sshKey:          nodePool.sshKey,
+          rootVolume:      {
+            size: nodePool.rootVolumeSize,
+            type: nodePool.rootVolumeType,
+          },
+          dataVolumes: [{
+            size: nodePool.dataVolumeSize,
+            type: nodePool.dataVolumeType,
+          }],
+          count:       1,
+          billingMode: nodePool.billingMode,
+          runtime:     nodePool.runtime,
+        },
+        customSecurityGroups: [],
       };
 
-      delete node.isNew;
-      delete node.size;
-      delete node.category;
+      if (nodePool.nodePoolID) {
+        out.nodePoolID = nodePool.nodePoolID;
+      }
 
-      return node;
+      if (nodePool.billingMode === 1) {
+        const validityPeriod = nodePool?.validityPeriod.split(' ');
+
+        out.nodeTemplate.extendParam = {
+          periodType:  validityPeriod[1],
+          periodNum:   validityPeriod[0],
+          isAutoRenew: nodePool.bmsIsAutoRenew
+        };
+      }
+
+      nodePoolList.push(out);
     });
 
-    return ackConfig.value;
+    const config = {
+      name:             normanCluster.value.name,
+      type:             'VirtualMachine',
+      category,
+      huaweiCredentialSecret,
+      regionID,
+      imported:         false,
+      containerNetwork: {
+        cidr: containerNetworkCidr,
+        mode: containerNetworkMode
+      },
+      version,
+      flavor:      clusterFlavor,
+      hostNetwork: {
+        vpcID:    vpcId === 'default' ? '' : vpcId,
+        subnetID: subnetId === 'default' ? '' : subnetId,
+        securityGroup,
+      },
+      kubernetesSvcIPRange,
+      description,
+      authentication: { mode: authentiactionMode },
+      tags,
+      publicAccess:   eipSelection !== 'none',
+      nodePools:      nodePoolList,
+      extendParam:    {},
+      kubeProxyMode,
+      eniNetwork,
+    };
+
+    // eip config
+    if (config.publicAccess) {
+      if (eipSelection === 'new') {
+        config.publicIP = {
+          createEIP: true,
+          eip:       {
+            ipType:    eipType,
+            bandwidth: {
+              chargeMode: eipChargeMode,
+              size:       eipBandwidthSize,
+              shareType:  'PER'
+            }
+          }
+        };
+      } else if (eipSelection === 'exist') {
+        config.extendParam.clusterExternalIP = clusterExternalIP;
+      }
+    }
+
+    // ca config
+    if (authentiactionMode === 'authenticating_proxy') {
+      const { authenticatingProxyCa, authenticatingProxyCert, authenticatingProxyPrivateKey } = get(this, 'config');
+
+      config.authentication.authenticatingProxy = {
+        ca:         base64Encode(authenticatingProxyCa),
+        cert:       base64Encode(authenticatingProxyCert),
+        privateKey: base64Encode(authenticatingProxyPrivateKey),
+      };
+    }
+
+    return config;
   }
 
   function setErrors(newErrors) {

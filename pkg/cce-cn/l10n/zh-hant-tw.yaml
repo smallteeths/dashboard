@@ -1,5 +1,6 @@
 cceCn:
   label: Huawei CCE
+  updateWarn: 集群正在升級，編輯可能導致未知錯誤
   region:
     label: 區域
     helpText: 獲取區域參考<a href="https://developer.huaweicloud.com/endpoint" target="_blank">這裡</a>。
@@ -105,3 +106,44 @@ cceCn:
     label: 客戶端證書
   authenticatingProxyPrivateKey:
     label: 客戶端證書私鑰
+  highAvailability:
+    label: 高可用
+  availableZone:
+    label: 當前區域
+    value: 可用區{num}
+    random: 随机
+  nodePoolName:
+    label: 節點池名稱
+    placeholder: 例如：nodepool
+    required: 必須設置 worker 節點池名稱
+    same: 節點池名稱 “{name}” 不唯一
+  billingMode:
+    label: 計費模式
+    payPerUse: 按需計費
+    yearly: '包年/包月'
+  rootVolumeType:
+    label: 系統盤類型
+  rootVolumeSize:
+    label: 系統盤大小
+    placeholder: "容量範圍: 40 ~ 1024"
+  dataVolumeType:
+    label: 數據盤類型
+  dataVolumeSize:
+    label: 數據盤大小
+    placeholder: "容量範圍: 100 ~ 32768"
+  volumetype:
+    SAS: 高IO
+    SSD: 超高IO
+    SATA: 普通IO
+    GPSSD: 通用SSD
+    ESSD: 極速型SSD
+    rootDescription: "繫統盤取值範圍: 40~1024 單位為GB"
+    dataDescription: "數據盤取值範圍: 100~32768 單位為GB"
+  initialNodeCount:
+    label: 節點個數
+  flavor:
+    label: 節點規格
+  sshKey:
+    label: 密鑰對
+  operatingSystem:
+    label: 操作系統

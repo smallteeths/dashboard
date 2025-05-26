@@ -20,6 +20,7 @@ const DEFAULTCCECONFIG = {
   userName:               'root',
   authentiactionMode:     'rbac',
   eipChargeMode:          'bandwidth',
+  eipType:                '5_sbgp',
   securityGroup:          '',
   kubeProxyMode:          'iptables',
   eniNetwork:             { subnets: [] },
@@ -107,18 +108,32 @@ const EIPTYPEOTPTIONS = [
 ];
 
 const DEFAULT_NODE_GROUP_CONFIG = {
-  name:            'default-nodepool',
-  flavor:          't6.large.2',
-  availableZone:   null,
-  sshKey:          null,
-  rootVolume:      {},
-  dataVolumes:     [],
-  billingMode:     null,
-  OperatingSystem: null,
-  tags:            null,
-  count:           null,
-  runtime:         'containerd',
+  name:             'default-nodepool',
+  flavor:           '',
+  availableZone:    null,
+  sshKey:           null,
+  rootVolume:       {},
+  dataVolumes:      [],
+  billingMode:      0,
+  OperatingSystem:  null,
+  tags:             null,
+  count:            null,
+  dataVolumeSize:   100,
+  rootVolumeSize:   50,
+  runtime:          'containerd',
+  bmsIsAutoRenew:   false,
+  rootVolumeType:   '',
+  dataVolumeType:   '',
+  initialNodeCount: 1,
 };
+
+const BILLING_MODES = [{
+  label: 'cceCn.billingMode.payPerUse',
+  value: 0,
+}, {
+  label: 'cceCn.billingMode.yearly',
+  value: 1,
+}];
 
 export default {
   DEFAULTCCECONFIG,
@@ -128,5 +143,6 @@ export default {
   CONTAINER_NETWORK_MODES,
   EIPCHARGEMODEOPTIONS,
   EIPTYPEOTPTIONS,
-  DEFAULT_NODE_GROUP_CONFIG
+  DEFAULT_NODE_GROUP_CONFIG,
+  BILLING_MODES
 };

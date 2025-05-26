@@ -1,5 +1,6 @@
 cceCn:
   label: Huawei CCE
+  updateWarn: The cluster is currently being upgraded, and editing may result in unknown errors.
   region:
     label: Region
     helpText: You can find instructions on how to obtain Region <a href="https://developer.huaweicloud.com/endpoint" target="_blank">here</a>.
@@ -105,3 +106,44 @@ cceCn:
     label: Client Certificate
   authenticatingProxyPrivateKey:
     label: Client Certificate Private Key
+  highAvailability:
+    label: High Availability
+  availableZone:
+    label: Zone
+    value: Availability Zone {num}
+    random: Random
+  nodePoolName:
+    label: Nood Pool Name
+    placeholder: e.g. nodepool
+    required: Worker Node Name is required
+    same: Node pool name '{name}' is not unique
+  billingMode:
+    label: Billing Mode
+    payPerUse: Pay-per-use
+    yearly: Yearly/Monthly
+  rootVolumeType:
+    label: Root Volume Type
+  rootVolumeSize:
+    label: Root Volume Size
+    placeholder: "Disk Capacity: 40 to 1024"
+  dataVolumeType:
+    label: Data Volume Type
+  dataVolumeSize:
+    label: Data Volume Size
+    placeholder: "Disk Capacity: 100 to 32768"
+  volumetype:
+    SAS: SAS
+    SSD: SSD
+    SATA: SATA
+    GPSSD: GPSSD
+    ESSD:  ESSD
+    rootDescription: "Root Disk: Range of values: 40 to 1024 GB"
+    dataDescription: "Data Disk: Range of values: 100 to 32768 GB"
+  initialNodeCount:
+    label: Node Count
+  flavor:
+    label: Node Flavor
+  sshKey:
+    label: SSH Key Name
+  operatingSystem:
+    label: Node Operation System

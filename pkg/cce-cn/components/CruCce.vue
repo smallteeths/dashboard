@@ -6,10 +6,15 @@ import { useStore } from 'vuex';
 import CruResource from '@shell/components/CruResource.vue';
 import { useCreateEditView } from '../composables/useCreateEditView.js';
 import { useFormValidation } from '../composables/useFormValidation.js';
+import LabeledMultiSelect from './LabeledMultiSelect';
 import CCEValidators from '../util/validators';
 import { NORMAN } from '@shell/config/types';
+import NodePool from './NodePool';
 import { CREATOR_PRINCIPAL_ID } from '@shell/config/labels-annotations';
-import { _CREATE, _VIEW, _IMPORT } from '@shell/config/query-params';
+import Tab from '@shell/components/Tabbed/Tab.vue';
+import Tabbed from '@shell/components/Tabbed/index.vue';
+import { _CREATE, _IMPORT } from '@shell/config/query-params';
+import Banner from '@components/Banner/Banner.vue';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
 import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
 import SelectCredential from '@shell/edit/provisioning.cattle.io.cluster/SelectCredential.vue';
@@ -17,8 +22,11 @@ import KeyValue from '@shell/components/form/KeyValue';
 import UnitInput from '@shell/components/form/UnitInput';
 import FileSelector from '@shell/components/form/FileSelector.vue';
 import { RadioGroup } from '@components/Form/Radio';
+import { queryHuawei } from '../util/request';
 import CONFIG_ENV from '../util/config';
-import { find, cloneDeep } from 'lodash';
+import { find, pullAt } from 'lodash';
+import { stringify } from '@shell/utils/error';
+import { base64Decode } from '@shell/utils/crypto';
 
 const props = defineProps({
   mode: {
@@ -40,11 +48,16 @@ const normanCluster = ref({});
 const nodePools = ref([]);
 const cruresource = ref(null);
 const options = ref({
-  vpcOptions:           [],
-  subnetOptions:        [],
-  securityGroupOptions: [],
-  externalIPOptions:    [],
-  eipOptions:           [
+  vpcOptions:                         [],
+  subnetOptions:                      [],
+  securityGroupOptions:               [],
+  externalIPOptions:                  [],
+  eniNetworkCidrMutipleSelectOptions: [],
+  volumeTypeChoicesByZones:           {},
+  availableZoneOptions:               [],
+  sshKeyOptions:                      [],
+  flavorOptionsByZones:               {},
+  eipOptions:                         [
     intl.value('cceCn.eipSelection.none'),
     intl.value('cceCn.eipSelection.exist'),
     intl.value('cceCn.eipSelection.new'),
@@ -53,13 +66,24 @@ const options = ref({
     intl.value('cceCn.authentiactionMode.rbac'),
     intl.value('cceCn.authentiactionMode.authenticating_proxy'),
   ],
+  highAvailabilityOptions: [
+    intl.value('generic.enabled'),
+    intl.value('generic.disabled'),
+  ],
 });
-
 const state = ref({
-  loading:         false,
-  regionName:      '',
-  managementScale: 'small',
-  eipSelection:    'none',
+  loading:                  false,
+  vpcLoading:               false,
+  publicIPsLoading:         false,
+  subnetsLoading:           false,
+  securityGroupsLoading:    false,
+  regionName:               '',
+  managementScale:          'small',
+  eipSelection:             'none',
+  highAvailabilityEnabled:  's2',
+  highAvailabilityDisabled: false,
+  eniNetworks:              [],
+  errors:                   [],
 });
 const emit = defineEmits(['done']);
 const {
@@ -90,9 +114,37 @@ const fvExtraRules = computed(() => {
 
   if (hasCredential.value) {
     const commonRules = {
-      nameRequired:     CCEValidators.nameRequired(normanCluster, intl),
-      regionIdRequired: CCEValidators.regionIdRequired(cceConfig, intl),
+      nameRequired:                 CCEValidators.nameRequired(normanCluster, intl),
+      regionIdRequired:             CCEValidators.regionIdRequired(cceConfig, intl),
+      categoryRequired:             CCEValidators.categoryRequired(cceConfig, intl),
+      versionRequired:              CCEValidators.versionRequired(cceConfig, intl),
+      managementScaleRequired:      CCEValidators.managementScaleRequired(state, intl),
+      containerNetworkModeRequired: CCEValidators.containerNetworkModeRequired(cceConfig, intl),
+      vpcIdRequired:                CCEValidators.vpcIdRequired(cceConfig, intl),
+      subnetIdRequired:             CCEValidators.subnetIdRequired(cceConfig, intl),
+      kubernetesSvcIPRangeRequired: CCEValidators.kubernetesSvcIPRangeRequired(cceConfig, intl),
+      validateKubernetesSvcIPRange: CCEValidators.validateKubernetesSvcIPRange(cceConfig, intl),
+      securityGroupRequired:        CCEValidators.securityGroupRequired(cceConfig, intl),
     };
+
+    if (!isTurbo.value) {
+      commonRules.containerNetworkCidrRequired = CCEValidators.containerNetworkCidrRequired(cceConfig, intl);
+      commonRules.validateContainerNetworkCidr = CCEValidators.validateContainerNetworkCidr(cceConfig, intl);
+    } else {
+      commonRules.eniNetworksRequired = CCEValidators.eniNetworksRequired(state, intl);
+    }
+    if (state.value.eipSelection === 'exist') {
+      commonRules.eipSelectionRequired = CCEValidators.eipSelectionRequired(cceConfig, intl);
+    } else if (state.value.eipSelection === 'new') {
+      commonRules.eipTypeRequired = CCEValidators.eipTypeRequired(cceConfig, intl);
+      commonRules.eipChargeModeRequired = CCEValidators.eipChargeModeRequired(cceConfig, intl);
+      commonRules.eipBandwidthSizeRequired = CCEValidators.eipBandwidthSizeRequired(cceConfig, intl);
+    }
+    if (cceConfig.value.authentiactionMode === 'authenticating_proxy') {
+      commonRules.authenticatingProxyCaRequired = CCEValidators.authenticatingProxyCaRequired(cceConfig, intl);
+      commonRules.authenticatingProxyCertRequired = CCEValidators.authenticatingProxyCertRequired(cceConfig, intl);
+      commonRules.authenticatingProxyPrivateKeyRequired = CCEValidators.authenticatingProxyPrivateKeyRequired(cceConfig, intl);
+    }
 
     const isImportMode = isImport.value || cceConfig.value.imported;
 
@@ -114,11 +166,91 @@ const isNewOrUnprovisioned = computed(() => {
   return props.mode === _CREATE || !normanCluster.value?.cceStatus?.upstreamSpec;
 });
 
+const isTurbo = computed(() => {
+  return cceConfig.value.category === 'Turbo';
+});
+
+const clusterActive = computed(() => {
+  if (!isNewOrUnprovisioned.value) {
+    return normanCluster.value.state === 'active';
+  }
+
+  return true;
+});
+
+const operatingSystemOptions = computed(() => {
+  const types = ['EulerOS 2.9', 'CentOS 7.6'];
+  const containerNetworkMode = cceConfig.value.containerNetworkMode;
+
+  if (containerNetworkMode !== 'overlay_l2') {
+    types.push('Huawei Cloud EulerOS 2.0', 'Ubuntu 22.04');
+  }
+
+  return types.map((item) => ({
+    label: item,
+    value: item
+  }));
+});
+
 // watch
 watch(() => cceConfig.value.huaweiCredentialSecret, async(credential) => {
+  state.value.errors = [];
   if (credential) {
     fetchRegion(credential);
+    if (!isImport.value) {
+      await fetchVpc(credential);
+      await fetchListPublicIPs(credential);
+      await fetchListSubnets(credential);
+      await fetchVolumeTypes(credential);
+      await fetchOsAvailabilityZone(credential);
+      await fetchSecurityGroups(credential);
+      await fetchOsKeypairs(credential);
+      await fetchFlavors(credential);
+    }
   }
+});
+
+watch(() => cceConfig.value.category, async() => {
+  if (cceConfig.value.huaweiCredentialSecret) {
+    await fetchVpc(cceConfig.value.huaweiCredentialSecret);
+    await fetchListSubnets(cceConfig.value.huaweiCredentialSecret);
+  }
+  if (cceConfig.value.category === 'Turbo') {
+    cceConfig.value.containerNetworkMode = 'eni';
+    cceConfig.value.containerNetworkCidr = '';
+    cceConfig.value.vpcId = '';
+    cceConfig.value.subnetId = '';
+  } else {
+    cceConfig.value.containerNetworkMode = 'vpc-router';
+    cceConfig.value.containerNetworkCidr = '10.0.0.0/16';
+    cceConfig.value.vpcId = 'default';
+    cceConfig.value.subnetId = 'default';
+  }
+});
+
+watch(() => cceConfig.value.vpcId, async() => {
+  if (cceConfig.value.huaweiCredentialSecret) {
+    if (cceConfig.value.category === 'Turbo') {
+      cceConfig.value.subnetId = '';
+    } else {
+      cceConfig.value.subnetId = 'default';
+    }
+    await fetchListSubnets(cceConfig.value.huaweiCredentialSecret);
+  }
+});
+
+watchEffect(() => {
+  const managementScale = state.value.managementScale;
+  const highAvailabilityEnabled = state.value.highAvailabilityEnabled;
+  const matched = find(CONFIG_ENV.MANAGEMENT_SCALE_VIRTUAL, { value: managementScale });
+
+  state.value.highAvailabilityDisabled = false;
+  if (matched && parseInt(matched.label, 10) > 200) {
+    state.value.highAvailabilityDisabled = true;
+    state.value.highAvailabilityEnabled = 's2';
+  }
+
+  cceConfig.value.clusterFlavor = `cce.${ highAvailabilityEnabled }.${ managementScale }`;
 });
 
 const {
@@ -133,9 +265,417 @@ fvFormRuleSets.value = [
     path:  'name',
     rules: ['nameRequired'],
   },
+  {
+    path:  'category',
+    rules: ['categoryRequired'],
+  },
+  {
+    path:  'version',
+    rules: ['versionRequired'],
+  },
+  {
+    path:  'managementScale',
+    rules: ['managementScaleRequired'],
+  },
+  {
+    path:  'containerNetworkMode',
+    rules: ['containerNetworkModeRequired'],
+  },
+  {
+    path:  'vpcId',
+    rules: ['vpcIdRequired'],
+  },
+  {
+    path:  'subnetId',
+    rules: ['subnetIdRequired'],
+  },
+  {
+    path:  'containerNetworkCidr',
+    rules: ['containerNetworkCidrRequired', 'validateContainerNetworkCidr'],
+  },
+  {
+    path:  'eniNetworks',
+    rules: ['eniNetworksRequired'],
+  },
+  {
+    path:  'kubernetesSvcIPRange',
+    rules: ['kubernetesSvcIPRangeRequired', 'validateKubernetesSvcIPRange'],
+  },
+  {
+    path:  'securityGroup',
+    rules: ['securityGroupRequired'],
+  },
+  {
+    path:  'eipSelection',
+    rules: ['eipSelectionRequired'],
+  },
+  {
+    path:  'eipType',
+    rules: ['eipTypeRequired'],
+  },
+  {
+    path:  'eipChargeMode',
+    rules: ['eipChargeModeRequired'],
+  },
+  {
+    path:  'eipBandwidthSize',
+    rules: ['eipBandwidthSizeRequired'],
+  },
+  {
+    path:  'authenticatingProxyCa',
+    rules: ['authenticatingProxyCaRequired'],
+  },
+  {
+    path:  'authenticatingProxyCert',
+    rules: ['authenticatingProxyCertRequired'],
+  },
+  {
+    path:  'authenticatingProxyPrivateKey',
+    rules: ['authenticatingProxyPrivateKeyRequired'],
+  },
 ];
 
 // method
+async function fetchFlavors(cloudCredentialId) {
+  const flavorOptionsByZones = {};
+
+  try {
+    const res = await queryHuawei({
+      resource:       'flavors',
+      cloudCredentialId,
+      store,
+      externalParams: {},
+    });
+
+    options.value.flavorOptionsByZones = {};
+    if (res.length === 0) {
+      return;
+    }
+    res.forEach((flavor) => {
+      const specAz = flavor?.os_extra_specs['cond:operation:az'] || '';
+
+      specAz.split(',').forEach((az) => {
+        if (az.includes('(normal)')) {
+          const zone = az.substr(0, az.length - 8);
+
+          flavorOptionsByZones[zone] = flavorOptionsByZones[zone] || [];
+          flavorOptionsByZones[zone].push({
+            label: `${ flavor.name } ( vCPUs: ${ flavor.vcpus }, memory: ${ flavor.ram / 1024 } GB )`,
+            value: flavor.name,
+            group: flavor.name.split('.')[0]
+          });
+        }
+      });
+    });
+
+    options.value.flavorOptionsByZones = flavorOptionsByZones;
+  } catch (err) {
+    options.value.flavorOptionsByZones = {};
+    state.value.errors = [];
+    state.value.errors.push(err);
+  }
+}
+
+async function fetchVpc(cloudCredentialId) {
+  state.value.vpcLoading = true;
+  try {
+    const externalParams = {};
+    const res = await queryHuawei({
+      resource: 'vpcs',
+      cloudCredentialId,
+      store,
+      externalParams,
+    });
+    const initVpcs = [];
+    let vpcOptions = [];
+
+    options.value.vpcOptions = [];
+    if (!isTurbo.value) {
+      initVpcs.push({
+        label: intl.value('cceCn.vpcId.default'),
+        value: 'default',
+      });
+    }
+
+    if (res?.length > 0) {
+      vpcOptions = res.reduce((prev, v) => {
+        prev.push({
+          label: v.name,
+          value: v.id
+        });
+
+        return prev;
+      }, initVpcs);
+    }
+
+    options.value.vpcOptions = vpcOptions;
+  } catch (err) {
+    options.value.vpcOptions = [];
+    state.value.errors = [];
+    state.value.errors.push(err);
+  }
+  state.value.vpcLoading = false;
+}
+
+async function fetchListPublicIPs(cloudCredentialId) {
+  state.value.publicIPsLoading = true;
+  try {
+    const externalParams = {};
+    const res = await queryHuawei({
+      resource: 'listPublicIPs',
+      cloudCredentialId,
+      store,
+      externalParams,
+    });
+    let eipOptions = [];
+
+    if (res?.length > 0) {
+      eipOptions = res.reduce((prev, eip) => {
+        if (eip.status === 'DOWN') {
+          prev.push({
+            label: `${ eip.public_ip_address }(${ eip.type }) `,
+            value: eip.public_ip_address,
+          });
+        }
+
+        return prev;
+      }, []);
+    }
+    options.value.externalIPOptions = eipOptions;
+  } catch (err) {
+    options.value.externalIPOptions = [];
+    state.value.errors = [];
+    state.value.errors.push(err);
+  }
+  state.value.publicIPsLoading = false;
+}
+
+async function fetchListSubnets(cloudCredentialId) {
+  state.value.subnetsLoading = true;
+  const vpcID = cceConfig.value.vpcId;
+
+  if (!vpcID || vpcID === 'default') {
+    if (!isTurbo.value) {
+      options.value.subnetOptions = [{
+        label: intl.value('cceCn.subnetId.default'),
+        value: 'default',
+      }];
+    }
+    state.value.subnetsLoading = false;
+
+    return;
+  }
+  try {
+    const externalParams = { vpcID };
+    const res = await queryHuawei({
+      resource: 'subnets',
+      cloudCredentialId,
+      store,
+      externalParams,
+    });
+    const initSubnetOptions = [];
+    let subnetOptions = [];
+
+    if (!isTurbo.value) {
+      initSubnetOptions.push({
+        label: intl.value('cceCn.subnetId.default'),
+        value: 'default',
+      });
+    }
+
+    if (res?.length > 0) {
+      subnetOptions = res.reduce((prev, s) => {
+        if (s.vpc_id === vpcID) {
+          prev.push({
+            label: s.name,
+            value: s.neutron_subnet_id,
+          });
+        }
+
+        return prev;
+      }, initSubnetOptions);
+    }
+    options.value.eniNetworkCidrMutipleSelectOptions = subnetOptions;
+    options.value.subnetOptions = subnetOptions;
+  } catch (err) {
+    options.value.eniNetworkCidrMutipleSelectOptions = [];
+    options.value.subnetOptions = [];
+    state.value.errors = [];
+    state.value.errors.push(err);
+  }
+  state.value.subnetsLoading = false;
+}
+
+async function fetchVolumeTypes(cloudCredentialId) {
+  const volumeTypeChoicesByZones = {};
+  const types = ['SSD', 'SAS', 'SATA', 'GPSSD', 'ESSD'];
+
+  try {
+    const res = await queryHuawei({
+      resource:       'volumeTypes',
+      cloudCredentialId,
+      store,
+      externalParams: {},
+    });
+
+    options.value.volumeTypeChoicesByZones = {};
+
+    if (res.length === 0) {
+      return;
+    }
+
+    res.forEach((volumeType) => {
+      const extraSpecs = volumeType.extra_specs;
+
+      if (
+        typeof extraSpecs !== 'object' ||
+        extraSpecs === null ||
+        !types.includes(volumeType.name)
+      ) {
+        return;
+      }
+
+      const rawAvailability = extraSpecs['RESKEY:availability_zones'] ?? '';
+
+      if (typeof rawAvailability !== 'string' || rawAvailability.trim() === '') {
+        return;
+      }
+      const availabilityArr = rawAvailability
+        .split(',')
+        .map((z) => z.trim())
+        .filter((z) => z);
+
+      const rawSoldOut = extraSpecs['os-vendor-extended:sold_out_availability_zones'] ?? '';
+      const soldOutArr = typeof rawSoldOut === 'string' ? rawSoldOut.split(',').map((z) => z.trim()) : [];
+
+      const availableZones = availabilityArr.filter(
+        (zone) => !soldOutArr.includes(zone)
+      );
+
+      availableZones.forEach((zone) => {
+        if (!volumeTypeChoicesByZones[zone]) {
+          volumeTypeChoicesByZones[zone] = [];
+        }
+        volumeTypeChoicesByZones[zone].push({
+          label: `cceCn.volumetype.${ volumeType.name }`,
+          value: volumeType.name,
+        });
+      });
+
+      options.value.volumeTypeChoicesByZones = volumeTypeChoicesByZones;
+    });
+  } catch (err) {
+    options.value.volumeTypeChoicesByZones = {};
+    state.value.errors = [];
+    state.value.errors = [err];
+  }
+}
+
+async function fetchOsAvailabilityZone(cloudCredentialId) {
+  try {
+    const res = await queryHuawei({
+      resource:       'osAvailabilityZone',
+      cloudCredentialId,
+      store,
+      externalParams: {},
+    });
+
+    options.value.availableZoneOptions = [];
+    if (res.length === 0) {
+      return;
+    }
+
+    const availableZoneOptions = res.reduce((prev, zone) => {
+      if (zone?.zoneState?.available && cceConfig.value.regionID) {
+        const id = zone.zoneName || '';
+        const regionId = cceConfig.value.regionID;
+
+        if (id.startsWith(regionId)) {
+          const num = id.substr(regionId.length, 1).charCodeAt() - 96;
+
+          prev.push({
+            label: intl.value('cceCn.availableZone.value', { num }),
+            value: id
+          });
+        } else {
+          prev.push({
+            label: zone.zoneName,
+            value: zone.zoneName,
+          });
+        }
+      }
+
+      return prev;
+    }, []);
+
+    options.value.availableZoneOptions = availableZoneOptions;
+  } catch (err) {
+    options.value.availableZoneOptions = [];
+    state.value.errors = [];
+    state.value.errors = [err];
+  }
+}
+
+async function fetchSecurityGroups(cloudCredentialId) {
+  state.value.securityGroupsLoading = true;
+  try {
+    const res = await queryHuawei({
+      resource:       'securityGroups',
+      cloudCredentialId,
+      store,
+      externalParams: {},
+    });
+
+    options.value.securityGroupOptions = [];
+    if (res.length === 0) {
+      return;
+    }
+
+    const securityGroupChoices = res.map((item) => {
+      return {
+        label: item.name,
+        value: item.id
+      };
+    });
+
+    options.value.securityGroupOptions = securityGroupChoices;
+  } catch (err) {
+    options.value.securityGroupOptions = [];
+    state.value.errors = [];
+    state.value.errors = [err];
+  }
+  state.value.securityGroupsLoading = false;
+}
+
+async function fetchOsKeypairs(cloudCredentialId) {
+  try {
+    const res = await queryHuawei({
+      resource:       'osKeypairs',
+      cloudCredentialId,
+      store,
+      externalParams: {},
+    });
+
+    options.value.sshKeyOptions = [];
+    if (res.length === 0) {
+      return;
+    }
+
+    const sshKeyOptions = res.map((sshKey) => {
+      return {
+        label: sshKey?.keypair?.name,
+        value: sshKey?.keypair?.name,
+      };
+    });
+
+    options.value.sshKeyOptions = sshKeyOptions;
+  } catch (err) {
+    options.value.sshKeyOptions = [];
+    state.value.errors = [];
+    state.value.errors = [err];
+  }
+}
+
 function cancelCredential() {
   if (cruresource.value) {
     cruresource.value.emitOrRoute();
@@ -154,9 +694,7 @@ async function fetchRegion(credentialID) {
   const regionId = matched?.huaweicredentialConfig?.regionID ?? '';
 
   cceConfig.value.regionID = regionId;
-  console.log(regionId);
   state.value.regionName = intl.value(`cceCn.region.${ regionId.replace(/\-/g, '_') }`);
-  console.log(state.value.regionName);
 }
 
 async function initCustomConfig() {
@@ -166,6 +704,10 @@ async function initCustomConfig() {
     const liveNormanCluster = await props.value.findNormanCluster();
 
     normanCluster.value = await store.dispatch(`rancher/clone`, { resource: liveNormanCluster });
+
+    if (normanCluster.value.cceConfig) {
+      fixConfig(normanCluster);
+    }
   } else {
     normanCluster.value = await store.dispatch('rancher/create', { type: NORMAN.CLUSTER }, { root: true });
 
@@ -174,17 +716,158 @@ async function initCustomConfig() {
     if (principalId.includes('local://')) {
       normanCluster.value.annotations = { ...normanCluster.value.annotations, [CREATOR_PRINCIPAL_ID]: principalId };
     }
+
+    nodePools.value = [{ ...CONFIG_ENV.DEFAULT_NODE_GROUP_CONFIG }];
+    cceConfig.value = { ...CONFIG_ENV.DEFAULTCCECONFIG };
   }
-  if (!normanCluster?.value?.cceConfig) {
-    normanCluster.value['cceConfig'] = { ...CONFIG_ENV.DEFAULTCCECONFIG };
-  }
-  cceConfig.value = cloneDeep({ ...normanCluster.value.cceConfig });
   state.value.loading = false;
 }
 
+function fixConfig(liveNormanCluster) {
+  const config = liveNormanCluster?.value?.cceConfig;
+  const nodePoolList = [];
+  const nodePools = config.nodePools || [];
+
+  nodePools.forEach((nodePool) => {
+    const {
+      flavor,
+      availableZone,
+      operatingSystem,
+      sshKey,
+      rootVolume,
+      dataVolumes,
+      billingMode,
+      runtime
+    } = nodePool.nodeTemplate;
+
+    const out = {
+      nodePoolName:     nodePool.name,
+      initialNodeCount: nodePool.initialNodeCount,
+      flavor,
+      availableZone,
+      operatingSystem,
+      sshKey,
+      rootVolumeSize:   rootVolume.size,
+      rootVolumeType:   rootVolume.type,
+      dataVolumeSize:   dataVolumes[0].size,
+      dataVolumeType:   dataVolumes[0].type,
+      billingMode,
+      runtime,
+    };
+
+    if (nodePool.nodePoolID) {
+      out.nodePoolID = nodePool.nodePoolID;
+    }
+
+    const displayShowValue = {};
+
+    nodePoolList.push(Object.assign(out, displayShowValue));
+  });
+
+  const {
+    category,
+    containerNetwork,
+    version,
+    hostNetwork,
+    kubernetesSvcIPRange,
+    description,
+    authentication,
+    tags,
+    clusterID,
+    publicIP,
+    kubeProxyMode,
+    eniNetwork
+  } = config;
+
+  const out = {
+    category,
+    containerNetworkCidr: containerNetwork.cidr,
+    containerNetworkMode: containerNetwork.mode,
+    version,
+    vpcId:                hostNetwork.vpcID ? hostNetwork.vpcID : 'default',
+    subnetId:             hostNetwork.subnetID ? hostNetwork.subnetID : 'default',
+    securityGroup:        hostNetwork.securityGroup,
+    kubernetesSvcIPRange,
+    description,
+    authentiactionMode:   authentication.mode,
+    tags,
+    taglength:            Object.keys(tags || {}).length,
+    clusterID,
+    kubeProxyMode,
+    imported:             config.imported,
+    clusterFlavor:        config.flavor,
+    eniNetwork,
+  };
+
+  if (config.publicAccess) {
+    if (config?.publicIP?.eip?.ipType) {
+      state.value.eipSelection = 'new';
+      out.eipBandwidthSize = publicIP?.eip?.bandwidth?.size;
+      out.eipChargeMode = publicIP?.eip?.bandwidth?.chargeMode;
+      out.eipType = publicIP?.eip?.ipType;
+      // 这里的 liveNormanCluster 需要判断是否有值 to do
+    } else if (config?.extendParam?.clusterExternalIP || liveNormanCluster.value?.cceStatus?.clusterExternalIP) {
+      state.value.eipSelection = 'exist';
+    }
+  } else {
+    state.value.eipSelection = 'none';
+  }
+
+  if (authentication.mode === 'authenticating_proxy') {
+    const { ca, cert, privateKey } = authentication.authenticatingProxy || {};
+
+    out.authenticatingProxyCa = base64Decode(ca);
+    out.authenticatingProxyCert = base64Decode(cert);
+    out.authenticatingProxyPrivateKey = base64Decode(privateKey);
+  }
+
+  nodePools.value = nodePoolList;
+  cceConfig.value = out;
+
+  if (eniNetwork && eniNetwork?.subnets?.length > 0) {
+    state.value.eniNetworks = eniNetwork.subnets;
+  }
+}
+
+function addPool() {
+  let nextDefaultSuffix = nodePools.value?.length + 1;
+
+  while (nodePools.value.find((group) => group.name === `nodepool-${ nextDefaultSuffix }`)) {
+    nextDefaultSuffix++;
+  }
+
+  const name = `nodepool-${ nextDefaultSuffix }`;
+  const ngConfig = {
+    ...CONFIG_ENV.DEFAULT_NODE_GROUP_CONFIG,
+    name,
+    isNew: true,
+  };
+
+  nodePools.value.push(ngConfig);
+}
+
+function removePool(index) {
+  if (cceConfig.value.imported) {
+    return;
+  }
+  if (!nodePools.value ||
+    !Number.isInteger(index) ||
+    index < 0 ||
+    index >= nodePools.value.length ||
+    nodePools.value.length === 1
+  ) {
+    return;
+  }
+
+  pullAt(nodePools.value, index);
+}
+
+function poolIsValid(pool) {
+  return true;
+}
+
 function updateCceConfigTags(tags) {
-  console.log(cceConfig.value);
-  console.log(tags);
+  cceConfig.value.tags = tags;
 }
 
 onMounted(() => {
@@ -295,6 +978,7 @@ onMounted(() => {
               option-label="label"
               option-key="value"
               label-key="cceCn.clusterType.label"
+              :rules="fvGetAndReportPathRules('category')"
               required
               :disabled="!isNewOrUnprovisioned"
             />
@@ -308,6 +992,7 @@ onMounted(() => {
               option-label="label"
               option-key="value"
               label-key="cceCn.version.label"
+              :rules="fvGetAndReportPathRules('version')"
               required
               :disabled="!isNewOrUnprovisioned"
             />
@@ -323,6 +1008,7 @@ onMounted(() => {
               option-label="label"
               option-key="value"
               label-key="cceCn.managementScale.label"
+              :rules="fvGetAndReportPathRules('managementScale')"
               required
               :disabled="!isNewOrUnprovisioned"
             />
@@ -336,9 +1022,10 @@ onMounted(() => {
               option-label="label"
               option-key="value"
               label-key="cceCn.containerNetworkMode.label"
+              :rules="fvGetAndReportPathRules('containerNetworkMode')"
               required
               :localizedLabel="true"
-              :disabled="!isNewOrUnprovisioned"
+              :disabled="!isNewOrUnprovisioned || isTurbo"
             />
           </div>
         </div>
@@ -352,8 +1039,10 @@ onMounted(() => {
               option-label="label"
               option-key="value"
               label-key="cceCn.vpcId.label"
+              :rules="fvGetAndReportPathRules('vpcId')"
               required
               :disabled="!isNewOrUnprovisioned"
+              :loading="state.vpcLoading"
             />
           </div>
           <div class="col span-6">
@@ -365,20 +1054,35 @@ onMounted(() => {
               option-label="label"
               option-key="value"
               label-key="cceCn.subnetId.label"
+              :rules="fvGetAndReportPathRules('subnetId')"
               required
               :disabled="!isNewOrUnprovisioned"
+              :loading="state.subnetsLoading"
             />
           </div>
         </div>
         <div class="row mb-10">
           <div class="col span-6">
             <LabeledInput
-              :value="cceConfig.containerNetworkCidr"
+              v-if="!isTurbo"
+              v-model:value="cceConfig.containerNetworkCidr"
               data-testid="crucce-container-network-cidr"
               :mode="mode"
               label-key="cceCn.containerNetworkCidr.label"
+              :rules="fvGetAndReportPathRules('containerNetworkCidr')"
               :placeholder="intl('cceCn.containerNetworkCidr.placeholder')"
               required
+            />
+            <LabeledMultiSelect
+              v-else
+              v-model:value="state.eniNetworks"
+              required
+              :mode="mode"
+              :options="options.eniNetworkCidrMutipleSelectOptions"
+              :disabled="!isNewOrUnprovisioned"
+              label-key="cceCn.eniNetworkCidr.label"
+              :loading="state.subnetsLoading"
+              :rules="fvGetAndReportPathRules('eniNetworks')"
             />
           </div>
           <div class="col span-6">
@@ -387,6 +1091,7 @@ onMounted(() => {
               data-testid="crucce-kubernetes-svc-ip-range"
               :mode="mode"
               label-key="cceCn.kubernetesSvcIPRange.label"
+              :rules="fvGetAndReportPathRules('kubernetesSvcIPRange')"
               :placeholder="intl('cceCn.kubernetesSvcIPRange.placeholder')"
               required
             />
@@ -402,8 +1107,25 @@ onMounted(() => {
               option-label="label"
               option-key="value"
               label-key="cceCn.securityGroup.label"
+              :rules="fvGetAndReportPathRules('securityGroup')"
               required
               :disabled="!isNewOrUnprovisioned"
+              :loading="securityGroupsLoading"
+            />
+          </div>
+        </div>
+        <div class="row mb-10">
+          <div class="col span-6">
+            <h3 class="clearfix">
+              {{ intl('cceCn.highAvailability.label') }}
+            </h3>
+            <RadioGroup
+              v-model:value="state.highAvailabilityEnabled"
+              :disabled="!isNewOrUnprovisioned || state.highAvailabilityDisabled"
+              name="highAvailabilityEnabled"
+              :options="['s2', 's1']"
+              :labels="options.highAvailabilityOptions"
+              :mode="mode"
             />
           </div>
         </div>
@@ -449,6 +1171,7 @@ onMounted(() => {
               option-key="value"
               label-key="cceCn.eipIds.label"
               required
+              :rules="fvGetAndReportPathRules('eipSelection')"
               :disabled="!isNewOrUnprovisioned"
             />
             <div
@@ -463,10 +1186,12 @@ onMounted(() => {
                 option-key="value"
                 label-key="cceCn.eipType.label"
                 :localizedLabel="true"
+                :rules="fvGetAndReportPathRules('eipType')"
+                required
                 :disabled="!isNewOrUnprovisioned"
               />
               <LabeledSelect
-                v-model:value="cceConfig.clusterExternalIP"
+                v-model:value="cceConfig.eipChargeMode"
                 class="mt-10"
                 data-testid="crucce-external-ip"
                 :mode="mode"
@@ -474,14 +1199,19 @@ onMounted(() => {
                 option-label="label"
                 option-key="value"
                 :localizedLabel="true"
+                :rules="fvGetAndReportPathRules('eipChargeMode')"
+                required
                 label-key="cceCn.eipChargeMode.label"
                 :disabled="!isNewOrUnprovisioned"
               />
               <UnitInput
+                v-model:value="cceConfig.eipBandwidthSize"
                 class="mt-10"
                 :disabled="!isNewOrUnprovisioned"
-                :value="cceConfig.eipBandwidthSize"
                 :label="intl('cceCn.eipBandwidthSize.label')"
+                :rules="fvGetAndReportPathRules('eipBandwidthSize')"
+                required
+                min="0"
                 :mode="mode"
                 suffix="Mbit/s"
               />
@@ -509,6 +1239,8 @@ onMounted(() => {
                   class="cce-authenticating-textarea-multiline"
                   :disabled="!isNewOrUnprovisioned"
                   :mode="mode"
+                  :rules="fvGetAndReportPathRules('authenticatingProxyCa')"
+                  required
                   label-key="cceCn.authenticatingProxyCa.label"
                   type="multiline"
                 />
@@ -526,6 +1258,8 @@ onMounted(() => {
                   class="cce-authenticating-textarea-multiline"
                   :disabled="!isNewOrUnprovisioned"
                   :mode="mode"
+                  :rules="fvGetAndReportPathRules('authenticatingProxyCert')"
+                  required
                   label-key="cceCn.authenticatingProxyCert.label"
                   type="multiline"
                 />
@@ -545,6 +1279,8 @@ onMounted(() => {
                   class="cce-authenticating-textarea-multiline"
                   :disabled="!isNewOrUnprovisioned"
                   :mode="mode"
+                  :rules="fvGetAndReportPathRules('authenticatingProxyPrivateKey')"
+                  required
                   label-key="cceCn.authenticatingProxyPrivateKey.label"
                   type="multiline"
                 />
@@ -564,7 +1300,7 @@ onMounted(() => {
             key="labels"
             :disabled="!isNewOrUnprovisioned"
             :value="cceConfig.tags"
-            :protected-keys="cceConfig.tags || []"
+            :protected-keys="[]"
             :add-label="t('labels.addLabel')"
             :add-icon="addIcon"
             :mode="mode"
@@ -573,6 +1309,44 @@ onMounted(() => {
             @update:value="updateCceConfigTags($event)"
           />
         </div>
+        <Tabbed
+          ref="pools"
+          :side-tabs="true"
+          :show-tabs-add-remove="mode !== 'view'"
+          class="mb-20"
+          @addTab="addPool()"
+          @removeTab="removePool($event)"
+        >
+          <Tab
+            v-for="(pool, i) in nodePools"
+            :key="i"
+            :weight="-i"
+            :name="`${pool.name} ${i}`"
+            :label="pool.name"
+            :error="!poolIsValid(pool)"
+          >
+            <NodePool
+              v-model:name="pool.name"
+              v-model:runtime="pool.runtime"
+              v-model:availableZone="pool.availableZone"
+              v-model:billingMode="pool.billingMode"
+              v-model:rootVolumeType="pool.rootVolumeType"
+              v-model:rootVolumeSize="pool.rootVolumeSize"
+              v-model:dataVolumeType="pool.dataVolumeType"
+              v-model:dataVolumeSize="pool.dataVolumeSize"
+              v-model:flavor="pool.flavor"
+              v-model:operatingSystem="pool.operatingSystem"
+              v-model:initialNodeCount="pool.initialNodeCount"
+              v-model:sshKey="pool.sshKey"
+              :availableZoneOptions="options.availableZoneOptions"
+              :operatingSystemOptions="operatingSystemOptions"
+              :sshKeyOptions="options.sshKeyOptions"
+              :volumeTypeChoicesByZones="options.volumeTypeChoicesByZones"
+              :flavorOptionsByZones="options.flavorOptionsByZones"
+              @errors="e=>state.errors=e"
+            />
+          </Tab>
+        </Tabbed>
       </div>
     </div>
     <template
