@@ -1,0 +1,155 @@
+cceCn:
+  label: Huawei CCE
+  updateWarn: 集群正在升級，編輯可能導致未知錯誤
+  region:
+    label: 區域
+    helpText: 獲取區域參考<a href="https://developer.huaweicloud.com/endpoint" target="_blank">這裡</a>。
+    required: 區域必須填寫
+    cn_north_1: 華北-北京一
+    cn_north_4: 華北-北京四
+    cn_east_3: 華東-上海一
+    cn_east_2: 華東-上海二
+    cn_south_1: 華南-廣州
+    cn_southwest_2: 西南-貴陽一
+    ap_southeast_1: 亞太-香港
+    ap_southeast_2: 亞太-曼谷
+    ap_southeast_3: 亞太-新加坡
+    af_south_1: 非洲-約翰內斯堡
+    sa_brazil_1: 拉美-聖保羅一
+    la_south_2: 拉美-聖地亞哥
+    cn_north_9: 華北-烏蘭察布一
+    eu_west_0: 歐洲-巴黎
+    eu_west_101: 歐洲-都柏林
+    tr_west_1: 土耳其-伊斯坦布爾
+    ae_ad_1: 中東-阿布扎比-OP5
+  clusterType:
+    label: 叢集類型
+    VirtualMachine:
+      label: 混合叢集
+    BareMetal:
+      label: 裸金屬集群
+    ARM64:
+      label: 鯤鵬叢集
+  version:
+    label: 版本
+    warningNotRecommend: “{version}”，此版本華為 CCE 不推薦使用。具體請查閱華為官方文檔。
+    warningRacher: “{version}”，此版本不在 Rancher 支持矩陣範圍內。可參考
+    warningRancherTip: Rancher 支持矩陣。
+  managementScale:
+    label: 叢集管理規模
+  containerNetworkMode:
+    label: 網路模型
+    none: 無配置
+    overlay:
+      label: 容器隧道網路
+    underlayIpvlan:
+      label: 'Underlay l2網路'
+    vpcRouter:
+      label: VPC網路
+    eni:
+      label: eni
+  vpcId:
+    label: 虛擬私有雲
+    default: 自動創建
+    placeholder: 請選擇一个 VPC
+  subnetId:
+    label: 所在子網
+    none: 無可用子網
+    default: 自動創建
+    placeholder: 請選擇一个子網
+  containerNetworkCidr:
+    label: 容器網段
+    placeholder: '例如: 172.16.0.0/16'
+    none: 無配置
+    cidrFormatError: '"容器網段" 格式错误'
+  eniNetworkCidr:
+    label: Eni Network
+    placeholder: 子网ID
+  kubernetesSvcIPRange:
+    label: 服務網段
+    placeholder: '例如: 10.247.0.0/16'
+    none: 無配置
+    cidrFormatError: '"服務網段" 格式错误'
+  securityGroup:
+    label: 安全組
+    required: 請選擇安全組
+    default: 默认安全組
+  publicAccess:
+    label: 使用公網訪問
+  kubeProxyMode:
+    label: 服務轉發模式
+  eipSelection:
+    none: 暫不使用
+    new: 創建新的
+    exist: 使用已有
+  eipIds:
+    label: 彈性 IP
+    none: 無可用彈性 IP
+    countError: 已選或新建的彈性 IP數量必須和節點數保持一致
+  eipType:
+    label: Eip 類型
+    bgp: 全動態BGP
+    sbgp: 靜態BGP
+  eipChargeMode:
+    label: 計費模式
+    bandwidth: 按帶寬計費
+    traffic: 按流量計費
+  eipBandwidthSize:
+    label: 帶寬
+  authentiactionMode:
+    label: 證書認證
+    rbac: 系统默认
+    authenticating_proxy: 自定義
+  authenticatingProxyCa:
+    label: CA 根證書
+  authenticatingProxyCert:
+    label: 客戶端證書
+  authenticatingProxyPrivateKey:
+    label: 客戶端證書私鑰
+  highAvailability:
+    label: 高可用
+  availableZone:
+    label: 當前區域
+    value: 可用區{num}
+    random: 随机
+  nodePoolName:
+    label: 節點池名稱
+    placeholder: 例如：nodepool
+    required: 必須設置 worker 節點池名稱
+    same: 節點池名稱不唯一
+  billingMode:
+    label: 計費模式
+    payPerUse: 按需計費
+    yearly: '包年/包月'
+  rootVolumeType:
+    label: 系統盤類型
+  rootVolumeSize:
+    label: 系統盤大小
+    placeholder: "容量範圍: 40 ~ 1024"
+    minRequired: 磁碟大小必須大於或等於 40GB
+  dataVolumeType:
+    label: 數據盤類型
+  dataVolumeSize:
+    label: 數據盤大小
+    placeholder: "容量範圍: 100 ~ 32768"
+    minRequired: 磁碟大小必須大於或等於 100GB
+  volumetype:
+    SAS: 高IO
+    SSD: 超高IO
+    SATA: 普通IO
+    GPSSD: 通用SSD
+    ESSD: 極速型SSD
+    rootDescription: "繫統盤取值範圍: 40~1024 單位為GB"
+    dataDescription: "數據盤取值範圍: 100~32768 單位為GB"
+  initialNodeCount:
+    label: 節點個數
+  flavor:
+    label: 節點規格
+  sshKey:
+    label: 密鑰對
+  operatingSystem:
+    label: 操作系統
+  clusterSelect:
+    importCluster: 集群
+    required: 必須設置需要導入的集群
+    placeholder: '請選擇'
