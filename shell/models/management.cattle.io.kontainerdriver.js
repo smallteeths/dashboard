@@ -49,6 +49,7 @@ export const DRIVER_TO_IMPORT = {
   huawei:    'huawei',
   tencent:   'tke',
   ack:       'ack',
+  cce:       'cce',
 };
 
 export default class KontainerDriver extends HybridModel {
