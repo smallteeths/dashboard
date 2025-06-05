@@ -1,0 +1,169 @@
+cceCn:
+  label: Huawei CCE
+  updateWarn: The cluster is currently being upgraded, and editing may result in unknown errors.
+  region:
+    label: Region
+    helpText: You can find instructions on how to obtain Region <a href="https://developer.huaweicloud.com/endpoint" target="_blank">here</a>.
+    required: Region is required.
+    cn_north_1: CN North-Beijing1
+    cn_north_4: CN North-Beijing4
+    cn_east_3: CN East-Shanghai1
+    cn_east_2: CN East-Shanghai2
+    cn_south_1: CN South-Guangzhou
+    cn_southwest_2: CN Southwest-Guiyang1
+    ap_southeast_1: AP-Hong-Kong
+    ap_southeast_2: AP-Bangkok
+    ap_southeast_3: AP-Singapore
+    af_south_1: AF-Johannesburg
+    sa_brazil_1: LA-Sao Paulo1
+    la_south_2: LA-Santiago
+    cn_north_9: North-乌兰察布一
+    eu_west_0: Europe-Paris
+    eu_west_101: Europe-Dublin
+    tr_west_1: Turkey-Istanbul
+    ae_ad_1: Middle-East-Abu-Dhabi-OP5
+  clusterType:
+    label: Cluster Type
+    VirtualMachine:
+      label: VirtualMachine
+    BareMetal:
+      label: BareMetal
+    ARM64:
+      label: ARM64
+  version:
+    label: Master Version
+    warningNotRecommend: “{version}”，This version of Huawei CCE is not recommended. For details, see huawei official documents.
+    warningRacher: “{version}”，This version is not supported by Rancher. Reference
+    warningRancherTip: Rancher support matrix.
+  managementScale:
+    label: Management Scale count
+  containerNetworkMode:
+    label: Container Network Mode
+    none: No config
+    overlay:
+      label: overlay_l2
+    underlayIpvlan:
+      label: underlay_ipvlan
+    vpcRouter:
+      label: vpc-router
+    eni:
+      label: eni
+  vpcId:
+    label: VPC Name
+    default: Default VPC
+    placeholder: Please select a VPC
+  subnetId:
+    label: Subnet Name
+    none: No subnet in this VPC
+    default: Default Subnet
+    placeholder: Please select a subnet
+  containerNetworkCidr:
+    label: Container CIDR Block
+    placeholder: e.g. 172.16.0.0/16
+    none: No config
+    cidrFormatError: '"Container CIDR Block" format error'
+  eniNetworkCidr:
+    label: Eni Network
+    placeholder: Subnet ID
+  kubernetesSvcIPRange:
+    label: Service CIDR Block
+    placeholder: e.g. 10.247.0.0/16
+    none: No config
+    cidrFormatError: '"Service CIDR Block" format error'
+  securityGroup:
+    label: Security Group
+    required: Security Group is required
+    default: Default Security Group
+  kubeProxyMode:
+    label: Request Forwarding
+  publicAccess:
+    label: Use Public Network Access
+  eipSelection:
+    none: Disabled
+    new: Create Eip
+    exist: Select Existed Eip
+  eipIds:
+    label: Eip
+    none: No available Eip
+    countError: The count of selected or created must be equal to the count of nodes
+  eipType:
+    label: Eip Type
+    bgp: Dynamic BGP
+    sbgp: Static BGP
+  eipChargeMode:
+    label: Eip Charge Mode
+    bandwidth: Billing by bandwidth
+    traffic: Billing by traffic
+  eipBandwidthSize:
+    label: Eip Bandwidth Size
+  authentiactionMode:
+    label: Certificate Authentication
+    rbac: Default
+    authenticating_proxy: Custom
+  authenticatingProxyCa:
+    label: CA Root Certificate
+  authenticatingProxyCert:
+    label: Client Certificate
+  authenticatingProxyPrivateKey:
+    label: Client Certificate Private Key
+  highAvailability:
+    label: High Availability
+  availableZone:
+    label: Zone
+    value: Availability Zone {num}
+    random: Random
+  nodePoolName:
+    label: Nood Pool Name
+    placeholder: e.g. nodepool
+    required: Worker Node Name is required
+    same: Node pool name is not unique
+  billingMode:
+    label: Billing Mode
+    payPerUse: Pay-per-use
+    yearly: Yearly/Monthly
+  rootVolumeType:
+    label: Root Volume Type
+  rootVolumeSize:
+    label: Root Volume Size
+    placeholder: "Disk Capacity: 40 to 1024"
+    minRequired: The number of disk size must be greater than or equal to 40 GB.
+  dataVolumeType:
+    label: Data Volume Type
+  dataVolumeSize:
+    label: Data Volume Size
+    placeholder: "Disk Capacity: 100 to 32768"
+    minRequired: The number of disk size must be greater than or equal to 100 GB.
+  volumetype:
+    SAS: SAS
+    SSD: SSD
+    SATA: SATA
+    GPSSD: GPSSD
+    ESSD:  ESSD
+    rootDescription: "Root Disk: Range of values: 40 to 1024 GB"
+    dataDescription: "Data Disk: Range of values: 100 to 32768 GB"
+  initialNodeCount:
+    label: Node Count
+  flavor:
+    label: Node Flavor
+  sshKey:
+    label: SSH Key Name
+  operatingSystem:
+    label: Node Operation System
+  clusterSelect:
+    importCluster: Cluster
+    required: The cluster to be imported must be set
+    placeholder: Please select cluster
+  validityPeriod:
+    label: Validity Period
+  bmsIsAutoRenew:
+    label: Automatic renewal
+    months: |
+      {count, plural,
+        =1 {Month}
+        other {Months}
+      }
+    years: |
+      {count, plural,
+        =1 {Year}
+        other {Years}
+      }
