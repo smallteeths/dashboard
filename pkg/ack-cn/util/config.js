@@ -1,6 +1,7 @@
 const K8S_1_30_7 = '1.30.7-aliyun.1';
-const K8S_1_31_1 = '1.31.1-aliyun.1';
+const K8S_1_31_9 = '1.31.9-aliyun.1';
 const K8S_1_32_1 = '1.32.1-aliyun.1';
+const K8S_1_33_1 = '1.33.1-aliyun.1';
 const DEFAULT_KUBERNETES_VERSION = K8S_1_32_1;
 const MANAGED = 'ManagedKubernetes';
 const ACK_CLUSTER_SPEC_STANDARD = 'ack.standard';
@@ -87,7 +88,15 @@ const CLUSTER_TYPES = [
   }
 ];
 
+// Follows ACK supported Kubernetes versions:
+// https://help.aliyun.com/zh/ack/ack-managed-and-ack-dedicated/user-guide/support-for-kubernetes-versions
 const KUBERNETESVERSIONS = [
+  {
+    value:          K8S_1_33_1,
+    label:          K8S_1_33_1,
+    rancherEnabled: false,
+    aliyunEnabled:  true,
+  },
   {
     value:          K8S_1_32_1,
     label:          K8S_1_32_1,
@@ -95,8 +104,8 @@ const KUBERNETESVERSIONS = [
     aliyunEnabled:  true,
   },
   {
-    value:          K8S_1_31_1,
-    label:          K8S_1_31_1,
+    value:          K8S_1_31_9,
+    label:          K8S_1_31_9,
     rancherEnabled: true,
     aliyunEnabled:  true,
   },
@@ -104,8 +113,8 @@ const KUBERNETESVERSIONS = [
     value:          K8S_1_30_7,
     label:          K8S_1_30_7,
     rancherEnabled: true,
-    aliyunEnabled:  true,
-  },
+    aliyunEnabled:  false,
+  }
 ];
 
 const ACK_CLUSTER_SPEC_OPTIONS = [
