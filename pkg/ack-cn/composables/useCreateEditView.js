@@ -1,8 +1,10 @@
 // useCreateEditView.js
-import { ref, computed, getCurrentInstance } from 'vue';
+import { ref, computed } from 'vue';
 import { _CREATE, _EDIT, _VIEW } from '@shell/config/query-params';
+import { useRouter, useRoute } from 'vue-router';
 import { LAST_NAMESPACE } from '@shell/store/prefs';
 import { exceptionToErrorsArray } from '@shell/utils/error';
+import { useStore } from 'vuex';
 import { clear } from '@shell/utils/array';
 import { DEFAULT_WORKSPACE } from '@shell/config/types';
 import { handleConflict } from '@shell/plugins/dashboard-store/normalize';
@@ -15,10 +17,9 @@ export function useCreateEditView(props, context) {
 
   const errors = ref([]);
 
-  const instance = getCurrentInstance();
-  const $router = instance.appContext.config.globalProperties.$router;
-  const $route = instance.appContext.config.globalProperties.$route;
-  const $store = instance.appContext.config.globalProperties.$store;
+  const $router = useRouter();
+  const $route = useRoute();
+  const $store = useStore();
 
   const { applyHooks } = useChildHook();
 
