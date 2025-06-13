@@ -1,8 +1,9 @@
 <script setup>
 import {
-  ref, onMounted, computed, watch, watchEffect, getCurrentInstance
+  ref, onMounted, computed, watch, watchEffect
 } from 'vue';
 import { useStore } from 'vuex';
+import { useRouter } from 'vue-router';
 import CruResource from '@shell/components/CruResource.vue';
 import { useCreateEditView } from '../composables/useCreateEditView.js';
 import { useFormValidation } from '../composables/useFormValidation.js';
@@ -13,7 +14,7 @@ import NodePool from './NodePool';
 import { CREATOR_PRINCIPAL_ID } from '@shell/config/labels-annotations';
 import Tab from '@shell/components/Tabbed/Tab.vue';
 import Tabbed from '@shell/components/Tabbed/index.vue';
-import { _CREATE, _IMPORT } from '@shell/config/query-params';
+import { _CREATE, _IMPORT, _VIEW } from '@shell/config/query-params';
 import Banner from '@components/Banner/Banner.vue';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
 import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
@@ -27,6 +28,8 @@ import CONFIG_ENV from '../util/config';
 import { find, pullAt, uniqBy, cloneDeep } from 'lodash';
 import { stringify } from '@shell/utils/error';
 import { base64Decode } from '@shell/utils/crypto';
+import Accordion from '@components/Accordion/Accordion.vue';
+import Labels from '@shell/components/form/Labels.vue';
 import ImportCce from './ImportCce';
 
 const props = defineProps({
@@ -102,15 +105,14 @@ const {
 });
 
 const isImport = computed(() => {
-  const instance = getCurrentInstance();
-  const route = instance?.appContext?.config?.globalProperties?.$route;
+  const router = useRouter();
 
-  if (!route) {
+  if (!router) {
     return false;
   }
-  const mode = route.query?.mode;
+  const query = router?.currentRoute?.value?.query;
 
-  return mode === _IMPORT;
+  return query?.mode === _IMPORT;
 });
 
 const hasCredential = computed(() => {
@@ -219,6 +221,14 @@ const operatingSystemOptions = computed(() => {
     label: item,
     value: item
   }));
+});
+
+const CREATE = computed(() => {
+  return _CREATE;
+});
+
+const VIEW = computed(() => {
+  return _VIEW;
 });
 
 function registerWatch() {
@@ -1625,6 +1635,16 @@ onMounted(async() => {
             />
           </Tab>
         </Tabbed>
+      </div>
+      <div>
+        <Accordion
+          class="mb-20"
+          :title="intl('generic.labelsAndAnnotations')"
+        >
+          <Labels
+            v-model:value="normanCluster"
+          />
+        </Accordion>
       </div>
     </div>
     <template

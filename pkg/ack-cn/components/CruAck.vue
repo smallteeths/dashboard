@@ -1,8 +1,9 @@
 <script setup>
 import {
-  ref, onMounted, computed, watch, watchEffect, getCurrentInstance
+  ref, onMounted, computed, watch, watchEffect
 } from 'vue';
 import { useStore } from 'vuex';
+import { useRouter } from 'vue-router';
 import { NORMAN } from '@shell/config/types';
 import Loading from '@shell/components/Loading.vue';
 import { useCreateEditView } from '../composables/useCreateEditView.js';
@@ -490,15 +491,14 @@ function setClusterName(name) {
 }
 
 const isImport = computed(() => {
-  const instance = getCurrentInstance();
-  const route = instance?.appContext?.config?.globalProperties?.$route;
+  const router = useRouter();
 
-  if (!route) {
+  if (!router) {
     return false;
   }
-  const mode = route.query?.mode;
+  const query = router?.currentRoute?.value?.query;
 
-  return mode === _IMPORT;
+  return query?.mode === _IMPORT;
 });
 
 const hasCredential = computed(() => {
