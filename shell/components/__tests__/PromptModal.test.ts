@@ -74,6 +74,7 @@ function generateStore(component: any):any {
       'type-map/labelFor':     () => jest.fn(), // ScaleMachineDownDialog
       'type-map/getTree':      () => jest.fn().mockReturnValue([]), // SearchDialog
       'cluster/all':           () => jest.fn(), // SearchDialog
+      'management/byId':       () => jest.fn(),
       currentProduct:          () => { // SearchDialog
         return { inStore: 'cluster' };
       },

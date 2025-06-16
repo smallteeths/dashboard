@@ -57,7 +57,7 @@ export default {
       subdomain:   null,
       options:     null,
 
-      allowVlansubnet:     null,
+      allowVlansubnet:     false,
       vlansubnetNetwork:   null,
       vlansubnetIp:        null,
       vlansubnetMac:       null,
@@ -86,7 +86,7 @@ export default {
     } = this.value;
     const { nameservers, searches, options } = dnsConfig;
     const {
-      network: vlansubnetNetwork, ip: vlansubnetIp, mac: vlansubnetMac, subnet: vlansubnetName, allowVlansubnet
+      network: vlansubnetNetwork, ip: vlansubnetIp, mac: vlansubnetMac, subnet: vlansubnetName, allowVlansubnet = false
     } = vlansubnet;
 
     this.hostAliases = hostAliases;

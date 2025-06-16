@@ -8,12 +8,10 @@ describe('component: Networking', () => {
     const wrapper = mount(Networking, {
       props: {
         namespace: 'default',
-        value:     {},
         mode:      _CREATE,
+        value:     { vlansubnet: { allowVlansubnet: true } }
       },
-      data() {
-        return { allowVlansubnet: true };
-      },
+
       global: {
         directives: { cleanHtml },
         mocks:      {
@@ -37,11 +35,8 @@ describe('component: Networking', () => {
     const wrapper = mount(Networking, {
       props: {
         namespace: 'default',
-        value:     {},
         mode:      _CREATE,
-      },
-      data() {
-        return { allowVlansubnet: true };
+        value:     { vlansubnet: { allowVlansubnet: true } }
       },
       global: {
         directives: { cleanHtml },
