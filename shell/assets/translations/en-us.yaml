@@ -7,6 +7,9 @@ generic:
   userMenu: user menu
   actionMenu: action menu
   namespaceFilter: namespace filter menu
+  banners:
+    altCloseBanner: Close banner icon
+    bannerIcon: Banner icon
   filterNamespaces: filter namespaces
   clearSearch: clear search
   clearFilters: clear filters
@@ -116,6 +119,12 @@ generic:
   experimental: Experimental
 
   deprecated: Deprecated
+  upgradeable: Upgradeable
+  installed: Installed
+  featured: Featured
+  shortFeatured: Feat
+  category: Category
+  tags: Tags
   placeholder: "e.g. {text}"
   moreInfo: More Info
   selectors:
@@ -129,8 +138,18 @@ generic:
         }
   basic: Basic
   ariaLabel:
-    key: Key {index}
-    value: Value {index}
+    keyValue: Key-Value input
+    key: Key for row {index}
+    value: Value for row {index}
+    remove: remove row {index}
+    addKeyValue: Add a new Key-Value row
+    readKeyValue: read  Key-Values from file
+    genericAddRow: Add a new row
+    arrayList: Array list input
+    genericRow: row {index}
+  showLess: Show less
+  showMore: Show more
+  opensInNewTab: Opens in a new tab
 
 locale:
   menu: Locale selector menu
@@ -144,6 +163,7 @@ nav:
     localClusterIcon: Local Cluster icon
     clusterProvIcon: Cluster {cluster} provider icon
     topLevelMenu: Main menu
+    sideNav: Secondary menu
     homePage: Home page navigation menu
     cluster: Cluster menu item
     harvesterCluster: Harvester cluster menu item
@@ -158,6 +178,7 @@ nav:
   alt:
     mainMenuIcon: Main menu icon
     mainMenuRancherLogo: Main menu Rancher logo
+    userAvatar: User avatar image
   expandCollapseAppBar: Expand/Collapse the Application Bar
   harvesterDashboard: Harvester Dashboard
   backToRancher: Cluster Manager
@@ -179,7 +200,6 @@ nav:
   restoreSnapshot: Restore Snapshot
   rotateCertificates: Rotate Certificates
   rotateEncryptionKeys: Rotate Encryption Keys
-  saveAsRKETemplate: Save as RKE Template
   takeSnapshot: Take Snapshot
   seeAllClusters: See all clusters
   seeAllClustersCollapsed: See all
@@ -236,9 +256,11 @@ nav:
     clusters: clusters
     ariaLabel: Filter clusters on main menu
   resourceSearch:
-    label: Resource Search
-    toolTip: Resource Search {key}
-    placeholder: Type to search for a resource...
+    label: Resource Type Search
+    prompt: Search for a Kubernetes Resource/Custom Resource type
+    toolTip: Resource Type Search {key}
+    placeholder: Type to search for a resource type...
+    filteringDescription: Using this input will immediately filter the results in the list below
   header:
     setLoginPage: Set as login page
     restoreCards: Restore hidden cards
@@ -318,6 +340,15 @@ suffix:
 ##############################
 # Components & Pages
 ##############################
+layouts:
+  home: home layout
+  plain: plain layout
+  default: default layout
+  blank: blank layout
+  unauthenticated: unauthenticated layout
+  logout: logout layout
+  verify: verify layout
+
 windowmanager:
   closeTab: Close tab {tabId}
 about:
@@ -378,11 +409,15 @@ accountAndKeys:
     title: API Keys
     notAllowed: You do not have permission to manage API Keys
     apiEndpoint: "API Endpoint:"
+    copyApiEnpoint: Copy API Endpoint to clipboard
     add:
       description:
         label: Description
         placeholder: Optionally enter a description to help you identify this API Key
       label: Create API Key
+      ariaLabel:
+        expiration: Expiration duration - number input
+        expirationUnits: Expiration unit - time unit
       expiry:
         label: Automatically expire
         options:
@@ -482,6 +517,9 @@ authConfig:
          4: 'Under Scopes for Google APIs, enable "email", "profile", and "openid".'
          5: 'Click on "Save".'
         topPrivateDomain: 'Top private domain of:'
+        ariaLabel:
+          hostname: Copy Hostname to clipboard
+          serverUrl: Copy Server URL to clipboard
       2:
         title: 'Navigate to the "Credentials" tab to create your OAuth client ID'
         body:
@@ -490,6 +528,8 @@ authConfig:
           3: 'Authorized redirect URIs:'
           4: 'Click "Create", and then click on the "Download JSON" button.'
           5: 'Upload the downloaded JSON file in the OAuth credentials box.'
+        ariaLabel:
+          serverUrlVerify: Copy Server Auth Verfication URL to clipboard
       3:
         title: 'Create Service Account credentials'
         introduction: 'Follow <a href="{docsBase}/how-to-guides/new-user-guides/authentication-permissions-and-global-configuration/authentication-config/configure-google-oauth#3-creating-service-account-credentials" target="_blank" rel="noopener noreferrer nofollow">this</a> guide to:'
@@ -623,6 +663,7 @@ authConfig:
     reply:
       info: 'Azure AD requires a whitelisted URL for your Rancher server before beginning this setup. Please ensure that the following URL is set in the Reply URL section of your Azure Portal. Please note that it may take up to 5 minutes for the whitelisted URL to propagate.'
       label: Reply URL
+      ariaLabel: Copy Reply URL to clipboard
     updateEndpoint:
       button: Update Endpoint
       banner:
@@ -634,6 +675,7 @@ authConfig:
   oidc:
     genericoidc: Configure an OIDC account
     keycloakoidc: Configure a Keycloak OIDC account
+    cognito: Configure an Amazon Cognito account
     rancherUrl: Rancher URL
     clientId: Client ID
     clientSecret: Client Secret
@@ -652,10 +694,12 @@ authConfig:
     tokenEndpoint: Token Endpoint
     userInfoEndpoint: User Info Endpoint
     acrValue: Authorization Context Reference
+    cognitoIssuer: Issuer URL
+    cognitoHelp: "You will need to create an application client in Cognito of type <b>Traditional web application</b> with the Return URL set to the URL shown below."
     scope:
       label: Scopes
       placeholder: openid
-      protip: The <code>openid</code> scope is required. If you are using custom scopes, ensure that it is included.
+      protip: The <code>openid</code>, <code>profile</code>, and <code>email</code> scopes are required and cannot be removed.
     cert:
       label: Certificate
       placeholder: Paste in the certificate, starting with -----BEGIN CERTIFICATE-----
@@ -694,6 +738,8 @@ assignTo:
   workspace: Workspace
 
 asyncButton:
+  alt:
+    iconAlt: Async button icon
   apply:
     action: Apply
     success: Applied
@@ -850,13 +896,13 @@ asyncButton:
     success: Generated
     waiting: Generating&hellip;
 
-backupRestoreOperator: 
+backupRestoreOperator:
   backup:
     label: Resource Set
     description: The Resource Set determines which resources the backup-restore-operator collects in a backup
     enableEncryptionWarning: 'Enabling encryption is highly recommended when using <b><i>Full Rancher backup resource set</i></b>, otherwise sensitive information will be backed up as plain-text. <a target="_blank" rel="noopener noreferrer nofollow" href="https://ranchermanager.docs.rancher.com/reference-guides/backup-restore-configuration/backup-configuration#resourcesets">Read more</a>.'
     missingResourceSetWarning: The <b><i>{resourceSet}</i></b> resource set doesn't exist, it's possible it has been deleted. Please select a different option.
-    resourceSetOptions: 
+    resourceSetOptions:
       'rancher-resource-set-basic': 'Basic Rancher backup resource set'
       'rancher-resource-set-full': 'Full Rancher backup resource set'
       custom: Custom
@@ -1344,7 +1390,7 @@ cluster:
     registrationCommand:
       label: Registration Command
       linuxDetail: Run this command on each of the existing Linux machines you want to register.
-      windowsDetail: Run this command in PowerShell on each of the existing Windows machines you want to register. 
+      windowsDetail: Run this command in PowerShell on each of the existing Windows machines you want to register.
       windowsWorkersOnly: <b>Windows nodes can only be workers.</b>
       windowsNotReady: The cluster must be up and running with Linux etcd, control plane, and worker nodes before the registration command for adding Windows workers will display.<br /> <br /><b>Windows nodes can only be workers.</b>
       windowsWarning: Workload pods, including some deployed by Rancher charts, will be scheduled on both Linux and Windows nodes by default. Edit NodeSelector in the chart to direct them to be placed onto a compatible node.
@@ -1862,11 +1908,11 @@ cluster:
     subGroups:
       podAffinityAnti: Pod Affinity/Anti-Affinity
       nodeAffinity: Node Affinity
-      schedulingCustomization: 
+      schedulingCustomization:
         label: Prevent Rancher cluster agent pod eviction
         description: This ensures that the cluster agent pod is not evicted due to node pressure, resource constraints or scheduler policies.
         banner: This feature has been enabled with settings that are different from the global default settings.
-        innerCheckbox: Apply global settings for Priority Class and Pod Disruption Budget  
+        innerCheckbox: Apply global settings for Priority Class and Pod Disruption Budget
     banners:
       advanced: These are advanced configuration options. Generally, they should be left as-is.
       tolerations: Additional Pod Tolerations will be added to the default Tolerations applied by Rancher.
@@ -1913,9 +1959,8 @@ cluster:
         =1 { {pool_name}: The provided value for {fields} was not found in the list of expected values. This can happen with clusters provisioned outside of Rancher or when options for the provider have changed. }
         other { {pool_name}: The provided values for {fields} were not found in the list of expected values. This can happen with clusters provisioned outside of Rancher or when options for the provider have changed. }
       }
-    rke1DeprecationMessage: 'Rancher Kubernetes Engine (RKE / RKE1) will reach end of life on July 31, 2025. Rancher 2.12.0 and later will no longer support provisioning or managing downstream RKE1 clusters. We recommend replatforming RKE1 clusters to RKE2 to ensure continued support and security updates. Learn more about the transition <a href="https://www.suse.com/support/kb/doc/?id=000021518" target="_blank" rel="noopener noreferrer nofollow">here</a>.'
-    rke1DeprecationShortMessage: Rancher Kubernetes Engine (RKE / RKE1) will reach end of life on July 31, 2025. Rancher 2.12.0 and later will no longer support provisioning or managing downstream RKE1 clusters.
-  rkeTemplateUpgrade: Template revision {name} available for upgrade
+    rke1DeprecationMessage: 'Rancher Kubernetes Engine (RKE / RKE1) has reached end of life and these clusters are no longer supported. We recommend replatforming RKE1 clusters to RKE2 to ensure continued support and security updates. Learn more about the transition <a href="https://www.suse.com/support/kb/doc/?id=000021518" target="_blank" rel="noopener noreferrer nofollow">here</a>.'
+  rke1Unsupported: RKE1 Clusters are no longer supported
   cloudCredentials:
     renew: Renew Cloud Credentials
     expired: Cloud Credential expired, please Renew Cloud Credentials
@@ -2035,6 +2080,7 @@ cluster:
     docker: Docker
     eks: Amazon EKS
     exoscale: Exoscale
+    sks: Exoscale SKS
     gcp: Google
     google: Google GCE
     googlegke: Google GKE
@@ -2193,7 +2239,7 @@ cluster:
       snapshotScheduleCron:
         label: Cron Schedule
       snapshotRetention:
-        label: Snapshot retention count 
+        label: Snapshot retention count
         tooltip: Each backup records 1 snapshot per etcd node. If you specify 3 snapshots and you have 3 etcd nodes you will only retain 1 full backup.
       exportMetric:
         label: Metrics
@@ -2402,6 +2448,7 @@ drivers:
     activate: Failed to activate { name } driver
 
 detailText:
+  copyAriaLabel: Copy {item} value to clipboard
   collapse: Hide
   binary: '<Binary Data: {n, number} bytes>'
   empty: '<Empty>'
@@ -2448,13 +2495,29 @@ fleet:
     learnMoreLink: https://fleet.rancher.io
     noRepo: "You don't have any Git Repositories in your Workspaces"
     getStarted: Get started
-    thereIsMore: |-
-      {count, plural,
-      =1 { There is one other workspace with no repositories}
-      other { There are { count } other workspaces with no repositories}
-      }
+    workspace: Workspace
+    expand: Expand
+    collapse: Collapse
     expandAll: Expand All
     collapseAll: Collapse All
+    state: State
+    viewMode:
+      table: Show table
+      cards: Show cards
+    cards:
+      filters:
+        gitRepos: Show Git Repos
+        helmOps: Show Helm Ops
+      resourceSummary:
+        part1: in
+        part2: |-
+          {count, plural,
+          =1 { cluster }
+          other { clusters }
+          }
+      noClusters: Not targeting any clusters
+    resources: Resources
+    source: Source
   cluster:
     summary: Resource Summary
     nonReady: Non-Ready Bundles
@@ -2491,6 +2554,8 @@ fleet:
       notReady: Not Ready
       waitApplied: Wait Applied
   gitRepo:
+    intro:
+      add: Add Repository
     actions:
       forceUpdate:
         label: Force Update
@@ -2523,6 +2588,7 @@ fleet:
       placeholder: "Paste in one or more certificates, starting with -----BEGIN CERTIFICATE----"
     paths:
       label: Paths
+      ariaLabel: Enter path for Git Repo
       placeholder: e.g. /directory/in/your/repo
       addLabel: Add Path
       empty: The root of the repo is used by default. Multiple different directories can be provided.
@@ -2532,7 +2598,7 @@ fleet:
       placeholder: e.g. https://github.com/rancher/fleet-examples.git or git@github.com:rancher/fleet-examples.git
       addRepo: Add Repository
       noRepos: No repositories have been added
-      noWorkspaces: There are no workspaces. <br/> Please create a workspace before adding repositories
+      noWorkspaces: There are no workspaces.
     resources:
       label: 'Resource Handling'
       keepResources: Always keep resources
@@ -2732,6 +2798,7 @@ clusterBadge:
     iconText: Icon Text
     buttonAction: Apply
     badgeBgColor: Badge background color
+    badgeBgColorInput: Badge background color selector input
     badgeTextColor: Badge text color
     badgeAsIcon: Use custom badge
     maxCharsTooltip: Overwrites the default cluster name abbreviation.
@@ -2931,6 +2998,8 @@ ingress:
 
 internalExternalIP:
   none: None
+  copyInternalIp: Copy internal IP address to clipboard
+  copyExternalIp: Copy external IP address to clipboard
 
 istio:
   links:
@@ -3109,6 +3178,9 @@ istio:
   tracing: Enable Jaeger Tracing (limited)
   v1Warning: Please uninstall the current Istio version in the <code>istio-system</code> namespace before attempting to install this version.
 
+itemCard:
+  ariaLabel:
+    clickable: Click on card for {cardTitle}
 jwt:
   title: JWT Authentication
   actions:
@@ -3138,6 +3210,7 @@ labels:
     hide: Hide System Labels and Annotations
   annotations:
     title: Annotations
+    singular: Annotation
 
 labelSelect:
   noOptions:
@@ -3151,6 +3224,8 @@ labeledSelect:
   pressEnter: Press enter to add "{input}"
 
 landing:
+  bannerImage: Homepage banner image
+  homepage: Homepage
   clusters:
     title: Clusters
     provider: Provider
@@ -3177,8 +3252,6 @@ landing:
     title: Commercial Support
     body: Learn about commercial support
   landingPrefs:
-    title: You can change what you see when you login via preferences
-    userPrefs: Preferences
     body: "You can change where you land when you login"
     ariaLabelTakeMeToCluster: Select which cluster to take me to after login
     options:
@@ -3474,8 +3547,10 @@ neuvector:
         na: Resource Unavailable
 
 login:
+  login: Login
   howdy: Howdy!
   welcome: Welcome to {vendor}
+  landscapeAlt: Landscape image
   loggedOut: You have been logged out.
   loggedOutFromSso: You've been logged out of Rancher, however you may still be logged in to your single sign-on identity provider.
   loggedOutFromSlo: You've been logged out of Rancher and from your single sign-on identity provider.
@@ -3874,6 +3949,7 @@ nameNsDescription:
     placeholder: Any text you want that better describes this resource
 
 namespace:
+  cancelCreateAriaLabel: Cancel create namespace
   containerResourceLimit: Container Resource Limit
   resourceQuotas: Resource Quotas
   project:
@@ -3912,6 +3988,10 @@ namespaceFilter:
       one {1 item selected}
       other {{total} items selected}
       }
+  input: Filter namespace options
+  button:
+    clear: Remove applied namespace filters
+    clearFilter: Clear namespace options filter 
 
 namespaceList:
   selectLabel: Namespace
@@ -4712,6 +4792,7 @@ prefs:
     allNamespaces: Show dynamic Namespaces managed by Rancher (not intended for editing or deletion)
     themeShortcut: Enable Dark/Light Theme keyboard shortcut toggle (shift+T)
     pluginDeveloper: Enable Extension developer features
+    pluginDeveloperTooltip: Enables the ability to perform a developer load of UI extensions
   hideDesc:
     label: Hide Type Description banners above resource lists
   helm:
@@ -4728,6 +4809,8 @@ principal:
   name: Name
   loginName: Username
   type: Type
+  alt:
+    avatar: User avatar image
 
 probe:
   checkInterval:
@@ -4880,6 +4963,7 @@ promptForceRemove:
   modalTitle: Are you sure?
   removeWarning: "There was an issue with deleting underlying infrastructure. If you proceed with this action, the Machine <b>{nameToMatch}</b> will be deleted from Rancher only. It's highly recommended to manually delete any referenced infrastructure."
   forceDelete: Force Delete
+  ariaLabel: Copy Machine name to clipboard
   confirmName: "Enter in the pool name below to confirm:"
   podRemoveWarning: "Force deleting pods does not wait for confirmation that the pod's processes have been terminated. This may result in <strong>data corruption or inconsistencies</strong>"
 
@@ -4939,12 +5023,6 @@ promptRollback:
   multipleWorkloadError: "Only one workload can be rolled back at a time."
   singleRevisionBanner: There are no revisions to roll back to.
 
-promptSaveAsRKETemplate:
-  title: Convert {cluster} to new RKE Template
-  name: Cluster Template Name
-  description: Create a new RKE cluster template and initial revision from the current cluster configuration.
-  warning: This will modify the cluster, setting it up to use the newly created cluster template and revision. This can not be undone.
-
 promptRotateEncryptionKey:
   title: Rotate Encryption Keys
   description: The last backup {name} was performed on {date}
@@ -4993,6 +5071,7 @@ rbac:
           resources: Resource
           nonResourceUrls: Non-Resource URLs
           apiGroups: API Groups
+        psaWarning: Granting Project Roles the ability to amend PSA labels could lead to a weaker security posture and allow for privilege escalation. This is only recommended for advanced users who understand the risks involved.
     subtypes:
       GLOBAL:
         createButton: Create Global Role
@@ -5106,6 +5185,8 @@ rbac:
         label: Login Access
       clustertemplaterevisions-create:
         label: Create RKE Template Revisions
+  errors:
+    escalation: You cannot assign Global Permissions that are higher than your own. Please verify the permissions you are attempting to assign.
 
 resourceDetail:
   detailTop:
@@ -5139,6 +5220,9 @@ resourceDetail:
     stage: "Stage from {subtype} {name}"
     view: "{subtype} {name}"
   masthead:
+    ariaLabel:
+      favoriteAction: Add {resource} to your starred/favorites list
+      unfavoriteAction: Remove {resource} from your starred/favorites list
     age: Age
     createdBy: Created by
     restartCount: Pod Restarts
@@ -5179,6 +5263,7 @@ resourceTable:
     role: Group by Role
     cluster: Group by Cluster
     device: Group by Device
+    pool: Group by Pool
   groupLabel:
     cluster: "<span>Cluster:</span> {name}"
     notInACluster: Not in a Cluster
@@ -5193,6 +5278,8 @@ resourceTable:
     notInANodePool: "Not in a Pool"
     nodePool: "<span>Pool:</span> {name}"
     node: "<span>Node:</span> {name}"
+  autoRefresh:
+    label: Auto Refresh
 
 resourceTabs:
   conditions:
@@ -5488,9 +5575,22 @@ setup:
   setPassword: The first order of business is to set a strong password for the default <code>{username}</code> user. We suggest using this random one generated just for you, but enter your own if you like.
   useManual: Set a specific password to use
   useRandom: Use a randomly generated password
+  copyRandom: Copy random password to clipboard
   welcome: Welcome to {vendor}!
 
 sortableTable:
+  ariaLabel:
+    firstPageBtn: First page of results
+    prevPageBtn: Previous page of results
+    nextPageBtn: Next page of results
+    lastPageBtn: Last page of results
+  alt:
+    firstPageBtn: First page of results icon
+    prevPageBtn: Previous page of results icon
+    nextPageBtn: Next page of results icon
+    lastPageBtn: Last page of results icon
+    sortingIconDesc: Table header descending sort icon
+    sortingIconAsc: Table header ascending sort icon
   genericGroupCheckbox: Table group selection checkbox
   genericRowCheckbox: Table row selection checkbox for item {item}
   tableActionsLabel: More actions - { resource }
@@ -5519,6 +5619,7 @@ sortableTable:
   searchLabel: Filter table results
   in: in
   addFilter: Add Filter
+  filteringDescription: Using this input will immediately filter the results in the table below
   filterFor: Filter for...
   selectCol: Select a column
   resetFilters: Reset
@@ -6879,6 +6980,7 @@ model:
       saml: SAML
       oauth: OAuth
       oidc: OIDC
+      cognito: Amazon Cognito
     name:
       keycloak: Keycloak (SAML)
       keycloakoidc: Keycloak (OIDC)
@@ -6900,6 +7002,8 @@ model:
       googleoauth: Google
       genericoidc: Generic OIDC
       keycloakoidc: Keycloak
+      cognito: Amazon Cognito
+
 
   cluster:
     name: Cluster Name
@@ -7053,6 +7157,11 @@ typeLabel:
     {count, plural,
       one { Git Repo }
       other {Git Repos }
+    }
+  fleet.cattle.io.helmop: |-
+    {count, plural,
+      one { Helm Op }
+      other { Helm Ops }
     }
   management.cattle.io.authconfig: |-
     {count, plural,
@@ -7522,6 +7631,9 @@ typeLabel:
     }
 
 action:
+  ariaLabel:
+    hidePass: Hide {area}
+    showPass: Reveal {area}
   clone: Clone
   disable: Disable
   download: Download YAML
@@ -7761,21 +7873,18 @@ performance:
     authUserTTL: This timeout cannot be higher than the user session timeout auth-user-session-ttl-minutes, which is currently {current} minutes.
   serverPagination:
     label: Server-side Pagination
-    description: By default Lists will fetch all resources and paginate in the browser (create the page given sorting and filtering settings). Change this setting to enable pagination server-side. This should help the responsiveness of the UI in systems with a lot of resources.
-    checkboxLabel: Enable Server-side Pagination
+    description: By default Lists will fetch all resources and paginate (create the page given sort and filter settings) locally in the browser. Server-Side Pagination moves this out from the browser to the server. This improves performance of the UI, especially in systems with lots of resources.
     applicable: "Server-side pagination applies to Resource Types"
-    incompatibleDescription: "Server-side Pagination is incompatible with Manual Refresh and Incremental Loading. Enabling this will disable them."
-    featureFlag: The&nbsp;<a href="{ffUrl}">Feature Flag</a>&nbsp;`ui-sql-cache` must be enabled to use this feature
+    featureFlag: Enabling/Disabling <i class="mr-5">"Server-side Pagination"</i> is now solely done so via the <i class="mr-5">ui-sql-cache</i>&nbsp;<a href="{ffUrl}">Feature Flag</a>
     resources:
       generic: most resources in the cluster's 'More Resources' section
       all: All Resources
-    experimental: This setting is experimental and may be removed or updated in future versions. We do not recommend enabling this setting in production environments.
 banner:
   label: Fixed Banners
   settingName: Banners
-  headerBanner: Header Banner
-  footerBanner: Footer Banner
-  loginScreenBanner: Login Screen Banner
+  bannerHeader: Header Banner
+  bannerFooter: Footer Banner
+  bannerConsent: Login Screen Banner
   text: Text
   buttonText: Accept Button Text
   textColor: Text Color
@@ -7802,6 +7911,12 @@ banner:
   consent: Consent Banner
   consentFootnote: "Tip: Use \\n character for line break"
   individualSetting: 'This banner is managed by the setting "{name}" and can not be modified in the UI'
+  type:
+    html: HTML
+    text: Text
+  htmlWarning: 'Not all HTML elements or attriutes are permitted and the HTML entered here will be sanitized before display. For HTML anchor elements, it is recommended to use the target attribute to have links open in a blank tab.'
+  htmlContent: HTML Content
+  toggleTextHtml: Toggle between text and html
 
 branding:
   label: Branding
@@ -7926,12 +8041,12 @@ customLinks:
     commercialSupport: Commercial Support
     appCo: SUSE Application Collection
 
-
 ##############################
 ### Support Page
 ##############################
 
 support:
+  bannerImage: Support page banner image
   community:
     title: SUSE Rancher provides world-class support
     linksTitle: Community Support
@@ -8102,3 +8217,38 @@ gitPicker:
 networkAttachmentDefinition:
   tabs:
     config: Config
+
+errors:
+  actionNotAvailable: This action is not currently available
+  missingRequired: is required
+  notUnique: is not unique
+  notNullable: must be set
+  invalidOption: is not a valid option
+  invalidCharacters: contains invalid characters
+  minLengthExceeded: is not long enough
+  maxLengthExceeded: is too long
+  minLimitExceeded: is too small
+  maxLimitExceded: is too big
+  messageAndDetail: '{message} ({detail})'
+  messageOrDetail: '{val}'
+  failedInApi: 
+    withName:
+      withCodeExplanation:
+        withMessageDetail: 'Validation failed in API: {name} {codeExplanation}: {messageDetail}'
+        withoutMessageDetail: 'Validation failed in API: {name} {codeExplanation}'
+      withMessageDetail: 'Validation failed in API: {name} {messageDetail}'
+      withoutAnythingElse: 'Validation failed in API: {name} '
+    withoutName:
+      withMessageDetail: 
+        withCodeExplanation: 'Validation failed in API: {codeExplanation}: {messageDetail}'
+        withoutCodeExplanation: 'Validation failed in API: {messageDetail}'
+      withCode:
+        withCodeExplanation: 'Validation failed in API: {code} {codeExplanation}'
+        withoutCodeExplanation: 'Validation failed in API: {code}'
+    withoutAnything: Validation failed in API.
+  notFound:
+    withUrl: '{msg}: {url}'
+    withoutUrl: '{msg}'
+
+
+

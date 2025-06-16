@@ -64,6 +64,19 @@ const CLUSTER_COMPONENTS = [
   'controller-manager',
 ];
 
+const nodeHeaders = [
+  STATE,
+  NAME,
+  ROLES,
+];
+
+const clusterServiceIcons = {
+  [STATES_ENUM.IN_PROGRESS]: 'icon-spinner icon-spin',
+  [STATES_ENUM.HEALTHY]:     'icon-checkmark',
+  [STATES_ENUM.WARNING]:     'icon-warning',
+  [STATES_ENUM.UNHEALTHY]:   'icon-warning',
+};
+
 export default {
   name: 'ClusterExplorerIndexPage',
 
@@ -120,20 +133,6 @@ export default {
   },
 
   data() {
-    const clusterCounts = this.$store.getters[`cluster/all`](COUNT);
-    const nodeHeaders = [
-      STATE,
-      NAME,
-      ROLES,
-    ];
-
-    const clusterServiceIcons = {
-      [STATES_ENUM.IN_PROGRESS]: 'icon-spinner icon-spin',
-      [STATES_ENUM.HEALTHY]:     'icon-checkmark',
-      [STATES_ENUM.WARNING]:     'icon-warning',
-      [STATES_ENUM.UNHEALTHY]:   'icon-warning',
-    };
-
     return {
       nodeHeaders,
       constraints:             [],
@@ -154,7 +153,6 @@ export default {
       ETCD_METRICS_DETAIL_URL,
       ETCD_METRICS_SUMMARY_URL,
       STATES_ENUM,
-      clusterCounts,
       selectedTab:             'cluster-events',
       extensionCards:          getApplicableExtensionEnhancements(this, ExtensionPoint.CARD, CardLocation.CLUSTER_DASHBOARD_CARD, this.$route),
       canViewEvents:           !!this.$store.getters['cluster/schemaFor'](EVENT),
@@ -189,6 +187,10 @@ export default {
   computed: {
     ...mapGetters(['currentCluster']),
     ...monitoringStatus(),
+
+    clusterCounts() {
+      return this.$store.getters[`cluster/all`](COUNT);
+    },
 
     nodes() {
       return this.$store.getters['cluster/all'](NODE);
@@ -538,6 +540,13 @@ export default {
     },
 
     getAgentStatus(resources, opt = { checkDisconnected: false }) {
+      // If there is a single resource that is null, then there was an error fetching the status, which
+      // is most likely because the user does not have permission, so we should hide the agent status
+      // as we can not determine what it is
+      if (resources.length === 1 && resources[0] === null) {
+        return { state: STATES_ENUM.OFF };
+      }
+
       if (resources.find((resource) => resource === 'loading')) {
         return { state: STATES_ENUM.IN_PROGRESS };
       }
@@ -1053,6 +1062,10 @@ export default {
     > I {
       color: var(--success)
     }
+  }
+
+  &.off {
+    display: none;
   }
 }
 </style>

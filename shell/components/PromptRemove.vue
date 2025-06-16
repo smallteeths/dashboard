@@ -371,6 +371,7 @@ export default {
     :width="400"
     height="auto"
     styles="max-height: 100vh;"
+    :trigger-focus-trap="true"
     @close="close"
   >
     <Card
@@ -386,7 +387,7 @@ export default {
         <div class="mb-10">
           <template v-if="!hasCustomRemove">
             {{ t('promptRemove.attemptingToRemove', { type }) }} <span
-              v-clean-html="resourceNames(names, t)"
+              v-clean-html="resourceNames(names, null, t)"
             />
           </template>
 

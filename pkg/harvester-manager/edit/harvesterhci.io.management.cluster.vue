@@ -10,7 +10,7 @@ import ClusterMembershipEditor, { canViewClusterMembershipEditor } from '@shell/
 import { Banner } from '@components/Banner';
 import Labels from '@shell/components/form/Labels.vue';
 import KeyValue from '@shell/components/form/KeyValue';
-
+import Loading from '@shell/components/Loading';
 import { set, get } from '@shell/utils/object';
 import { CAPI as CAPI_LABEL } from '@shell/config/labels-annotations';
 import cloneDeep from 'lodash/cloneDeep';
@@ -34,6 +34,7 @@ export default {
     Tabbed,
     Labels,
     KeyValue,
+    Loading
   },
 
   mixins: [CreateEditView],

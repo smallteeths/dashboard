@@ -16,6 +16,7 @@ export const configType = {
   github:          'oauth',
   keycloakoidc:    'oidc',
   genericoidc:     'oidc',
+  cognito:         'oidc',
   cas:             'cas',
 };
 

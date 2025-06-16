@@ -11,7 +11,7 @@ import Tab from '@shell/components/Tabbed/Tab';
 import ResourceTabs from '@shell/components/form/ResourceTabs/index.vue';
 import CruResource from '@shell/components/CruResource';
 import { PROJECT_ID, _VIEW, FLAT_VIEW, _CREATE } from '@shell/config/query-params';
-import MoveModal from '@shell/components/MoveModal';
+// import ResourceQuota from '@shell/components/form/ResourceQuota/Namespace';
 import ResourceQuota from '@shell/components/form/ResourceQuota/NamespaceQuota';
 import Loading from '@shell/components/Loading';
 import { HARVESTER_TYPES, RANCHER_TYPES } from '@shell/components/form/ResourceQuota/shared';
@@ -31,8 +31,7 @@ export default {
     PodSecurityAdmission,
     ResourceQuota,
     Tab,
-    ResourceTabs,
-    MoveModal
+    ResourceTabs
   },
 
   mixins:       [CreateEditView],
@@ -280,6 +279,5 @@ export default {
         />
       </Tab>
     </ResourceTabs>
-    <MoveModal v-if="projects" />
   </CruResource>
 </template>

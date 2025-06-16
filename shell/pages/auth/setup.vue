@@ -345,6 +345,7 @@ export default {
                     style="padding: 0 0 0 12px;"
                   >
                     <CopyToClipboard
+                      :aria-label="t('setup.copyRandom')"
                       :text="password"
                       class="btn-sm"
                     />
@@ -379,6 +380,7 @@ export default {
               <hr
                 v-if="mustChangePassword"
                 class="mt-20 mb-20"
+                role="none"
               >
               <p>
                 <t

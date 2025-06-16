@@ -46,6 +46,35 @@ export default {
 
   data() {
     const t = this.$store.getters['i18n/t'];
+
+    return {
+      dnsPolicy:   this.value.dnsPolicy || 'ClusterFirst',
+      networkMode: this.value.hostNetwork ? { label: t('workload.networking.networkMode.options.hostNetwork'), value: true } : { label: t('workload.networking.networkMode.options.normal'), value: false },
+      hostAliases: [],
+      nameservers: null,
+      searches:    null,
+      hostname:    null,
+      subdomain:   null,
+      options:     null,
+
+      allowVlansubnet:     null,
+      vlansubnetNetwork:   null,
+      vlansubnetIp:        null,
+      vlansubnetMac:       null,
+      vlansubnetName:      null,
+      vlansubnetChoices:   [],
+      unsupportVlansubnet: true,
+      isFlatNetworkV2:     false,
+      /**
+      * Enforces the use of v1 macvlan annotations when editing a workload.
+      * If the workload is already configured with v1 macvlan annotations,
+      * the v2 annotations will not be used, and the original v1 annotations will be preserved.
+      */
+      enforcesUseV1:       false,
+    };
+  },
+
+  created() {
     const hostAliases = (this.value.hostAliases || []).map((entry) => {
       return {
         ip:        entry.ip,
@@ -60,33 +89,17 @@ export default {
       network: vlansubnetNetwork, ip: vlansubnetIp, mac: vlansubnetMac, subnet: vlansubnetName, allowVlansubnet
     } = vlansubnet;
 
-    const out = {
-      dnsPolicy:   this.value.dnsPolicy || 'ClusterFirst',
-      networkMode: this.value.hostNetwork ? { label: t('workload.networking.networkMode.options.hostNetwork'), value: true } : { label: t('workload.networking.networkMode.options.normal'), value: false },
-      hostAliases,
-      nameservers,
-      searches,
-      hostname,
-      subdomain,
-      options,
-
-      allowVlansubnet,
-      vlansubnetNetwork:   vlansubnetNetwork || DUAL_NETWORK_CARD,
-      vlansubnetIp,
-      vlansubnetMac,
-      vlansubnetName,
-      vlansubnetChoices:   [],
-      unsupportVlansubnet: true,
-      isFlatNetworkV2:     false,
-      /**
-      * Enforces the use of v1 macvlan annotations when editing a workload.
-      * If the workload is already configured with v1 macvlan annotations,
-      * the v2 annotations will not be used, and the original v1 annotations will be preserved.
-      */
-      enforcesUseV1:       false,
-    };
-
-    return out;
+    this.hostAliases = hostAliases;
+    this.nameservers = nameservers;
+    this.searches = searches;
+    this.hostname = hostname;
+    this.subdomain = subdomain;
+    this.options = options;
+    this.allowVlansubnet = allowVlansubnet;
+    this.vlansubnetNetwork = vlansubnetNetwork || DUAL_NETWORK_CARD;
+    this.vlansubnetIp = vlansubnetIp;
+    this.vlansubnetMac = vlansubnetMac;
+    this.vlansubnetName = vlansubnetName;
   },
 
   computed: {

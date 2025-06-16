@@ -8,7 +8,7 @@ import {
   SNAPSHOT,
   VIRTUAL_TYPES
 } from '@shell/config/types';
-import { MULTI_CLUSTER, RKE1_UI } from '@shell/store/features';
+import { MULTI_CLUSTER } from '@shell/store/features';
 import { DSL } from '@shell/store/type-map';
 import { BLANK_CLUSTER } from '@shell/store/store-types.js';
 import { getGlobalMonitoringV2Setting } from '@shell/config/settings';
@@ -113,28 +113,6 @@ export function init(store) {
   });
 
   virtualType({
-    ifFeature:  RKE1_UI,
-    labelKey:   'manager.rkeTemplates.label',
-    name:       'rke-templates',
-    group:      'Root',
-    namespaced: false,
-    icon:       'globe',
-    route:      { name: 'c-cluster-manager-pages-page', params: { cluster: 'local', page: 'rke-templates' } },
-    exact:      true
-  });
-
-  virtualType({
-    ifFeature:  RKE1_UI,
-    labelKey:   'manager.nodeTemplates.label',
-    name:       'rke-node-templates',
-    group:      'Root',
-    namespaced: false,
-    icon:       'globe',
-    route:      { name: 'c-cluster-manager-pages-page', params: { cluster: 'local', page: 'node-templates' } },
-    exact:      true
-  });
-
-  virtualType({
     ifHaveType: MANAGEMENT.CLUSTER_PROXY_CONFIG,
     labelKey:   'manager.jwtAuthentication.label',
     name:       VIRTUAL_TYPES.JWT_AUTHENTICATION,
@@ -150,11 +128,6 @@ export function init(store) {
     'rke-node-drivers',
     'operator-setting',
   ], 'drivers');
-
-  basicType([
-    'rke-templates',
-    'rke-node-templates'
-  ], 'RKE1Configuration');
 
   virtualType({
     showMenuFun(state, getters, rootState, rootGetters) {
