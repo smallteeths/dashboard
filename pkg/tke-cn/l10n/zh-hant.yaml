@@ -1,3 +1,34 @@
 tkeCn:
   label: 騰訊雲Kubernetes服務
   shortLabel: Tencent TKE
+  region:
+    label: 區域
+  regions:
+    ap-guangzhou: 廣州
+    ap-shanghai: 上海
+    ap-beijing: 北京
+    ap-chengdu: 成都
+    ap-chongqing: 重慶
+    ap-nanjing: 南京
+    ap-hongkong: 香港
+    ap-singapore: 新加坡
+    na-toronto: 多倫多
+    ap-bangkok: 曼谷
+    ap-mumbai: 孟買
+    ap-seoul: 首爾
+    ap-tokyo: 東京
+    na-siliconvalley: 矽谷
+    na-ashburn: 弗吉尼亞
+    eu-frankfurt: 法蘭克福
+    eu-moscow: 莫斯科
+    ap-jakarta: 雅加達
+    sa-saopaulo: 聖保羅
+  container:
+    label: 運行時組件
+  clusterType:
+    label: 集群類型
+    independent: 獨立集群
+    managed: 託管集群
+  clusterLevel:
+    label: 集群規格
+    help: '{level} (最多管理{node}個節點，{pod}個 Pod，{configMap}個 ConfigMap，{crd}個 CRD)'

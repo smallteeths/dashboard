@@ -1,3 +1,34 @@
 tkeCn:
   label: Tencent Kubernetes Engine
   shortLabel: Tencent TKE
+  region:
+    label: Region
+  regions:
+    ap-guangzhou: Guangzhou
+    ap-shanghai: Shanghai
+    ap-beijing: Beijing
+    ap-chengdu: Chengdu
+    ap-chongqing: Chongqing
+    ap-nanjing: Nanjing
+    ap-hongkong: Hong Kong
+    ap-singapore: Singapore
+    na-toronto: Toronto
+    ap-bangkok: Bangkok
+    ap-mumbai: Mumbai
+    ap-seoul: Seoul
+    ap-tokyo: Tokyo
+    na-siliconvalley: Silicon Valley
+    na-ashburn: Virginia
+    eu-frankfurt: Frankfurt
+    eu-moscow: Moscow
+    ap-jakarta: Jakarta
+    sa-saopaulo: Saopaulo
+  container:
+    label: Runtime Components
+  clusterType:
+    label: Cluster Type
+    independent: Independent Cluster
+    managed: Managed Cluster
+  clusterLevel:
+    label: Cluster Level
+    help: "{level} (At most {node} nodes, {pod} pods, {configMap} ConfigMaps, {crd} CRDs can be managed)"
