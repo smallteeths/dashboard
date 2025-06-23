@@ -66,10 +66,10 @@ export default {
 </script>
 <template>
   <div>
-    <div class="mb-5">
-      <h3>
+    <div class="mb-20">
+      <h1>
         {{ t('macvlan.titleV2') }}: {{ config?.metadata?.name }}
-      </h3>
+      </h1>
     </div>
     <Tabbed
       :side-tabs="true"

@@ -227,9 +227,10 @@ export default {
 <style lang="scss" scoped>
 .container {
   position: relative;
+  padding-top: 20px;
   .edit-button {
     position: absolute;
-    top : 32px;
+    top : 20px;
     right: 10px;
   }
 }
