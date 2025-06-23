@@ -345,6 +345,9 @@ about:
     machine: Machine
     releaseNotes: 'View release notes'
     rancher: Rancher
+    downloadCli: Download CLI for {os}
+    downloadImages: Download {listName} images list
+    githubRepo: Open GitHub repository for the {name} component
   os:
     mac: macOS
     windows: Windows
@@ -8979,3 +8982,34 @@ labeledSelect:
   startTyping: Start typing to define an item
 windowmanager:
   closeTab: Close tab {tabId}
+errors:
+  actionNotAvailable: This action is not currently available
+  failedInApi:
+    withName:
+      withCodeExplanation:
+        withMessageDetail: 'Validation failed in API: {name} {codeExplanation}: {messageDetail}'
+        withoutMessageDetail: 'Validation failed in API: {name} {codeExplanation}'
+      withMessageDetail: 'Validation failed in API: {name} {messageDetail}'
+      withoutAnythingElse: 'Validation failed in API: {name} '
+    withoutAnything: Validation failed in API.
+    withoutName:
+      withCode:
+        withCodeExplanation: 'Validation failed in API: {code} {codeExplanation}'
+        withoutCodeExplanation: 'Validation failed in API: {code}'
+      withMessageDetail:
+        withCodeExplanation: 'Validation failed in API: {codeExplanation}: {messageDetail}'
+        withoutCodeExplanation: 'Validation failed in API: {messageDetail}'
+  invalidCharacters: contains invalid characters
+  invalidOption: is not a valid option
+  maxLengthExceeded: is too long
+  maxLimitExceded: is too big
+  messageAndDetail: '{message} ({detail})'
+  messageOrDetail: '{val}'
+  minLengthExceeded: is not long enough
+  minLimitExceeded: is too small
+  missingRequired: is required
+  notFound:
+    withUrl: '{msg}: {url}'
+    withoutUrl: '{msg}'
+  notNullable: must be set
+  notUnique: is not unique
