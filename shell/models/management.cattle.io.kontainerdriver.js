@@ -50,6 +50,7 @@ export const DRIVER_TO_IMPORT = {
   tencent:   'tke',
   ack:       'ack',
   cce:       'cce',
+  tke:       'tke',
 };
 
 export default class KontainerDriver extends HybridModel {

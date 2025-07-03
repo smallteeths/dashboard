@@ -1,0 +1,115 @@
+tkeCn:
+  label: 騰訊雲 TKE
+  updateWarn: 集群正在升級，編輯可能導致未知錯誤
+  shortLabel: Tencent TKE
+  region:
+    label: 區域
+  regions:
+    ap-guangzhou: 廣州
+    ap-shanghai: 上海
+    ap-beijing: 北京
+    ap-chengdu: 成都
+    ap-chongqing: 重慶
+    ap-nanjing: 南京
+    ap-hongkong: 香港
+    ap-singapore: 新加坡
+    na-toronto: 多倫多
+    ap-bangkok: 曼谷
+    ap-mumbai: 孟買
+    ap-seoul: 首爾
+    ap-tokyo: 東京
+    na-siliconvalley: 矽谷
+    na-ashburn: 弗吉尼亞
+    eu-frankfurt: 法蘭克福
+    eu-moscow: 莫斯科
+    ap-jakarta: 雅加達
+    sa-saopaulo: 聖保羅
+  container:
+    label: 運行時組件
+  clusterType:
+    label: 集群類型
+    independent: 獨立集群
+    managed: 託管集群
+  clusterLevel:
+    label: 集群規格
+    help: '{level} (最多管理{node}個節點，{pod}個 Pod，{configMap}個 ConfigMap，{crd}個 CRD)'
+  version:
+    label: Kubernetes版本
+    warning: “{version}”，此版本不在 Rancher 支持矩陣範圍內。可參考
+    warningTip: Rancher 支持矩陣。
+  zone:
+    label: 可用區
+    required: 請選擇可用區
+  vpc:
+    label: VPC
+  subnet:
+    label: 子網
+  os:
+    label: 操作系統
+  clusterCidr:
+    label: 容器網路 CIDR
+    placeholder: '例如: 172.16.0.0/16'
+    required: 請輸入容器網路的CIDR
+    formatError: 容器網路 CIDR 格式錯誤
+  securityGroup:
+    label: 安全組
+    required: 請選擇安全組
+  ipvs:
+    label: ipvs 支持
+    enabled: 啟用
+    disabled: 停用
+    help: IPVS適用於大規模場景下提供更優的轉發性能。注意一經選擇將不支持更改。
+  proxy:
+    label: 訪問集群 APIServer
+    inner: 內網訪問
+    outer: 外網訪問
+    info: 需要確保準備導入的集群已開啟集群訪問代理，且使用的安全組開放了443端口
+  nodePoolName:
+    label: 節點池名稱
+    placeholder: 例如：nodepool
+    required: 必須設置 worker 
+    same: 節點池名稱不唯一
+  instanceType:
+    label: 實例類型
+  numOfNodes:
+    label: Worker 節點數
+    placeholder: '例如: 3'
+    required: 必須設置Worker節點
+    help: 此Kubernetes集群將運行的Worker節點數
+  systemDiskSize:
+    label: 系統盤大小
+  systemDiskType:
+    label: 系統盤類型
+  dataDiskType:
+    label: 數據盤類型
+  dataDiskSize:
+    label: 數據盤大小
+  bandwidth:
+    label: 帶寬
+    placeholder: '例如: 10'
+  disk:
+    LOCAL_BASIC: 本地硬盤
+    LOCAL_SSD: 本地 SSD 硬盤
+    CLOUD_BASIC: 普通雲硬盤
+    CLOUD_PREMIUM: 高性能雲硬盤
+    CLOUD_SSD: SSD 雲硬盤
+    CLOUD_BSSD: 通用型 SSD 雲硬盤
+    CLOUD_TSSD: TSSD 雲硬盤
+    CLOUD_HSSD: 增强型SSD雲硬盤
+  bandwidthType:
+    label: 帶寬類型
+    bandwidth: 按帶寬計費
+    traffic: 按使用流量計費
+  keyPair:
+    label: 密鑰
+    required: 請選擇密鑰
+  clusterSelect:
+    title: 選擇集群
+    detail: 選擇要註冊的 TKE 集群
+    next: 註冊集群
+    importCluster: 集群
+    required: 必須設置需要導入的集群
+    placeholder: '請選擇'
+  master:
+    title: Master&Etcd 節點配置
+    detail: 配置用於啟動騰訊雲 Kubernetes 服務的主節點
