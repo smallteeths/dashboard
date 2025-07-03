@@ -372,7 +372,7 @@ export default {
         const provider = `${ obj.id.substring(0, obj.id.lastIndexOf('operatorsetting')) }`;
 
         // ack change to ui plugin
-        if (obj.id === 'ackoperatorsetting' || obj.id === 'cceoperatorsetting') {
+        if (obj.id === 'ackoperatorsetting' || obj.id === 'cceoperatorsetting' || obj.id === 'tkeoperatorsetting') {
           return;
         }
 

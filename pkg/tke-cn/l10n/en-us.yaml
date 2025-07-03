@@ -1,0 +1,116 @@
+tkeCn:
+  label: Tencent TKE
+  updateWarn: The cluster is currently being upgraded, and editing may result in unknown errors.
+  shortLabel: Tencent TKE
+  region:
+    label: Region
+  regions:
+    ap-guangzhou: Guangzhou
+    ap-shanghai: Shanghai
+    ap-beijing: Beijing
+    ap-chengdu: Chengdu
+    ap-chongqing: Chongqing
+    ap-nanjing: Nanjing
+    ap-hongkong: Hong Kong
+    ap-singapore: Singapore
+    na-toronto: Toronto
+    ap-bangkok: Bangkok
+    ap-mumbai: Mumbai
+    ap-seoul: Seoul
+    ap-tokyo: Tokyo
+    na-siliconvalley: Silicon Valley
+    na-ashburn: Virginia
+    eu-frankfurt: Frankfurt
+    eu-moscow: Moscow
+    ap-jakarta: Jakarta
+    sa-saopaulo: Saopaulo
+  container:
+    label: Runtime Components
+  clusterType:
+    label: Cluster Type
+    independent: Independent Cluster
+    managed: Managed Cluster
+  clusterLevel:
+    label: Cluster Level
+    help: "{level} (At most {node} nodes, {pod} pods, {configMap} ConfigMaps, {crd} CRDs can be managed)"
+  version:
+    label: Kubernetes Version
+    warning: “{version}”，This version is not supported by Rancher. Reference
+    warningTip: Rancher support matrix.
+  zone:
+    label: Availability Zone
+    required: Availability Zone is required
+  vpc:
+    label: VPC
+  subnet:
+    label: Subnet
+  os:
+    label: Operating System
+  clusterCidr:
+    label: Container Network CIDR
+    placeholder: e.g. 172.16.0.0/16
+    required: Container Network CIDR is required
+    formatError: Container Network CIDR format error
+  securityGroup:
+    label: Security Group
+    required: Security Group is required
+  ipvs:
+    label: Support IPVS
+    enabled: Enabled
+    disabled: Disabled
+    help: IPVS is suitable for providing better forwarding performance in large-scale scenarios. Note that once selected, changes are not supported.
+  proxy:
+    label: Access cluster APIServer
+    inner: Inner Net
+    outer: Outer Net
+    info: It is necessary to ensure that the cluster to be imported has the cluster access agent enabled and the security group used has opened port 443.
+  nodePoolName:
+    label: Nood Pool Name
+    placeholder: e.g. nodepool
+    required: Worker Node Name is required
+    same: Node pool name is not unique
+  instanceType:
+    label: Instance Type
+  numOfNodes:
+    label: Worker Nodes Count
+    placeholder: e.g. 3
+    required: Worker Nodes Count is required
+    help: The count of worker nodes will be launched in this Kubernetes cluster
+  systemDiskSize:
+    label: Root Disk Size
+  systemDiskType:
+    label: Root Disk Type
+  dataDiskType:
+    label: Data Disk Type
+  dataDiskSize:
+    label: Data Disk Size
+  bandwidth:
+    label: Band Width
+    placeholder: e.g. 10
+  disk:
+    LOCAL_BASIC: Local Basic
+    LOCAL_SSD: Local SSD
+    CLOUD_BASIC: Cloud Basic
+    CLOUD_PREMIUM: Cloud Premium
+    CLOUD_SSD: Cloud SSD
+    CLOUD_BSSD: CLOUD BSSD
+    CLOUD_TSSD: CLOUD TSSD
+    CLOUD_HSSD: CLOUD HSSD
+  bandwidthType:
+    label: Band Width Type
+    bandwidth: Pay By Bandwidth
+    traffic: Pay By Traffic
+  keyPair:
+    label: Key Pair
+    required: Key Pair is required
+  clusterSelect:
+    title: Select Cluster
+    detail: Select the TKE cluster to register
+    next: Register cluster
+    importCluster: Cluster
+    required: The cluster to be imported must be set
+    placeholder: Please select
+  master:
+    title: Master Nodes
+    detail: Configure the master nodes that will be used to launch Tencent Kubernetes Service
+

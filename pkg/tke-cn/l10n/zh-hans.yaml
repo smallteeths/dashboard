@@ -1,0 +1,115 @@
+tkeCn:
+  label: 腾讯云 TKE
+  updateWarn: 集群正在升级，编辑可能导致未知错误
+  shortLabel: Tencent TKE
+  region:
+    label: 区域
+  regions:
+    ap-guangzhou: 广州
+    ap-shanghai: 上海
+    ap-beijing: 北京
+    ap-chengdu: 成都
+    ap-chongqing: 重庆
+    ap-nanjing: 南京
+    ap-hongkong: 香港
+    ap-singapore: 新加坡
+    na-toronto: 多伦多
+    ap-bangkok: 曼谷
+    ap-mumbai: 孟买
+    ap-seoul: 首尔
+    ap-tokyo: 东京
+    na-siliconvalley: 硅谷
+    na-ashburn: 弗吉尼亚
+    eu-frankfurt: 法兰克福
+    eu-moscow: 莫斯科
+    ap-jakarta: 雅加达
+    sa-saopaulo: 圣保罗
+  container:
+    label: 运行时组件
+  clusterType:
+    label: 集群类型
+    independent: 独立集群
+    managed: 托管集群
+  clusterLevel:
+    label: 集群规格
+    help: "{level} (最多管理{node}个节点，{pod}个 Pod，{configMap}个 ConfigMap，{crd}个 CRD)"
+  version:
+    label: Kubernetes版本
+    warning: “{version}”，此版本不在 Rancher 支持矩阵范围内。可参考
+    warningTip: Rancher 支持矩阵。
+  zone:
+    label: 可用区
+    required: 请选择可用区
+  vpc:
+    label: VPC
+  subnet:
+    label: 子网
+  os:
+    label: 操作系统
+  clusterCidr:
+    label: 容器网络 CIDR
+    placeholder: '例如: 172.16.0.0/16'
+    required: 请输入容器网络的CIDR
+    formatError: 容器网络 CIDR 格式错误
+  securityGroup:
+    label: 安全组
+    required: 请选择安全组
+  ipvs:
+    label: ipvs 支持
+    enabled: 启用
+    disabled: 停用
+    help: IPVS适用于大规模场景下提供更优的转发性能。注意一经选择将不支持更改。
+  proxy:
+    label: 访问集群 APIServer
+    inner: 内网访问
+    outer: 外网访问
+    info: 需要确保准备导入的集群已开启集群访问代理，且使用的安全组开放了443端口
+  nodePoolName:
+    label: 节点池名称
+    placeholder: 例如：nodepool
+    required: 必须设置 worker 节点池名称
+    same: 节点池名称不唯一
+  instanceType:
+    label: 实例类型
+  numOfNodes:
+    label: Worker 节点数
+    placeholder: '例如: 3'
+    required: 必须设置Worker节点
+    help: 此Kubernetes集群将运行的Worker节点数
+  systemDiskSize:
+    label: 系统盘大小
+  systemDiskType:
+    label: 系统盘类型
+  dataDiskType:
+    label: 数据盘类型
+  dataDiskSize:
+    label: 数据盘大小
+  bandwidth:
+    label: 带宽
+    placeholder: '例如: 10'
+  disk:
+    LOCAL_BASIC: 本地硬盘
+    LOCAL_SSD: 本地SSD硬盘
+    CLOUD_BASIC: 普通云硬盘
+    CLOUD_PREMIUM: 高性能云硬盘
+    CLOUD_SSD: SSD云硬盘
+    CLOUD_BSSD: 通用型SSD云硬盘
+    CLOUD_TSSD: TSSD 云硬盘
+    CLOUD_HSSD: 增强型SSD云硬盘
+  bandwidthType:
+    label: 带宽类型
+    bandwidth: 按带宽计费
+    traffic: 按使用流量计费
+  keyPair:
+    label: 密钥
+    required: 请选择密钥
+  clusterSelect:
+    title: 选择集群
+    detail: 选择要注册的 TKE 集群
+    next: 注册集群
+    importCluster: 集群
+    required: 必须设置需要导入的集群
+    placeholder: '请选择'
+  master:
+    title: Master&Etcd 节点配置
+    detail: 配置用于启动腾讯云 Kubernetes 服务的主节点
