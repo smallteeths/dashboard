@@ -8645,3 +8645,36 @@ promptSlo:
   all:
     active: 退出 {name}
     waiting: 正在退出
+quotasCn:
+  quotas: 配額
+  remain: 剩餘可分配
+  usable: 剩餘可使用
+  editProjectModal: 修改專案配額
+  editNamespaceModal: 修改命名空間配額
+  chart:
+    distribution: 分配
+    used: 佔用
+    qesourceQuotaLink: 此頁面展示的是配額相關用量，詳情請參考 <a href="https://kubernetes.io/docs/concepts/policy/resource-quotas/" target="_blank">Kubernetes ResourceQuota</a>。
+    percent: 百分比
+    remain: 剩餘
+    class: 儲存類別
+    total: 總共
+    legend:
+      distribution: 分配
+      used: 佔用
+  headers:
+    namespace: 命名空間
+    used: 已分配
+    percentInNS: 命名空間內已使用
+  common:
+    limit: 限制
+    reserved: 預留
+    use: 已使用
+    total: 總共
+    usage: 使用率
+    avaliable: 可用
+  project:
+    title: 專案配額
+  namespace:
+    title: 命名空間配額
+  notice: 尚未配置配額，透過設定專案配額項新增配額。
