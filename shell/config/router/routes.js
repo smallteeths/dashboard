@@ -531,7 +531,13 @@ export default [
         component: () => interopDefault(import('@shell/pages/c/_cluster/_product/resourcequota/_page.vue')),
         name:      'c-cluster-legacy-resourcequota-page',
         params:    { product: 'explorer' },
-      }]
+      }, {
+        path:      '/c/:cluster/:product/resourcequota/ns/:page',
+        component: () => interopDefault(import('@shell/pages/c/_cluster/_product/resourcequota/ns/_page.vue')),
+        name:      'c-cluster-legacy-resourcequota-ns-page',
+        params:    { product: 'explorer' },
+      }
+    ]
   },
   {
     path:      '/:catchAll(.*)*',
