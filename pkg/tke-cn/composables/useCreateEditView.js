@@ -130,7 +130,7 @@ export function useCreateEditView(props, context) {
     };
     const clusterBasicSettings = {
       clusterDescription: '',
-      clusterName:        normanCluster.name,
+      clusterName:        config.name ? config.name : normanCluster.value.name,
       clusterOs:          config.osName,
       clusterType:        config.clusterType,
       clusterVersion:     config.clusterVersion,
@@ -203,7 +203,7 @@ export function useCreateEditView(props, context) {
   }
 
   return {
-    done,
+    doneRoute,
     save,
   };
 }
