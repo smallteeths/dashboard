@@ -86,7 +86,7 @@ async function fetchClusters(cloudCredentialId, regionId) {
     });
     const clusterOptions = res?.Response?.Clusters?.map((c) => {
       return {
-        label: c.ClusterName,
+        label: c.ClusterName ? c.ClusterName : c.ClusterId,
         value: c.ClusterId,
       };
     });

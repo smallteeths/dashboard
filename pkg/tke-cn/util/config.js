@@ -134,12 +134,39 @@ const OS_IMAGE = [
     Status:          'online'
   },
   {
+    Alias:           'TencentOS Server 2.4 (TK4) HCC',
+    Arch:            'amd64',
+    ImageId:         'img-nannz3uj',
+    OsCustomizeType: 'GENERAL',
+    OsName:          'tlinux2.4(tkernel4)x86_64_HCC',
+    SeriesName:      'TencentOS Server 2.4 (TK4) HCC',
+    Status:          'online'
+  },
+  {
     Alias:           'TencentOS Server 3.1 (TK4)',
     Arch:            'amd64',
     ImageId:         'img-eb30mz89',
     OsCustomizeType: 'GENERAL',
     OsName:          'tlinux3.1x86_64',
     SeriesName:      'TencentOS Server 3.1 (TK4)',
+  },
+  {
+    Alias:           'RedHat Enterprise Linux 7.9 64位',
+    Arch:            'amd64',
+    ImageId:         'img-0qhxz7dl',
+    OsCustomizeType: 'GENERAL',
+    OsName:          'redhat7.9x86_64',
+    SeriesName:      'RedHat Enterprise Linux 7.9 64位',
+    Status:          'online'
+  },
+  {
+    Alias:           'RedHat Enterprise Linux 8.6 64位',
+    Arch:            'amd64',
+    ImageId:         'img-kp3mv36j',
+    OsCustomizeType: 'GENERAL',
+    OsName:          'redhat8.6x86_64',
+    SeriesName:      'RedHat Enterprise Linux 8.6 64位',
+    Status:          'online'
   }
 ];
 

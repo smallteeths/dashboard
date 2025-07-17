@@ -214,7 +214,7 @@ const fvFormIsValid = computed(() => {
 const kubernetesSupport = computed(() => {
   const version = tkeConfig.value.clusterVersion;
 
-  if (options.value.versionOptions.length === 0 || version) {
+  if (options.value.versionOptions.length === 0 || !version) {
     return { rancherDisabled: false };
   }
   const matched = find(options.value.versionOptions, { value: version }) || {};
@@ -326,7 +326,6 @@ function cancelCredential() {
 
 function setClusterName(name) {
   normanCluster.value['name'] = name;
-  tkeConfig.value['name'] = name;
 }
 
 function resetConfig() {
@@ -440,6 +439,7 @@ function fixConfig(config) {
     securityGroup:       clusterEndpoint.securityGroup,
     osName:              clusterBasicSettings.clusterOs,
     clusterType:         clusterBasicSettings.clusterType,
+    name:                clusterBasicSettings.clusterName,
     clusterVersion:      clusterBasicSettings.clusterVersion,
     vpcId:               clusterBasicSettings.vpcId,
     clusterLevel:        clusterBasicSettings.clusterLevel,
@@ -1080,6 +1080,13 @@ function poolIsValid(pool) {
           </div>
         </div>
         <div class="row mb-10">
+          <Banner
+            v-if="kubernetesSupport.rancherDisabled"
+            color="warning"
+            :label="intl('tkeCn.version.warning', { version: tkeConfig.clusterVersion })"
+          />
+        </div>
+        <div class="row mb-10">
           <div
             class="col span-6"
           >
@@ -1183,13 +1190,6 @@ function poolIsValid(pool) {
               :mode="mode"
             />
           </div>
-        </div>
-        <div>
-          <Banner
-            v-if="kubernetesSupport.rancherDisabled"
-            color="warning"
-            :label="intl('tkeCn.version.warning', { version: tkeConfig.clusterVersion })"
-          />
         </div>
         <GroupPanel
           v-if="!isManagedCluster"
