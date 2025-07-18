@@ -115,6 +115,7 @@ const props = defineProps({
     required: true
   },
 });
+
 const store = useStore();
 const state = ref({
   minSystemDiskSize: 20,
@@ -248,6 +249,7 @@ watch(() => props.dataDiskType, () => {
           option-label="label"
           option-key="value"
           label-key="tkeCn.os.label"
+          :disabled="tkeConfig.imported"
           :rules="rules.osName"
           @update:value="$emit('update:osName', $event)"
         />
@@ -257,6 +259,7 @@ watch(() => props.dataDiskType, () => {
           :value="instanceNum"
           :label="intl('tkeCn.numOfNodes.label')"
           :mode="mode"
+          :disabled="tkeConfig.imported"
           :placeholder="intl('tkeCn.numOfNodes.placeholder')"
           @blur="blurInitialNodeCount(instanceNum)"
           @update:value="$emit('update:instanceNum', $event)"

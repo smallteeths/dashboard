@@ -35,7 +35,7 @@ tkeCn:
     help: "{level} (At most {node} nodes, {pod} pods, {configMap} ConfigMaps, {crd} CRDs can be managed)"
   version:
     label: Kubernetes Version
-    warning: “{version}”，This version is not supported by Rancher. Reference
+    warning: "This version is not supported by Rancher. Reference <a href='https://github.com/Project-HAMi/HAMi' target='_blank' rel='noopener nofollow noreferrer'>Rancher support matrix.</a>"
     warningTip: Rancher support matrix.
   zone:
     label: Availability Zone

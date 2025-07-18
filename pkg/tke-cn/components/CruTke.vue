@@ -409,6 +409,7 @@ function fixConfig(config) {
 
   nodePoolList.forEach((item) => {
     const { autoScalingGroupPara, launchConfigurePara } = item;
+
     const obj = {
       clusterId:      item.clusterId,
       nodePoolId:     item.nodePoolId,
@@ -419,7 +420,8 @@ function fixConfig(config) {
       instanceType:   launchConfigurePara.instanceType,
       systemDiskSize: launchConfigurePara.systemDisk.diskSize,
       systemDiskType: launchConfigurePara.systemDisk.diskType,
-      dataDisks:      launchConfigurePara.dataDisks,
+      dataDiskType:   launchConfigurePara.dataDisks?.[0].diskType,
+      dataDiskSize:   launchConfigurePara.dataDisks?.[0].diskSize,
       bandwidthType:  launchConfigurePara.internetChargeType,
       bandwidth:      launchConfigurePara.internetMaxBandwidthOut,
       keyPair:        launchConfigurePara.keyIds[0],
@@ -1083,7 +1085,7 @@ function poolIsValid(pool) {
           <Banner
             v-if="kubernetesSupport.rancherDisabled"
             color="warning"
-            :label="intl('tkeCn.version.warning', { version: tkeConfig.clusterVersion })"
+            label-key="tkeCn.version.warning"
           />
         </div>
         <div class="row mb-10">
