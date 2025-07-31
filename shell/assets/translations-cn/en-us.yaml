@@ -3402,6 +3402,7 @@ labels:
     show: Show System Labels and Annotations
   annotations:
     title: Annotations
+  protectedWarning: This key is protected and will be discarded
 landing:
   clusters:
     title: Clusters
@@ -5189,6 +5190,8 @@ rbac:
         =1 { Checking if there are any users bound to this role <i class="icon-spin icon icon-spinner" style="margin-left: 5px"></i> }
         other { Checking if there are any users bound to these roles <i class="icon-spin icon icon-spinner" style="margin-left: 5px"></i> }
       }
+  errors:
+    escalation: You cannot assign Global Permissions that are higher than your own. Please verify the permissions you are attempting to assign.
 resourceDetail:
   detailTop:
     annotations: Annotations
@@ -7088,6 +7091,7 @@ typeDescription:
   group.principal: Assigning global roles to a group only works with external auth providers that support groups. Local authorization does not support groups.
   logging-extensions.banzaicloud.io.eventtailer: <a href="https://kube-logging.dev/docs/configuration/extensions/kubernetes-event-tailer/" target="_blank" rel="noopener noreferrer nofollow">Event-tailer</a> listens for Kubernetes events and transmits their changes to stdout, so the Logging operator can process them.
   logging-extensions.banzaicloud.io.hosttailer: <a href="https://kube-logging.dev/docs/configuration/extensions/kubernetes-host-tailer/" target="_blank" rel="noopener noreferrer nofollow">Host-tailer</a> tails custom files and transmits their changes to stdout. This way the Logging operator can process them. Kubernetes host tailer allows you to tail logs like kubelet, audit logs, or the systemd journal from the nodes.
+  jwt.authentication: Enable this feature on a cluster to add support for JWT authenticating downstream service accounts.
 typeLabel:
   management.cattle.io.token: |-
     {count, plural,
