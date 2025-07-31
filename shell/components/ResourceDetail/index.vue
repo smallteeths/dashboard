@@ -384,18 +384,7 @@ export default {
   },
 
   created() {
-    // eslint-disable-next-line prefer-const
-    const id = this.$route.params.id;
-    const resource = this.resourceOverride || this.$route.params.resource;
-    const options = this.$store.getters[`type-map/optionsFor`](resource);
-
-    const detailResource = options.resourceDetail || options.resource || resource;
-    const editResource = options.resourceEdit || options.resource || resource;
-
-    // FIXME: These aren't right... signature is (rawType, subType).. not (rawType, resourceId)
-    // Remove id? How does subtype get in (cluster/node)
-    this.detailComponent = this.$store.getters['type-map/importDetail'](detailResource, id);
-    this.editComponent = this.$store.getters['type-map/importEdit'](editResource, id);
+    this.configureResource();
   },
 
   methods: {
@@ -414,6 +403,61 @@ export default {
     closeError(index) {
       this.errors = this.errors.filter((_, i) => i !== index);
     },
+    onYamlError(err) {
+      this.errors = [];
+      const errors = Array.isArray(err) ? err : [err];
+
+      errors.forEach((e) => {
+        if (this.errors.indexOf(e) === -1) {
+          this.errors.push(e);
+        }
+      });
+    },
+    /**
+     * Initializes the resource components based on the provided user and
+     * resource override.
+     *
+     * Configures the detail and edit components for a resource based on the
+     * user's ID and the specified resource.
+     *
+     * @param {Object} user - The user object containing user-specific
+     * information.
+     * @param {string|null} resourceOverride - An optional resource override
+     * string. If not provided, the method will use the default resource from
+     * the route parameters or the instance's resourceOverride property.
+     */
+    configureResource(userId = '', resourceOverride = null) {
+      const id = userId || this.$route.params.id;
+      const resource = resourceOverride || this.resourceOverride || this.$route.params.resource;
+      const options = this.$store.getters[`type-map/optionsFor`](resource);
+
+      const detailResource = options.resourceDetail || options.resource || resource;
+      const editResource = options.resourceEdit || options.resource || resource;
+
+      // FIXME: These aren't right... signature is (rawType, subType).. not (rawType, resourceId)
+      // Remove id? How does subtype get in (cluster/node)
+      this.detailComponent = this.$store.getters['type-map/importDetail'](detailResource, id);
+      this.editComponent = this.$store.getters['type-map/importEdit'](editResource, id);
+    },
+    /**
+     * Sets the mode and initializes the resource components.
+     *
+     * This method sets the mode of the component and configures the resource
+     * components based on the provided user and resource.
+     *
+     * @param {Object} payload - An object containing the mode, user, and
+     * resource properties.
+     * @param {string} payload.mode - The mode to set.
+     * @param {Object} payload.user - The user object containing user-specific
+     * information.
+     * @param {string} payload.resource - The resource string to use for
+     * initialization.
+     */
+    setMode({ mode, userId, resource }) {
+      this.mode = mode;
+      this.value.id = userId;
+      this.configureResource(userId, resource);
+    }
   }
 };
 </script>
@@ -473,8 +517,9 @@ export default {
       :offer-preview="offerPreview"
       :done-route="doneRoute"
       :done-override="value ? value.doneOverride : null"
+      :show-errors="false"
       @update:value="$emit('input', $event)"
-      @error="e=>errors.push(e)"
+      @error="onYamlError"
     />
 
     <component
@@ -491,6 +536,7 @@ export default {
       :real-mode="realMode"
       :class="{'flex-content': flexContent}"
       @update:value="$emit('input', $event)"
+      @update:mode="setMode"
       @set-subtype="setSubtype"
     />
 
@@ -530,5 +576,11 @@ export default {
   display: flex;
   flex-direction: column;
   flex-grow: 1;
+}
+.cru__errors {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: var(--header-bg);
 }
 </style>
