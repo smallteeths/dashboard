@@ -3223,6 +3223,7 @@ labels:
     show: Show System Labels and Annotations
   annotations:
     title: Annotations
+  protectedWarning: This key is protected and will be discarded
 landing:
   clusters:
     title: Clusters
