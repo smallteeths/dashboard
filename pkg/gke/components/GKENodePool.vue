@@ -12,8 +12,8 @@ import ArrayList from '@shell/components/form/ArrayList.vue';
 import KeyValue from '@shell/components/form/KeyValue.vue';
 
 import AuthScopes from './AuthScopes.vue';
-import { GKEImageTypes } from '../util/gcp';
-import type { GKEMachineTypeOption } from '../types/index.d.ts';
+import { GKEImageTypes } from '@shell/components/google/util/gcp';
+import type { GKEMachineTypeOption } from '@shell/components/google/types/index.d.ts';
 
 export default defineComponent({
   name: 'GKENodePool',
@@ -292,7 +292,7 @@ export default defineComponent({
 <template>
   <div>
     <h3>{{ t('gke.groupDetails') }}</h3>
-    <hr>
+    <hr role="none">
     <div class="row mb-10">
       <div class="col span-4">
         <LabeledInput
@@ -372,7 +372,7 @@ export default defineComponent({
     <h3 class="mt-20">
       {{ t('gke.nodeDetails') }}
     </h3>
-    <hr>
+    <hr role="none">
     <div class="row mb-10">
       <div class="col span-6">
         <Checkbox

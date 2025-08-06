@@ -28,6 +28,43 @@ describe('select.vue', () => {
     expect(console.warn).not.toHaveBeenCalled();
   });
 
+  it('a11y: adding ARIA props should correctly fill out the appropriate fields on the component', async() => {
+    const label = 'Foo';
+    const value = 'foo';
+    const ariaDescribedById = 'some-described-by-id';
+    const ariaLabelText = 'some-aria-label';
+
+    const wrapper = shallowMount(SelectComponent, {
+      props: {
+        value,
+        options: [
+          { label, value },
+        ],
+      },
+      attrs: {
+        'aria-describedby': ariaDescribedById,
+        'aria-label':       ariaLabelText,
+      }
+    });
+
+    const labeledSelectContainer = wrapper.find('.unlabeled-select');
+    const ariaExpanded = labeledSelectContainer.attributes('aria-expanded');
+    const ariaDescribedBy = labeledSelectContainer.attributes('aria-describedby');
+    const ariaLabel = labeledSelectContainer.attributes('aria-label');
+
+    const vSelectInput = wrapper.find('.inline');
+
+    expect(ariaExpanded).toBe('false');
+    expect(ariaDescribedBy).toBe(ariaDescribedById);
+    expect(ariaLabel).toBe(ariaLabelText);
+
+    // make sure it's hardcoded to a "neutral" value so that
+    // in the current architecture of the component
+    // screen readers won't pick up the default "Select option" aria-label
+    // from the library
+    expect(vSelectInput.attributes('aria-label')).toBe('-');
+  });
+
   it('pressing space key while focused on search should not prevent event propagation', async() => {
     const value = 'value-1';
     const options = [
@@ -40,7 +77,8 @@ describe('select.vue', () => {
         value,
         label:      'some-label',
         options,
-        searchable: true
+        searchable: true,
+        loading:    false,
       }
     });
 
@@ -54,7 +92,9 @@ describe('select.vue', () => {
     await input.trigger('keydown.enter');
 
     // mimic pressing space on search box inside v-select
-    await input.trigger('keydown.space', mockEvent);
+    const search = input.find('input');
+
+    await search.trigger('keydown.space', mockEvent);
 
     // eslint-disable-next-line
     expect(spyFocus).toHaveBeenCalled();

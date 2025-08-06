@@ -1,4 +1,5 @@
 import { NAMESPACE_FILTER_NS_FULL_PREFIX, NAMESPACE_FILTER_P_FULL_PREFIX } from '@shell/utils/namespace-filter';
+import { KubeLabelSelector } from '@shell/types/kube/kube-api';
 
 // Pagination Typing
 // These structures are designed to offer both convenience and flexibility based on a common structure and are
@@ -63,12 +64,14 @@ export class PaginationFilterField {
   field?: string;
   /**
    * Value of field within the object to filter by for example the y of x=y
+   *
+   * This can be empty if `exists` is true
    */
-  value: string;
+  value?: string;
   /**
    * Equality field within the object to filter by for example the `=` or `!=` of x=y
    */
-  equals: boolean;
+  equals?: boolean;
   /**
    * Match the field exactly. False for partial matches
    *
@@ -76,18 +79,26 @@ export class PaginationFilterField {
    * Exact: true. "p" no, "pod", no, "pod1" yes
    * Exact: false. "p" yes, "pod", yes, "pod1" yes
    */
-  exact: boolean;
+  exact?: boolean;
+
+  /**
+   * Check if the field/property exists, regardless of value
+   *
+   * If this is false it does not flip the expectation, just doesn't add the field
+   */
+  exists?: boolean;
 
   constructor(
     {
-      field, value, equals = true, exact = true
+      field, value = '', equals = true, exact = true, exists = false
     }:
-    { field?: string; value: string; equals?: boolean; exact?: boolean;}
+    { field?: string; value?: string; equals?: boolean; exact?: boolean; exists?:boolean;}
   ) {
     this.field = field;
     this.value = value;
     this.equals = equals;
     this.exact = exact;
+    this.exists = exists;
   }
 }
 
@@ -227,7 +238,7 @@ export class PaginationParamFilter extends PaginationParam {
   /**
    * Convenience method when you just want an instance of {@link PaginationParamFilter} with a simple `filter=x=y` param
    */
-  static createSingleField(field: { field?: string; value: string; equals?: boolean; exact?: boolean }): PaginationParam {
+  static createSingleField(field: { field?: string; value?: string; equals?: boolean; exact?: boolean, exists?: boolean }): PaginationParam {
     return new PaginationParamFilter({ fields: [new PaginationFilterField(field)] });
   }
 
@@ -304,7 +315,7 @@ export class PaginationArgs {
    */
   sort: PaginationSort[];
   /**
-   * A collection of `filter` params
+   * A collection of traditional `filter` params covering logic such as x is y, x is like y, x is not y
    *
    * For more info see {@link PaginationParamFilter}
    */
@@ -317,6 +328,11 @@ export class PaginationArgs {
   projectsOrNamespaces: PaginationParamProjectOrNamespace[];
 
   /**
+   * Traditional Kube labelSelector consisting of matchLabels and matchExpressions
+   */
+  labelSelector?: KubeLabelSelector;
+
+  /**
    * Creates an instance of PaginationArgs.
    *
    * Contains defaults to avoid creating complex json objects all the time
@@ -327,6 +343,7 @@ export class PaginationArgs {
     sort = [],
     filters = [],
     projectsOrNamespaces = [],
+    labelSelector = undefined,
   }:
   // This would be neater as just Partial<PaginationArgs> but we lose all jsdoc
   {
@@ -354,6 +371,10 @@ export class PaginationArgs {
      * For definition see {@link PaginationArgs} `projectsOrNamespaces`
      */
     projectsOrNamespaces?: PaginationParamProjectOrNamespace | PaginationParamProjectOrNamespace[],
+    /**
+     * Traditional Kube labelSelector consisting of matchLabels and matchExpressions
+     */
+    labelSelector?: KubeLabelSelector,
   }) {
     this.page = page;
     this.pageSize = pageSize;
@@ -368,6 +389,7 @@ export class PaginationArgs {
     } else {
       this.projectsOrNamespaces = [];
     }
+    this.labelSelector = labelSelector;
   }
 }
 
@@ -386,6 +408,7 @@ export class FilterArgs extends PaginationArgs {
     sort = [],
     filters = [],
     projectsOrNamespaces = [],
+    labelSelector = undefined,
   }:
   // This would be neater as just Partial<PaginationArgs> but we lose all jsdoc
   {
@@ -405,9 +428,13 @@ export class FilterArgs extends PaginationArgs {
      * For definition see {@link PaginationArgs} `projectsOrNamespaces`
      */
     projectsOrNamespaces?: PaginationParamProjectOrNamespace | PaginationParamProjectOrNamespace[],
+    /**
+     * Traditional Kube labelSelector consisting of matchLabels and matchExpressions
+     */
+    labelSelector?: KubeLabelSelector
   }) {
     super({
-      page: null, pageSize: null, sort, filters, projectsOrNamespaces
+      page: null, pageSize: null, sort, filters, projectsOrNamespaces, labelSelector
     });
   }
 }
@@ -434,7 +461,12 @@ export interface StorePaginationRequest {
   /**
    * The set of pagination args used to create the request
    */
-  pagination: PaginationArgs
+  pagination: PaginationArgs,
+
+  /**
+   * Does this request stem from a list with manual refresh?
+   */
+  hasManualRefresh?: boolean,
 }
 
 /**

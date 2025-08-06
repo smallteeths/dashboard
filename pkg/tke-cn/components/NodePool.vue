@@ -137,6 +137,7 @@ const emit = defineEmits([
   'update:bandwidth',
   'update:securityGroup',
   'update:subnetId',
+  'update:keyPair'
 ]);
 
 function blurInitialNodeCount(num) {

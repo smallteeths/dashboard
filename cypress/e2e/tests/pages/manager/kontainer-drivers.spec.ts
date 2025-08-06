@@ -5,6 +5,7 @@ import DeactivateDriverDialogPo from '@/cypress/e2e/po/prompts/deactivateDriverD
 import ClusterManagerListPagePo from '@/cypress/e2e/po/pages/cluster-manager/cluster-manager-list.po';
 import ClusterManagerCreatePagePo from '@/cypress/e2e/po/edit/provisioning.cattle.io.cluster/create/cluster-create.po';
 import PromptRemove from '@/cypress/e2e/po/prompts/promptRemove.po';
+import { LONG_TIMEOUT_OPT } from '@/cypress/support/utils/timeouts';
 
 describe('Kontainer Drivers', { testIsolation: 'off', tags: ['@manager', '@adminUser'] }, () => {
   const driversPage = new KontainerDriversPagePo();
@@ -20,7 +21,7 @@ describe('Kontainer Drivers', { testIsolation: 'off', tags: ['@manager', '@admin
   const oracleDriver = 'Oracle OKE';
   const googleDriver = 'Google GKE';
   const linodeDriver = 'Linode LKE';
-  const tencentDriver = 'Tencent TKE';
+  // const tencentDriver = 'Tencent TKE';
   const exampleDriver = 'Example';
   const amazonDriver = 'Amazon EKS';
   const azureDriver = 'Azure AKS';
@@ -42,7 +43,7 @@ describe('Kontainer Drivers', { testIsolation: 'off', tags: ['@manager', '@admin
     driversPage.waitForPage();
     cy.intercept('POST', '/v3/kontainerdrivers?action=refresh').as('refresh');
     driversPage.refreshKubMetadata().click({ force: true });
-    cy.wait('@refresh').its('response.statusCode').should('eq', 200);
+    cy.wait('@refresh', LONG_TIMEOUT_OPT).its('response.statusCode').should('eq', 200);
   });
 
   it('can create new driver', () => {
@@ -154,16 +155,16 @@ describe('Kontainer Drivers', { testIsolation: 'off', tags: ['@manager', '@admin
   });
 
   it('will show error if could not activate driver', () => {
-    cy.intercept('POST', '/v3/kontainerDrivers/tencentkubernetesengine?action=activate', {
+    cy.intercept('POST', '/v3/kontainerDrivers/linodekubernetesengine?action=activate', {
       statusCode: 500,
       body:       { message: `Could not activate driver` }
     }).as('activationError');
 
     KontainerDriversPagePo.navTo();
     driversPage.waitForPage();
-    driversPage.list().details(tencentDriver, 1).should('contain', 'Inactive');
+    driversPage.list().details(linodeDriver, 1).should('contain', 'Inactive');
 
-    driversPage.list().actionMenu(tencentDriver).getMenuItem('Activate').click();
+    driversPage.list().actionMenu(linodeDriver).getMenuItem('Activate').click();
 
     cy.wait('@activationError').then(() => {
       cy.get('.growl-text').contains('Could not activate driver').should('be.visible');

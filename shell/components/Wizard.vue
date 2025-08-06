@@ -1,5 +1,5 @@
 <script>
-
+import { _CREATE, _VIEW } from '@shell/config/query-params';
 import AsyncButton from '@shell/components/AsyncButton';
 import { Banner } from '@components/Banner';
 import Loading from '@shell/components/Loading';
@@ -54,6 +54,11 @@ export default {
     steps: {
       type:     Array,
       required: true
+    },
+
+    mode: {
+      type:    String,
+      default: _CREATE
     },
 
     // Initial step to show when Wizard loads.
@@ -121,6 +126,11 @@ export default {
   },
 
   computed: {
+
+    isView() {
+      return this.mode === _VIEW;
+    },
+
     errorStrings() {
       return ( this.errors || [] ).map((x) => stringify(x));
     },
@@ -351,7 +361,7 @@ export default {
                     role="presentation"
                   >
                     <span
-                      :aria-controls="'step' + idx+1"
+                      :aria-controls="'step-container-' + step.name"
                       :aria-selected="step.name === activeStep.name"
                       role="tab"
                       class="controls"
@@ -366,7 +376,7 @@ export default {
                       </span>
                     </span>
                   </li>
-                  <div
+                  <li
                     v-if="idx!==visibleSteps.length-1"
                     :key="step.name"
                     class="divider"
@@ -387,7 +397,9 @@ export default {
           >
             <div
               v-if="step.name === activeStep.name || step.hidden"
+              :id="'step-container-' + step.name"
               :key="step.name"
+              role="tabpanel"
               class="step-container__step"
               :class="{'hide': step.name !== activeStep.name && step.hidden}"
             >
@@ -426,7 +438,7 @@ export default {
         </div>
         <div
           id="wizard-footer-controls"
-          class="controls-row pt-20"
+          class="controls-row"
         >
           <slot
             name="cancel"
@@ -461,6 +473,7 @@ export default {
               :finish="finish"
             >
               <AsyncButton
+                v-if="!isView"
                 :disabled="!activeStep.ready"
                 :mode="finishMode"
                 @click="finish"
@@ -674,7 +687,7 @@ $spacer: 10px;
 // We have to account for the absolute position of the .controls-row
 .footer-error {
   margin-top: -40px;
-  margin-bottom: 70px;
+  margin-bottom: calc($footer-height + 10px);
 }
 
   .controls-row {

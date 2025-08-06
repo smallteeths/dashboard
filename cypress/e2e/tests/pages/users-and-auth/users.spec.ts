@@ -8,6 +8,7 @@ import BurgerMenuPo from '@/cypress/e2e/po/side-bars/burger-side-menu.po';
 import SortableTablePo from '@/cypress/e2e/po/components/sortable-table.po';
 import HomePagePo from '@/cypress/e2e/po/pages/home.po';
 import FixedBannerPo from '@/cypress/e2e/po/components/fixed-banner.po';
+import { USERS_BASE_URL } from '@/cypress/support/utils/api-endpoints';
 
 const usersPo = new UsersPo('_');
 const userCreate = usersPo.createEdit();
@@ -47,6 +48,7 @@ describe('Users', { tags: ['@usersAndAuths', '@adminUser'] }, () => {
     const userBasePassword = 'userBase-password';
 
     usersPo.goTo();
+    usersPo.waitForPage();
     usersPo.list().create();
 
     userCreate.waitForPage();
@@ -62,6 +64,7 @@ describe('Users', { tags: ['@usersAndAuths', '@adminUser'] }, () => {
 
   it('can create Standard User and view their details', () => {
     usersPo.goTo();
+    usersPo.waitForPage();
     usersPo.list().create();
 
     userCreate.username().set(standardUsername);
@@ -103,6 +106,7 @@ describe('Users', { tags: ['@usersAndAuths', '@adminUser'] }, () => {
     });
 
     usersPo.goTo();
+    usersPo.waitForPage();
     usersPo.list().create();
     userCreate.waitForPage();
 
@@ -119,6 +123,7 @@ describe('Users', { tags: ['@usersAndAuths', '@adminUser'] }, () => {
   it('can Refresh Group Memberships', () => {
     // Refresh Group Membership and verify request is made
     usersPo.goTo();
+    usersPo.waitForPage();
     cy.intercept('POST', '/v3/users?action=refreshauthprovideraccess').as('refreshGroup');
     usersPo.list().refreshGroupMembership().click();
     cy.wait('@refreshGroup').its('response.statusCode').should('eq', 200);
@@ -126,7 +131,10 @@ describe('Users', { tags: ['@usersAndAuths', '@adminUser'] }, () => {
 
   describe('Action Menu', () => {
     it('can Deactivate and Activate user', () => {
+      cy.intercept('GET', '/v3/users?limit=0').as('getUsers');
       usersPo.goTo();
+      usersPo.waitForPage();
+      cy.wait('@getUsers');
 
       let menu = usersPo.list().actionMenu(standardUsername);
 
@@ -178,6 +186,7 @@ describe('Users', { tags: ['@usersAndAuths', '@adminUser'] }, () => {
       const viewYaml = usersPo.createEdit(userId);
 
       usersPo.goTo();
+      usersPo.waitForPage();
       usersPo.list().clickRowActionMenuItem(standardUsername, 'View YAML');
       cy.url().should('include', `?mode=view&as=yaml`);
       viewYaml.mastheadTitle().should('contain', standardUsername);
@@ -188,6 +197,7 @@ describe('Users', { tags: ['@usersAndAuths', '@adminUser'] }, () => {
       const downloadedFilename = path.join(downloadsFolder, `${ standardUsername }.yaml`);
 
       usersPo.goTo();
+      usersPo.waitForPage();
       usersPo.list().clickRowActionMenuItem(standardUsername, 'Download YAML');
       cy.readFile(downloadedFilename).should('exist').then((buffer) => {
         const obj: any = jsyaml.load(buffer);
@@ -202,6 +212,7 @@ describe('Users', { tags: ['@usersAndAuths', '@adminUser'] }, () => {
     it('can Delete user', () => {
       // Delete user and verify user is removed from list
       usersPo.goTo();
+      usersPo.waitForPage();
       usersPo.list().clickRowActionMenuItem(standardUsername, 'Delete');
 
       const promptRemove = new PromptRemove();
@@ -237,7 +248,7 @@ describe('Users', { tags: ['@usersAndAuths', '@adminUser'] }, () => {
       usersPo.list().selectAll().set();
       usersPo.list().openBulkActionDropdown();
 
-      cy.intercept('GET', '/v1/management.cattle.io.users/*').as('downloadYaml');
+      cy.intercept('GET', `${ USERS_BASE_URL }/*`).as('downloadYaml');
       usersPo.list().bulkActionButton('Download YAML').click({ force: true });
       cy.wait('@downloadYaml', { timeout: 10000 }).its('response.statusCode').should('eq', 200);
       const downloadedFilename = path.join(downloadsFolder, 'resources.zip');
@@ -261,7 +272,7 @@ describe('Users', { tags: ['@usersAndAuths', '@adminUser'] }, () => {
     });
   });
 
-  describe('List', { testIsolation: 'off', tags: ['@vai', '@adminUser'] }, () => {
+  describe('List', { testIsolation: 'off', tags: ['@noVai', '@adminUser'] }, () => {
     let uniqueUserName = SortableTablePo.firstByDefaultName('user');
 
     const userIdsList = [];
@@ -299,7 +310,7 @@ describe('Users', { tags: ['@usersAndAuths', '@adminUser'] }, () => {
     });
 
     it('pagination is visible and user is able to navigate through users data', () => {
-      usersPo.goTo(); // This is needed for the @vai only world
+      usersPo.goTo(); // This is needed for the @noVai only world
       usersPo.waitForPage();
       const count = initialCount + 26;
 
@@ -493,7 +504,11 @@ describe('Users', { tags: ['@usersAndAuths', '@adminUser'] }, () => {
     });
 
     after(() => {
-      userIdsList.forEach((r) => cy.deleteRancherResource('v3', 'Users', r, false));
+      cy.deleteManyResources({
+        toDelete: userIdsList,
+        deleteFn: (r) => cy.deleteRancherResource('v3', 'Users', r, false)
+      });
+
       // Ensure the default rows per page value is set after executing the tests
       cy.tableRowsPerPageAndNamespaceFilter(100, 'local', 'none', '{"local":["all://user"]}');
     });

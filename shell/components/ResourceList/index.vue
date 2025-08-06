@@ -9,6 +9,7 @@ import { ResourceListComponentName } from './resource-list.config';
 import { PanelLocation, ExtensionPoint } from '@shell/core/types';
 import ExtensionPanel from '@shell/components/ExtensionPanel';
 import { sameContents } from '@shell/utils/array';
+import perfSettingsUtils from '@shell/utils/perf-setting.utils';
 
 export default {
   name: ResourceListComponentName,
@@ -99,6 +100,7 @@ export default {
 
     return {
       schema,
+      overrideInStore:                  undefined,
       hasListComponent,
       showMasthead:                     showMasthead === undefined ? true : showMasthead,
       resource,
@@ -138,7 +140,7 @@ export default {
     },
 
     showIncrementalLoadingIndicator() {
-      return this.perfConfig?.incrementalLoading?.enabled;
+      return perfSettingsUtils.incrementalLoadingUtils.isEnabled(this.calcCanPaginate(), this.perfConfig);
     },
 
   },

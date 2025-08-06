@@ -14,6 +14,7 @@ export const BASE_SCOPES = {
   azuread:      [],
   keycloakoidc: ['openid profile email'],
   genericoidc:  ['openid profile email'],
+  cognito:      ['openid email'],
 };
 
 const KEY = 'rc_nonce';
@@ -425,6 +426,8 @@ export const actions = {
 
     commit('loggedOut');
     dispatch('onLogout', null, { root: true });
+
+    dispatch('uiplugins/setReady', false, { root: true });
   },
 
   async logout({

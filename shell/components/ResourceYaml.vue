@@ -294,6 +294,10 @@ export default {
       }
     },
 
+    refresh() {
+      this.$refs.yamleditor.refresh();
+    },
+
     closeError(index) {
       this.errors = (this.errors || []).filter((_, i) => i !== index);
     },

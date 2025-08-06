@@ -32,7 +32,7 @@ import {
 import { COLUMN_BREAKPOINTS } from '@shell/types/store/type-map';
 import { STEVE_CACHE } from '@shell/store/features';
 import { configureConditionalDepaginate } from '@shell/store/type-map.utils';
-import { CATTLE_PUBLIC_ENDPOINTS } from '@shell/config/labels-annotations';
+import { CATTLE_PUBLIC_ENDPOINTS, STORAGE } from '@shell/config/labels-annotations';
 
 export const NAME = 'explorer';
 
@@ -94,6 +94,7 @@ export function init(store) {
     PVC,
     STORAGE_CLASS,
     SECRET,
+    VIRTUAL_TYPES.PROJECT_SECRETS,
     CONFIG_MAP,
     'pvcStates'
   ], 'storage');
@@ -106,6 +107,10 @@ export function init(store) {
     WORKLOAD_TYPES.CRON_JOB,
     POD,
   ], 'workload');
+
+  setGroupDefaultType('workload', () => {
+    return store.getters['features/get'](STEVE_CACHE) ? WORKLOAD_TYPES.DEPLOYMENT : undefined;
+  });
 
   weightGroup('cluster', 99, true);
   weightGroup('workload', 98, true);
@@ -161,7 +166,7 @@ export function init(store) {
   mapGroup(/^(.*\.)?(k3s)\.cattle\.io$/, 'K3s');
   mapGroup(/^(.*\.)?(helm)\.cattle\.io$/, 'Helm');
   mapGroup(/^(.*\.)?upgrade\.cattle\.io$/, 'Upgrade Controller');
-  mapGroup(/^(.*\.)?cis\.cattle\.io$/, 'CIS');
+  mapGroup(/^(.*\.)?compliance\.cattle\.io$/, 'Compliance');
   mapGroup(/^(.*\.)?traefik\.containo\.us$/, 'Træfik');
   mapGroup(/^(catalog|management|project|ui)\.cattle\.io$/, 'Rancher');
   mapGroup(/^(.*\.)?istio\.io$/, 'Istio');
@@ -184,7 +189,12 @@ export function init(store) {
   configureType(NORMAN.CLUSTER_ROLE_TEMPLATE_BINDING, { depaginate: dePaginateNormanBindings });
   configureType(NORMAN.PROJECT_ROLE_TEMPLATE_BINDING, { depaginate: dePaginateNormanBindings });
   configureType(SNAPSHOT, { depaginate: true });
-  configureType(NORMAN.ETCD_BACKUP, { depaginate: true });
+
+  configureType(SECRET, { showListMasthead: false });
+  weightType(SECRET, 1, false);
+
+  configureType(VIRTUAL_TYPES.PROJECT_SECRETS, { showListMasthead: false });
+  weightType(VIRTUAL_TYPES.PROJECT_SECRETS, 2, false);
 
   configureType(EVENT, { limit: 500 });
   weightType(EVENT, -1, true);
@@ -284,7 +294,7 @@ export function init(store) {
       STEVE_NAMESPACE_COL,
       {
         ...INGRESS_TARGET,
-        sort:   'spec.rules[0].host', // Pending API support https://github.com/rancher/rancher/issues/48473 (index fields)
+        sort:   'spec.rules[0].host', // Pending API Support - BUG - https://github.com/rancher/rancher/issues/50526
         search: false, // This is broken in normal world, so disable here
       },
       {
@@ -295,7 +305,7 @@ export function init(store) {
       {
         ...INGRESS_CLASS,
         sort:   'spec.ingressClassName',
-        search: 'spec.ingressClassName', // Pending API support  (blocked https://github.com/rancher/rancher/issues/48473 (index fields)
+        search: 'spec.ingressClassName',
       },
       STEVE_AGE_COL
     ]
@@ -306,8 +316,11 @@ export function init(store) {
     [
       STEVE_STATE_COL,
       STEVE_NAME_COL,
-      STEVE_NAMESPACE_COL,
-      TARGET_PORT,
+      STEVE_NAMESPACE_COL, {
+        ...TARGET_PORT,
+        sort:   false,
+        search: false,
+      },
       {
         // Selector is an object. This is broken in non-SSP world anyway (won't sort on object, filtering on `$[x][y]` paths are broken )
         ...SELECTOR,
@@ -316,8 +329,8 @@ export function init(store) {
       },
       {
         ...SPEC_TYPE,
-        sort:   false, // ['spec.type', 'spec.clusterIP'] Pending API support  (blocked https://github.com/rancher/rancher/issues/48473 (index fields)
-        search: 'spec.type',
+        sort:   ['spec.type'],
+        search: 'spec.type'
       },
       STEVE_AGE_COL
     ]
@@ -346,10 +359,10 @@ export function init(store) {
       STEVE_STATE_COL,
       STEVE_NAME_COL,
       STEVE_NAMESPACE_COL,
-      HPA_REFERENCE, // Pending API support https://github.com/rancher/rancher/issues/48479 (hpa filtering)
-      MIN_REPLICA, // Pending API support https://github.com/rancher/rancher/issues/48479 (hpa filtering)
-      MAX_REPLICA, // Pending API support https://github.com/rancher/rancher/issues/48479 (hpa filtering)
-      CURRENT_REPLICA, // Pending API support https://github.com/rancher/rancher/issues/48479 (hpa filtering)
+      HPA_REFERENCE, // Pending API Support - BUG - https://github.com/rancher/rancher/issues/50527
+      MIN_REPLICA, // Pending API Support - BUG - https://github.com/rancher/rancher/issues/50527
+      MAX_REPLICA, // Pending API Support - BUG - https://github.com/rancher/rancher/issues/50527
+      CURRENT_REPLICA, // Pending API Support - BUG - https://github.com/rancher/rancher/issues/50527
       STEVE_AGE_COL
     ]
   );
@@ -497,8 +510,8 @@ export function init(store) {
       },
       {
         ...STORAGE_CLASS_DEFAULT,
-        sort:   false, // [`metadata.annotations[${ STORAGE.DEFAULT_STORAGE_CLASS }]`], // Pending API Support - https://github.com/rancher/rancher/issues/48453
-        search: false, // [`metadata.annotations[${ STORAGE.DEFAULT_STORAGE_CLASS }]`], // Pending API Support - https://github.com/rancher/rancher/issues/48453
+        sort:   [`metadata.annotations[${ STORAGE.DEFAULT_STORAGE_CLASS }]`],
+        search: [`metadata.annotations[${ STORAGE.DEFAULT_STORAGE_CLASS }]`],
       },
       STEVE_AGE_COL
     ]
@@ -642,6 +655,25 @@ export function init(store) {
     weight:     -1,
     route:      { name: 'c-cluster-explorer-pvc-states' },
     exact:      true,
+  });
+
+  virtualType({
+    label:            store.getters['i18n/t'](`typeLabel.${ VIRTUAL_TYPES.PROJECT_SECRETS }`, { count: 2 }),
+    group:            'storage',
+    icon:             'globe',
+    namespaced:       false,
+    ifRancherCluster: true,
+    name:             VIRTUAL_TYPES.PROJECT_SECRETS,
+    weight:           -1,
+    route:            {
+      name:   'c-cluster-product-resource',
+      params: { resource: VIRTUAL_TYPES.PROJECT_SECRETS }
+    },
+    exact:      true,
+    ifHaveType: [{
+      store: 'management',
+      type:  SECRET
+    }],
   });
 
   // Ignore these types as they are managed through the settings product

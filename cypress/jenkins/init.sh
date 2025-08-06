@@ -94,6 +94,7 @@ corral config vars set azure_client_id "${AZURE_CLIENT_ID}"
 corral config vars set azure_client_secret "${AZURE_CLIENT_SECRET}"
 corral config vars set create_initial_clusters "${CREATE_INITIAL_CLUSTERS}"
 corral config vars set gke_service_account "${GKE_SERVICE_ACCOUNT}"
+corral config vars set percy_token "${PERCY_TOKEN}"
 
 create_initial_clusters() {
   shopt -u nocasematch
@@ -232,7 +233,7 @@ corral config vars set dashboard_branch "${DASHBOARD_BRANCH}"
 # Disable vai where it doesn't exist or is turn off by default
 case "${RANCHER_IMAGE_TAG}" in
     "v2.7-head" | "v2.8-head" | "v2.9-head" )
-        CYPRESS_TAGS="${CYPRESS_TAGS}+-@vai"
+        CYPRESS_TAGS="${CYPRESS_TAGS}+-@noVai"
         ;;
     *)
 esac

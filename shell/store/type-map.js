@@ -514,20 +514,22 @@ export const getters = {
 
   optionsFor(state, getters, rootState, rootGetters) {
     const def = {
-      isCreatable:            true,
-      isEditable:             true,
-      isRemovable:            true,
-      showState:              true,
-      showAge:                true,
-      canYaml:                true,
-      namespaced:             null,
-      listGroups:             [],
-      listGroupsWillOverride: false,
-      listMandatorySort:      null,
-      depaginate:             false,
-      customRoute:            undefined,
-      resourceEditMasthead:   true,
-      custom:                 {},
+      listCreateButtonLabelKey: undefined,
+      isCreatable:              true,
+      isEditable:               true,
+      isRemovable:              true,
+      showState:                true,
+      showAge:                  true,
+      canYaml:                  true,
+      namespaced:               null,
+      listGroups:               [],
+      listGroupsWillOverride:   false,
+      listMandatorySort:        null,
+      depaginate:               false,
+      customRoute:              undefined,
+      resourceEditMasthead:     true,
+      custom:                   {},
+      subTypes:                 [],
     };
 
     return (schemaOrType, pagination) => {
@@ -661,7 +663,14 @@ export const getters = {
 
         const label = typeObj.labelKey ? rootGetters['i18n/t'](typeObj.labelKey) || typeObj.label : typeObj.label;
 
-        const labelDisplay = highlightLabel(label, count, typeObj.schema);
+        let labelDisplay = highlightLabel(label, count, typeObj.schema);
+
+        // If we did not match on just the label, add the schema name and see if that matches
+        if (!labelDisplay && typeObj.schema?.attributes) {
+          const schemaName = `${ typeObj.schema.attributes.resource }.${ typeObj.schema.attributes.group }`;
+
+          labelDisplay = highlightLabel(`${ label } (${ schemaName })`, count, typeObj.schema);
+        }
 
         if ( !labelDisplay ) {
           // Search happens in highlight and returns null if not found
@@ -748,11 +757,13 @@ export const getters = {
         let group = findBy(tree.children, 'name', name);
 
         if ( !group ) {
+          const groupDefaultTypeFor = getters.groupDefaultTypeFor(name);
+
           group = {
             name,
             label,
             weight:      getters.groupWeightFor(name, forBasic),
-            defaultType: getters.groupDefaultTypeFor(name),
+            defaultType: typeof groupDefaultTypeFor === 'function' ? groupDefaultTypeFor() : groupDefaultTypeFor,
           };
 
           tree.children.push(group);

@@ -99,6 +99,11 @@ export default {
     },
 
     groupSelected() {
+      // Can not click on groups that are fixed open
+      if (this.fixedOpen) {
+        return;
+      }
+
       // Don't auto-select first group entry if we're already expanded and contain the currently-selected nav item
       if (this.hasActiveRoute() && this.isExpanded) {
         return;
@@ -158,6 +163,17 @@ export default {
         items = this.group;
       }
 
+      let parentPath = '';
+      const cluster = this.$route.params?.cluster;
+
+      // Where we use nested route configuration, consider the parent route when trying to identify the nav location
+      if (this.$route.matched.length > 1) {
+        const parentRoute = this.$route.matched[this.$route.matched.length - 2];
+
+        parentPath = parentRoute.path.replace(':cluster', cluster);
+        parentPath = parentPath === '/' ? undefined : parentPath;
+      }
+
       for (const item of items.children) {
         if (item.children && this.hasActiveRoute(item)) {
           return true;
@@ -166,9 +182,11 @@ export default {
           const matchesNavLevel = navLevels.filter((param) => !this.$route.params[param] || this.$route.params[param] !== item.route.params[param]).length === 0;
           const withoutHash = this.$route.hash ? this.$route.fullPath.slice(0, this.$route.fullPath.indexOf(this.$route.hash)) : this.$route.fullPath;
           const withoutQuery = withoutHash.split('?')[0];
+          const itemFullPath = this.$router.resolve(item.route).fullPath;
 
-          if (matchesNavLevel || this.$router.resolve(item.route).fullPath === withoutQuery ||
-          (this.$route.meta?.parentRouteName && this.$route.meta?.parentRouteName === item.route.name)) {
+          if (matchesNavLevel || itemFullPath === withoutQuery) {
+            return true;
+          } else if (parentPath && itemFullPath === parentPath) {
             return true;
           }
         }
@@ -206,36 +224,41 @@ export default {
 <template>
   <div
     class="accordion"
-    :class="{[`depth-${depth}`]: true, 'expanded': isExpanded, 'has-children': hasChildren, 'group-highlight': isGroupActive}"
+    :class="{[`depth-${depth}`]: true, 'expanded': isExpanded, 'has-children': hasChildren, 'group-highlight': isGroupActive }"
   >
     <div
-      v-if="showHeader"
-      class="header"
-      :class="{'active': isOverview, 'noHover': !canCollapse}"
-      role="button"
-      tabindex="0"
-      :aria-label="group.labelDisplay || group.label || ''"
-      @click="groupSelected()"
-      @keyup.enter="groupSelected()"
-      @keyup.space="groupSelected()"
+      v-if="showHeader || (!onlyHasOverview && canCollapse)"
+      class="accordion-item"
     >
-      <slot name="header">
-        <router-link
-          v-if="hasOverview"
-          :to="group.children[0].route"
-          :exact="group.children[0].exact"
-          :tabindex="-1"
-        >
-          <h6>
+      <div
+        v-if="showHeader"
+        class="header"
+        :class="{'active': isOverview, 'noHover': !canCollapse || fixedOpen}"
+        role="button"
+        :tabindex="fixedOpen ? -1 : 0"
+        :aria-label="group.labelDisplay || group.label || ''"
+        @click="groupSelected()"
+        @keyup.enter="groupSelected()"
+        @keyup.space="groupSelected()"
+      >
+        <slot name="header">
+          <router-link
+            v-if="hasOverview"
+            :to="group.children[0].route"
+            :exact="group.children[0].exact"
+            :tabindex="-1"
+          >
+            <h6>
+              <span v-clean-html="group.labelDisplay || group.label" />
+            </h6>
+          </router-link>
+          <h6
+            v-else
+          >
             <span v-clean-html="group.labelDisplay || group.label" />
           </h6>
-        </router-link>
-        <h6
-          v-else
-        >
-          <span v-clean-html="group.labelDisplay || group.label" />
-        </h6>
-      </slot>
+        </slot>
+      </div>
       <i
         v-if="!onlyHasOverview && canCollapse"
         class="icon toggle toggle-accordion"
@@ -261,7 +284,7 @@ export default {
           v-if="child.divider"
           :key="idx"
         >
-          <hr>
+          <hr role="none">
         </li>
         <!-- <div v-else-if="child[childrenKey] && hideGroup(child[childrenKey])" :key="child.name">
           HIDDEN
@@ -312,6 +335,12 @@ export default {
       font-size: 14px;
     }
 
+    > H6 {
+        text-transform: none;
+        height: 100%;
+        padding: 8px 0 8px 16px;
+      }
+
     > A {
       display: block;
       box-sizing:border-box;
@@ -330,16 +359,25 @@ export default {
   }
 
   .accordion {
+    .accordion-item {
+      position: relative;
+      cursor: pointer;
+      color: var(--body-text);
+      height: 33px;
+      outline: none;
+
+      .toggle-accordion:focus-visible {
+        @include focus-outline;
+        outline-offset: -6px;
+      }
+    }
+
     .header {
       &:focus-visible {
         h6 span {
           @include focus-outline;
           outline-offset: 2px;
         }
-      }
-      .toggle-accordion:focus-visible {
-        @include focus-outline;
-        outline-offset: -6px;
       }
 
       &.active {
@@ -355,9 +393,16 @@ export default {
         &:hover {
           background-color: var(--primary-hover-bg);
         }
+
+        ~ I {
+          color: var(--primary-hover-text);
+        }
       }
       &:hover:not(.active) {
         background-color: var(--nav-hover);
+      }
+      &:hover:not(.active).noHover {
+        background-color: inherit;
       }
     }
   }
@@ -374,14 +419,14 @@ export default {
           text-transform: none;
           padding: 8px 0 8px 16px;
         }
+      }
 
-        > I {
-          position: absolute;
-          right: 0;
-          top: 0;
-          padding: 10px 10px 9px 7px;
-          user-select: none;
-        }
+      .accordion-item > I {
+        position: absolute;
+        right: 0;
+        top: 0;
+        padding: 10px 10px 9px 7px;
+        user-select: none;
       }
 
       > .body {
@@ -400,9 +445,15 @@ export default {
           line-height: 18px;
           padding: 8px 0 7px 5px !important;
         }
-        > I {
-          padding: 10px 7px 9px 7px !important;
-        }
+
+      }
+
+      .accordion-item > I {
+        padding: 10px 7px 9px 7px !important;
+      }
+
+      &:deep() .type-link > .label {
+        padding-left: 10px;
       }
     }
 
@@ -413,19 +464,19 @@ export default {
           display: inline-block;
           padding: 5px 0 5px 5px;
         }
+      }
 
-        > I {
-          position: absolute;
-          right: 0;
-          top: 0;
-          padding: 6px 8px 6px 8px;
-        }
+      .accordion-item > I {
+        position: absolute;
+        right: 0;
+        top: 0;
+        padding: 6px 8px 6px 8px;
       }
     }
   }
 
   .body :deep() > .child.router-link-active,
-  .header :deep() > .child.router-link-exact-active {
+  .accordion-item :deep() > .child.router-link-exact-active {
     padding: 0;
 
     A, A I {

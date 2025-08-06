@@ -30,22 +30,20 @@ import {
 } from '@shell/config/private-label';
 import loadPlugins from '@shell/plugins/plugin';
 import Loading from '@shell/components/Loading';
-import { getGlobalBannerFontSizes } from '@shell/utils/banners';
 import { encryptPassword } from '@shell/utils/auth';
 import { HARVESTER_NAME as HARVESTER } from '@shell/config/features';
+import TabTitle from '@shell/components/TabTitle.vue';
 
 export default {
   name:       'Login',
   components: {
-    LabeledInput, AsyncButton, Checkbox, BrandImage, Banner, InfoBox, CopyCode, Password, LocaleSelector, Loading
+    LabeledInput, AsyncButton, Checkbox, BrandImage, Banner, InfoBox, CopyCode, Password, LocaleSelector, Loading, TabTitle
   },
 
   data() {
-    const username = this.$cookies.get(USERNAME, { parseJSON: false }) || '';
-
     return {
-      username,
-      remember: !!username,
+      username: '',
+      remember: false,
       password: '',
 
       timedOut:           this.$route.query[TIMED_OUT] === _FLAGGED,
@@ -138,13 +136,6 @@ export default {
     hasLoginMessage() {
       return this.errorToDisplay || this.loggedOut || this.timedOut;
     },
-
-    // Apply bottom margin so that the locale secletor control lifts up to avoid the footer fixed banner, if it is shown
-    localeSelectorStyle() {
-      const globalBannerSettings = getGlobalBannerFontSizes(this.$store);
-
-      return { marginBottom: globalBannerSettings?.footerFont };
-    }
   },
 
   watch: {
@@ -171,6 +162,11 @@ export default {
   },
 
   async fetch() {
+    const username = this.$cookies.get(USERNAME, { parseJSON: false }) || '';
+
+    this.username = username;
+    this.remember = !!username;
+
     const { firstLoginSetting, disabledEncryption } = await this.loadInitialSettings();
     const { value } = await this.$store.dispatch('management/find', { type: MANAGEMENT.SETTING, id: SETTING.BANNERS });
     const drivers = await this.$store.dispatch('auth/getAuthProviders');
@@ -367,10 +363,16 @@ export default {
     v-if="$fetchState.pending"
     mode="relative"
   />
-  <main
+  <div
     v-else
     class="main-layout login"
   >
+    <TabTitle
+      :show-child="false"
+      :breadcrumb="false"
+    >
+      {{ `${vendor} - ${t('login.login')}` }}
+    </TabTitle>
     <div class="row gutless mb-20">
       <div class="col span-6 p-20">
         <p class="text-center">
@@ -498,7 +500,7 @@ export default {
                   v-model:value="password"
                   data-testid="local-login-password"
                   :label="t('login.password')"
-                  autocomplete="password"
+                  autocomplete="current-password"
                 />
               </div>
             </div>
@@ -558,7 +560,6 @@ export default {
           class="locale-selector"
         >
           <LocaleSelector
-            :style="localeSelectorStyle"
             mode="login"
           />
         </div>
@@ -567,14 +568,16 @@ export default {
         class="col span-6 landscape"
         data-testid="login-landscape__img"
         file-name="login-landscape.svg"
+        :alt="t('login.landscapeAlt')"
       />
     </div>
-  </main>
+  </div>
 </template>
 
 <style lang="scss" scoped>
   .login {
     overflow: hidden;
+    position: relative;  // Used to keep the locale selector positioned correctly
 
     .row {
       align-items: center;

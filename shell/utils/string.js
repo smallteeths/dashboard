@@ -151,10 +151,8 @@ export function pluralize(str) {
   }
 }
 
-export function resourceNames(names, t, options = {}) {
+export function resourceNames(names, plusMore, t, endString) {
   const MAX_NAMES_COUNT = 5;
-
-  let { plusMore, endString } = options;
 
   // plusMore default value
   if (!plusMore) {
@@ -359,4 +357,28 @@ export function isBase64(value) {
 
 export function generateRandomAlphaString(length) {
   return Array.from({ length }, () => String.fromCharCode(97 + Math.random() * 26 | 0)).join('');
+}
+
+/**
+ * Generate a key-value nested object from a list of paths that represents a directory tree.
+ *
+ * Each key is a subpath
+ * Each value contains the children of the subpath
+ */
+export function pathArrayToTree(paths) {
+  const result = [];
+  const level = { result };
+
+  paths.forEach((path) => {
+    path?.split('/').reduce((r, name) => {
+      if (!r[name]) {
+        r[name] = { result: [] };
+        r.result.push({ name, children: r[name].result });
+      }
+
+      return r[name];
+    }, level);
+  });
+
+  return result;
 }

@@ -2,6 +2,7 @@
 import { parseSi, formatSi, UNITS, FRACTIONAL } from '@shell/utils/units';
 import { LabeledInput } from '@components/Form/LabeledInput';
 import { _EDIT } from '@shell/config/query-params';
+import { generateRandomAlphaString } from '@shell/utils/string';
 
 export default {
   components: { LabeledInput },
@@ -139,6 +140,22 @@ export default {
       type:    Boolean,
       default: false,
     },
+
+    disabled: {
+      type:    Boolean,
+      default: false,
+    },
+    /**
+     * The sub-label for the Labeled Input.
+     */
+    subLabel: {
+      type:    String,
+      default: null
+    }
+  },
+
+  data() {
+    return { describedById: `unit-describedbyid-${ generateRandomAlphaString(12) }` };
   },
 
   computed: {
@@ -233,6 +250,7 @@ export default {
     type="number"
     :min="min"
     :mode="mode"
+    :disabled="disabled"
     :label="label"
     :delay="delay"
     :label-key="labelKey"
@@ -241,12 +259,15 @@ export default {
     :required="required"
     :placeholder="placeholder"
     :hide-arrows="hideArrows"
+    :aria-describedby="displayUnit ? describedById : undefined"
+    :sub-label="subLabel"
     @update:value="update"
     @blur="update($event.target.value)"
   >
     <template #suffix>
       <div
         v-if="displayUnit"
+        :id="describedById"
         class="addon"
         :class="{'with-tooltip': tooltip || tooltipKey}"
       >

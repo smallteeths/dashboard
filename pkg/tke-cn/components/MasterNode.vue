@@ -117,6 +117,7 @@ const emit = defineEmits([
   'update:dataDiskSize',
   'update:bandwidthType',
   'update:bandwidth',
+  'update:keyPair'
 ]);
 
 function blurInitialNodeCount(num) {

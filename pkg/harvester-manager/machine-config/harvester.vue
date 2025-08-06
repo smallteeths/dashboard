@@ -18,6 +18,7 @@ import { Checkbox } from '@components/Form/Checkbox';
 import { Banner } from '@components/Banner';
 import { clone, get } from '@shell/utils/object';
 import { uniq, removeObject } from '@shell/utils/array';
+import paginationUtils from '@shell/utils/pagination-utils';
 
 import { _CREATE, _VIEW } from '@shell/config/query-params';
 
@@ -133,13 +134,14 @@ export default {
 
       if (clusterId) {
         let configMapsUrl = `${ url }/${ CONFIG_MAP }s`;
+        const harvesterClusterVaiEnabled = await paginationUtils.isDownstreamSteveCacheEnabled({ dispatch: this.$store.dispatch }, clusterId);
 
-        if (this.$store.getters[`cluster/paginationEnabled`](CONFIG_MAP)) {
+        if (harvesterClusterVaiEnabled && this.$store.getters[`cluster/paginationEnabled`](CONFIG_MAP)) {
           const pagination = new FilterArgs({
             filters: [
               PaginationParamFilter.createMultipleFields([
-                new PaginationFilterField({ field: `metadata.label["${ HCI_ANNOTATIONS.CLOUD_INIT }"]`, value: 'user' }),
-                new PaginationFilterField({ field: `metadata.label["${ HCI_ANNOTATIONS.CLOUD_INIT }"]`, value: 'network' })
+                new PaginationFilterField({ field: `metadata.labels[${ HCI_ANNOTATIONS.CLOUD_INIT }]`, value: 'user' }),
+                new PaginationFilterField({ field: `metadata.labels[${ HCI_ANNOTATIONS.CLOUD_INIT }]`, value: 'network' })
               ])
             ]
           });
@@ -203,24 +205,7 @@ export default {
         this.networkDataOptions = networkDataOptions;
         this.images = res.images.value?.data;
         this.storageClass = res.storageClass.value?.data;
-        this.networkOptions = (res.networks.value?.data || []).filter((O) => O.metadata?.annotations?.[STORAGE_NETWORK] !== 'true').map((O) => {
-          let value;
-          let label;
-
-          try {
-            const config = JSON.parse(O.spec.config);
-
-            const id = config.vlan;
-
-            value = O.id;
-            label = `${ value } (vlanId=${ id })`;
-          } catch (err) {}
-
-          return {
-            label,
-            value
-          };
-        });
+        this.networks = res.networks.value?.data;
 
         let systemNamespaces = (res.settings.value?.data || []).filter((x) => x.id === SETTING.SYSTEM_NAMESPACES);
 
@@ -320,6 +305,7 @@ export default {
       this.update();
     } catch (e) {
       this.errors = exceptionToErrorsArray(e);
+      console.error('Failed to initialize harvester machine config data', e); // eslint-disable-line no-console
     }
   },
 
@@ -390,7 +376,7 @@ export default {
       storageClass:       [],
       namespaces:         [],
       namespaceOptions:   [],
-      networkOptions:     [],
+      networks:           [],
       userDataOptions:    [],
       networkDataOptions: [],
       allNodeObjects:     [],
@@ -436,6 +422,31 @@ export default {
       },
       set(neu) {
         this.images = neu;
+      }
+    },
+
+    networkOptions: {
+      get() {
+        return (this.networks || []).filter((O) => O.metadata?.annotations?.[STORAGE_NETWORK] !== 'true').map((O) => {
+          let value;
+          let label;
+
+          try {
+            const config = JSON.parse(O.spec.config);
+            const id = config.vlan;
+
+            value = O.id;
+            label = `${ value } (vlanId=${ id })`;
+          } catch (err) {}
+
+          return {
+            label,
+            value
+          };
+        });
+      },
+      set(neu) {
+        this.networks = neu;
       }
     },
 
@@ -738,6 +749,21 @@ export default {
           const res = await this.$store.dispatch('cluster/request', { url: `${ url }/${ HCI.IMAGE }s` });
 
           this.images = res?.data;
+        }
+      } catch (e) {
+        this.errors = exceptionToErrorsArray(e);
+      }
+    },
+
+    async getAvailableNetworks() {
+      try {
+        const clusterId = get(this.credential, 'decodedData.clusterId');
+
+        if (clusterId) {
+          const url = `/k8s/clusters/${ clusterId }/v1`;
+          const res = await this.$store.dispatch('cluster/request', { url: `${ url }/k8s.cni.cncf.io.network-attachment-definitions` });
+
+          this.networks = res?.data;
         }
       } catch (e) {
         this.errors = exceptionToErrorsArray(e);
@@ -1356,7 +1382,10 @@ export default {
         </button>
       </div>
 
-      <hr class="mt-10 mb-10">
+      <hr
+        class="mt-10 mb-10"
+        role="none"
+      >
 
       <h2>{{ t('cluster.credential.harvester.network.title') }}</h2>
       <div
@@ -1393,6 +1422,7 @@ export default {
                 :required="true"
                 label-key="cluster.credential.harvester.network.networkName"
                 :placeholder="t('cluster.harvester.machinePool.network.placeholder')"
+                @on-open="getAvailableNetworks"
                 @update:value="update"
               />
             </div>
@@ -1503,7 +1533,10 @@ export default {
           />
         </div>
 
-        <hr class="divider mt-20">
+        <hr
+          class="divider mt-20"
+          role="none"
+        >
 
         <h3 class="mt-20">
           {{ t("workload.container.titles.nodeScheduling") }}
@@ -1527,7 +1560,10 @@ export default {
           @update="updateScheduling"
         />
 
-        <hr class="divider mt-20">
+        <hr
+          class="divider mt-20"
+          role="none"
+        >
       </portal>
     </div>
     <div v-if="errors.length">

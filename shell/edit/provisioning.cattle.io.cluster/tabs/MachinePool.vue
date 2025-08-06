@@ -45,6 +45,10 @@ export default {
       type:    String,
       default: null
     },
+    projectId: {
+      type:    String,
+      default: null
+    },
 
     mode: {
       type:    String,
@@ -292,7 +296,10 @@ export default {
         />
       </div>
     </div>
-    <hr class="mt-10">
+    <hr
+      class="mt-10"
+      role="none"
+    >
     <component
       :is="configComponent"
       v-if="value.config && configComponent"
@@ -303,6 +310,7 @@ export default {
       :value="value.config"
       :provider="provider"
       :credential-id="credentialId"
+      :project-id="projectId"
       :pool-index="idx"
       :pool-id="poolId"
       :pool-create-mode="value.create"

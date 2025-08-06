@@ -66,10 +66,12 @@ export default {
       type:    [String, Boolean],
       default: '',
     },
-    valueProtip: {
-      type:    String,
+
+    protipValue: {
+      type:    [String, Boolean],
       default: '',
     },
+
     // For asMap=false, the name of the field that goes into the row objects
     keyName: {
       type:    String,
@@ -176,6 +178,10 @@ export default {
       type:    String,
       default: '',
     },
+    addClass: {
+      type:    String,
+      default: '',
+    },
     addAllowed: {
       type:    Boolean,
       default: true,
@@ -202,7 +208,7 @@ export default {
     },
     removeIcon: {
       type:    String,
-      default: 'icon-minus',
+      default: '',
     },
     removeAllowed: {
       type:    Boolean,
@@ -248,6 +254,10 @@ export default {
   },
   computed: {
     _protip() {
+      if (this.protip === false) {
+        return null;
+      }
+
       return this.protip || this.t('keyValue.protip', null, true);
     },
     _keyLabel() {
@@ -507,10 +517,16 @@ export default {
       const text = event.clipboardData.getData('text/plain');
       const lines = text.split('\n');
       const splits = lines.map((line) => {
-        const splitter = this.parserSeparators.find((sep) => line.includes(sep));
+        const separatorIndex = line.search(new RegExp(this.parserSeparators.join('|')));
 
-        return splitter ? line.split(splitter) : '';
-      }).filter((split) => split && split.length > 0);
+        if (separatorIndex === -1) {
+          return [];
+        }
+        const key = line.substring(0, separatorIndex).trim();
+        const value = line.substring(separatorIndex + 1).trim();
+
+        return [key, value];
+      }).filter((split) => split.length > 0);
 
       if (splits.length === 0 || (splits.length === 1 && splits[0].length < 2)) {
         return;
@@ -590,6 +606,7 @@ export default {
     <div
       class="kv-container"
       role="grid"
+      :aria-label="title || t('generic.ariaLabel.keyValue')"
       :aria-rowcount="rows.length"
       :aria-colcount="extraColumns.length + 2"
       :style="containerStyle"
@@ -597,8 +614,8 @@ export default {
       <template v-if="rows.length || isView">
         <div class="rowgroup">
           <div class="row">
-            <label
-              class="text-label"
+            <div
+              class="text-label key-value-label"
               role="columnheader"
             >
               {{ _keyLabel }}
@@ -608,26 +625,32 @@ export default {
                 v-stripped-aria-label="_protip"
                 class="icon icon-info"
                 tabindex="0"
+                role="tooltip"
               />
-            </label>
-            <label
-              class="text-label"
+            </div>
+            <div
+              class="text-label key-value-label"
               role="columnheader"
             >
               {{ _valueLabel }}
               <i
-                v-if="valueProtip && !isView && addAllowed"
-                v-clean-tooltip="valueProtip"
+                v-if="protipValue && !isView && addAllowed"
+                v-clean-tooltip="{content: protipValue, triggers: ['hover', 'touch', 'focus'] }"
+                v-stripped-aria-label="protipValue"
                 class="icon icon-info"
+                tabindex="0"
+                role="tooltip"
               />
-            </label>
-            <label
+            </div>
+            <div
               v-for="(c, i) in extraColumns"
               :key="i"
               role="columnheader"
             >
-              <slot :name="'label:'+c">{{ c }}</slot>
-            </label>
+              <slot :name="'label:'+c">
+                {{ c }}
+              </slot>
+            </div>
             <slot
               v-if="canRemove"
               name="remove"
@@ -692,7 +715,7 @@ export default {
                   :taggable="keyTaggable"
                   :options="calculateOptions(row[keyName])"
                   :data-testid="`select-kv-item-key-${i}`"
-                  :aria-label="t('generic.ariaLabel.key', {index: i})"
+                  :aria-label="t('generic.ariaLabel.key', {index: i+1})"
                   @update:value="queueUpdate"
                 />
                 <input
@@ -702,7 +725,7 @@ export default {
                   :disabled="isView || disabled || !keyEditable"
                   :placeholder="_keyPlaceholder"
                   :data-testid="`input-kv-item-key-${i}`"
-                  :aria-label="t('generic.ariaLabel.key', {index: i})"
+                  :aria-label="t('generic.ariaLabel.key', {index: i+1})"
                   @input="queueUpdate"
                   @paste="onPaste(i, $event)"
                 >
@@ -765,7 +788,7 @@ export default {
                     :placeholder="_valuePlaceholder"
                     :min-height="40"
                     :spellcheck="false"
-                    :aria-label="t('generic.ariaLabel.value', {index: i})"
+                    :aria-label="t('generic.ariaLabel.value', {index: i+1})"
                     @update:value="queueUpdate"
                   />
                   <input
@@ -778,7 +801,7 @@ export default {
                     autocapitalize="off"
                     spellcheck="false"
                     :data-testid="`input-kv-item-value-${i}`"
-                    :aria-label="t('generic.ariaLabel.value', {index: i})"
+                    :aria-label="t('generic.ariaLabel.value', {index: i+1})"
                     @input="queueUpdate"
                   >
                   <FileSelector
@@ -786,7 +809,7 @@ export default {
                     class="btn btn-sm role-secondary file-selector"
                     :label="t('generic.upload')"
                     :include-file-name="true"
-                    :aria-label="t('generic.ariaLabel.value', {index: i})"
+                    :aria-label="t('generic.ariaLabel.value', {index: i+1})"
                     @selected="onValueFileSelected(i, $event)"
                   />
                 </div>
@@ -826,11 +849,15 @@ export default {
                   type="button"
                   role="button"
                   :disabled="isView || disabled"
-                  :aria-label="removeLabel || t('generic.remove')"
+                  :aria-label="t('generic.ariaLabel.remove', {index: i+1})"
                   class="btn role-link"
                   @click="remove(i)"
                 >
                   {{ removeLabel || t('generic.remove') }}
+                  <i
+                    v-if="removeIcon"
+                    :class="[removeIcon]"
+                  />
                 </button>
               </slot>
             </div>
@@ -840,7 +867,7 @@ export default {
     </div>
     <div
       v-if="(addAllowed || readAllowed) && !isView"
-      class="footer mt-20"
+      class="footer mt-10"
     >
       <slot
         name="add"
@@ -851,9 +878,10 @@ export default {
           type="button"
           role="button"
           class="btn role-tertiary add"
+          :class="[addClass]"
           data-testid="add_row_item_button"
           :disabled="loading || disabled || (keyOptions && filteredKeyOptions.length === 0)"
-          :aria-label="_addLabel"
+          :aria-label="t('generic.ariaLabel.addKeyValue')"
           @click="add()"
         >
           <i
@@ -863,10 +891,12 @@ export default {
         </button>
         <FileSelector
           v-if="readAllowed"
+          :aria-label="t('generic.ariaLabel.readKeyValue')"
           :disabled="isView"
           class="role-tertiary"
           :label="t('generic.readFromFile')"
           :include-file-name="true"
+          data-testid="read_all_key_value_button"
           @selected="onFileSelected"
         />
       </slot>
@@ -885,7 +915,8 @@ export default {
     display: grid;
     align-items: center;
     column-gap: 20px;
-    label {
+
+    .key-value-label {
       margin-bottom: 0;
     }
     & .kv-item {

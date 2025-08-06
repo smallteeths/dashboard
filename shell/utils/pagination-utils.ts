@@ -1,4 +1,4 @@
-import { PaginationSettings, PaginationSettingsStore } from '@shell/types/resources/settings';
+import { PaginationFeature, PaginationSettings, PaginationSettingsStore } from '@shell/types/resources/settings';
 import {
   NAMESPACE_FILTER_ALL_USER as ALL_USER,
   NAMESPACE_FILTER_ALL as ALL,
@@ -15,17 +15,22 @@ import { isEqual } from '@shell/utils/object';
 import { STEVE_CACHE } from '@shell/store/features';
 import { getPerformanceSetting } from '@shell/utils/settings';
 import { PAGINATION_SETTINGS_STORE_DEFAULTS } from '@shell/plugins/steve/steve-pagination-utils';
+import { MANAGEMENT } from '@shell/config/types';
 
 /**
  * Helper functions for server side pagination
  */
 class PaginationUtils {
   /**
+   * In places where we're using paginated features but not in a page... this is what the max results should be
+   */
+  readonly defaultPageSize = 100000;
+  /**
    * When a ns filter isn't one or more projects/namespaces... what are the valid values?
    *
    * This basically blocks 'Not in a Project'.. which would involve a projectsornamespaces param with every ns not in a project.
    */
-  validNsProjectFilters = [ALL, ALL_SYSTEM, ALL_USER, ALL_SYSTEM, NAMESPACE_FILTER_KINDS.NAMESPACE, NAMESPACE_FILTER_KINDS.PROJECT, NAMESPACED_YES, NAMESPACED_NO];
+  readonly validNsProjectFilters = [ALL, ALL_SYSTEM, ALL_USER, ALL_SYSTEM, NAMESPACE_FILTER_KINDS.NAMESPACE, NAMESPACE_FILTER_KINDS.PROJECT, NAMESPACED_YES, NAMESPACED_NO];
 
   private getSettings({ rootGetters }: any): PaginationSettings {
     const perf = getPerformanceSetting(rootGetters);
@@ -51,6 +56,23 @@ class PaginationUtils {
   }
 
   /**
+   * Determine if the downstream cluster has vai enabled
+   *
+   * Almost all the time the downstream cluster vai state will align with upstream (it manages it)
+   * ... unless it's harvester then weird things happen
+   */
+  async isDownstreamSteveCacheEnabled({ dispatch }: any, clusterId: string): Promise<boolean> {
+    const url = `/k8s/clusters/${ clusterId }/v1/${ MANAGEMENT.FEATURE }s/${ STEVE_CACHE }`;
+    const entry = await dispatch('cluster/request', { url });
+
+    if (entry.status.lockedValue !== null) {
+      return entry.status.lockedValue;
+    }
+
+    return (entry.spec.value !== null) ? entry.spec.value : entry.status.default;
+  }
+
+  /**
    * Is pagination enabled at a global level or for a specific resource
    */
   isEnabled({ rootGetters }: any, enabledFor: PaginationResourceContext) {
@@ -62,7 +84,7 @@ class PaginationUtils {
     const settings = this.getSettings({ rootGetters });
 
     // No setting, not enabled
-    if (!settings?.enabled) {
+    if (!settings) {
       return false;
     }
 
@@ -122,6 +144,31 @@ class PaginationUtils {
     }
 
     return false;
+  }
+
+  listAutoRefreshToggleEnabled({ rootGetters }: any): boolean {
+    return this.isFeatureEnabled({ rootGetters }, 'listAutoRefreshToggle');
+  }
+
+  isListManualRefreshEnabled({ rootGetters }: any): boolean {
+    return this.isFeatureEnabled({ rootGetters }, 'listManualRefresh');
+  }
+
+  private isFeatureEnabled({ rootGetters }: any, featureName: PaginationFeature): boolean {
+    // Cache must be enabled to support pagination api
+    if (!this.isSteveCacheEnabled({ rootGetters })) {
+      return false;
+    }
+
+    const settings = this.getSettings({ rootGetters });
+
+    return !!settings.features?.[featureName]?.enabled;
+  }
+
+  resourceChangesDebounceMs({ rootGetters }: any): number | undefined {
+    const settings = this.getSettings({ rootGetters });
+
+    return settings.resourceChangesDebounceMs;
   }
 
   validateNsProjectFilters(nsProjectFilters: string[]) {

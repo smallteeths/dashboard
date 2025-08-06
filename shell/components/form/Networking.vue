@@ -46,29 +46,20 @@ export default {
 
   data() {
     const t = this.$store.getters['i18n/t'];
-    const hostAliases = (this.value.hostAliases || []).map((entry) => {
-      return {
-        ip:        entry.ip,
-        hostnames: entry.hostnames.join(', ')
-      };
-    });
-    const {
-      dnsConfig = {}, hostname, subdomain, vlansubnet = {}
-    } = this.value;
-    const { nameservers, searches, options } = dnsConfig;
+    const { vlansubnet = {} } = this.value;
     const {
       network: vlansubnetNetwork, ip: vlansubnetIp, mac: vlansubnetMac, subnet: vlansubnetName, allowVlansubnet
     } = vlansubnet;
 
-    const out = {
-      dnsPolicy:   this.value.dnsPolicy || 'ClusterFirst',
-      networkMode: this.value.hostNetwork ? { label: t('workload.networking.networkMode.options.hostNetwork'), value: true } : { label: t('workload.networking.networkMode.options.normal'), value: false },
-      hostAliases,
-      nameservers,
-      searches,
-      hostname,
-      subdomain,
-      options,
+    return {
+      dnsPolicy:      this.value.dnsPolicy || 'ClusterFirst',
+      networkMode:    this.value.hostNetwork ? { label: t('workload.networking.networkMode.options.hostNetwork'), value: true } : { label: t('workload.networking.networkMode.options.normal'), value: false },
+      tmpHostAliases: [],
+      nameservers:    null,
+      searches:       null,
+      hostname:       null,
+      subdomain:      null,
+      options:        null,
 
       allowVlansubnet,
       vlansubnetNetwork:   vlansubnetNetwork || DUAL_NETWORK_CARD,
@@ -85,8 +76,19 @@ export default {
       */
       enforcesUseV1:       false,
     };
+  },
 
-    return out;
+  created() {
+    const hostAliases = this.value.hostAliases || [];
+    const { dnsConfig = {}, hostname, subdomain } = this.value;
+    const { nameservers, searches, options } = dnsConfig;
+
+    this.tmpHostAliases = hostAliases;
+    this.nameservers = nameservers;
+    this.searches = searches;
+    this.hostname = hostname;
+    this.subdomain = subdomain;
+    this.options = options;
   },
 
   computed: {
@@ -116,6 +118,15 @@ export default {
         { label: this.t('workload.networking.networkMode.options.normal'), value: false },
         { label: this.t('workload.networking.networkMode.options.hostNetwork'), value: true },
       ];
+    },
+
+    hostAliases() {
+      return (this.value.hostAliases || []).map((entry) => {
+        return {
+          ip:        entry.ip,
+          hostnames: entry.hostnames?.join(', ') ?? ''
+        };
+      });
     },
 
     vlansubnetNetworkChoices() {
@@ -165,12 +176,12 @@ export default {
 
   methods: {
     updateHostAliases(neu) {
-      this.hostAliases = neu.map((entry) => {
+      this.tmpHostAliases = neu.map((entry) => {
         const ip = entry.ip.trim();
         const hostnames = entry.hostnames.trim().split(/[\s,]+/).filter((x) => !!x);
 
         return { ip, hostnames };
-      }).filter((entry) => entry.ip && entry.hostnames.length);
+      });
       this.update();
     },
 
@@ -256,7 +267,7 @@ export default {
         dnsConfig,
         dnsPolicy:   this.dnsPolicy,
         hostname:    this.hostname,
-        hostAliases: this.hostAliases,
+        hostAliases: this.tmpHostAliases,
         subdomain:   this.subdomain,
         hostNetwork: this.networkMode.value,
         vlansubnet:  {
@@ -379,7 +390,8 @@ export default {
       <div class="col span-12">
         <KeyValue
           key="hostAliases"
-          v-model:value="hostAliases"
+          data-test="hostAliases"
+          :value="hostAliases"
           :mode="mode"
           :title="t('workload.networking.hostAliases.label')"
           :protip="t('workload.networking.hostAliases.tip')"

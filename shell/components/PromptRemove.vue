@@ -45,6 +45,7 @@ export default {
       chartsToRemoveIsApp: false,
       chartsDeleteCrd:     false,
       showModal:           false,
+      cachedDoneLocation:  null
     };
   },
   computed: {
@@ -226,6 +227,7 @@ export default {
       this.chartsDeleteCrd = false;
       this.chartsToRemoveIsApp = false;
       this.removeFinalizers = false;
+      this.cachedDoneLocation = null;
       this.$store.commit('action-menu/togglePromptRemove');
     },
 
@@ -245,6 +247,8 @@ export default {
       if (this.doneLocation) {
         // doneLocation will recompute to undefined when delete request completes
         this.cachedDoneLocation = { ...this.doneLocation };
+      } else {
+        this.cachedDoneLocation = null;
       }
 
       if (this.hasCustomRemove && this.$refs?.customPrompt?.remove) {
@@ -312,7 +316,7 @@ export default {
       }
     },
     done() {
-      if ( this.cachedDoneLocation && !isEmpty(this.cachedDoneLocation) ) {
+      if (!isEmpty(this.cachedDoneLocation) && this.currentRouter) {
         this.currentRouter.push(this.cachedDoneLocation);
       }
       this.close();
@@ -371,6 +375,7 @@ export default {
     :width="400"
     height="auto"
     styles="max-height: 100vh;"
+    :trigger-focus-trap="true"
     @close="close"
   >
     <Card
@@ -386,7 +391,7 @@ export default {
         <div class="mb-10">
           <template v-if="!hasCustomRemove">
             {{ t('promptRemove.attemptingToRemove', { type }) }} <span
-              v-clean-html="resourceNames(names, t)"
+              v-clean-html="resourceNames(names, null, t)"
             />
           </template>
 

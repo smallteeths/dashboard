@@ -27,13 +27,13 @@ import Banner from '@components/Banner/Banner.vue';
 import { RadioGroup } from '@components/Form/Radio';
 
 import AksNodePool from '@pkg/aks/components/AksNodePool.vue';
-import type { AKSDiskType, AKSNodePool, AKSPoolMode, AKSConfig } from '../types/index';
+import type { AKSNodePool, AKSPoolMode, AKSConfig } from '../types/index';
 import {
   getAKSVirtualNetworks, getAKSVMSizes, getAKSKubernetesVersions
   , regionsWithAvailabilityZones
 } from '../util/aks';
 import { parseTaint } from '../util/taints';
-import { NETWORKING_AUTH_MODES } from './CruAks.vue';
+import { NETWORKING_AUTH_MODES, defaultNodePool } from './CruAks.vue';
 import {
   requiredInCluster,
 
@@ -48,25 +48,6 @@ import {
   nodePoolNamesUnique,
   nodePoolCount
 } from '../util/validators';
-
-export const defaultNodePool = {
-  availabilityZones:     ['1', '2', '3'],
-  count:                 1,
-  enableAutoScaling:     false,
-  maxPods:               110,
-  maxSurge:              '1',
-  mode:                  'System' as AKSPoolMode,
-  name:                  'agentpool',
-  nodeLabels:            { },
-  nodeTaints:            [],
-  orchestratorVersion:   '',
-  osDiskSizeGB:          128,
-  osDiskType:            'Managed' as AKSDiskType,
-  osType:                'Linux',
-  vmSize:                'Standard_DS2_v2',
-  _isNewOrUnprovisioned: true,
-  _validation:           {}
-};
 
 const _NONE = 'none';
 
@@ -136,7 +117,6 @@ export default defineComponent({
     const store = this.$store as Store<any>;
     // This setting is used by RKE1 AKS GKE and EKS - rke2/k3s have a different mechanism for fetching supported versions
     const supportedVersionRange = store.getters['management/byId'](MANAGEMENT.SETTING, SETTING.UI_SUPPORTED_K8S_VERSIONS)?.value;
-    const t = store.getters['i18n/t'];
 
     return {
 
@@ -152,10 +132,6 @@ export default defineComponent({
       touchedVersion:        false,
       touchedVmSize:         false,
       touchedVirtualNetwork: false,
-
-      networkPluginOptions: [
-        { value: 'kubenet', label: t('aks.networkPlugin.options.kubenet') }, { value: 'azure', label: t('aks.networkPlugin.options.azure') }
-      ],
 
       loadingVersions:        false,
       loadingVmSizes:         false,
@@ -274,13 +250,14 @@ export default defineComponent({
         locationRequired:        requiredInCluster(this, 'aks.location.label', 'config.location'),
         resourceGroupRequired:   requiredInCluster(this, 'aks.clusterResourceGroup.label', 'config.resourceGroup'),
         dnsPrefixRequired:       requiredInCluster(this, 'aks.dnsPrefix.label', 'config.dnsPrefix'),
+        virtualNetworkRequired:  requiredInCluster(this, 'aks.virtualNetwork.label', 'config.virtualNetwork'),
         resourceGroupChars:      resourceGroupChars(this, 'aks.clusterResourceGroup.label', 'config.resourceGroup'),
         nodeResourceGroupChars:  resourceGroupChars(this, 'aks.nodeResourceGroup.label', 'config.nodeResourceGroup'),
         resourceGroupLength:     resourceGroupLength(this, 'aks.clusterResourceGroup.label', 'config.resourceGroup'),
         nodeResourceGroupLength: resourceGroupLength(this, 'aks.nodeResourceGroup.label', 'config.nodeResourceGroup'),
         resourceGroupEnd:        resourceGroupEnd(this, 'aks.clusterResourceGroup.label', 'config.resourceGroup'),
         nodeResourceGroupEnd:    resourceGroupEnd(this, 'aks.nodeResourceGroup.label', 'config.nodeResourceGroup'),
-        ipv4WithOrWithoutCidr:   ipv4WithOrWithoutCidr(this, 'aks.authorizedIpRanges.label', 'config.authorizedIpRanges'),
+        ipv4WithOrWithoutCidr:   ipv4WithOrWithoutCidr(this),
         serviceCidr:             ipv4WithCidr(this, 'aks.serviceCidr.label', 'config.serviceCidr'),
         podCidr:                 ipv4WithCidr(this, 'aks.podCidr.label', 'config.podCidr'),
         dockerBridgeCidr:        ipv4WithCidr(this, 'aks.dockerBridgeCidr.label', 'config.dockerBridgeCidr'),
@@ -457,34 +434,45 @@ export default defineComponent({
 
     // filter out versions outside ui-k8s-supported-versions-range global setting and versions < current version
     // sort versions, descending
-    aksVersionOptions(): Array<any> {
-      const filteredAndSortable = this.allAksVersions.filter((v: string) => {
-        if (this.supportedVersionRange && !semver.satisfies(v, this.supportedVersionRange)) {
-          return false;
-        }
-        if (this.originalVersion && semver.gt(this.originalVersion, v)) {
-          return false;
-        }
+    aksVersionOptions(): { value: string, label: string, sort?: string, disabled?: boolean }[] {
+      const validVersions = this.allAksVersions.reduce((versions, v: string) => {
+        const coerced = semver.coerce(v);
 
-        return true;
-      }).map((v: string) => {
-        let label = v;
-
-        if (v === this.originalVersion) {
-          label = this.t('aks.kubernetesVersion.current', { version: v });
+        if (!coerced || (this.supportedVersionRange && !semver.satisfies(coerced.version, this.supportedVersionRange))) {
+          return versions;
         }
 
-        return {
-          value: v,
-          label,
-          sort:  sortable(v)
-        };
+        if (!this.originalVersion) {
+          versions.push({ value: v, label: v });
+        } else if (semver.lte(semver.coerce(this.originalVersion), coerced)) {
+          const highestSupportedMinor = semver.coerce(this.originalVersion)?.minor + 1;
+
+          if (highestSupportedMinor && highestSupportedMinor < coerced?.minor) {
+            versions.push({
+              value:    v,
+              label:    `${ v } ${ this.t('aks.kubernetesVersion.upgradeWarning') }`,
+              disabled: true
+            });
+          } else {
+            const label = v === this.originalVersion ? this.t('aks.kubernetesVersion.current', { version: v }) : v;
+
+            versions.push({ value: v, label });
+          }
+        }
+
+        return versions;
+      }, [] as { value: string, label: string, sort?: string, disabled?: boolean }[]);
+
+      validVersions.forEach((v) => {
+        v.sort = sortable(v.value);
       });
 
-      const sorted = sortBy(filteredAndSortable, 'sort', true);
+      const sorted = sortBy(validVersions, 'sort', true); // Descending order
 
       if (!this.config.kubernetesVersion) {
-        this.config['kubernetesVersion'] = sorted[0]?.value;
+        const firstValid = sorted.find((v) => !v.disabled);
+
+        this.config.kubernetesVersion = firstValid?.value;
       }
 
       return sorted;
@@ -526,6 +514,20 @@ export default defineComponent({
         label:    'Azure',
         disabled: !this.hasAzureCNI
       }
+      ];
+    },
+
+    networkPluginOptions(): Array<any> {
+      return [
+        {
+          value:    'kubenet',
+          label:    this.t('aks.networkPlugin.options.kubenet'),
+          disabled: this.isUserDefinedRouting
+        },
+        {
+          value: 'azure',
+          label: this.t('aks.networkPlugin.options.azure')
+        }
       ];
     },
 
@@ -610,6 +612,10 @@ export default defineComponent({
 
     canEnableNetworkPolicy(): Boolean {
       return this.networkPolicy !== 'none';
+    },
+
+    isUserDefinedRouting(): Boolean {
+      return this.config?.outboundType === 'UserDefinedRouting';
     },
 
     CREATE(): string {
@@ -722,6 +728,22 @@ export default defineComponent({
       if (!neu) {
         this.config['logAnalyticsWorkspaceGroup'] = null;
         this.config['logAnalyticsWorkspaceName'] = null;
+      }
+    },
+
+    isUserDefinedRouting(neu: boolean) {
+      if (neu) {
+        this.config.networkPlugin = 'azure';
+        // add a required fv rule to the existing virtual network validators
+
+        const rule = this.fvFormRuleSets.find((r: {path: string, rules: string[]}) => r.path === 'networkPolicy') || { rules: [] };
+
+        rule.rules.push('virtualNetworkRequired');
+      } else {
+        // remove required fv rule
+        const rule = this.fvFormRuleSets.find((r:{path: string, rules: string[]}) => r.path === 'networkPolicy') || { rules: [] };
+
+        rule.rules.splice(rule.rules.indexOf('virtualNetworkRequired'), 1);
       }
     }
   },
@@ -870,6 +892,7 @@ export default defineComponent({
         :show-tabs-add-remove="mode !== 'view'"
         :rules="fvGetAndReportPathRules('vmSize')"
         class="mb-20"
+        :use-hash="false"
         @addTab="addPool($event)"
         @removeTab="removePool($event)"
       >
@@ -1058,11 +1081,12 @@ export default defineComponent({
             <LabeledSelect
               v-model:value="config.outboundType"
               :mode="mode"
-              label-key="aks.dns.label"
+              label-key="aks.outboundType.label"
               :disabled="!isNewOrUnprovisioned"
               :rules="fvGetAndReportPathRules('outboundType')"
               :options="outboundTypeOptions"
               :tooltip="t('aks.outboundType.tooltip')"
+              data-testid="aks-outbound-type-select"
             />
           </div>
         </div>
@@ -1074,6 +1098,7 @@ export default defineComponent({
               :options="networkPluginOptions"
               label-key="aks.networkPlugin.label"
               :disabled="!isNewOrUnprovisioned"
+              data-testid="aks-network-plugin-select"
             />
           </div>
           <div class="col span-3">
@@ -1101,6 +1126,8 @@ export default defineComponent({
               option-key="key"
               :disabled="!isNewOrUnprovisioned"
               :rules="fvGetAndReportPathRules('networkPolicy')"
+              :required="isUserDefinedRouting"
+              :require-dirty="false"
               data-testid="aks-virtual-network-select"
               @selecting="(e)=>virtualNetwork = e"
             />

@@ -69,11 +69,17 @@ export default class FleetCluster extends SteveModel {
   }
 
   assignTo() {
-    this.$dispatch('assignTo', [this]);
+    this.$dispatch('promptModal', {
+      component:      'AssignToDialog',
+      componentProps: { toAssign: [this] }
+    });
   }
 
   assignToBulk(items) {
-    this.$dispatch('assignTo', items);
+    this.$dispatch('promptModal', {
+      component:      'AssignToDialog',
+      componentProps: { toAssign: items }
+    });
   }
 
   get canDelete() {
@@ -122,6 +128,17 @@ export default class FleetCluster extends SteveModel {
   get repoInfo() {
     const ready = this.status?.readyGitRepos || 0;
     const total = this.status?.desiredReadyGitRepos || 0;
+
+    return {
+      ready,
+      unready: total - ready,
+      total,
+    };
+  }
+
+  get helmOpsInfo() {
+    const ready = this.status?.readyHelmOps || 0;
+    const total = this.status?.desiredReadyHelmOps || 0;
 
     return {
       ready,

@@ -74,7 +74,7 @@ export default {
             v-model:value="password"
             type="password"
             :label="t('login.password')"
-            autocomplete="password"
+            autocomplete="current-password"
           />
         </div>
       </div>

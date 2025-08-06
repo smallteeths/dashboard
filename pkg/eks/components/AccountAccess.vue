@@ -117,13 +117,14 @@ export default defineComponent({
       <LabeledSelect
         :disabled="mode!=='create'"
         :value="region"
+        data-testid="eks_region"
         label-key="eks.region.label"
         :options="regionOptions"
         @update:value="$emit('update-region', $event)"
       />
     </div>
     <div
-      class="select-credential-container mb-10"
+      class="select-credential-container"
     >
       <SelectCredential
         :value="credential"
