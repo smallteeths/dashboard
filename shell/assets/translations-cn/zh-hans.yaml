@@ -250,6 +250,7 @@ product:
   uiplugins: 扩展
   legacy: 旧版
   plugins: 插件
+  compliance: Compliance
 suffix:
   percent: "%"
   milliCpus: milli CPU
@@ -2035,6 +2036,7 @@ cluster:
     machineinventoryselectortemplate: Elemental 集群
     huawei: 华为云
     ovhcloudmks: OVHcloud MKS
+    sks: Exoscale SKS
   providerTag:
     rke2:
       harvester: '{tag}'
@@ -2417,6 +2419,7 @@ fleet:
       }
     expandAll: 展开所有
     collapseAll: 收起所有
+    noApplications: 工作区中没有任何 Git 仓库
   cluster:
     summary: 资源摘要
     nonReady: 非就绪 Bundle
@@ -2449,6 +2452,9 @@ fleet:
       unknown: '未知'
       notReady: 未就绪
       waitApplied: 等待应用
+    noClusters:
+      gitRepo: 这个 Git 仓库不针对任何集群
+      helmOp: ""
   gitRepo:
     createLocalBanner: 将 Git 仓库部署到本地工作区时，你无法定位任何集群或集群组
     tabs:
@@ -7517,6 +7523,9 @@ banner:
     label: '字体大小'
   consent: 同意横幅
   consentFootnote: "提示：使用 \n 进行换行"
+  bannerConsent: 登录屏幕横幅
+  bannerFooter: 页脚横幅
+  bannerHeader: 标题横幅
 branding:
   label: 品牌
   directoryName: 品牌资产目录名称
@@ -8656,7 +8665,7 @@ quotasCn:
   usable: 剩余可使用
   editProjectModal: 修改项目配额
   editNamespaceModal: 修改命名空间配额
-  chart: 
+  chart:
     distribution: 分配
     used: 占用
     qesourceQuotaLink: 此页面展示的是配额相关用量，详情请参考 <a href="https://kubernetes.io/docs/concepts/policy/resource-quotas/" target="_blank">Kubernetes ResourceQuota</a>。
@@ -8664,7 +8673,7 @@ quotasCn:
     remain: 剩余
     class: 存储类
     total: 总共
-    legend: 
+    legend:
       distribution: 分配
       used: 占用
   headers:
@@ -8683,3 +8692,62 @@ quotasCn:
   namespace:
     title: 命名空间配额
   notice: 没有配置配额，通过设置项目配额项添加配额。
+compliance:
+  addTest: 添加测试 ID
+  alertNeeded: |-
+    必须在 Compliance Chart values.yaml 中开启告警。
+    这要求<a tabindex="0" href="{link}"> {vendor} 的 Monitoring 与 Alerting 应用</a>已经安装
+    ，而且接收器和路由<a target="_blank" rel='noopener noreferrer nofollow' href='{docsBase}/how-to-guides/advanced-user-guides/monitoring-v2-configuration-guides/advanced-configuration/alertmanager'>已配置告警发送</a>。
+  alertOnComplete: 扫描完成告警
+  alertOnFailure: 扫描失败告警
+  benchmarkVersion: Benchmark 版本
+  clusterProvider: 集群提供商
+  cronSchedule:
+    label: 调度
+    placeholder: 例如：0 * * * *
+  customConfigMap: 自定义 Benchmark ConfigMap
+  deleteBenchmarkWarning: |-
+    {count, plural,
+      =1 { 任何使用该 Benchmark 版本的配置文件将会失效。}
+      other { 任何使用这些 Benchmark 版本的配置文件将会失效。 }
+    }
+  deleteProfileWarning: |-
+    {count, plural,
+      =1 { 任何使用此配置文件的定时扫描将会失效。}
+      other { 任何使用这些配置文件的定时扫描将会失效。}
+    }
+  downloadAllReports: 下载所有保存的报告
+  downloadLatestReport: 下载最新报告
+  downloadReport: 下载报告
+  maxKubernetesVersion: 允许的最大 Kubernetes 版本
+  minKubernetesVersion: 允许的最低 Kubernetes 版本
+  noProfiles: 此集群类型没有有效的 ClusterScanProfiles 可供选择。
+  noReportFound: 未找到扫描报告
+  profile: 配置文件
+  reports: 报告
+  retention: 保留数量
+  scan:
+    description: 描述
+    fail: 失败
+    lastScanTime: 上次扫描时间
+    notApplicable: N/A
+    number: 序号
+    pass: 通过
+    remediation: 补救
+    scanDate: 扫描日期
+    scanReport: 扫描报告
+    skip: 跳过
+    total: 总计
+    warn: 警告
+  scheduling:
+    disable: 运行单次扫描
+    enable: 定时运行扫描
+  scoreWarning:
+    label: 扫描 "warn" 结果的状态
+    protip: 即使一些测试生成 “warn” 输出，只要扫描没有失败，则会默认标记为 “通过”，。你可以在本区域中选择 “fail” 选项来更改此行为。
+  testID: 测试 ID
+  testsSkipped: 已跳过的测试
+  testsToSkip: 要跳过的测试
+graph:
+  loading: 正在加载 Chart 数据...
+  rendering: 正在渲染 Chart...

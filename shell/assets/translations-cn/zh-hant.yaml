@@ -250,6 +250,7 @@ product:
   uiplugins: 擴展
   legacy: 舊版
   plugins: 插件
+  compliance: Compliance
 suffix:
   percent: "%"
   milliCpus: milli CPU
@@ -2035,6 +2036,7 @@ cluster:
     machineinventoryselectortemplate: Elemental 集羣
     huawei: 華為雲
     ovhcloudmks: OVHcloud MKS
+    sks: Exoscale SKS
   providerTag:
     rke2:
       harvester: '{tag}'
@@ -2418,6 +2420,7 @@ fleet:
       }
     expandAll: 展開所有
     collapseAll: 收起所有
+    noApplications: 工作區中沒有任何 Git 倉庫
   cluster:
     summary: 資源摘要
     nonReady: 非就緒 Bundle
@@ -2450,6 +2453,9 @@ fleet:
       unknown: '未知'
       notReady: 未就緒
       waitApplied: 等待應用
+    noClusters:
+      gitRepo: 這個 Git 倉庫不針對任何集羣
+      helmOp: ""
   gitRepo:
     createLocalBanner: 將 Git 倉庫部署到本地工作區時，你無法定位任何集羣或集羣組
     tabs:
@@ -7518,6 +7524,9 @@ banner:
     label: '字體大小'
   consent: 同意橫幅
   consentFootnote: "提示：使用 \n 進行換行"
+  bannerConsent: 登錄屏幕橫幅
+  bannerFooter: 頁腳橫幅
+  bannerHeader: 標題橫幅
 branding:
   label: 品牌
   directoryName: 品牌資產目錄名稱
@@ -8684,3 +8693,62 @@ quotasCn:
   namespace:
     title: 命名空間配額
   notice: 尚未配置配額，透過設定專案配額項新增配額。
+compliance:
+  addTest: 添加測試 ID
+  alertNeeded: |-
+    必須在 Compliance Chart values.yaml 中開啓告警。
+    這要求<a tabindex="0" href="{link}"> {vendor} 的 Monitoring 與 Alerting 應用</a>已經安裝
+    ，而且接收器和路由<a target="_blank" rel='noopener noreferrer nofollow' href='{docsBase}/how-to-guides/advanced-user-guides/monitoring-v2-configuration-guides/advanced-configuration/alertmanager'>已配置告警發送</a>。
+  alertOnComplete: 掃描完成告警
+  alertOnFailure: 掃描失敗告警
+  benchmarkVersion: Benchmark 版本
+  clusterProvider: 集羣提供商
+  cronSchedule:
+    label: 調度
+    placeholder: 例如：0 * * * *
+  customConfigMap: 自定義 Benchmark ConfigMap
+  deleteBenchmarkWarning: |-
+    {count, plural,
+      =1 { 任何使用該 Benchmark 版本的配置文件將會失效。}
+      other { 任何使用這些 Benchmark 版本的配置文件將會失效。 }
+    }
+  deleteProfileWarning: |-
+    {count, plural,
+      =1 { 任何使用此配置文件的定時掃描將會失效。}
+      other { 任何使用這些配置文件的定時掃描將會失效。}
+    }
+  downloadAllReports: 下載所有保存的報告
+  downloadLatestReport: 下載最新報告
+  downloadReport: 下載報告
+  maxKubernetesVersion: 允許的最大 Kubernetes 版本
+  minKubernetesVersion: 允許的最低 Kubernetes 版本
+  noProfiles: 此集羣類型沒有有效的 ClusterScanProfiles 可供選擇。
+  noReportFound: 未找到掃描報告
+  profile: 配置文件
+  reports: 報告
+  retention: 保留數量
+  scan:
+    description: 描述
+    fail: 失敗
+    lastScanTime: 上次掃描時間
+    notApplicable: N/A
+    number: 序號
+    pass: 通過
+    remediation: 補救
+    scanDate: 掃描日期
+    scanReport: 掃描報告
+    skip: 跳過
+    total: 總計
+    warn: 警告
+  scheduling:
+    disable: 運行單次掃描
+    enable: 定時運行掃描
+  scoreWarning:
+    label: 掃描 "warn" 結果的狀態
+    protip: 即使一些測試生成 “warn” 輸出，只要掃描沒有失敗，則會默認標記爲 “通過”，。你可以在本區域中選擇 “fail” 選項來更改此行爲。
+  testID: 測試 ID
+  testsSkipped: 已跳過的測試
+  testsToSkip: 要跳過的測試
+graph:
+  loading: 正在加載 Chart 數據...
+  rendering: 正在渲染 Chart...
