@@ -102,18 +102,6 @@ export default {
         { key: this.t('quotasCn.chart.used'), value: this.quotaWithUnits(key, this.resourceQuota.usage, true) }
       ];
     },
-    editNamespaceLink() {
-      return {
-        name:   'c-cluster-product-resource-id',
-        params: {
-          cluster:  this.currentCluster?.id,
-          resource: 'namespace',
-          id:       this.namespaceId,
-        },
-        query: { mode: 'edit' },
-        hash:  '#container-resource-quotas',
-      };
-    }
   },
   data() {
     return {};
@@ -174,34 +162,6 @@ export default {
 <template>
   <div class="quota-project-item-cn">
     <div class="quota-project-item-cn-container">
-      <div class="quota-project-item-cn-action">
-        <v-dropdown
-          popperClass="drop-down-menu-cn tooltip popover"
-          placement="bottom-end"
-        >
-          <slot name="default">
-            <button
-              class="btn btn-sm button-dropdown actions"
-            >
-              <i class="icon icon-actions" />
-            </button>
-          </slot>
-          <template #popper>
-            <ul
-              class="list-unstyled menu"
-            >
-              <li>
-                <router-link
-                  :to="editNamespaceLink"
-                  class="btn-sm"
-                >
-                  {{ t('quotasCn.editNamespaceModal') }}
-                </router-link>
-              </li>
-            </ul>
-          </template>
-        </v-dropdown>
-      </div>
       <PartialChart
         :nameText="nameText"
         :totalText="totalText"
@@ -227,27 +187,6 @@ export default {
     border: 1px solid #ebebeb;
     display: flex;
     justify-content: center;
-    .quota-project-item-cn-action {
-      position: absolute;
-      right: 2px;
-      top: 2px;
-      font-size: 12px;
-      z-index: 10;
-      .button-dropdown {
-        background-color: transparent;
-        color: var(--primary);
-        border-radius: 2px;
-        box-shadow: none;
-        &:hover {
-          background-color: var(--accent-btn);
-          opacity: 1;
-        }
-        &:focus {
-          background-color: var(--accent-btn);
-          opacity: 1;
-        }
-      }
-    }
   }
 }
 </style>

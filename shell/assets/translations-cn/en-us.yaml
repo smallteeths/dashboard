@@ -9687,7 +9687,7 @@ quotasCn:
     usage: Usage
     avaliable: Avaliable
   project:
-    title: Project Quotas
+    title: Project
   namespace:
     title: Namespace Quotas
   notice: No quotas configured, Add quotas by setting the project quota item.
