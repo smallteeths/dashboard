@@ -142,10 +142,25 @@ export default {
         }] : [];
       });
     },
+    editProjectLink() {
+      if (!this.projectId) {
+        return '';
+      }
+
+      return {
+        name:   'c-cluster-product-resource-id',
+        params: {
+          cluster:  this.currentCluster?.id,
+          resource: MANAGEMENT.PROJECT,
+          id:       this.getMgmtProjectId(this.projectId),
+        },
+        query: { mode: 'edit' },
+      };
+    }
   },
   methods: {
     getMgmtProjectId(projectId) {
-      return projectId.replace(':', '/');
+      return projectId?.replace(':', '/');
     },
   }
 };
@@ -153,40 +168,56 @@ export default {
 
 <template>
   <div>
-    <h1>
-      {{ t('quotasCn.project.title') }}
-    </h1>
+    <div class="title">
+      <div class="primaryheader">
+        <h1>
+          <router-link
+            v-if="editProjectLink"
+            :to="editProjectLink"
+            role="link"
+            class="masthead-resource-list-link"
+          >
+            {{ t('quotasCn.project.title') }}:
+          </router-link>
+          {{ project.spec.displayName }} {{ t('quotasCn.quotas') }}
+        </h1>
+      </div>
+    </div>
     <Banner
       color="warning"
       label-key="quotasCn.chart.qesourceQuotaLink"
     />
     <div class="quotas-wrapper">
-      <div
+      <template
         v-for="item in quotaItems"
-        :key="item.storageKey != null
-          ? `${item.quotaKey}-${item.storageKey}`
-          : item.quotaKey"
-        class="quota-item"
+        :key="item.storageKey ? `${item.quotaKey}-${item.storageKey}` : item.quotaKey"
       >
-        <ProjectQuotaUsage
-          v-if="item.resourceQuota.total"
-          :quotaKey="item.quotaKey"
-          :storageKey="item.storageKey"
-          :projectId="getMgmtProjectId(projectId)"
-          :resourceQuota="item.resourceQuota"
-        />
-      </div>
+        <div
+          v-if="item?.resourceQuota?.total"
+          class="quota-item"
+        >
+          <ProjectQuotaUsage
+            class="quota-project-item-cn"
+            :quotaKey="item.quotaKey"
+            :storageKey="item.storageKey"
+            :projectId="getMgmtProjectId(projectId)"
+            :projectName="project.spec.displayName"
+            :resourceQuota="item.resourceQuota"
+          />
+        </div>
+      </template>
     </div>
   </div>
 </template>
 
 <style scoped>
   .quotas-wrapper {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(566px, 1fr));
+    gap: 20px 20px;
+    align-items: stretch;
   }
   .quota-item {
-    flex: 1 1 280px;
     box-sizing: border-box;
   }
 </style>
