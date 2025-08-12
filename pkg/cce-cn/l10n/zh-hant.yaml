@@ -44,7 +44,7 @@ cceCn:
   version:
     label: 版本
     warningNotRecommend: “{version}”，此版本華為 CCE 不推薦使用。具體請查閱華為官方文檔。
-    warningRacher: “{version}”，此版本不在 Rancher 支持矩陣範圍內。可參考
+    warningRacher: "此版本不在 Rancher 支持矩陣範圍內。可參考 可参考<a href='https://www.suse.com/suse-rancher/support-matrix/all-supported-versions' target='_blank' rel='noopener nofollow noreferrer'>Rancher 支持矩陣。</a>"
     warningRancherTip: Rancher 支持矩陣。
   managementScale:
     label: 叢集管理規模

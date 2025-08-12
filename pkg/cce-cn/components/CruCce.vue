@@ -1254,7 +1254,7 @@ onMounted(async() => {
           <Banner
             v-if="!kubernetesSupport.rancherEnabled"
             color="warning"
-            :label="intl('cceCn.version.warningRacher', { version: cceConfig.version })"
+            label-key="cceCn.version.warningRacher"
           />
           <Banner
             v-if="!kubernetesSupport.cceEnabled"
