@@ -8679,7 +8679,7 @@ quotasCn:
     usage: 使用率
     avaliable: 可用
   project:
-    title: 專案配額
+    title: 專案
   namespace:
-    title: 命名空間配額
+    title: 命名空間
   notice: 尚未配置配額，透過設定專案配額項新增配額。

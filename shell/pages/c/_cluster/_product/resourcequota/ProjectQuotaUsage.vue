@@ -3,7 +3,6 @@ import { mapGetters } from 'vuex';
 import PartialChart from './PartialChart';
 import LazyImage from '@shell/components/LazyImage';
 import { parseSi } from '@shell/utils/units';
-import { MANAGEMENT } from '@shell/config/types';
 import { Table as VxeTable, Column as VxeColumn } from 'vxe-table';
 
 const quotaName = {
@@ -43,6 +42,10 @@ export default {
       default: '',
     },
     projectId: {
+      type:    String,
+      default: '',
+    },
+    projectName: {
       type:    String,
       default: '',
     },
@@ -133,18 +136,6 @@ export default {
         { key: this.t('quotasCn.chart.used'), value: this.quotaWithUnits(key, this.resourceQuota.usage, true) }
       ];
     },
-    editProjectLink() {
-      return {
-        name:   'c-cluster-product-resource-id',
-        params: {
-          cluster:  this.currentCluster?.id,
-          resource: MANAGEMENT.PROJECT,
-          id:       this.projectId,
-        },
-        query: { mode: 'edit' },
-        hash:  '#resource-quotas',
-      };
-    }
   },
   data() {
     return {
@@ -219,34 +210,6 @@ export default {
 <template>
   <div class="quota-project-item-cn">
     <div class="quota-project-item-cn-container">
-      <div class="quota-project-item-cn-action">
-        <v-dropdown
-          popperClass="drop-down-menu-cn tooltip popover"
-          placement="bottom-end"
-        >
-          <slot name="default">
-            <button
-              class="btn btn-sm button-dropdown actions"
-            >
-              <i class="icon icon-actions" />
-            </button>
-          </slot>
-          <template #popper>
-            <ul
-              class="list-unstyled menu"
-            >
-              <li>
-                <router-link
-                  :to="editProjectLink"
-                  class="btn-sm"
-                >
-                  {{ t('quotasCn.editProjectModal') }}
-                </router-link>
-              </li>
-            </ul>
-          </template>
-        </v-dropdown>
-      </div>
       <PartialChart
         :nameText="nameText"
         :totalText="totalText"
@@ -294,7 +257,10 @@ export default {
                       nspage: 'project-resource-ns-quota',
                       product: 'explorer'
                     },
-                    query: { ns: row[th.field].id }
+                    query: {
+                      ns: row[th.field].id,
+                      projectName: projectName,
+                    }
                   }"
                   class="link"
                 >
@@ -317,43 +283,23 @@ export default {
 <style scoped lang="scss">
 .quota-project-item-cn {
   height: 280px;
-  min-width: 566px;
-  max-width: 700px;
-  margin: 0 20px 60px;
-  display: flex;
+  width: clamp(566px, 100%, 650px);
+  margin: 0;
+  display: grid;
+  grid-template-columns: 310px minmax(230px, 1fr);
   overflow: hidden;
+
   .quota-project-item-cn-container {
     position: relative;
-    width: 310px;
-    min-width: 310px;
     border: 1px solid #ebebeb;
     border-right: none;
     display: flex;
     justify-content: center;
-    .quota-project-item-cn-action {
-      position: absolute;
-      right: 2px;
-      top: 2px;
-      font-size: 12px;
-      z-index: 10;
-      .button-dropdown {
-        background-color: transparent;
-        color: var(--primary);
-        border-radius: 2px;
-        box-shadow: none;
-        &:hover {
-          background-color: var(--accent-btn);
-          opacity: 1;
-        }
-        &:focus {
-          background-color: var(--accent-btn);
-          opacity: 1;
-        }
-      }
-    }
   }
   .quota-project-item-cn-table {
-    width: 360px;
+    min-width: 230px;
+    width: 100%;
+    max-width: none;
     .icon-image {
       width: 20px;
       height: 20px;
