@@ -35,7 +35,7 @@ tkeCn:
     help: "{level} (最多管理{node}个节点，{pod}个 Pod，{configMap}个 ConfigMap，{crd}个 CRD)"
   version:
     label: Kubernetes版本
-    warning: "此版本不在 Rancher 支持矩阵范围内。可参考<a href='https://github.com/Project-HAMi/HAMi' target='_blank' rel='noopener nofollow noreferrer'>Rancher 支持矩阵。</a>"
+    warning: "此版本不在 Rancher 支持矩阵范围内。可参考<a href='https://www.suse.com/suse-rancher/support-matrix/all-supported-versions' target='_blank' rel='noopener nofollow noreferrer'>Rancher 支持矩阵。</a>"
     warningTip: Rancher 支持矩阵。
   zone:
     label: 可用区

@@ -13,7 +13,7 @@ ackCn:
   version:
     label: Kubernetes版本
     warningAliyun: “{version}”，此版本阿里云不在支持，如果继续部署将会导致集群部署失败，请更换其他版本。
-    warningRacher: “{version}”，此版本不在 Rancher 支持矩阵范围内，请更换其他版本。可参考
+    warningRacher: "此版本不在 Rancher 支持矩阵范围内。可参考<a href='https://www.suse.com/suse-rancher/support-matrix/all-supported-versions' target='_blank' rel='noopener nofollow noreferrer'>Rancher 支持矩阵。</a>"
     warningRancherTip: Rancher 支持矩阵。
     warningEdited: 检测到 Kubernetes 版本被修改，其他配置项将暂时不支持修改。历史版本为 {version}。
     toggle: 切换
