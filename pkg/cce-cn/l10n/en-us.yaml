@@ -44,7 +44,7 @@ cceCn:
   version:
     label: Master Version
     warningNotRecommend: “{version}”，This version of Huawei CCE is not recommended. For details, see huawei official documents.
-    warningRacher: “{version}”，This version is not supported by Rancher. Reference
+    warningRacher:  "This version is not supported by Rancher. Reference <a href='https://www.suse.com/suse-rancher/support-matrix/all-supported-versions' target='_blank' rel='noopener nofollow noreferrer'>Rancher support matrix.</a>"
     warningRancherTip: Rancher support matrix.
   managementScale:
     label: Management Scale Count
