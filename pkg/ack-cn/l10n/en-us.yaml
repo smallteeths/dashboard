@@ -13,7 +13,7 @@ ackCn:
   version:
     label: Kubernetes Version
     warningAliyun: “{version}”, Ali Cloud is not supported in this version. If you continue to deploy it, cluster deployment will fail, please replace it with another version.
-    warningRacher: “{version}”, This version is not supported by Rancher,  please replace it with another version for reference
+    warningRacher: "This version is not supported by Rancher. Reference <a href='https://www.suse.com/suse-rancher/support-matrix/all-supported-versions' target='_blank' rel='noopener nofollow noreferrer'>Rancher support matrix.</a>"
     warningRancherTip: Rancher supported versions.
     warningEdited: It is detected that the Kubernetes version has been modified, and other configuration items will not support modification temporarily. Historical version is {vsersion}。
     toggle: Switch Mode

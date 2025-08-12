@@ -891,7 +891,7 @@ watch(() => normanCluster.value.name, (name) => {
           <Banner
             v-if="!kubernetesSupport.rancherEnabled"
             color="warning"
-            :label="intl('ackCn.version.warningRacher', { version: ackConfig.kubernetesVersion })"
+            label-key="ackCn.version.warningRacher"
           />
           <Banner
             v-if="!kubernetesSupport.aliyunEnabled"

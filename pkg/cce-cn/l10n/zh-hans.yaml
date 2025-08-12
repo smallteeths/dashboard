@@ -44,7 +44,7 @@ cceCn:
   version:
     label: 版本
     warningNotRecommend: “{version}”，此版本华为 CCE 不推荐使用。具体请查阅华为官方文档。
-    warningRacher: “{version}”，此版本不在 Rancher 支持矩阵范围内。可参考
+    warningRacher: "此版本不在 Rancher 支持矩阵范围内。可参考<a href='https://www.suse.com/suse-rancher/support-matrix/all-supported-versions' target='_blank' rel='noopener nofollow noreferrer'>Rancher 支持矩阵。</a>"
     warningRancherTip: Rancher 支持矩阵。
   managementScale:
     label: 集群管理规模

@@ -1,8 +1,8 @@
 const K8S_1_30_7 = '1.30.7-aliyun.1';
 const K8S_1_31_9 = '1.31.9-aliyun.1';
-const K8S_1_32_1 = '1.32.1-aliyun.1';
+const K8S_1_32_7 = '1.32.7-aliyun.1';
 const K8S_1_33_1 = '1.33.1-aliyun.1';
-const DEFAULT_KUBERNETES_VERSION = K8S_1_32_1;
+const DEFAULT_KUBERNETES_VERSION = K8S_1_32_7;
 const MANAGED = 'ManagedKubernetes';
 const ACK_CLUSTER_SPEC_STANDARD = 'ack.standard';
 const ACK_CLUSTER_SPEC_PRO = 'ack.pro.small';
@@ -98,8 +98,8 @@ const KUBERNETESVERSIONS = [
     aliyunEnabled:  true,
   },
   {
-    value:          K8S_1_32_1,
-    label:          K8S_1_32_1,
+    value:          K8S_1_32_7,
+    label:          K8S_1_32_7,
     rancherEnabled: true,
     aliyunEnabled:  true,
   },
