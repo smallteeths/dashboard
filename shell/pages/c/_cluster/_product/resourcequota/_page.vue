@@ -148,13 +148,8 @@ export default {
       }
 
       return {
-        name:   'c-cluster-product-resource-id',
-        params: {
-          cluster:  this.currentCluster?.id,
-          resource: MANAGEMENT.PROJECT,
-          id:       this.getMgmtProjectId(this.projectId),
-        },
-        query: { mode: 'edit' },
+        name:   'c-cluster-product-projectsnamespaces',
+        params: { cluster: this.currentCluster?.id }
       };
     }
   },
