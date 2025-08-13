@@ -83,7 +83,7 @@ export default {
         return `${ this.storageKey }: ${ this.quotaWithUnits(key, total, true) }`;
       }
 
-      return this.quotaWithUnits(key, total, true);
+      return `${ this.quotaWithUnits(key, total, true) }`;
     },
     remainText() {
       const key = this.quotaKey;
@@ -95,11 +95,13 @@ export default {
     },
     quotaLabels() {
       const key = this.quotaKey;
+      const total = this.convertToLimit(key, this.resourceQuota.total);
+      const usage = this.convertToLimit(key, this.resourceQuota.usage);
 
       return [
-        { key: this.t('quotasCn.chart.total'), value: this.quotaWithUnits(key, this.resourceQuota.total, true) },
+        { key: this.t('quotasCn.chart.total'), value: this.quotaWithUnits(key, total, true) },
         { key: this.t('quotasCn.chart.distribution'), value: '' },
-        { key: this.t('quotasCn.chart.used'), value: this.quotaWithUnits(key, this.resourceQuota.usage, true) }
+        { key: this.t('quotasCn.chart.used'), value: this.quotaWithUnits(key, usage, true) }
       ];
     },
   },
