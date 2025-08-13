@@ -117,7 +117,7 @@ export default {
 
           result[key] = Object.entries(storages).map(([storageKey, tot]) => ({
             storageKey,
-            usage: pick(resourcequotaUsage[key], storageKey),
+            usage: this.readStorageUsage(resourcequotaUsage, key, storageKey),
             total: tot || 0,
           }));
         } else {
@@ -177,6 +177,19 @@ export default {
     getMgmtProjectId(projectId) {
       return projectId?.replace(':', '/');
     },
+    readStorageUsage(usage, bucketKey, scName) {
+      const STORAGE_PVC_SUFFIX = 'storageclass.storage.k8s.io/persistentvolumeclaims';
+      const STORAGE_REQ_SUFFIX = 'storageclass.storage.k8s.io/requests.storage';
+
+      if (bucketKey === 'requestsStorageClassPVC') {
+        return usage?.[`${ scName }.${ STORAGE_PVC_SUFFIX }`] ?? 0;
+      }
+      if (bucketKey === 'requestsStorageClassStorage') {
+        return usage?.[`${ scName }.${ STORAGE_REQ_SUFFIX }`] ?? 0;
+      }
+
+      return 0;
+    }
   }
 };
 </script>

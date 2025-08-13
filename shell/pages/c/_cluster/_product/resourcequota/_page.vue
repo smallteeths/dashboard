@@ -174,7 +174,7 @@ export default {
           >
             {{ t('quotasCn.project.title') }}:
           </router-link>
-          {{ project.spec.displayName }} {{ t('quotasCn.quotas') }}
+          {{ project?.spec?.displayName }} {{ t('quotasCn.quotas') }}
         </h1>
       </div>
     </div>
@@ -196,7 +196,7 @@ export default {
             :quotaKey="item.quotaKey"
             :storageKey="item.storageKey"
             :projectId="getMgmtProjectId(projectId)"
-            :projectName="project.spec.displayName"
+            :projectName="project?.spec?.displayName"
             :resourceQuota="item.resourceQuota"
           />
         </div>
