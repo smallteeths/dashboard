@@ -117,7 +117,7 @@ export default {
         return `${ this.storageKey }: ${ this.quotaWithUnits(key, total, true) }`;
       }
 
-      return this.quotaWithUnits(key, total, true);
+      return `${ this.quotaWithUnits(key, total, true) }`;
     },
     remainText() {
       const key = this.quotaKey;
@@ -129,11 +129,14 @@ export default {
     },
     quotaLabels() {
       const key = this.quotaKey;
+      const total = this.convertToLimit(key, this.resourceQuota.total);
+      const allocated = this.convertToLimit(key, this.resourceQuota.allocated);
+      const usage = this.convertToLimit(key, this.resourceQuota.usage);
 
       return [
-        { key: this.t('quotasCn.chart.total'), value: this.quotaWithUnits(key, this.resourceQuota.total, true) },
-        { key: this.t('quotasCn.chart.distribution'), value: this.quotaWithUnits(key, this.resourceQuota.allocated, true) },
-        { key: this.t('quotasCn.chart.used'), value: this.quotaWithUnits(key, this.resourceQuota.usage, true) }
+        { key: this.t('quotasCn.chart.total'), value: this.quotaWithUnits(key, total, true) },
+        { key: this.t('quotasCn.chart.distribution'), value: this.quotaWithUnits(key, allocated, true) },
+        { key: this.t('quotasCn.chart.used'), value: this.quotaWithUnits(key, usage, true) }
       ];
     },
   },
@@ -254,7 +257,6 @@ export default {
                     name: 'c-cluster-legacy-resourcequota-ns-page',
                     params: {
                       cluster: currentCluster?.id,
-                      nspage: 'project-resource-ns-quota',
                       product: 'explorer'
                     },
                     query: {
