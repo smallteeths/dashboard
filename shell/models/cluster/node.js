@@ -255,7 +255,7 @@ export default class ClusterNode extends SteveModel {
   }
 
   get podCapacity() {
-    return Number.parseInt(this.status.capacity?.pods);
+    return parseSi(this.status.capacity?.pods);
   }
 
   get podConsumed() {
@@ -440,6 +440,7 @@ export default class ClusterNode extends SteveModel {
   }
 
   get pods() {
+    // This fetches all pods that are in the store, rather than all pods in the cluster
     const allPods = this.$rootGetters['cluster/all'](POD);
 
     return allPods.filter((pod) => pod.spec.nodeName === this.name);

@@ -38,6 +38,7 @@ const {
   provideDropdownContext,
   registerDropdownCollection,
   handleKeydown,
+  setDropdownDimensions
 } = useDropdownContext(emit);
 
 provideDropdownContext();
@@ -48,6 +49,7 @@ const dropdownTarget = useTemplateRef<HTMLElement>('dropdownTarget');
 useClickOutside(dropdownTarget, () => showMenu(false));
 
 const applyShow = () => {
+  setDropdownDimensions(dropdownTarget.value);
   registerDropdownCollection(dropdownTarget.value);
   setFocus();
 };
@@ -117,6 +119,9 @@ const applyShow = () => {
   }
 
   .dropdownTarget {
+    overflow: auto;
+    padding: 3px 0; // Need padding at top and bottom in order to show the focus border for the notification
+
     &:focus-visible, &:focus {
       outline: none;
     }
