@@ -865,8 +865,8 @@ export default {
       }
     },
     hideFooter() {
-      return this.needCredential && !this.credential;
-    }
+      return this.needCredential && !this.credentialId;
+    },
   },
 
   watch: {
