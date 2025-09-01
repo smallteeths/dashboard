@@ -42,12 +42,18 @@ const KUBERNETESVERSIONS = [
   {
     label:          'v1.30',
     value:          'v1.30',
-    rancherEnabled: true,
+    rancherEnabled: false,
     cceEnabled:     true,
   },
   {
     label:          'v1.31',
     value:          'v1.31',
+    rancherEnabled: true,
+    cceEnabled:     true,
+  },
+  {
+    label:          'v1.32',
+    value:          'v1.32',
     rancherEnabled: true,
     cceEnabled:     true,
   }
