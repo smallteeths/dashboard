@@ -639,7 +639,7 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
     });
   };
 
-  const fetchLogsV2 = (p) => {
+  const fetchLogsV2 = (p, path) => {
     const params = Object.entries(p).map((p) => {
       if (p[0] === 'page' || p[0] === 'page_size' ) {
         return `${ p[0] }=${ p[1] }`;
@@ -650,7 +650,7 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
 
     const res = store.dispatch('management/request', {
       headers:              { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
-      url:                  `${ baseUrl }/audit-logs?${ params }`,
+      url:                  `${ baseUrl }/${ path }?${ params }`,
       method:               'GET',
       redirectUnauthorized: false,
     });
@@ -727,7 +727,7 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
     return factoryNewPromise(res, true);
   };
 
-  const fetchProjectLogsV2 = (projectId, p) => {
+  const fetchProjectLogsV2 = (projectId, p, path) => {
     const params = Object.entries(p).map((p) => {
       if (p[0] === 'page' || p[0] === 'page_size' ) {
         return `${ p[0] }=${ p[1] }`;
@@ -737,7 +737,7 @@ export const harborAPI = (spec = { harborVersion: '', harborServer: '' }) => {
     }).join('&');
 
     const res = store.dispatch('management/request', {
-      url:                  `${ baseUrl }/projects/${ projectId }/logs?${ params }`,
+      url:                  `${ baseUrl }/projects/${ projectId }/${ path }?${ params }`,
       headers:              { 'X-API-Harbor-Admin-Header': store.getters['auth/isAdmin'] },
       method:               'GET',
       redirectUnauthorized: false,

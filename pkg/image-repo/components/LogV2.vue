@@ -144,11 +144,24 @@ export default {
       }
       this.loading = true;
       try {
+        let path = 'audit-logs';
+        const harborSysntemInfo = await this.apiRequest.fetchSystemInfo();
+
+        if (harborSysntemInfo.harbor_version) {
+          const subPos = harborSysntemInfo.harbor_version.indexOf('-');
+          const version = harborSysntemInfo.harbor_version.substring(1, subPos).split('.').map((item) => parseInt(item, 10));
+          const supportRoleMaster = version[0] > 1 || (version[0] >= 1 && version[1] > 7);
+
+          if (supportRoleMaster) {
+            path = 'auditlog-exts';
+          }
+        }
+
         const logs = await this.apiRequest.fetchLogsV2({
           page_size: this.page_size,
           page:      this.page,
           ...params
-        });
+        }, path);
 
         this.logs = logs?.length ? logs : [];
         this.totalCount = this.getTotalCount(logs) || 0;
