@@ -414,7 +414,7 @@ export default {
       if (version.value) {
         this.harborConfig.version = version.value;
       } else {
-        this.harborConfig.version = 'v1';
+        this.harborConfig.version = 'v2.0';
       }
 
       this.harborConfig.url = harborServer.value;
@@ -453,7 +453,7 @@ export default {
       this.harborConfig.url = '';
       this.harborConfig.username = '';
       this.harborConfig.password = '';
-      this.harborConfig.version = 'v1';
+      this.harborConfig.version = 'v2.0';
       this.changePwdForm.confirmPwd = ''
       this.changePwdForm.newPwd = ''
       this.changePwdForm.oldPwd = ''
