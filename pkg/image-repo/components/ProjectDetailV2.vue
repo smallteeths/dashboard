@@ -52,6 +52,7 @@
       >
         <Logs
           :apiRequest="apiRequest"
+          :harborSysntemInfo="harborSysntemInfo"
           :project="project"
         />
       </template>
@@ -194,7 +195,8 @@ export default {
               ...harborSysntemInfo,
               supportSummary:          false,
               supportRoleLimitedGuest: false,
-              supportRoleMaster:       false
+              supportRoleMaster:       false,
+              useExtsAuditlog:         false,
             };
           } else {
             const subPos = harborSysntemInfo.harbor_version.indexOf('-');
@@ -204,7 +206,8 @@ export default {
               ...harborSysntemInfo,
               supportSummary:          version[0] > 1 || (version[0] >= 1 && version[1] > 8),
               supportRoleLimitedGuest: version[0] > 1 || (version[0] >= 1 && version[1] > 9),
-              supportRoleMaster:       version[0] > 1 || (version[0] >= 1 && version[1] > 7)
+              supportRoleMaster:       version[0] > 1 || (version[0] >= 1 && version[1] > 7),
+              useExtsAuditlog:         version[0] > 1 && version[1] >= 13,
             };
           }
           break;

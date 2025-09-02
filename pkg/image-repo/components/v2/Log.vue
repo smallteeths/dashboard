@@ -37,6 +37,10 @@ export default {
     project: {
       type:    Object,
       default: () => {},
+    },
+    harborSysntemInfo: {
+      type:     Object,
+      required: true
     }
   },
   data() {
@@ -110,11 +114,12 @@ export default {
         }
         this.loading = true;
         try {
+          const path = this.harborSysntemInfo?.useExtsAuditlog ? 'auditlog-exts' : 'logs';
           const logs = await this.apiRequest.fetchProjectLogsV2(this.project?.name, {
             page_size: this.page_size,
             page:      this.page,
             ...params
-          });
+          }, path);
 
           this.logs = logs?.length ? logs : [];
           this.totalCount = this.getTotalCount(logs) || 0;
