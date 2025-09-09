@@ -1,6 +1,7 @@
 <script>
 import { LabeledInput } from '@components/Form/LabeledInput';
 import { RadioGroup } from '@components/Form/Radio';
+import { MANAGEMENT } from '@shell/config/types';
 
 const HARBOR_AUTH_KEY = 'rancher.cn/registry-harbor-auth';
 const HARBOR_ADMIN_AUTH_KEY = 'rancher.cn/registry-harbor-admin-auth';
@@ -26,11 +27,12 @@ export default {
     }
 
     try {
-      this.harborRegistryUrl = await this.$store.dispatch('management/request', { url: '/v3/settings/harbor-server-url' }).then((resp) => {
-        return resp?.value || '';
-      });
+      const harborServerUrlSetting = await this.$store.dispatch('management/find', { type: MANAGEMENT.SETTING, id: 'harbor-server-url' }, { root: true });
+
+      this.harborRegistryUrl = harborServerUrlSetting?.value || '';
     } catch (e) {
       console.error('Failed to fetch harborRegistryUrl'); // eslint-disable-line no-console
+      this.harborRegistryUrl = '';
     }
   },
 

@@ -182,8 +182,8 @@ export default {
 
     await allHash(fetches);
 
-    this.$store.dispatch('harbor/fetchHarborVersion');
-    this.$store.dispatch('harbor/loadHarborServerUrl');
+    await this.$store.dispatch('harbor/fetchHarborVersion');
+    await this.$store.dispatch('harbor/loadHarborServerUrl');
 
     if (this.$store.getters[`cluster/canList`]('hami.pandaria.com.resourcetype')) {
       try {
