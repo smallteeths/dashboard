@@ -1,4 +1,5 @@
 import { tagsSortingInit, tagsResultFormat } from '@shell/utils/harbor';
+import { MANAGEMENT } from '@shell/config/types';
 
 export const state = function() {
   return {
@@ -43,10 +44,18 @@ export const actions = {
     return dispatch('rancher/request', { url, headers: headers || undefined }, { root: true });
   },
 
-  loadHarborServerUrl({ dispatch, commit }) {
-    return dispatch('apiList', { url: '/v3/settings/harbor-server-url' } ).then((res) => {
-      commit('setHarborServer', res.value || '');
-    });
+  async loadHarborServerUrl({ dispatch, commit }) {
+    try {
+      const harborServerUrlSetting = await dispatch('management/find', { type: MANAGEMENT.SETTING, id: 'harbor-server-url' }, { root: true });
+
+      commit('setHarborServer', harborServerUrlSetting?.value || '');
+
+      return harborServerUrlSetting;
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.warn(error);
+      commit('setHarborServer', '');
+    }
   },
 
   loadImagesInHarbor({
@@ -108,10 +117,18 @@ export const actions = {
     });
   },
 
-  fetchHarborVersion({ dispatch, commit }) {
-    return dispatch('apiList', { url: '/v3/settings/harbor-version' } ).then((res) => {
-      commit('setHarborVersion', res.value || '');
-    });
+  async fetchHarborVersion({ dispatch, commit }) {
+    try {
+      const harborVersionSetting = await dispatch('management/find', { type: MANAGEMENT.SETTING, id: 'harbor-version' }, { root: true });
+
+      commit('setHarborVersion', harborVersionSetting?.value || '');
+
+      return harborVersionSetting;
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.warn(error);
+      commit('setHarborVersion', '');
+    }
   },
 
   fetchTags({ rootGetters, state, dispatch }, { projectId, name }) {
