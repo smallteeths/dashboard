@@ -16,12 +16,25 @@ export default function useConfirm() {
     clean();
   });
   const show = (options, appContext = {}, el = document.body) => {
-    app = createApp(Confirm, { ...options, onClose: () => clean() });
+    const onClose = () => clean();
+
+    app = createApp(Confirm, {
+      ...options,
+      modelValue:            true,
+      'onUpdate:modelValue': (v) => {
+        if (!v) {
+          // delete the confirm app
+          onClose();
+        }
+      },
+      // watch emit close
+      onClose,
+    });
+
     Object.assign(app._context, appContext);
     container = document.createElement('div');
     el.appendChild(container);
     app.mount(container);
-    app._instance.data.show = true;
   };
 
   return { show };

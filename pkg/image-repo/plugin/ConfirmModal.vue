@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="show"
+    v-if="visible"
     class="dialog"
   >
     <div class="dialog-content">
@@ -35,7 +35,7 @@
           mode="delete"
           class="btn bg-error ml-10"
           :disabled="loading"
-          @click="remove"
+          @click="onRemoveClick"
         />
       </div>
     </div>
@@ -50,8 +50,12 @@ import loading from './loading';
 export default {
   name:       'Dialog',
   components: { AsyncButton },
-  emits:      ['close', 'removed'],
+  emits:      ['update:modelValue', 'close', 'removed'],
   props:      {
+    modelValue: {
+      type:    Boolean,
+      default: false,
+    },
     type: {
       type:    String,
       default: 'resource',
@@ -70,37 +74,41 @@ export default {
     },
   },
   data() {
-    return {
-      loading: false,
-      show:    false,
-    };
+    return { loading: false };
   },
   computed: {
+    visible: {
+      get() {
+        return this.modelValue;
+      },
+      set(v) {
+        this.$emit('update:modelValue', v);
+      },
+    },
     names() {
       return this.resources.map((r) => r[this.propKey]);
-    }
+    },
   },
   methods: {
     resourceNames,
     escapeHtml,
     closeDialog() {
-      this.show = false;
+      this.visible = false;
       this.$emit('close');
     },
-    async remove() {
+    async onRemoveClick() {
       this.loading = true;
       try {
         await this.removeCallback(this.resources.map((r) => r.id));
-
         this.$emit('removed');
-      } catch (err) {}
-      this.$emit('removed');
-      this.closeDialog();
+        this.visible = false;
+      } catch (err) {
+        console.warn('Unable to remove: ', err); // eslint-disable-line no-console
+      }
       this.loading = false;
-    }
+    },
   },
-  directives: { loading }
-
+  directives: { loading },
 };
 </script>
 
