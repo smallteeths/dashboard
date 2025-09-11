@@ -150,9 +150,9 @@ export default {
         if (harborSysntemInfo.harbor_version) {
           const subPos = harborSysntemInfo.harbor_version.indexOf('-');
           const version = harborSysntemInfo.harbor_version.substring(1, subPos).split('.').map((item) => parseInt(item, 10));
-          const supportRoleMaster = version[0] > 1 || (version[0] >= 1 && version[1] > 7);
+          const useExtsAuditlog = version[0] >= 1 && version[1] >= 13;
 
-          if (supportRoleMaster) {
+          if (useExtsAuditlog) {
             path = 'auditlog-exts';
           }
         }
