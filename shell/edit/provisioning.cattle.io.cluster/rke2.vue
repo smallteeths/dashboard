@@ -253,7 +253,8 @@ export default {
       addonConfigValidation: {}, // validation state of each addon config (boolean of whether codemirror's yaml lint passed)
       allNamespaces:         [],
       extensionTabs:         getApplicableExtensionEnhancements(this, ExtensionPoint.TAB, TabLocation.CLUSTER_CREATE_RKE2, this.$route, this),
-      labelForAddon
+      labelForAddon,
+      etcdConfigValid:       true
     };
   },
 
@@ -836,7 +837,12 @@ export default {
       set(newValue) {
         this.$emit('update:value', newValue);
       }
-    }
+    },
+    overallFormValidationPassed() {
+      return this.validationPassed &&
+            this.fvFormIsValid &&
+            this.etcdConfigValid;
+    },
   },
 
   watch: {
@@ -2181,7 +2187,7 @@ export default {
     v-else
     ref="cruresource"
     :mode="mode"
-    :validation-passed="validationPassed && fvFormIsValid"
+    :validation-passed="overallFormValidationPassed"
     :resource="value"
     :errors="errors"
     :cancel-event="true"
@@ -2402,6 +2408,7 @@ export default {
             @update:value="$emit('input', $event)"
             @s3-backup-changed="handleS3BackupChanged"
             @config-etcd-expose-metrics-changed="handleConfigEtcdExposeMetricsChanged"
+            @etcd-validation-changed="(val)=>etcdConfigValid = val"
           />
         </Tab>
 
