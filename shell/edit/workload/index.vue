@@ -81,11 +81,10 @@ export default {
     },
 
     // Pandaria
-    harborTagChange(container) {
-      const tag = container.imageTag;
+    harborTagChange(tag, container) {
+      const image = container.image;
 
-      if (tag) {
-        const image = container.image;
+      if (tag && image) {
         const harborRepo = this.harbor?.harborRepo || '';
         let repo = image;
 
@@ -273,7 +272,7 @@ export default {
                       :options="harborImageTagsChoices"
                       :searchable="true"
                       :mode="mode"
-                      @selecting="harborTagChange(allContainers[i])"
+                      @selecting="harborTagChange($event, allContainers[i])"
                     />
                   </div>
                 </div>
