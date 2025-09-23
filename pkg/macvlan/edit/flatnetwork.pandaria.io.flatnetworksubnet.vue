@@ -339,6 +339,7 @@ export default {
       }
       // remove unused fields
       delete this.config.id;
+      delete this.config._id;
       delete this.config.links;
       delete this.config.type;
       delete this.config.__clone;
@@ -348,6 +349,7 @@ export default {
         delete metadata.state;
         delete metadata.relationships;
         delete metadata.fields;
+        delete metadata.finalizers;
       }
 
       this.$store.dispatch(`flatnetwork/${ this.isEdit ? 'update' : 'create' }Flatnetwork`, {
