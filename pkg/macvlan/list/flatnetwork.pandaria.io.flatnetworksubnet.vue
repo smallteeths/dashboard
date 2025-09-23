@@ -31,7 +31,31 @@ export default {
       this.existing = null;
     }
 
-    await this.$fetchType(this.resource);
+    const type = this.resource;
+    const currStore = this.$store.getters['currentStore']();
+
+    if (!this.fetchedResourceType.find((item) => item.type === type)) {
+      this.fetchedResourceType.push({
+        type,
+        currStore
+      });
+    }
+    const schema = this.$store.getters[`${ currStore }/schemaFor`](type);
+
+    const opt = {
+      incremental:      null,
+      force:            true,
+      hasManualRefresh: false,
+    };
+
+    if (schema?.attributes?.namespaced) {
+      opt.namespaced = this.namespaceFilter;
+    }
+
+    this.$store.dispatch(`${ currStore }/findAll`, {
+      type,
+      opt
+    });
   },
 
   data() {
