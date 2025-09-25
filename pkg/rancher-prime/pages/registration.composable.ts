@@ -25,6 +25,16 @@ interface RegistrationDashboard {
 }
 
 /**
+ * Partial of the registration condition
+ */
+interface PartialCondition {
+  reason?: string;
+  message?: string;
+  type: string;
+  status: 'True' | 'False';
+}
+
+/**
  * Partial of the registration interface used for this page
  */
 interface PartialRegistration {
@@ -46,12 +56,8 @@ interface PartialRegistration {
       activated: boolean;
       systemUrl: string;
     };
-    conditions: Array<{
-      reason?: string;
-      message?: string;
-      type: string;
-      status: 'True' | 'False';
-    }>
+    conditions: PartialCondition[];
+    currentCondition: PartialCondition;
   };
 }
 
@@ -297,7 +303,7 @@ export const usePrimeRegistration = (storeArg?: Store<any>) => {
    */
   const isRegistrationOfflineProgress = (registration: PartialRegistration): boolean => {
     const isOffline = registration.spec?.mode === 'offline';
-    const lastCondition = registration.status?.conditions[registration.status?.conditions.length - 1];
+    const lastCondition = registration.status?.currentCondition;
     const isInProgress = lastCondition.type === 'OfflineRequestReady';
     const isActive = registration.status.activationStatus.activated === true;
 
@@ -311,11 +317,14 @@ export const usePrimeRegistration = (storeArg?: Store<any>) => {
    */
   const isRegistrationCompleted = (registration: PartialRegistration): boolean => {
     const mode = registration.spec?.mode;
-    const lastCondition = registration.status?.conditions[registration.status?.conditions.length - 1];
-    const isError = lastCondition.type === 'RegistrationActivated' && lastCondition.status === 'False';
-    const isError2 = lastCondition.type === 'Failure' && lastCondition.status === 'True';
-    const isCompleteOnline = mode === 'online' && lastCondition.type === 'Done' && lastCondition.status === 'True';
-    const isCompleteOffline = mode === 'offline' && lastCondition.type === 'OfflineActivationDone' && lastCondition.status === 'True';
+    const lastCondition = registration.status?.currentCondition;
+
+    if (!lastCondition.type) return false;
+
+    const isError = lastCondition.type === 'RegistrationActivated';
+    const isError2 = lastCondition.type === 'RegistrationAnnounced';
+    const isCompleteOnline = mode === 'online' && lastCondition.type === 'Done';
+    const isCompleteOffline = mode === 'offline' && lastCondition.type === 'Done';
 
     return isError || isError2 || isCompleteOnline || isCompleteOffline;
   };
@@ -381,10 +390,13 @@ export const usePrimeRegistration = (storeArg?: Store<any>) => {
         };
       } else {
         // Retrieve failure message from conditions
-        const conditions = registration.status?.conditions || [];
-        const errorMessage = conditions.find((condition) => condition.reason && condition.message);
+        const errorMessage = registration.status?.currentCondition;
 
-        onError(errorMessage);
+        if (errorMessage) {
+          onError(errorMessage);
+        } else {
+          onError(new Error('Registration failed without a specific error message'));
+        }
 
         return {
           ...commonRegistration,

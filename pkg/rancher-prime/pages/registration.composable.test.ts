@@ -39,10 +39,7 @@ describe('registration composable', () => {
         links:    { view: '123' },
         status:   {
           activationStatus: { activated: true },
-          conditions:       [{
-            type:   'Done',
-            status: 'True',
-          }]
+          currentCondition: { type: 'Done' }
         },
       }];
 
@@ -61,6 +58,48 @@ describe('registration composable', () => {
       expect(registration.value.active).toStrictEqual(true);
       expect(registration.value.resourceLink).toStrictEqual('123');
       expect(registrationStatus.value).toStrictEqual('registered');
+    });
+
+    it('should display the correct error message, prioritizing conditions without Failure', async() => {
+      const value = 'whatever';
+      const hash = 'anything';
+      const errorMessage = 'Registration failed';
+      const secrets = [
+        { metadata: { namespace: 'not me' } },
+        { metadata: { name: 'also not me' } },
+        {
+          metadata: {
+            namespace: REGISTRATION_NAMESPACE,
+            name:      REGISTRATION_SECRET,
+            labels:    { [REGISTRATION_LABEL]: hash }
+          },
+          data: { regCode: btoa(value) }
+        },
+      ];
+      const registrations = [{
+        spec:     { mode: 'online' },
+        metadata: { labels: { [REGISTRATION_LABEL]: hash } },
+        links:    { view: '123' },
+        status:   {
+          activationStatus: { activated: false },
+          currentCondition: {
+            type:    'RegistrationActivated',
+            message: errorMessage,
+            reason:  'Give me a reason',
+          },
+        },
+      }];
+
+      dispatchSpy = jest.fn()
+        .mockReturnValueOnce(Promise.resolve(secrets))
+        .mockReturnValue(Promise.resolve(registrations));
+      const store = { state: {}, dispatch: dispatchSpy } as any;
+      const { initRegistration, errors } = usePrimeRegistration(store);
+
+      await initRegistration();
+      jest.setTimeout(0);
+
+      expect(errors.value[0]).toStrictEqual(errorMessage);
     });
   });
 
@@ -85,10 +124,7 @@ describe('registration composable', () => {
         links:    { view: '123' },
         status:   {
           activationStatus: { activated: true },
-          conditions:       [{
-            type:   'Done',
-            status: 'True',
-          }]
+          currentCondition: { type: 'Done' }
         },
       }];
 
@@ -177,10 +213,7 @@ describe('registration composable', () => {
         links:    { view: '123' },
         status:   {
           activationStatus: { activated: true },
-          conditions:       [{
-            type:   'Done',
-            status: 'True',
-          }]
+          currentCondition: { type: 'Done' }
         },
       }];
       const secretRequest = {
@@ -248,13 +281,7 @@ describe('registration composable', () => {
         links:    { view: '123' },
         status:   {
           activationStatus: { activated: true },
-          conditions:       [
-            { type: 'OfflineRequestReady' },
-            {
-              type:   'OfflineActivationDone',
-              status: 'True',
-            },
-          ]
+          currentCondition: { type: 'Done' },
         },
       }];
 
