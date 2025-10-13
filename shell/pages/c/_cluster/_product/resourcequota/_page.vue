@@ -31,13 +31,14 @@ export default {
     this.namespaces = await this.$store.dispatch('cluster/findAll', { type: NAMESPACE });
     const backingNamespace = this.project?.status?.backingNamespace ? this.project?.status?.backingNamespace : this.projectId?.split(':')?.[1];
 
-    this.projectUsage = await this.$store.dispatch('rancher/request', { url: `/v3/projectresourcequotausages/${ backingNamespace }:${ this.projectId.replace(':', '-') }` }).then((res) => {
-      const usage = res?.status ? res?.status : {};
+    try {
+      const url = `/v1/management.cattle.io.projectresourcequotausages/${ backingNamespace }/${ this.projectId.replace(':', '-') }`;
+      const res = await this.$store.dispatch('rancher/request', { url });
 
-      return usage;
-    }).catch(() => {
-      return {};
-    });
+      this.projectUsage = res?.status ? res.status : {};
+    } catch (error) {
+      this.projectUsage = {};
+    }
   },
   components: {
     Banner,
