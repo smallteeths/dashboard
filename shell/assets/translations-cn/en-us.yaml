@@ -6744,6 +6744,7 @@ tableHeaders:
     project-clone-tooltip: Has a Project Scoped Secret created this Secret in this Namespace
     project-scoped: Project Secret
     project-scoped-tooltip: This Project Scoped Secret will create matching Secrets in the Namespaces it contains
+  firstSeenTooltip: The time at which the event was first recorded
 target:
   router:
     label: Router
