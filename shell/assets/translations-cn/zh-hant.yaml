@@ -3106,7 +3106,7 @@ landing:
     cpuUsed: 已用 CPU
     memoryUsed: 已用內存
   seeWhatsNew: 點擊右側鏈接，瞭解此版本的新功能和優化。
-  whatsNewLink: "2.8 的新功能"
+  whatsNewLink: "{version} 的新功能"
   learnMore: 瞭解更多
   gettingStarted:
     title: 快速入門

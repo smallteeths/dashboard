@@ -608,7 +608,7 @@ export const getters = {
   releaseNotesUrl(state, getters) {
     const version = getters['management/byId'](MANAGEMENT.SETTING, SETTING.VERSION_RANCHER)?.value;
 
-    const base = 'https://github.com/rancher/rancher/releases';
+    const base = 'https://github.com/ranchervip/pandaria/releases';
 
     if (version && !isDevBuild(version)) {
       return `${ base }/tag/${ version }`;
