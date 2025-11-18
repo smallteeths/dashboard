@@ -1,3 +1,4 @@
+import { insertAt } from '@shell/utils/array';
 import find from 'lodash/find';
 import { POD } from '@shell/config/types';
 import SteveModel from '@shell/plugins/steve/steve-class';
@@ -149,6 +150,78 @@ export default class Service extends SteveModel {
     return (relationships || []).filter((relationship) => relationship.toType === POD)[0];
   }
 
+  get canToggleExportService() {
+    const cluster = this?.$rootGetters['currentCluster'];
+    const serviceType = this.spec?.type;
+
+    return this?.$rootGetters['cluster/schemaFor']('multicluster.x-k8s.io.serviceimport') &&
+      this?.$rootGetters['cluster/schemaFor']('multicluster.x-k8s.io.serviceexport') &&
+      cluster?.id !== 'local' &&
+      (serviceType === CLUSTERIP || serviceType === HEADLESS);
+  }
+
+  isExported() {
+    return !!this.metadata?.annotations?.['multicluster.service.pandaria.io/export'];
+  }
+
+  get exportServiceMenuItem() {
+    const enabled = this.canToggleExportService && !this.isExported();
+
+    return {
+      action:  'exportService',
+      enabled: !!enabled,
+      icon:    'icon icon-globe',
+      label:   this.t('action.exportService'),
+    };
+  }
+
+  get cancelExportServiceMenuItem() {
+    const enabled = this.canToggleExportService && this.isExported();
+
+    return {
+      action:  'cancelExportService',
+      enabled: !!enabled,
+      icon:    'icon icon-globe',
+      label:   this.t('action.cancelExportService'),
+    };
+  }
+
+  async exportService() {
+    this.setAnnotation('multicluster.service.pandaria.io/export', 'true');
+
+    try {
+      await this.save();
+      this.$dispatch('growl/success', {
+        title:   this.t('asyncButton.load.success'),
+        timeout: 100,
+      }, { root: true });
+    } catch {
+      this.$dispatch('growl/error', {
+        title:   this.t('asyncButton.default.error'),
+        timeout: 100,
+      }, { root: true });
+    }
+  }
+
+  async cancelExportService() {
+    if (this.metadata?.annotations?.['multicluster.service.pandaria.io/export']) {
+      delete this.metadata?.annotations?.['multicluster.service.pandaria.io/export'];
+    }
+
+    try {
+      await this.save();
+      this.$dispatch('growl/success', {
+        title:   this.t('asyncButton.load.success'),
+        timeout: 100,
+      }, { root: true });
+    } catch {
+      this.$dispatch('growl/error', {
+        title:   this.t('asyncButton.default.error'),
+        timeout: 100,
+      }, { root: true });
+    }
+  }
+
   async fetchPods() {
     if (!this.podRelationship) {
       // If empty or not present, the service is assumed to have an external process managing its endpoints
@@ -200,6 +273,15 @@ export default class Service extends SteveModel {
     }
 
     return defaultService;
+  }
+
+  get _availableActions() {
+    const out = super._availableActions;
+
+    insertAt(out, out?.length, this.exportServiceMenuItem);
+    insertAt(out, out?.length, this.cancelExportServiceMenuItem);
+
+    return out;
   }
 
   proxyUrl(scheme, port) {

@@ -63,6 +63,7 @@ const getShellPaths = (dir) => {
 
 const getProxyConfig = (proxyConfig) => ({
   ...proxyConfig,
+  '/mcs-api':        proxyWsOpts(api), // mcs api
   '/k8s':            proxyWsOpts(api), // Straight to a remote cluster (/k8s/clusters/<id>/)
   '/pp':             proxyWsOpts(api), // For (epinio) standalone API
   '/api':            proxyWsOpts(api), // Management k8s API

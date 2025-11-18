@@ -1,0 +1,83 @@
+typeLabel:
+  multicluster.pandaria.io.clusterset: |-
+    {count, plural,
+      one { Clusterset }
+      other { Clustersets }
+    }
+  multicluster.x-k8s.io.serviceexport: |-
+    {count, plural,
+      one { Service Export }
+      other { Service Export }
+    }
+  multicluster.x-k8s.io.serviceimport: |-
+    {count, plural,
+      one { Service Import }
+      other { Service Import }
+    }
+mcs:
+  nav:
+    dashboard:
+      label: 控制面板
+    clusterMove: 移動
+    clusters: 集群
+  clusterSets:
+    label: Clustersets/Clusters
+  welcome: 歡迎使用多集群服務
+  chartNotInstallTips:
+    global: 未安裝 mcs-addon-global-system
+    cluster: 未安裝 mcs-addon-system
+  install: 安裝
+  noPermission: 無訪問相關資源的權限
+  notClusterSetMemberTips: 當前集群未加入任何 Clusterset，請前往 Clusterset 頁面添加集群。
+  chart:
+    installType: 安裝類型
+    submarinerClusterID: Submariner ClusterID
+    submarinerBrokerUrl: Submariner Broker Url
+    submarinerClusterCIDR: Submariner 集群 CIDR
+    submarinerServiceCIDR: Submariner 服務 CIDR
+  table:
+    addCluster: 添加集群
+    groupBy:
+      name: 按名稱分組
+    noClusters: 尚未添加任何集群。
+    notInClusterset: 未加入 Clusterset
+  addClustersetMembersModal:
+    title: 添加 Clusterset {name} 成員
+  moveClustersetMemeberModal:
+    title: 移動到新的 Clusterset
+    targetClusterset: "将集群 {cluster} 移动到 clusterset {clusterSet}"
+    notice: 遷移後，原 Cluster 中已匯出的服務將 {serviceExports} 等不再可用
+    deleteNotice: 删除後，原 Cluster 中已匯出的服務將 {serviceExports} 等不再可用
+  clusterSelect:
+    label: 集群
+  errors:
+    missingClusterId: 載入集群配置失敗
+    provNotFound: 未找到對應的 Provisioning Cluster
+    fetchCacertsFail: 獲取 cacerts 失敗
+    fetchServerUrlFail: 獲取 server-url 失敗
+    cidrMissing: "無法獲取 {path}"
+    brokerRegisterFail: Broker 註冊失敗
+    clustersetNoMatch: "未找到匹配的 Clusterset：{name}"
+    pskFetchFail: 獲取 PSK Secret 失敗
+    deleteNoClusterName: 當前集群缺少 ClusterName
+    deleteFailed: 刪除 Submariner 失敗
+    deleteTimeout: "等待刪除超時（>{timeoutMs}ms）"
+    valuesReadFailed: 讀取已安裝 Chart 的 values 失敗
+    appListFetchFailed: 獲取應用列表失敗
+    appNotFound: 未找到已安裝的 mcs-ext-chart
+    secretAnnoMissing: 缺少包含 values 的 Secret 註解
+    badReleaseName: "無效的升級參數：缺少 releaseName"
+    badPsk: "無效的升級參數：無法獲取 Secret PSK"
+    brokerFetchFailed: 獲取 brokerData 失敗
+    chartUpgradeFailed: Chart 升級失敗
+    upgradeFailed: 升級失敗
+    missNodeLabelError: "集群中必须有一个节点设置标签 submariner.io/gateway: 'true'"
+    tooManyNodeLabelError: "叢集中只能有一個節點設定標籤 submariner.io/gateway: 'true'"
+  progress:
+    deletingCrs: 正在刪除 Submariner CR
+    waitingCleanup: "删除可能会花费几分钟，请耐心等待 Submariner CR 清理完成……"
+    cleared: Submariner CR 清理完成
+    retrying: Submariner CR 查詢出錯，正在重試…
+product:
+  multiClusterService: 多集群服務
+  globalMultiClusterService: 多集群服務
