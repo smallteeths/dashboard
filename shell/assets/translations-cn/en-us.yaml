@@ -8306,6 +8306,8 @@ action:
   disable: Disable
   download: Download YAML
   downloadFile: Download File
+  exportService: Publish as Multi-Cluster Service
+  cancelExportService: Unpublish Multi-Cluster Service
   edit: Edit Config
   editYaml: Edit YAML
   enable: Enable

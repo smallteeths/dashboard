@@ -1,0 +1,20 @@
+<svg width="512" height="512" viewBox="0 0 512 512"
+     xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .mcs-stroke {
+      stroke: currentColor;
+      stroke-width: 26;
+      stroke-linejoin: round;
+      stroke-linecap: round;
+      fill: none;
+    }
+  </style>
+
+  <rect x="201" y="95" width="110" height="110" rx="24" class="mcs-stroke" />
+  <rect x="115" y="315" width="110" height="110" rx="24" class="mcs-stroke" />
+  <rect x="283" y="315" width="110" height="110" rx="24" class="mcs-stroke" />
+  <line x1="256" y1="248" x2="256" y2="205" class="mcs-stroke" />
+  <line x1="256" y1="264" x2="170" y2="315" class="mcs-stroke" />
+  <line x1="256" y1="264" x2="342" y2="315" class="mcs-stroke" />
+  <circle cx="256" cy="256" r="30" fill="currentColor" /> <!-- 这里也用 currentColor -->
+</svg>

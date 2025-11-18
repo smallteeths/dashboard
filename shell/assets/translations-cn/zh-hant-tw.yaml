@@ -7235,6 +7235,8 @@ action:
   disable: 禁用
   download: 下載 YAML
   downloadFile: 下載文件
+  exportService: 发布为多集群服务
+  cancelExportService: 取消多集群服务
   edit: 編輯配置
   editYaml: 編輯 YAML
   enable: 啟用
