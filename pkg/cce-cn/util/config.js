@@ -6,7 +6,7 @@ const DEFAULTCCECONFIG = {
   regionID:               '',
   dataVolumeSize:         100,
   vpcId:                  null,
-  version:                'v1.31',
+  version:                'v1.32',
   billingMode:            0,
   containerNetworkMode:   'vpc-router',
   clusterFlavor:          'cce.s2.small',
@@ -48,6 +48,12 @@ const KUBERNETESVERSIONS = [
   {
     label:          'v1.31',
     value:          'v1.31',
+    rancherEnabled: true,
+    cceEnabled:     true,
+  },
+  {
+    label:          'v1.32',
+    value:          'v1.32',
     rancherEnabled: true,
     cceEnabled:     true,
   }
