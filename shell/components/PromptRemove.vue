@@ -416,6 +416,7 @@ export default {
           >
             <span
               v-clean-html="t('promptRemove.confirmName', { nameToMatch: escapeHtml(nameToMatch) }, true)"
+              class="confirm-text"
             />
           </div>
         </div>
@@ -511,6 +512,10 @@ export default {
       .spacer {
         flex: 1;
       }
+    }
+
+    .confirm-text b {
+      user-select: all;
     }
   }
 </style>

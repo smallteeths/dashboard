@@ -71,4 +71,8 @@ export default class Setting extends HybridModel {
       super.goToEdit();
     }
   }
+
+  get disableResourceDetailDrawer() {
+    return true;
+  }
 }

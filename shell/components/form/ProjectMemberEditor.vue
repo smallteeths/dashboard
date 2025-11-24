@@ -328,6 +328,7 @@ export default {
       <template v-slot:body>
         <RadioGroup
           v-model:value="value.permissionGroup"
+          :mode="mode"
           data-testid="permission-options"
           :options="options"
           name="permission-group"
@@ -343,6 +344,7 @@ export default {
           >
             <Checkbox
               v-model:value="permission.value"
+              :mode="mode"
               :data-testid="`custom-permission-${i}`"
               :disabled="permission.locked"
               class="mb-5"
@@ -351,7 +353,7 @@ export default {
             <i
               v-if="permission.locked"
               v-clean-tooltip="permission.tooltip"
-              class="icon icon-lock icon-fw"
+              class="icon icon-lock"
             />
           </div>
         </div>

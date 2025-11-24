@@ -3,22 +3,22 @@ import { useDefaultIdentifyingInformation } from '@shell/components/Resource/Det
 import { useDefaultLabels } from '@shell/components/Resource/Detail/Metadata/Labels/composable';
 import { useDefaultAnnotations } from '@shell/components/Resource/Detail/Metadata/Annotations/composable';
 import { computed, toValue, Ref } from 'vue';
-import { useResourceDetailDrawer } from '@shell/components/Drawer/ResourceDetailDrawer/composables';
 import {
   useLiveDate, useNamespace, useProject, useResourceDetails, useWorkspace
 } from '@shell/components/Resource/Detail/Metadata/IdentifyingInformation/identifying-fields';
+import { useOnShowConfiguration } from '@shell/components/Resource/Detail/composables';
 
 export const useBasicMetadata = (resource: any) => {
   const labels = useDefaultLabels(resource);
   const annotations = useDefaultAnnotations(resource);
-  const { openResourceDetailDrawer } = useResourceDetailDrawer();
+  const onShowConfiguration = useOnShowConfiguration(resource);
 
   return computed(() => {
     return {
-      resource:            toValue(resource),
-      labels:              labels.value,
-      annotations:         annotations.value,
-      onShowConfiguration: (returnFocusSelector: string) => openResourceDetailDrawer(resource, returnFocusSelector)
+      resource:    toValue(resource),
+      labels:      labels.value,
+      annotations: annotations.value,
+      onShowConfiguration
     };
   });
 };
@@ -29,7 +29,7 @@ export const useDefaultMetadataProps = (resource: any, additionalIdentifyingInfo
 
   const identifyingInformation = computed(() => [...defaultIdentifyingInformation.value, ...(additionalIdentifyingInformationValue || [])]);
   const basicMetaData = useBasicMetadata(resource);
-  const { openResourceDetailDrawer } = useResourceDetailDrawer();
+  const onShowConfiguration = useOnShowConfiguration(resource);
 
   return computed(() => {
     return {
@@ -37,7 +37,7 @@ export const useDefaultMetadataProps = (resource: any, additionalIdentifyingInfo
       identifyingInformation: identifyingInformation.value,
       labels:                 basicMetaData.value.labels,
       annotations:            basicMetaData.value.annotations,
-      onShowConfiguration:    (returnFocusSelector: string) => openResourceDetailDrawer(resource, returnFocusSelector)
+      onShowConfiguration
     };
   });
 };
@@ -64,7 +64,6 @@ export const useDefaultMetadataForLegacyPagesProps = (resource: any) => {
     return info.filter((info) => typeof info !== 'undefined');
   });
   const basicMetaData = useBasicMetadata(resource);
-  const { openResourceDetailDrawer } = useResourceDetailDrawer();
 
   return computed(() => {
     return {
@@ -72,7 +71,7 @@ export const useDefaultMetadataForLegacyPagesProps = (resource: any) => {
       identifyingInformation: identifyingInformation.value,
       labels:                 basicMetaData.value.labels,
       annotations:            basicMetaData.value.annotations,
-      onShowConfiguration:    () => openResourceDetailDrawer(resource)
+      onShowConfiguration:    basicMetaData.value.onShowConfiguration
     };
   });
 };

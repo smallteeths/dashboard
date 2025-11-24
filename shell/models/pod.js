@@ -64,7 +64,7 @@ export default class Pod extends WorkloadService {
     return {
       action:  'openShell',
       enabled: !!this.links.view && this.isRunning,
-      icon:    'icon icon-fw icon-chevron-right',
+      icon:    'icon-chevron-right',
       label:   'Execute Shell',
       total:   1,
     };
@@ -74,7 +74,7 @@ export default class Pod extends WorkloadService {
     return {
       action:  'openLogs',
       enabled: !!this.links.view,
-      icon:    'icon icon-fw icon-chevron-right',
+      icon:    'icon icon-chevron-right',
       label:   'View Logs',
       total:   1,
     };

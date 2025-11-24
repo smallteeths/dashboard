@@ -51,6 +51,7 @@ export const DRIVER_TO_IMPORT = {
   ack:       'ack',
   cce:       'cce',
   tke:       'tke',
+  alibaba:   'alibabacloud'
 };
 
 export default class KontainerDriver extends HybridModel {

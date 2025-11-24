@@ -1,4 +1,4 @@
-<script lang="ts">
+<script setup lang="ts">
 import Drawer from '@shell/components/Drawer/Chrome.vue';
 import { useI18n } from '@shell/composables/useI18n';
 import { useStore } from 'vuex';
@@ -9,17 +9,11 @@ import ConfigTab from '@shell/components/Drawer/ResourceDetailDrawer/ConfigTab.v
 import { computed, ref } from 'vue';
 import RcButton from '@components/RcButton/RcButton.vue';
 import StateDot from '@shell/components/StateDot/index.vue';
+import { ResourceDetailDrawerProps } from '@shell/components/Drawer/ResourceDetailDrawer/types';
 
-export interface Props {
-  resource: any;
-
-  onClose?: () => void;
-}
-</script>
-<script setup lang="ts">
 const editBttnDataTestId = 'save-configuration-bttn';
 const componentTestid = 'configuration-drawer-tabbed';
-const props = defineProps<Props>();
+const props = defineProps<ResourceDetailDrawerProps>();
 const emit = defineEmits(['close']);
 const store = useStore();
 const i18n = useI18n(store);
@@ -45,10 +39,9 @@ const isConfig = computed(() => {
 });
 
 const action = computed(() => {
-  const isConfig = activeTab.value === 'config-tab';
-  const ariaLabel = isConfig ? i18n.t('component.drawer.resourceDetailDrawer.ariaLabel.editConfig') : i18n.t('component.drawer.resourceDetailDrawer.ariaLabel.editYaml');
-  const label = isConfig ? i18n.t('component.drawer.resourceDetailDrawer.ariaLabel.editConfig') : i18n.t('component.drawer.resourceDetailDrawer.ariaLabel.editYaml');
-  const action = isConfig ? () => props.resource.goToEdit() : () => props.resource.goToEditYaml();
+  const ariaLabel = isConfig.value ? i18n.t('component.drawer.resourceDetailDrawer.ariaLabel.editConfig') : i18n.t('component.drawer.resourceDetailDrawer.ariaLabel.editYaml');
+  const label = isConfig.value ? i18n.t('component.drawer.resourceDetailDrawer.ariaLabel.editConfig') : i18n.t('component.drawer.resourceDetailDrawer.ariaLabel.editYaml');
+  const action = isConfig.value ? () => props.resource.goToEdit() : () => props.resource.goToEditYaml();
 
   return {
     ariaLabel,
@@ -56,9 +49,11 @@ const action = computed(() => {
     action
   };
 });
+
 const canEdit = computed(() => {
   return isConfig.value ? props.resource.canEdit : props.resource.canEditYaml;
 });
+
 </script>
 <template>
   <Drawer

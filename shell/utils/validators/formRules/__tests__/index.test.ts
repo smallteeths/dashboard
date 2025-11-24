@@ -116,6 +116,10 @@ describe('formRules', () => {
       ['git@github.com:rancher/dashboard/%20', undefined],
       ['git@git.apps.local:fleet/fleet-local.git', undefined],
       ['git@git.apps.local:33333/fleet/fleet-local.git', undefined],
+      ['ssh://git@github.com:rancher/dashboard', undefined],
+      ['ssh://git@github.com:rancher/dashboard/', undefined],
+      ['ssh://git@git.apps.local:fleet/fleet-local.git', undefined],
+      ['ssh://git@git.apps.local:33333/fleet/fleet-local.git', undefined],
 
       // Not valid HTTP(s)
       ['https://github.com/rancher/  dashboard.git', message],
@@ -145,6 +149,9 @@ describe('formRules', () => {
       ['git@git.apps.local:/fleet/fleet-local.git', message],
       ['git@.git', message],
       ['git@', message],
+      ['ssh://git@github.com:/rancher/dashboard.git ', message],
+      ['ssh://git@github.com/rancher/ dashboard.git', message],
+      ['ssh://git@github.com/rancher/ dashboard', message],
 
       [undefined, message],
       ['', message]
@@ -193,6 +200,59 @@ describe('formRules', () => {
       'should return undefined or correct message based on the provided OCI url: %p',
       (url, expected) => {
         const formRuleResult = formRules.ociRegistry(url);
+
+        expect(formRuleResult).toStrictEqual(expected);
+      }
+    );
+  });
+
+  describe('version', () => {
+    const message = JSON.stringify({ message: 'validation.version' });
+    const testCases: (null | string | undefined)[][] = [
+      // Valid
+      ['1.2.3', undefined],
+      ['', undefined],
+      [null, undefined],
+
+      // Invalid
+      ['1.2.x', message],
+      ['foo', message],
+      ['1.2', message],
+      ['1.2.', message],
+      ['.', message],
+    ];
+
+    it.each(testCases)(
+      'should return undefined or correct message based on the provided Version: %p',
+      (version, expected) => {
+        const formRuleResult = formRules.version(version);
+
+        expect(formRuleResult).toStrictEqual(expected);
+      }
+    );
+  });
+
+  describe('semanticVersion', () => {
+    const message = JSON.stringify({ message: 'validation.semanticVersion' });
+    const testCases: (null | string | undefined)[][] = [
+      // Valid
+      ['1.2.x', undefined],
+      ['1.2.3', undefined],
+      ['1.2', undefined],
+      ['> 1', undefined],
+      ['', undefined],
+      [null, undefined],
+
+      // Invalid
+      ['foo', message],
+      ['1.2.', message],
+      ['.', message],
+    ];
+
+    it.each(testCases)(
+      'should return undefined or correct message based on the provided Semantic Version: %p',
+      (version, expected) => {
+        const formRuleResult = formRules.semanticVersion(version);
 
         expect(formRuleResult).toStrictEqual(expected);
       }

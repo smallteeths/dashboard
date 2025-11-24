@@ -69,7 +69,14 @@ export const CAPI = {
   /**
    * Annotation for overriding the cluster provider,
    */
-  UI_CUSTOM_PROVIDER:   'ui.rancher/provider'
+  UI_CUSTOM_PROVIDER:   'ui.rancher/provider',
+
+  /**
+   * Annotations for autoscaler
+   */
+  AUTOSCALER_CLUSTER_PAUSE:         'provisioning.cattle.io/cluster-autoscaler-paused',
+  AUTOSCALER_MACHINE_POOL_MIN_SIZE: 'cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size',
+  AUTOSCALER_MACHINE_POOL_MAX_SIZE: 'cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size'
 };
 
 export const CATALOG = {
@@ -166,6 +173,7 @@ export const HCI = {
   NETWORK_TYPE:        'network.harvesterhci.io/type',
   CLUSTER_NETWORK:     'network.harvesterhci.io/clusternetwork',
   PRIMARY_SERVICE:     'cloudprovider.harvesterhci.io/primary-service',
+  CPU_MANAGER:         'cpumanager',
 };
 
 // Annotations that can be on management.cattle.io.cluster to configure a custom badge
@@ -194,8 +202,6 @@ export const SYSTEM_LABELS = [
   'node.kubernetes.io',
   'egress.rke2.io'
 ];
-
-export const CLOUD_CREDENTIALS = { EXPIRATION: 'rancher.io/expiration-timestamp' };
 
 export const OIDC_CLIENT_SECRET_ANNOTATIONS = {
   CREATE: 'cattle.io/oidc-client-secret-create',

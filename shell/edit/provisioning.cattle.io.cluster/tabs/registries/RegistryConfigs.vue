@@ -49,35 +49,16 @@ export default {
   },
 
   data() {
-    const configMap = clone(this.value.spec.rkeConfig?.registries?.configs) || {};
-    const entries = [];
-
-    const defaultAddValue = {
-      hostname:             '',
-      authConfigSecretName: null,
-      caBundle:             '',
-      insecureSkipVerify:   false,
-      tlsSecretName:        null,
-    };
-
-    for ( const hostname in configMap ) {
-      if (configMap[hostname]) {
-        configMap[hostname].insecureSkipVerify = configMap[hostname].insecureSkipVerify ?? defaultAddValue.insecureSkipVerify;
-        configMap[hostname].authConfigSecretName = configMap[hostname].authConfigSecretName ?? defaultAddValue.authConfigSecretName;
-
-        const caBundle = configMap[hostname].caBundle ?? defaultAddValue.caBundle;
-
-        configMap[hostname].caBundle = isBase64(caBundle) ? base64Decode(caBundle) : caBundle;
-
-        configMap[hostname].tlsSecretName = configMap[hostname].tlsSecretName ?? defaultAddValue.tlsSecretName;
+    return {
+      entries:         [],
+      defaultAddValue: {
+        hostname:             '',
+        authConfigSecretName: null,
+        caBundle:             '',
+        insecureSkipVerify:   false,
+        tlsSecretName:        null,
       }
-      entries.push({
-        hostname,
-        ...configMap[hostname],
-      });
-    }
-
-    return { entries, defaultAddValue };
+    };
   },
 
   computed: {
@@ -92,9 +73,27 @@ export default {
     window.z = this;
   },
 
-  // created() {
-  //   set(this.value, 'spec.rkeConfig.registries.configs', {});
-  // },
+  created() {
+    const configMap = clone(this.value.spec.rkeConfig?.registries?.configs) || {};
+
+    for ( const hostname in configMap ) {
+      if (configMap[hostname]) {
+        configMap[hostname].insecureSkipVerify = configMap[hostname].insecureSkipVerify ?? this.defaultAddValue.insecureSkipVerify;
+        configMap[hostname].authConfigSecretName = configMap[hostname].authConfigSecretName ?? this.defaultAddValue.authConfigSecretName;
+
+        const caBundle = configMap[hostname].caBundle ?? this.defaultAddValue.caBundle;
+
+        configMap[hostname].caBundle = isBase64(caBundle) ? base64Decode(caBundle) : caBundle;
+
+        configMap[hostname].tlsSecretName = configMap[hostname].tlsSecretName ?? this.defaultAddValue.tlsSecretName;
+      }
+
+      this.entries.push({
+        hostname,
+        ...configMap[hostname],
+      });
+    }
+  },
 
   methods: {
     base64Encode,

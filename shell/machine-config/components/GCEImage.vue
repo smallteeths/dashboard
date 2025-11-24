@@ -43,13 +43,13 @@ export default {
       type:    String,
       default: _CREATE,
     },
-    location: {
-      type:     Object,
-      required: true
-    },
     poolCreateMode: {
       type:    Boolean,
       default: true
+    },
+    location: {
+      type:     Object,
+      required: true
     },
     rules: {
       type:    Object,

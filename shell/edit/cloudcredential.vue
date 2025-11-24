@@ -14,8 +14,6 @@ import SelectIconGrid from '@shell/components/SelectIconGrid';
 import { sortBy } from '@shell/utils/sort';
 import { ucFirst } from '@shell/utils/string';
 import { set } from '@shell/utils/object';
-import { mapFeature, RKE2 as RKE2_FEATURE } from '@shell/store/features';
-import { rke1Supports } from '@shell/store/plugins';
 
 export default {
   name: 'CruCloudCredential',
@@ -41,6 +39,7 @@ export default {
     }
     this.operatorDrivers = await this.$store.dispatch('rancher/request', { url: `v3/${ NORMAN.OPERATOR_SETTINGS }` }).then((res) => res.data).catch(() => ([]));
 
+    this.extensions = this.getExtensions();
     // Force reload the cloud cred schema and any missing subtypes because there aren't change events sent when drivers come/go
     try {
       const schema = await this.$store.dispatch('rancher/find', {
@@ -93,7 +92,9 @@ export default {
       nameRequiredValidation:        false,
       nodeDrivers:                   [],
       kontainerDrivers:              [],
+      extensions:                    null,
       operatorDrivers:               [],
+
     };
   },
 
@@ -104,12 +105,9 @@ export default {
   },
 
   computed: {
-    rke2Enabled: mapFeature(RKE2_FEATURE),
 
     hasCustomCloudCredentialComponent() {
-      const driverName = this.driverName;
-
-      return this.$store.getters['type-map/hasCustomCloudCredentialComponent'](driverName);
+      return this.getCustomCloudCredentialComponent(this.driverName);
     },
 
     cloudCredentialComponent() {
@@ -146,17 +144,17 @@ export default {
     secretSubTypes() {
       const out = [];
 
-      const drivers = [...this.nodeDrivers, ...this.kontainerDrivers]
+      const fromDrivers = [...this.nodeDrivers, ...this.kontainerDrivers]
         .filter((x) => x.spec.active && x.id !== 'rancherkubernetesengine')
         .map((x) => x.spec.displayName || x.id);
+      const fromExtensions = this.extensions?.filter((x) => !x.hidden).map((x) => x.id) || [];
+
+      const providers = [...fromDrivers, ...fromExtensions];
       const operatorDrivers = this.operatorDrivers.filter((x) => x.state === 'active').map((x) => x.id);
 
-      drivers.push(...operatorDrivers);
-      let types = uniq(drivers.map((x) => this.$store.getters['plugins/credentialDriverFor'](x)));
+      providers.push(...operatorDrivers);
 
-      if ( !this.rke2Enabled ) {
-        types = types.filter((x) => rke1Supports.includes(x));
-      }
+      let types = uniq(providers.map((x) => this.$store.getters['plugins/credentialDriverFor'](x)));
 
       const schema = this.$store.getters['rancher/schemaFor'](NORMAN.CLOUD_CREDENTIAL);
 
@@ -186,7 +184,7 @@ export default {
       for ( const id of types ) {
         let bannerAbbrv;
 
-        let bannerImage = this.$store.app.$plugin.getDynamic('image', `providers/${ id }.svg`);
+        let bannerImage = this.$store.app.$extension.getDynamic('image', `providers/${ id }.svg`);
 
         if (!bannerImage) {
           try {
@@ -199,7 +197,7 @@ export default {
 
         out.push({
           id,
-          label: this.typeDisplay(CAPI.CREDENTIAL_DRIVER, id),
+          label: this.typeDisplay(id),
           bannerImage,
           bannerAbbrv
         });
@@ -220,6 +218,25 @@ export default {
   methods: {
     createValidationChanged(passed) {
       this.credCustomComponentValidation = passed;
+    },
+
+    getExtensions() {
+      const context = {
+        dispatch:   this.$store.dispatch,
+        getters:    this.$store.getters,
+        axios:      this.$store.$axios,
+        $extension: this.$store.app.$extension,
+        t:          (...args) => this.t.apply(this, args),
+        isCreate:   this.isCreate,
+        isEdit:     this.isEdit,
+        isView:     this.isView,
+      };
+
+      return this.$extension.getProviders(context);
+    },
+
+    getCustomCloudCredentialComponent(driverName) {
+      return this.$store.getters['type-map/hasCustomCloudCredentialComponent'](driverName);
     },
 
     async saveCredential(btnCb) {
@@ -274,10 +291,10 @@ export default {
       }
 
       this.value['_type'] = type;
-      this.$emit('set-subtype', this.typeDisplay(type, driver));
+      this.$emit('set-subtype', this.typeDisplay(driver));
     },
 
-    typeDisplay(type, driver) {
+    typeDisplay(driver) {
       if (driver === 'aliyun') {
         return this.$store.getters['i18n/withFallback'](`cluster.provider.alibaba`, null, driver);
       }

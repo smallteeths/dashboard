@@ -635,4 +635,8 @@ export default class Secret extends SteveModel {
 
     return this.t('resourceTable.groupLabel.project', { name: escapeHtml(this?.project?.nameDisplay || '') }, true);
   }
+
+  get fullDetailPageOverride() {
+    return true;
+  }
 }

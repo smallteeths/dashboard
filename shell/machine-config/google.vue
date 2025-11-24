@@ -38,7 +38,8 @@ const defaultConfig = Object.freeze({
   vmLabels:                      '',
   username:                      'docker-user',
   setInternalFirewallRulePrefix: true,
-  setExternalFirewallRulePrefix: false
+  setExternalFirewallRulePrefix: false,
+  preemptible:                   false
 });
 
 export default {
@@ -449,9 +450,9 @@ export default {
         :credentialId="credentialId"
         :projectId="value.project"
         :originalMachineImage="originalMachineImage"
+        :pool-create-mode="poolCreateMode"
         :mode="mode"
         :location="location"
-        :pool-create-mode="poolCreateMode"
         :rules="{machineImage: fvGetAndReportPathRules('machineImage')}"
         @min-disk-changed="(val)=>minDiskFromImage=val"
         @error="(val)=>errors.push(val)"
@@ -514,7 +515,7 @@ export default {
           :options="subnetworkOptions"
           :disabled="!poolCreateMode"
           option-key="name"
-          option-label="name"
+          option-label="label"
           :loading="loadingNetworks"
           data-testid="gce-subnetwork-select"
         />
@@ -542,6 +543,13 @@ export default {
           class="span-3"
         />
       </div>
+      <Checkbox
+        v-model:value="value.preemptible"
+        :mode="mode"
+        :label="t('cluster.machineConfig.gce.preemptible.label')"
+        :tooltip="t('cluster.machineConfig.gce.preemptible.tooltip')"
+        class="mt-20"
+      />
 
       <ArrayList
         v-model:value="scopes"

@@ -9,7 +9,7 @@ import { mapPref, ENABLE_TWO_FACTOR_AUTH } from '@shell/store/prefs';
 
 const EMBER_FRAME_HIDE_CLASS = 'ember-iframe-hidden';
 const PAGE_CHECK_TIMEOUT = 30000;
-const WINDOW_MANAGER = 'windowmanager';
+const WINDOW_MANAGER = 'horizontal-window-manager';
 
 // Pages that we should intercept when loaded in the IFRAME and instead
 // navigate to a page in Cluster Dashboard

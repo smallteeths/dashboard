@@ -8,8 +8,16 @@ import { removeEmberPage } from '@shell/utils/ember-page';
 import { randomStr } from '@shell/utils/string';
 import { addParams, parse as parseUrl, removeParam } from '@shell/utils/url';
 
+// configuration for Single Logout/SLO
+// admissable auth providers compatible with SLO, based on shell/models/management.cattle.io.authconfig "configType"
+export const SLO_AUTH_PROVIDERS = ['oidc', 'saml'];
+
+// this is connected to the redirect url, for which the logic can be found in "shell/store/auth"
+const SLO_TOKENS_ENDPOINT_LOGOUT_RES_BASETYPE = ['authConfigLogoutOutput', 'casConfigLogoutOutput'];
+
 export const BASE_SCOPES = {
   github:       ['read:org'],
+  githubapp:    ['read:org'],
   googleoauth:  ['openid profile email'],
   azuread:      [],
   keycloakoidc: ['openid profile email'],
@@ -108,8 +116,6 @@ export const mutations = {
   loggedInAs(state, principalId) {
     state.loggedIn = true;
     state.principalId = principalId;
-
-    this.$cookies.remove(KEY);
   },
 
   loggedOut(state) {
@@ -173,10 +179,18 @@ export const actions = {
     commit('initialPass', pass);
   },
 
-  getAuthProviders({ dispatch }) {
+  getAuthProviders({ dispatch }, opt) {
+    let force = false;
+
+    if (opt?.force) {
+      force = true;
+    }
+
     return dispatch('rancher/findAll', {
       type: 'authProvider',
-      opt:  { url: `/v3-public/authProviders`, watch: false }
+      opt:  {
+        url: `/v3-public/authProviders`, watch: false, force
+      }
     }, { root: true });
   },
 
@@ -220,14 +234,18 @@ export const actions = {
    * Save nonce details. Information it contains will be used to validate auth requests/responses
    * Note - this may be structurally different than the nonce we encode and send
    */
-  saveNonce(ctx, opt) {
+  saveNonce({ commit }, opt) {
     const strung = JSON.stringify(opt);
 
-    this.$cookies.set(KEY, strung, {
+    const options = {
       path:     '/',
       sameSite: true,
       secure:   true,
-    });
+    };
+
+    commit('cookies/set', {
+      key: KEY, value: strung, options
+    }, { root: true });
 
     return strung;
   },
@@ -302,8 +320,8 @@ export const actions = {
     }
   },
 
-  verifyOAuth({ dispatch }, { nonce, code, provider }) {
-    const expectJSON = this.$cookies.get(KEY, { parseJSON: false });
+  verifyOAuth({ dispatch, rootGetters }, { nonce, code, provider }) {
+    const expectJSON = rootGetters['cookies/get']({ key: KEY, options: { parseJSON: false } });
     let parsed;
 
     try {
@@ -421,11 +439,17 @@ export const actions = {
     }
   },
 
-  uiLogout({ commit, dispatch }) {
+  loggedInAs({ commit }, principalId) {
+    commit('loggedInAs', principalId);
+
+    commit('cookies/remove', { key: KEY }, { root: true });
+  },
+
+  uiLogout({ commit, dispatch }, options = {}) {
     removeEmberPage();
 
     commit('loggedOut');
-    dispatch('onLogout', null, { root: true });
+    dispatch('onLogout', options, { root: true });
 
     dispatch('uiplugins/setReady', false, { root: true });
   },
@@ -482,8 +506,8 @@ export const actions = {
         redirectUnauthorized: false,
       }, { root: true });
 
-      // Single-sign logout for SAML and CAS providers that allow for it
-      if (['samlConfigLogoutOutput', 'casConfigLogoutOutput'].includes(res.baseType) && res.idpRedirectUrl) {
+      // Single-sign logout redirect for SLO compatible auth providers
+      if (SLO_TOKENS_ENDPOINT_LOGOUT_RES_BASETYPE.includes(res.baseType) && res.idpRedirectUrl) {
         window.location.href = res.idpRedirectUrl;
 
         return;
@@ -491,7 +515,11 @@ export const actions = {
     } catch (e) {
     }
 
-    dispatch('uiLogout');
+    const propagateOptions = {};
+
+    propagateOptions.sessionIdle = options.sessionIdle;
+
+    dispatch('uiLogout', propagateOptions);
   },
 
   mfa({ rootState }) {

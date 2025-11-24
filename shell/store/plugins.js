@@ -56,7 +56,6 @@ export const rke1Supports = [
 // Map a credential driver name to a component name
 // e.g. ec2 and eks both use the 'aws' driver to share the same pool of creds.
 const driverMap = {
-  aks:                             'azure',
   amazonec2:                       'aws',
   amazoneks:                       'aws',
   amazonelasticcontainerservice:   'aws',
@@ -84,6 +83,9 @@ const driverToFieldMap = {
   aws:    'amazonec2',
   gcp:    'google',
   oracle: 'oci',
+  aks:    'azure',
+  eks:    'amazonec2',
+  gke:    'google',
 
   tencent: 'tencent',
 };
@@ -131,8 +133,10 @@ const driverToCloudProviderMap = {
   linode:              '', // Show restricted options
   vmwarevsphere:       'rancher-vsphere',
   ovhcloudpubliccloud: '',
-
-  custom: undefined // Show all options
+  aks:                 'azure',
+  eks:                 'aws',
+  gke:                 'google',
+  custom:              undefined // Show all options
 };
 
 // Dynamically loaded drivers can call this eventually to register their options

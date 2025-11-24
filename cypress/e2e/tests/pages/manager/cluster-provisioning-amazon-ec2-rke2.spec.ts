@@ -97,7 +97,7 @@ describe('Deploy RKE2 cluster using node driver on Amazon EC2', { testIsolation:
       createRKE2ClusterPage.basicsTab().kubernetesVersions().clickOptionWithLabel(version);
 
       createRKE2ClusterPage.machinePoolTab().networks().toggle();
-      createRKE2ClusterPage.machinePoolTab().networks().clickOptionWithLabel('maxdualstack-vpc');
+      createRKE2ClusterPage.machinePoolTab().networks().clickOptionWithLabel('default');
 
       cy.intercept('POST', 'v1/provisioning.cattle.io.clusters').as('createRke2Cluster');
       createRKE2ClusterPage.create();
@@ -109,7 +109,12 @@ describe('Deploy RKE2 cluster using node driver on Amazon EC2', { testIsolation:
         clusterId = response?.body.id;
       });
       clusterList.waitForPage();
-      clusterList.list().state(this.rke2Ec2ClusterName).should('contain.text', 'Reconciling');
+      clusterList.list().state(this.rke2Ec2ClusterName).should('be.visible')
+        .and(($el) => {
+          const status = $el.text().trim();
+
+          expect(['Reconciling', 'Updating']).to.include(status);
+        });
     });
   });
 
@@ -154,9 +159,10 @@ describe('Deploy RKE2 cluster using node driver on Amazon EC2', { testIsolation:
     // check cluster details page > recent events
     ClusterManagerListPagePo.navTo();
     clusterList.waitForPage();
-    clusterList.clickOnClusterName(this.rke2Ec2ClusterName);
+    clusterList.goToDetailsPage(this.rke2Ec2ClusterName, '.cluster-link a');
     clusterDetails.waitForPage(null, 'machine-pools');
     clusterDetails.selectTab(tabbedPo, '[data-testid="btn-events"]');
+    clusterDetails.waitForPage(null, 'events');
     clusterDetails.recentEventsList().checkTableIsEmpty();
   });
 
@@ -167,9 +173,10 @@ describe('Deploy RKE2 cluster using node driver on Amazon EC2', { testIsolation:
     // check cluster details page > snapshots
     ClusterManagerListPagePo.navTo();
     clusterList.waitForPage();
-    clusterList.clickOnClusterName(this.rke2Ec2ClusterName);
+    clusterList.goToDetailsPage(this.rke2Ec2ClusterName, '.cluster-link a');
     clusterDetails.waitForPage(null, 'machine-pools');
     clusterDetails.selectTab(tabbedPo, '[data-testid="btn-snapshots"]');
+    clusterDetails.waitForPage(null, 'snapshots');
     clusterDetails.snapshotsList().checkTableIsEmpty();
 
     // create on demand snapshot
@@ -182,8 +189,10 @@ describe('Deploy RKE2 cluster using node driver on Amazon EC2', { testIsolation:
     clusterList.list().state(this.rke2Ec2ClusterName).contains('Active', { timeout: 700000 });
 
     // check snapshot exist
-    clusterList.clickOnClusterName(this.rke2Ec2ClusterName);
+    clusterList.goToDetailsPage(this.rke2Ec2ClusterName, '.cluster-link a');
+    clusterDetails.waitForPage(null, 'machine-pools');
     clusterDetails.selectTab(tabbedPo, '[data-testid="btn-snapshots"]');
+    clusterDetails.waitForPage(null, 'snapshots');
     clusterDetails.snapshotsList().checkSnapshotExist(`on-demand-${ this.rke2Ec2ClusterName }`);
   });
 

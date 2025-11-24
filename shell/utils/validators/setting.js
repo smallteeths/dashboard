@@ -6,10 +6,6 @@ export const isServerUrl = (value) => value === 'server-url';
 
 export const isHttps = (value) => value.toLowerCase().startsWith('https://');
 
-export const isLocalhost = (value) => (/^(?:https?:\/\/)?(?:localhost|127\.0\.0\.1)/i).test(value);
-
-export const hasTrailingForwardSlash = (value) => isUrl(value) && value?.toLowerCase().endsWith('/');
-
 /**
  * Checks that provided string is a domain without protocol (case insensitive):
  * - Cannot start with any protocol, such as http://, https://, ftp://, ftps://, udp://
@@ -23,3 +19,7 @@ export const hasTrailingForwardSlash = (value) => isUrl(value) && value?.toLower
  * @returns boolean indicating if the value is a domain without protocol
  */
 export const isDomainWithoutProtocol = (value) => (/^(?=.{1,254}$)(?![a-z][a-z0-9+.-]*:\/\/)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}(?::\d{1,5})?(?:\/\S*)?$/i).test(value);
+
+export const isLocalhost = (value) => (/^(?:https?:\/\/)?(?:localhost|127\.0\.0\.1)/i).test(value);
+
+export const hasTrailingForwardSlash = (value) => isUrl(value) && value?.toLowerCase().endsWith('/');

@@ -38,20 +38,17 @@ export default {
   },
 
   data() {
-    const config = {
-      bucket:              '',
-      cloudCredentialName: null,
-      endpoint:            '',
-      endpointCA:          '',
-      folder:              '',
-      region:              '',
-      skipSSLVerify:       false,
-
-      ...(this.value || {}),
-    };
-
     return {
-      config,
+      config: {
+        bucket:              '',
+        cloudCredentialName: null,
+        endpoint:            '',
+        endpointCA:          '',
+        folder:              '',
+        region:              '',
+        skipSSLVerify:       false,
+        ...(this.value || {}),
+      },
       fvFormRuleSets: [
         {
           path: 'endpoint', rootObject: this.config, rules: ['awsStyleEndpoint']
@@ -64,6 +61,7 @@ export default {
   },
 
   computed: {
+
     ccData() {
       if ( this.config.cloudCredentialName ) {
         const cred = this.$store.getters['rancher/byId'](NORMAN.CLOUD_CREDENTIAL, this.config.cloudCredentialName);
@@ -116,6 +114,7 @@ export default {
           :mode="mode"
           :placeholder="ccData.defaultBucket"
           :required="!ccData.defaultBucket"
+          :rules="!ccData.defaultBucket ? fvGetAndReportPathRules('bucket') : []"
           @update:value="update"
         />
       </div>
@@ -166,6 +165,7 @@ export default {
       <LabeledInput
         v-if="!config.skipSSLVerify"
         v-model:value="config.endpointCA"
+        :mode="mode"
         type="multiline"
         :label="t('cluster.rke2.etcd.s3config.endpointCA.label')"
         :placeholder="ccData.defaultEndpointCA"

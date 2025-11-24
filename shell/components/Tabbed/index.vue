@@ -261,7 +261,11 @@ export default {
 
 <template>
   <div
-    :class="{'side-tabs': !!sideTabs, 'tabs-only': tabsOnly }"
+    class="tabbed-container"
+    :class="{
+      'side-tabs': !!sideTabs,
+      'tabs-only': tabsOnly
+    }"
     :data-testid="componentTestid"
   >
     <ul
@@ -295,7 +299,9 @@ export default {
           @click.prevent="select(tab.name, $event)"
           @keyup.enter.space="select(tab.name, $event)"
         >
-          <span>{{ tab.labelDisplay }}</span>
+          <span>
+            {{ tab.labelDisplay }}
+          </span>
           <span
             v-if="tab.badge"
             class="tab-badge"
@@ -377,6 +383,10 @@ export default {
 </template>
 
 <style lang="scss" scoped>
+.tabbed-container {
+  min-width: fit-content;
+}
+
 .tabs {
   list-style-type: none;
   margin: 0;
@@ -402,7 +412,7 @@ export default {
     }
 
     .tab.active {
-      border-bottom: solid 2px var(--primary);
+      border-bottom: solid 2px var(--active, var(--primary));
     }
   }
 
@@ -440,7 +450,7 @@ export default {
 
     &.active {
       > A {
-        color: var(--primary);
+        color: var(--active, var(--primary));
         text-decoration: none;
       }
     }
@@ -520,16 +530,16 @@ export default {
       border-left: solid 5px transparent;
 
       &.toggle A {
-        color: var(--primary);
+        color: var(--active, var(--primary));
       }
 
       A {
-        color: var(--primary);
+        color: var(--link, var(--primary));
       }
 
       &.active {
         background-color: var(--body-bg);
-        border-left: solid 5px var(--primary);
+        border-left: solid 5px var(--active, var(--primary));
 
         & A {
           color: var(--input-label);
@@ -549,6 +559,7 @@ export default {
       list-style: none;
       padding: 0;
       margin-top: auto;
+      z-index: z-index('default');
 
       li {
         display: flex;
@@ -558,16 +569,25 @@ export default {
           flex: 1 1;
           display: flex;
           justify-content: center;
+
+          &:focus-visible {
+            @include focus-outline;
+          }
         }
 
         button:first-of-type {
           border-top: solid 1px var(--border);
           border-right: solid 1px var(--border);
+          border-top-left-radius: 0;
           border-top-right-radius: 0;
+          border-bottom-right-radius: 0;
         }
         button:last-of-type {
           border-top: solid 1px var(--border);
+          border-top-right-radius: 0;
           border-top-left-radius: 0;
+          border-bottom-left-radius: 0;
+          border-bottom-right-radius: 0;
         }
       }
     }

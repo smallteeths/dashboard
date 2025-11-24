@@ -28,7 +28,7 @@ import {
 } from '@shell/utils/object';
 import { allHash } from '@shell/utils/promise';
 import {
-  getAllOptionsAfterCurrentVersion, filterOutDeprecatedPatchVersions, isHarvesterSatisfiesVersion, labelForAddon, initSchedulingCustomization
+  getAllOptionsAfterCurrentVersion, filterOutDeprecatedPatchVersions, isHarvesterSatisfiesVersion, labelForAddon, initSchedulingCustomization, addonConfigPreserve
 } from '@shell/utils/cluster';
 
 import { BadgeState } from '@components/BadgeState';
@@ -57,7 +57,7 @@ import { ExtensionPoint, TabLocation } from '@shell/core/types';
 import MemberRoles from '@shell/edit/provisioning.cattle.io.cluster/tabs/MemberRoles';
 import Basics from '@shell/edit/provisioning.cattle.io.cluster/tabs/Basics';
 import Etcd from '@shell/edit/provisioning.cattle.io.cluster/tabs/etcd';
-import Networking from '@shell/edit/provisioning.cattle.io.cluster/tabs/networking';
+import Networking, { STACK_PREFS } from '@shell/edit/provisioning.cattle.io.cluster/tabs/networking';
 import Upgrade from '@shell/edit/provisioning.cattle.io.cluster/tabs/upgrade';
 import Registries from '@shell/edit/provisioning.cattle.io.cluster/tabs/registries';
 import AddOnConfig from '@shell/edit/provisioning.cattle.io.cluster/tabs/AddOnConfig';
@@ -164,6 +164,10 @@ export default {
     this.schedulingCustomizationOriginallyEnabled = sc.schedulingCustomizationOriginallyEnabled;
     this.errors = this.errors.concat(sc.errors);
 
+    if (this.isEdit) {
+      this.originalKubeVersion = this.versionOptions.find((v) => v.value === this.liveValue.spec.kubernetesVersion);
+    }
+
     Object.entries(this.chartValues).forEach(([name, value]) => {
       const key = this.chartVersionKey(name);
 
@@ -173,9 +177,7 @@ export default {
     this.setAgentConfiguration();
   },
 
-  data() {
-    const isGoogle = this.provider === GOOGLE;
-
+  beforeCreate() {
     if (!this.value.spec.rkeConfig) {
       this.value.spec.rkeConfig = {};
     }
@@ -219,11 +221,17 @@ export default {
       this.value.spec.rkeConfig.machineGlobalConfig = {};
     }
 
+    if (!this.value.spec.rkeConfig.networking) {
+      this.value.spec.rkeConfig.networking = {};
+    }
+
     if (!this.value.spec.rkeConfig.machineSelectorConfig?.length) {
       this.value.spec.rkeConfig.machineSelectorConfig = [{ config: {} }];
     }
+  },
 
-    const truncateLimit = this.value.defaultHostnameLengthLimit || 0;
+  data() {
+    const isGoogle = this.provider === GOOGLE;
 
     return {
       loadedOnce:                      false,
@@ -261,11 +269,12 @@ export default {
       }],
       harvesterVersionRange:                    {},
       complianceOverride:                       false,
-      truncateLimit,
+      truncateLimit:                            this.value.defaultHostnameLengthLimit || 0,
       busy:                                     false,
       machinePoolValidation:                    {}, // map of validation states for each machine pool
       machinePoolErrors:                        {},
       addonConfigValidation:                    {}, // validation state of each addon config (boolean of whether codemirror's yaml lint passed)
+      stackPreferenceError:                     false, //  spec.networking.stackPreference is validated in conjunction with hasSomeIpv6Pools
       allNamespaces:                            [],
       extensionTabs:                            getApplicableExtensionEnhancements(this, ExtensionPoint.TAB, TabLocation.CLUSTER_CREATE_RKE2, this.$route, this),
       clusterAgentDeploymentCustomization:      null,
@@ -280,11 +289,15 @@ export default {
       REGISTRIES_TAB_NAME,
       labelForAddon,
       etcdConfigValid:                          true,
+      addonConfigDiffs:                         {},
+      originalKubeVersion:                      null,
+      isEmpty,
     };
   },
 
   computed: {
     ...mapGetters({ features: 'features/get' }),
+
     isActiveTabRegistries() {
       return this.activeTab?.selectedName === REGISTRIES_TAB_NAME;
     },
@@ -837,6 +850,10 @@ export default {
       }
     },
 
+    hasSomeIpv6Pools() {
+      return !!(this.machinePools || []).find((p) => p.hasIpv6);
+    },
+
     validationPassed() {
       const validRequiredPools = this.hasMachinePools ? this.hasRequiredNodes() : true;
 
@@ -847,11 +864,12 @@ export default {
 
       const hasAddonConfigErrors = Object.values(this.addonConfigValidation).filter((v) => v === false).length > 0;
 
-      return validRequiredPools && base && !hasAddonConfigErrors;
+      return validRequiredPools && base && !hasAddonConfigErrors && !this.stackPreferenceError;
     },
     generateName() {
       return this.registryHost || '';
     },
+
     currentCluster() {
       if (this.mode === _EDIT) {
         return { ...this.value };
@@ -859,6 +877,7 @@ export default {
         return this.$store.getters['customisation/getPreviewCluster'];
       }
     },
+
     localValue: {
       get() {
         return this.value;
@@ -867,6 +886,7 @@ export default {
         this.$emit('update:value', newValue);
       }
     },
+
     hideFooter() {
       return this.needCredential && !this.credentialId;
     },
@@ -924,8 +944,22 @@ export default {
       }
     },
 
-    selectedVersion() {
-      this.versionInfo = {}; // Invalidate cache such that version info relevent to selected kube version is updated
+    async selectedVersion(neu) {
+      if (this.isEdit) {
+        const {
+          addonConfigDiffs, addonNames, userChartValues, $store
+        } = this;
+
+        await addonConfigPreserve(
+          {
+            addonConfigDiffs, addonNames, userChartValues, $store
+          },
+          this.originalKubeVersion?.charts,
+          neu?.charts
+        );
+      }
+
+      this.versionInfo = {}; // Invalidate cache such that version info relevant to selected kube version is updated
 
       // Allow time for addonNames to update... then fetch any missing addons
       this.$nextTick(() => this.initAddons());
@@ -955,6 +989,18 @@ export default {
         // No cloud provider available? Then clear cloud provider setting. This will recalculate addonNames...
         // ... which will eventually update `value.spec.rkeConfig.chartValues`
         this.agentConfig['cloud-provider-name'] = undefined;
+      }
+    },
+
+    hasSomeIpv6Pools(neu) {
+      if (this.isCreate && this.localValue.spec.rkeConfig.networking.stackPreference !== STACK_PREFS.IPV6) { // if stack pref is ipv6, the user has manually configured that and we shouldn't change it
+        if (neu) {
+          this.localValue.spec.rkeConfig.networking.stackPreference = STACK_PREFS.DUAL;
+
+          return;
+        }
+
+        this.localValue.spec.rkeConfig.networking.stackPreference = STACK_PREFS.IPV4;
       }
     },
   },
@@ -1286,13 +1332,14 @@ export default {
       const name = `pool${ ++this.lastIdx }`;
 
       const pool = {
-        id:     name,
+        id:      name,
         config,
-        remove: false,
-        create: true,
-        update: false,
-        uid:    name,
-        pool:   {
+        remove:  false,
+        create:  true,
+        update:  false,
+        uid:     name,
+        hasIpv6: false,
+        pool:    {
           name,
           etcdRole:             numCurrentPools === 0,
           controlPlaneRole:     numCurrentPools === 0,
@@ -1515,10 +1562,15 @@ export default {
       });
     },
 
-    showAddonConfirmation() {
-      return new Promise((resolve, reject) => {
+    showAddonConfirmation(addonNames, previousKubeVersion, newKubeVersion) {
+      return new Promise((resolve) => {
         this.$store.dispatch('cluster/promptModal', {
-          component: 'AddonConfigConfirmationDialog',
+          component:      'AddonConfigConfirmationDialog',
+          componentProps: {
+            addonNames,
+            previousKubeVersion,
+            newKubeVersion
+          },
           resources: [(value) => resolve(value)]
         });
       });
@@ -1559,10 +1611,28 @@ export default {
       const isEditVersion = this.isEdit && this.liveValue?.spec?.kubernetesVersion !== this.value?.spec?.kubernetesVersion;
 
       if (isEditVersion) {
-        const shouldContinue = await this.showAddonConfirmation();
+        const hasDiffs = Object.values(this.addonConfigDiffs).some((d) => !isEmpty(d));
 
-        if (!shouldContinue) {
-          return btnCb('cancelled');
+        if (hasDiffs) {
+          const addonNamesWithDiffs = [];
+
+          for (const name in this.addonConfigDiffs) {
+            const diff = this.addonConfigDiffs[name];
+
+            if (!isEmpty(diff)) {
+              addonNamesWithDiffs.push(name);
+            }
+          }
+
+          const shouldContinue = await this.showAddonConfirmation(
+            addonNamesWithDiffs,
+            this.liveValue.spec.kubernetesVersion,
+            this.value.spec.kubernetesVersion
+          );
+
+          if (!shouldContinue) {
+            return btnCb('cancelled');
+          }
         }
       }
 
@@ -1869,12 +1939,12 @@ export default {
 
       const hasMirrorsOrAuthConfig = Object.keys(regs.configs).length > 0 || Object.keys(regs.mirrors).length > 0;
 
-      if (this.registryHost || registrySecret || hasMirrorsOrAuthConfig) {
+      if (this.registryHost || registrySecret) {
         this.showCustomRegistryInput = true;
+      }
 
-        if (hasMirrorsOrAuthConfig) {
-          this.showCustomRegistryAdvancedInput = true;
-        }
+      if (hasMirrorsOrAuthConfig) {
+        this.showCustomRegistryAdvancedInput = true;
       }
     },
 
@@ -2190,7 +2260,8 @@ export default {
 
     handleTabChange(data) {
       this.activeTab = data;
-    }
+    },
+
   }
 };
 </script>
@@ -2405,6 +2476,7 @@ export default {
               :cloud-provider-options="cloudProviderOptions"
               :is-azure-provider-unsupported="isAzureProviderUnsupported"
               :can-azure-migrate-on-edit="canAzureMigrateOnEdit"
+              :has-some-ipv6-pools="hasSomeIpv6Pools"
               @update:value="$emit('input', $event)"
               @cilium-values-changed="handleCiliumValuesChanged"
               @enabled-system-services-changed="handleEnabledSystemServicesChanged"
@@ -2452,12 +2524,15 @@ export default {
             v-if="haveArgInfo"
             name="networking"
             label-key="cluster.tabs.networking"
+            :error="stackPreferenceError"
           >
             <Networking
               v-model:value="localValue"
               :mode="mode"
               :selected-version="selectedVersion"
               :truncate-limit="truncateLimit"
+              :machine-pools="machinePools"
+              :has-some-ipv6-pools="hasSomeIpv6Pools"
               @truncate-hostname-changed="truncateHostname"
               @cluster-cidr-changed="(val)=>localValue.spec.rkeConfig.machineGlobalConfig['cluster-cidr'] = val"
               @service-cidr-changed="(val)=>localValue.spec.rkeConfig.machineGlobalConfig['service-cidr'] = val"
@@ -2468,6 +2543,8 @@ export default {
               @local-cluster-auth-endpoint-changed="enableLocalClusterAuthEndpoint"
               @ca-certs-changed="(val)=>localValue.spec.localClusterAuthEndpoint.caCerts = val"
               @fqdn-changed="(val)=>localValue.spec.localClusterAuthEndpoint.fqdn = val"
+              @stack-preference-changed="(val)=>localValue.spec.rkeConfig.networking.stackPreference = val"
+              @validationChanged="(val)=>stackPreferenceError = !val"
             />
           </Tab>
 
@@ -2525,6 +2602,9 @@ export default {
               :addons-rev="addonsRev"
               :user-chart-values-temp="userChartValuesTemp"
               :init-yaml-editor="initYamlEditor"
+              :has-diff="!isEmpty(addonConfigDiffs[v.name])"
+              :previous-kube-version="liveValue?.spec?.kubernetesVersion"
+              :new-kube-version="value.spec.kubernetesVersion"
               @update:value="$emit('input', $event)"
               @update-questions="syncChartValues"
               @update-values="updateValues"

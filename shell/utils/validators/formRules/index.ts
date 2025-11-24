@@ -1,3 +1,4 @@
+import semver from 'semver';
 import { parse } from '@shell/utils/url';
 import { RBAC } from '@shell/config/types';
 import { HCI } from '@shell/config/labels-annotations';
@@ -162,9 +163,10 @@ export default function(
       return t(cronScheduleRule.message);
     }
   };
-  const awsStyleEndpoint: Validator = (val: string) => val && !isDomainWithoutProtocol(val) ? t('validation.setting.serverUrl.awsStyleEndpoint') : undefined;
 
   const https: Validator = (val: string) => val && !isHttps(val) ? t('validation.setting.serverUrl.https') : undefined;
+
+  const awsStyleEndpoint: Validator = (val: string) => val && !isDomainWithoutProtocol(val) ? t('validation.setting.serverUrl.awsStyleEndpoint') : undefined;
 
   const localhost: Validator = (val: string) => isLocalhost(val) ? t('validation.setting.serverUrl.localhost') : undefined;
 
@@ -198,8 +200,8 @@ export default function(
       return message;
     }
 
-    // Test http(s) protocol
-    if (protocol && (!/^(http|http(s))/gm.test(protocol) || (!url.startsWith('https://') && !url.startsWith('http://')))) {
+    // Test http(s)/ssh protocol
+    if (protocol && (!/^(http|https|ssh)$/gm.test(protocol) || (!url.startsWith('https://') && !url.startsWith('http://') && !url.startsWith('ssh://')))) {
       return message;
     }
 
@@ -252,6 +254,14 @@ export default function(
     }
 
     return undefined;
+  };
+
+  const version: Validator = (value: string) => {
+    return value && !semver.valid(value) ? t('validation.version') : undefined;
+  };
+
+  const semanticVersion: Validator = (value: string) => {
+    return value && !semver.validRange(value) ? t('validation.semanticVersion') : undefined;
   };
 
   const alphanumeric: Validator = (val: string) => val && !/^[a-zA-Z0-9]+$/.test(val) ? t('validation.alphanumeric', { key }) : undefined;
@@ -605,6 +615,7 @@ export default function(
     interval,
     awsStyleEndpoint,
     https,
+    awsStyleEndpoint,
     localhost,
     trailingForwardSlash,
     url,
@@ -625,9 +636,11 @@ export default function(
     isOctal,
     roleTemplateRules,
     ruleGroups,
+    semanticVersion,
     servicePort,
     subDomain,
     testRule,
+    version,
     wildcardHostname
   };
 }
