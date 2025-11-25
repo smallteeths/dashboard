@@ -6,7 +6,9 @@ describe('fetch: cloudcredential', () => {
     let requestFun = (key) => (key);
     const localThis = {
       value,
-      $store: {
+      getExtensions: jest.fn(),
+      $store:        {
+        app:      { $extension: { getProviders: jest.fn() } },
         dispatch: (key) => {
           return new Promise((resolve, reject) => {
             const store = {
