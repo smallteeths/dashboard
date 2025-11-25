@@ -890,11 +890,13 @@ export default {
     hideFooter() {
       return this.needCredential && !this.credentialId;
     },
+
     overallFormValidationPassed() {
       return this.validationPassed &&
             this.fvFormIsValid &&
             this.etcdConfigValid;
     },
+
   },
 
   watch: {

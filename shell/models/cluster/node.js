@@ -70,7 +70,7 @@ export default class ClusterNode extends SteveModel {
       drain,
       stopDrain,
       { divider: true },
-      ...super._availableActions,
+      ...super._availableActions
     ];
   }
 

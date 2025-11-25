@@ -590,23 +590,6 @@ describe('Cluster Manager', { testIsolation: 'off', tags: ['@manager', '@adminUs
       clusterDetail.machinePoolsList().details('machine-', 2).should('be.visible');
       clusterDetail.machinePoolsList().downloadYamlButton().should('be.disabled');
     });
-    it(`Show Configuration allows to edit config and view yaml for local cluster`, () => {
-      clusterDetail.waitForPage();
-      clusterDetail.openShowConfiguration();
-      const drawer = clusterDetail.detailDrawer();
-
-      drawer.checkExists();
-      drawer.checkVisible();
-      drawer.saveButton().should('be.visible');
-      const tabs = ['Config', 'YAML'];
-
-      drawer.tabs().tabNames().each((el, i) => {
-        expect(el).to.eq(tabs[i]);
-      });
-
-      drawer.tabs().clickTabWithName('yaml-tab');
-      drawer.saveButton().should('not.exist');
-    });
 
     it(`Show Configuration allows to edit config and view yaml for local cluster`, () => {
       clusterDetail.openShowConfiguration();

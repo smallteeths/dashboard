@@ -258,7 +258,7 @@ export default {
 
         disabledEncryption = await this.$store.dispatch('rancher/find', {
           type: 'setting',
-          id:   SETTING.BRAND,
+          id:   SETTING.DISABLE_PASSWORD_ENCRYPT,
           opt:  { url: `/v3/settings/${ SETTING.DISABLE_PASSWORD_ENCRYPT }` }
         });
       }

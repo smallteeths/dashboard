@@ -497,9 +497,15 @@ export function deepToRaw(obj, cache = new WeakSet()) {
  *
  * In rke2.vue, the syncMachineConfigWithLatest function updates machine pool configuration by
  * merging the latest configuration received from the backend with the current configuration updated by the user.
+ * However, Lodash's merge function treats arrays like object so index values are merged and not appended to arrays
+ * resulting in undesired outcomes for us, Example:
+ *
+ * const lastSavedConfigFromBE = { a: ["test"] };
+ * const currentConfigByUser = { a: [] };
  * merge(lastSavedConfigFromBE, currentConfigByUser); // returns { a: ["test"] }; but we expect { a: [] };
  *
  * More info: https://github.com/lodash/lodash/issues/1313
+
  * This helper function addresses the issue by always replacing the old array with the new array during the merge process.
  *
  * This helper is also used for another case in rke2.vue to handle merging addon chart default values with the user's current values.

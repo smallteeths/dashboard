@@ -613,7 +613,6 @@ export default function(
     hostname,
     imageUrl,
     interval,
-    awsStyleEndpoint,
     https,
     awsStyleEndpoint,
     localhost,

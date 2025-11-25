@@ -1,7 +1,7 @@
 import ExtensionsPagePo from '@/cypress/e2e/po/pages/extensions.po';
 import { HarvesterClusterDetailsPo, HarvesterClusterPagePo } from '@/cypress/e2e/po/pages/virtualization-mgmt/harvester-clusters.po';
 import RepositoriesPagePo from '@/cypress/e2e/po/pages/chart-repositories.po';
-import { EXTRA_LONG_TIMEOUT_OPT, LONG_TIMEOUT_OPT, MEDIUM_TIMEOUT_OPT } from '@/cypress/support/utils/timeouts';
+import { LONG_TIMEOUT_OPT, MEDIUM_TIMEOUT_OPT } from '@/cypress/support/utils/timeouts';
 import { CLUSTER_REPOS_BASE_URL } from '@/cypress/support/utils/api-endpoints';
 
 const extensionsPo = new ExtensionsPagePo();
@@ -255,7 +255,7 @@ describe('Harvester', { tags: ['@virtualizationMgmt', '@adminUser'] }, () => {
 
       harvesterPo.goTo();
       harvesterPo.waitForPage();
-      cy.wait('@updateHarvesterChart', EXTRA_LONG_TIMEOUT_OPT);
+      cy.wait('@updateHarvesterChart', LONG_TIMEOUT_OPT);
 
       // check for update harvester message
       harvesterPo.extensionWarning().invoke('text').should('match', /^Your current Harvester UI Extension \((v[\d.]+)\) is not the latest\.$/);
@@ -266,7 +266,7 @@ describe('Harvester', { tags: ['@virtualizationMgmt', '@adminUser'] }, () => {
         expect(response?.statusCode).to.eq(201);
         expect(request?.body?.charts[0].version).to.eq(versions[0]);
       });
-      cy.wait('@updateHarvesterChart', EXTRA_LONG_TIMEOUT_OPT);
+      cy.wait('@updateHarvesterChart', LONG_TIMEOUT_OPT);
 
       // verify update button and message not displayed
       harvesterPo.extensionWarning().should('not.exist');
