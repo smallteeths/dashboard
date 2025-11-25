@@ -8,6 +8,7 @@ describe('plugin: subscribe, actions: ws.resource.change', () => {
       getters: {
         normalizeType: (type) => type,
         typeEntry:     (type) => '',
+        havePage:      jest.fn()
       },
       dispatch:    growlSuccess,
       rootGetters: {
@@ -41,6 +42,7 @@ describe('plugin: subscribe, actions: ws.resource.change', () => {
       getters: {
         normalizeType: (type) => type,
         typeEntry:     (type) => '',
+        havePage:      jest.fn()
       },
       dispatch:    growlFail,
       rootGetters: {
@@ -73,6 +75,7 @@ describe('plugin: subscribe, actions: ws.resource.change', () => {
       getters: {
         normalizeType: (type) => type,
         typeEntry:     (type) => '',
+        havePage:      jest.fn()
       },
       dispatch:    growlSuccess,
       rootGetters: {
@@ -108,6 +111,7 @@ describe('plugin: subscribe, actions: ws.resource.change', () => {
       getters: {
         normalizeType: (type) => type,
         typeEntry:     (type) => '',
+        havePage:      jest.fn()
       },
       dispatch:    growlFail,
       rootGetters: {
@@ -143,6 +147,7 @@ describe('plugin: subscribe, actions: ws.resource.change', () => {
       getters: {
         normalizeType: (type) => type,
         typeEntry:     (type) => '',
+        havePage:      jest.fn()
       },
       dispatch:    growlFail,
       rootGetters: {
