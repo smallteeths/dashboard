@@ -1,5 +1,6 @@
 ackCn:
-  label: Alibaba ACK
+  label: 阿里雲 ACK
+  description: 建立新的阿里雲 ACK（阿里雲容器服務 Kubernetes 版）叢集或註冊現有叢集。
   updateWarn: 集群正在升級，編輯可能導致未知錯誤
   changedHistoryK8sVerison: 集群版本變更之後，無法編輯節點池
   resourceGroup:

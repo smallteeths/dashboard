@@ -1,5 +1,6 @@
 cceCn:
-  label: Huawei CCE
+  label: 华为 CCE
+  description: 创建新的华为 CCE (华为 Kubernetes 版）集群或注册已有集群。
   updateWarn: 集群正在升级，编辑可能导致未知错误
   region:
     label: 区域

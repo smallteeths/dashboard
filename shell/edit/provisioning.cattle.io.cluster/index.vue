@@ -13,7 +13,7 @@ import { sortBy } from '@shell/utils/sort';
 import { PROVISIONER, _RKE2 } from '@shell/store/prefs';
 import { filterAndArrangeCharts } from '@shell/store/catalog';
 import { CATALOG, CAPI as CAPI_ANNOTATIONS } from '@shell/config/labels-annotations';
-import { CAPI, MANAGEMENT, DEFAULT_WORKSPACE, NORMAN } from '@shell/config/types';
+import { CAPI, MANAGEMENT, DEFAULT_WORKSPACE } from '@shell/config/types';
 import { mapFeature, RKE2 as RKE2_FEATURE } from '@shell/store/features';
 import { allHash } from '@shell/utils/promise';
 import { BLANK_CLUSTER } from '@shell/store/store-types.js';
@@ -98,8 +98,6 @@ export default {
       hash.nodeDrivers = this.$store.dispatch('management/findAll', { type: MANAGEMENT.NODE_DRIVER });
     }
 
-    hash.operatorDrivers = this.$store.dispatch('rancher/request', { url: `v3/${ NORMAN.OPERATOR_SETTINGS }` }).catch(() => ([]));
-
     if (this.$store.getters[`management/canList`](MANAGEMENT.KONTAINER_DRIVER)) {
       hash.kontainerDrivers = this.$store.dispatch('management/findAll', { type: MANAGEMENT.KONTAINER_DRIVER });
     }
@@ -120,7 +118,6 @@ export default {
     const res = await allHash(hash);
 
     this.nodeDrivers = res.nodeDrivers || [];
-    this.operatorDrivers = res.operatorDrivers?.data || [];
     this.kontainerDrivers = res.kontainerDrivers || [];
 
     if ( !this.value.spec ) {
@@ -151,20 +148,6 @@ export default {
       }
     });
 
-    this.operatorDrivers.forEach((driver) => {
-      if (!driver.spec?.builtin && driver.spec?.uiUrl && driver.spec?.active) {
-        const name = driver.spec?.displayName || driver.id;
-        let cssUrl = driver.spec.uiUrl.replace(/\.js$/, '.css');
-
-        if (cssUrl.startsWith('http://') || cssUrl.startsWith('https://')) {
-          cssUrl = `${ PROXY_ENDPOINT }/${ cssUrl }`;
-        }
-
-        this.loadStylesheet(cssUrl, `driver-ui-css-${ driver.id }`);
-
-        this.iconClasses[name] = `machine-driver ${ name }`;
-      }
-    });
     // Custom Providers from extensions - initialize each with the store and the i18n service
     // We can't pass in this.$store as this leads to a circular-reference that causes Vue to freeze,
     // so pass in specific services that the provisioner extension may need
@@ -203,7 +186,6 @@ export default {
 
     return {
       nodeDrivers:      [],
-      operatorDrivers:  [],
       kontainerDrivers: [],
       extensions:       [],
       subType:          null,
@@ -359,16 +341,6 @@ export default {
         } else if (!isDeprecated) {
           addType(this.$plugin, obj.driverName, 'hosted', false, (isImport ? obj.emberImportPath : obj.emberCreatePath));
         }
-      });
-      this.operatorDrivers.filter((x) => x.state === 'active').forEach((obj) => {
-        const provider = `${ obj.id.substring(0, obj.id.lastIndexOf('operatorsetting')) }`;
-
-        // ack change to ui plugin
-        if (obj.id === 'ackoperatorsetting' || obj.id === 'cceoperatorsetting' || obj.id === 'tkeoperatorsetting') {
-          return;
-        }
-
-        addType(this.$plugin, obj.name, 'kontainer', false, (isImport ? `/g/clusters/add/launch/import?importProvider=${ provider }` : `/g/clusters/add/launch/${ obj.id }`));
       });
       if (!isImport) {
         templates.forEach((chart) => {
@@ -593,8 +565,6 @@ export default {
       }
       if (obj.link) {
         this.$router.push(obj.link);
-
-        return;
       }
 
       this.$router.applyQuery({ [SUB_TYPE]: id, [RKE_TYPE]: this.preferredProvisioner });

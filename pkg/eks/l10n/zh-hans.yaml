@@ -1,0 +1,2 @@
+eks:
+  description: 创建新的 Amazon EKS（Elastic Kubernetes 版）集群或注册已有集群。

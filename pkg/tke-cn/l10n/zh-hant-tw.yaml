@@ -1,5 +1,6 @@
 tkeCn:
   label: 騰訊雲 TKE
+  description: 建立新的騰訊雲 TKE (腾讯云 Kubernetes 版）叢集或註冊現有叢集。
   updateWarn: 集群正在升級，編輯可能導致未知錯誤
   shortLabel: Tencent TKE
   region:

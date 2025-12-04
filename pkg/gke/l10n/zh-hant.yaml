@@ -1,0 +1,2 @@
+gke:
+  description: 建立新的 Google GKE（Google Kubernetes 版）叢集或註冊現有叢集。

@@ -1,0 +1,2 @@
+eks:
+  description: 建立新的 Amazon EKS（Elastic Kubernetes 版）叢集或註冊現有叢集。

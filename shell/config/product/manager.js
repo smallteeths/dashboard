@@ -49,7 +49,6 @@ export function init(store) {
       [NORMAN.KONTAINER_DRIVER]:          'rancher',
       [NORMAN.NODE_DRIVER]:               'rancher',
       [VIRTUAL_TYPES.JWT_AUTHENTICATION]: 'management',
-      [NORMAN.OPERATOR_SETTING]:          'rancher',
     }
   });
 
@@ -105,16 +104,6 @@ export function init(store) {
     namespaced: false,
     icon:       'globe',
     route:      { name: 'c-cluster-manager-driver-nodedriver' },
-    exact:      true
-  });
-
-  virtualType({
-    labelKey:   'drivers.operatorsetting.title',
-    name:       'operator-setting',
-    group:      'Root',
-    namespaced: false,
-    icon:       'globe',
-    route:      { name: 'c-cluster-manager-driver-operatorsetting' },
     exact:      true
   });
 

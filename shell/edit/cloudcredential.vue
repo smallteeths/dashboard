@@ -37,7 +37,6 @@ export default {
     if (this.$store.getters['management/schemaFor'](MANAGEMENT.KONTAINER_DRIVER)) {
       this.kontainerDrivers = await this.$store.dispatch('management/findAll', { type: MANAGEMENT.KONTAINER_DRIVER });
     }
-    this.operatorDrivers = await this.$store.dispatch('rancher/request', { url: `v3/${ NORMAN.OPERATOR_SETTINGS }` }).then((res) => res.data).catch(() => ([]));
 
     this.extensions = this.getExtensions();
     // Force reload the cloud cred schema and any missing subtypes because there aren't change events sent when drivers come/go
@@ -93,8 +92,6 @@ export default {
       nodeDrivers:                   [],
       kontainerDrivers:              [],
       extensions:                    null,
-      operatorDrivers:               [],
-
     };
   },
 
@@ -150,9 +147,6 @@ export default {
       const fromExtensions = this.extensions?.filter((x) => !x.hidden).map((x) => x.id) || [];
 
       const providers = [...fromDrivers, ...fromExtensions];
-      const operatorDrivers = this.operatorDrivers.filter((x) => x.state === 'active').map((x) => x.id);
-
-      providers.push(...operatorDrivers);
 
       let types = uniq(providers.map((x) => this.$store.getters['plugins/credentialDriverFor'](x)));
 

@@ -1,4 +1,5 @@
 import CruAck from './components/CruAck.vue';
+import { isProviderEnabled } from '@shell/utils/settings';
 
 class AckProvisioner {
   static ID = 'ack';
@@ -16,7 +17,7 @@ class AckProvisioner {
   }
 
   get group() {
-    return 'kontainer';
+    return 'hosted';
   }
 
   get label() {
@@ -32,7 +33,7 @@ class AckProvisioner {
   }
 
   get hidden() {
-    return false;
+    return !isProviderEnabled(this.context, this.id);
   }
 
   get detailTabs() {
@@ -45,6 +46,10 @@ class AckProvisioner {
       events:       false,
       conditions:   false,
     };
+  }
+
+  get description() {
+    return this.context.t('ackCn.description');
   }
 }
 

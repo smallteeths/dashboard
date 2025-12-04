@@ -1,5 +1,6 @@
 tkeCn:
   label: 腾讯云 TKE
+  description: 创建新的腾讯云 TKE (腾讯云 Kubernetes 版）集群或注册已有集群。
   updateWarn: 集群正在升级，编辑可能导致未知错误
   shortLabel: Tencent TKE
   region:

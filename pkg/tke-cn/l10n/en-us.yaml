@@ -1,5 +1,6 @@
 tkeCn:
   label: Tencent TKE
+  description: Provision new Tencent TKE (Tencent Kubernetes Service) clusters or register existing ones.
   updateWarn: The cluster is currently being upgraded, and editing may result in unknown errors.
   shortLabel: Tencent TKE
   region:
