@@ -1,11 +1,10 @@
 // useCreateEditView.js
-import { ref, computed } from 'vue';
+import { ref, computed, getCurrentInstance } from 'vue';
 import { useStore } from 'vuex';
 import { _CREATE, _EDIT, _VIEW } from '@shell/config/query-params';
 import { LAST_NAMESPACE } from '@shell/store/prefs';
 import { exceptionToErrorsArray } from '@shell/utils/error';
 import { clear } from '@shell/utils/array';
-import { useRouter, useRoute } from 'vue-router';
 import { DEFAULT_WORKSPACE } from '@shell/config/types';
 import { handleConflict } from '@shell/plugins/dashboard-store/normalize';
 import { useChildHook, BEFORE_SAVE_HOOKS, AFTER_SAVE_HOOKS } from './useChildHook';
@@ -13,12 +12,12 @@ import { base64Encode } from '@shell/utils/crypto';
 
 export function useCreateEditView(props, context) {
   const {
-    emit, normanCluster, cceConfig, nodePools, state
+    normanCluster, cceConfig, nodePools, state
   } = context;
 
   const errors = ref([]);
-  const $router = useRouter();
-  const $route = useRoute();
+  const vm = getCurrentInstance();
+  const $router = vm?.proxy?.$router;
   const $store = useStore();
 
   const { applyHooks } = useChildHook();
@@ -46,48 +45,14 @@ export function useCreateEditView(props, context) {
   });
 
   const doneRoute = computed(() => {
-    if (props.value?.doneRoute) {
-      return props.value.doneRoute;
-    }
-    let name = $route.name;
-
-    if (name?.endsWith('-id')) {
-      name = name.replace(/(-namespace)?-id$/, '');
-    } else if (name?.endsWith('-create')) {
-      name = name.replace(/-create$/, '');
-    }
-
-    return name;
-  });
-
-  const doneParams = computed(() => {
-    if (props.value?.doneParams) {
-      return props.value.doneParams;
-    }
-    const out = { ...$route.params };
-
-    delete out.namespace;
-    delete out.id;
-
-    return out;
+    return props.value?.listLocation?.name;
   });
 
   function done() {
-    if (props.doneEvent) {
-      emit('done');
-
-      return;
-    }
-    if (props.doneLocationOverride) {
-      return $router.replace(props.doneLocationOverride);
-    }
     if (!doneRoute.value) {
       return;
     }
-    $router.replace({
-      name:   doneRoute.value,
-      params: doneParams.value || { resource: props.value.type },
-    });
+    $router.replace({ name: doneRoute.value });
   }
 
   async function conflict() {
@@ -307,7 +272,6 @@ export function useCreateEditView(props, context) {
     labels,
     annotations,
     doneRoute,
-    doneParams,
     done,
     save,
     actuallySave,

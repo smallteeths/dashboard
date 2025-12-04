@@ -1,0 +1,2 @@
+aks:
+  description: 建立新的 Azure AKS（Azure Kubernetes 版）叢集或註冊現有叢集。

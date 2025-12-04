@@ -1,9 +1,8 @@
 <script setup>
 import {
-  ref, onMounted, computed, watch, watchEffect
+  ref, onMounted, computed, watch, watchEffect, getCurrentInstance
 } from 'vue';
 import { useStore } from 'vuex';
-import { useRouter } from 'vue-router';
 import CruResource from '@shell/components/CruResource.vue';
 import { useCreateEditView } from '../composables/useCreateEditView.js';
 import { useFormValidation } from '../composables/useFormValidation.js';
@@ -51,6 +50,8 @@ const cceConfig = ref({});
 const normanCluster = ref({});
 const nodePools = ref([]);
 const cruresource = ref(null);
+const vm = getCurrentInstance();
+const router = vm?.proxy?.$router;
 const options = ref({
   vpcOptions:                         [],
   subnetOptions:                      [],
@@ -105,8 +106,6 @@ const {
 });
 
 const isImport = computed(() => {
-  const router = useRouter();
-
   if (!router) {
     return false;
   }

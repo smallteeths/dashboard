@@ -1,9 +1,8 @@
 <script setup>
 import {
-  ref, onMounted, computed, watch, watchEffect
+  ref, onMounted, computed, watch, watchEffect, getCurrentInstance
 } from 'vue';
 import { useStore } from 'vuex';
-import { useRouter } from 'vue-router';
 import { NORMAN } from '@shell/config/types';
 import Loading from '@shell/components/Loading.vue';
 import { useCreateEditView } from '../composables/useCreateEditView.js';
@@ -47,6 +46,8 @@ const props = defineProps({
 });
 
 const store = useStore();
+const vm = getCurrentInstance();
+const router = vm?.proxy?.$router;
 const intl = computed(() => store.getters['i18n/t']);
 const ackConfig = ref({});
 const normanCluster = ref({});
@@ -491,8 +492,6 @@ function setClusterName(name) {
 }
 
 const isImport = computed(() => {
-  const router = useRouter();
-
   if (!router) {
     return false;
   }

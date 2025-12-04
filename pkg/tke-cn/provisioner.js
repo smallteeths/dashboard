@@ -1,4 +1,5 @@
 import CruTke from './components/CruTke.vue';
+import { isProviderEnabled } from '@shell/utils/settings';
 
 class TkeProvisioner {
   static ID = 'tke';
@@ -16,7 +17,7 @@ class TkeProvisioner {
   }
 
   get group() {
-    return 'kontainer';
+    return 'hosted';
   }
 
   get label() {
@@ -32,7 +33,7 @@ class TkeProvisioner {
   }
 
   get hidden() {
-    return false;
+    return !isProviderEnabled(this.context, this.id);
   }
 
   get detailTabs() {
@@ -45,6 +46,10 @@ class TkeProvisioner {
       events:       false,
       conditions:   false,
     };
+  }
+
+  get description() {
+    return this.context.t('tkeCn.description');
   }
 }
 

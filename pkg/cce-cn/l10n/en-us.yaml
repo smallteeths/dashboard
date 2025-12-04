@@ -1,5 +1,6 @@
 cceCn:
   label: Huawei CCE
+  description: Provision new Huawei CCE (Huawei Kubernetes Service) clusters or register existing ones.
   updateWarn: The cluster is currently being upgraded, and editing may result in unknown errors.
   region:
     label: Region

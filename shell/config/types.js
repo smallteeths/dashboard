@@ -33,10 +33,8 @@ export const NORMAN = {
   ROLE_TEMPLATE:                 'roleTemplate',
   TOKEN:                         'token',
   USER:                          'user',
-  OPERATOR_SETTINGS:             'operatorsettings',
   KONTAINER_DRIVER:              'kontainerDriver',
   NODE_DRIVER:                   'nodeDriver',
-  OPERATOR_SETTING:              'operatorSetting',
 };
 
 // Public (via Norman)

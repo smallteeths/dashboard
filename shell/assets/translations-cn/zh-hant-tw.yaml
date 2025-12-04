@@ -2049,6 +2049,8 @@ cluster:
     create-rke2: 創建節點並使用 RKE2/K3s 創建集群
     create-template: 使用 Catalog 模板創建集群
     register-custom: 導入任意 Kubernetes 集群
+    create-hosted: 使用託管的 Kubernetes Hosted Provider 建立叢集
+    register-hosted: 在託管的 Kubernetes Hosted Provider 中註冊現有叢集
   rke2:
     snapshots:
       suffix: 每個節點的快照
@@ -8751,3 +8753,8 @@ compliance:
 graph:
   loading: 正在加載 Chart 數據...
   rendering: 正在渲染 Chart...
+providers:
+  hosted:
+    prime: 僅適用於 Prime
+    title: Hosted Providers
+    warning: 停用這些提供者後，所有使用它們的叢集將無法編輯

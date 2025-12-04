@@ -1,29 +1,17 @@
 // useCreateEditView.js
-import { computed } from 'vue';
+import { computed, getCurrentInstance } from 'vue';
 import { exceptionToErrorsArray } from '@shell/utils/error';
-import { useRouter, useRoute } from 'vue-router';
 
 export function useCreateEditView(props, context) {
   const {
     normanCluster, tkeConfig, nodePools, state
   } = context;
 
-  const $router = useRouter();
-  const $route = useRoute();
+  const vm = getCurrentInstance();
+  const $router = vm?.proxy?.$router;
 
   const doneRoute = computed(() => {
-    if (props.value?.doneRoute) {
-      return props.value.doneRoute;
-    }
-    let name = $route.name;
-
-    if (name?.endsWith('-id')) {
-      name = name.replace(/(-namespace)?-id$/, '');
-    } else if (name?.endsWith('-create')) {
-      name = name.replace(/-create$/, '');
-    }
-
-    return name;
+    return props.value?.listLocation?.name;
   });
 
   function done() {

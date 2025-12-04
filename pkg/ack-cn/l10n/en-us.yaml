@@ -1,5 +1,6 @@
 ackCn:
   label: Alibaba ACK
+  description: Provision new Alibaba ACK (ACK Kubernetes Service) clusters or register existing ones.
   updateWarn: The cluster is currently being upgraded, and editing may result in unknown errors.
   changedHistoryK8sVerison: After the cluster version changes, the node pool cannot be edited.
   resourceGroup:

@@ -1,5 +1,6 @@
 ackCn:
-  label: Alibaba ACK
+  label: 阿里云 ACK
+  description: 创建新的阿里云 ACK（阿里云容器服务 Kubernetes 版）集群或注册已有集群。
   updateWarn: 集群正在升级，编辑可能导致未知错误
   changedHistoryK8sVerison: 集群版本变更之后，无法编辑节点池
   resourceGroup:

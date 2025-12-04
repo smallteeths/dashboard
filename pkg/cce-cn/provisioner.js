@@ -1,4 +1,5 @@
 import CruCce from './components/CruCce.vue';
+import { isProviderEnabled } from '@shell/utils/settings';
 
 class CceProvisioner {
   static ID = 'cce';
@@ -16,7 +17,7 @@ class CceProvisioner {
   }
 
   get group() {
-    return 'kontainer';
+    return 'hosted';
   }
 
   get label() {
@@ -32,7 +33,7 @@ class CceProvisioner {
   }
 
   get hidden() {
-    return false;
+    return !isProviderEnabled(this.context, this.id);
   }
 
   get detailTabs() {
@@ -45,6 +46,10 @@ class CceProvisioner {
       events:       false,
       conditions:   false,
     };
+  }
+
+  get description() {
+    return this.context.t('cceCn.description');
   }
 }
 
