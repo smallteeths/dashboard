@@ -42,11 +42,11 @@ const props = defineProps({
   },
   systemDiskSize: {
     type:    Number,
-    default: 40,
+    default: 120,
   },
   size: {
     type:    Number,
-    default: 40,
+    default: 0,
   },
   instanceTypeLoading: {
     type:    Boolean,
