@@ -75,6 +75,7 @@ const driverMap = {
   ackoperatorsetting:               'aliyun',
   cceoperatorsetting:               'huawei',
   tkeoperatorsetting:               'tke',
+  cce:                              'huawei',
 };
 
 // Map a driver component back to the cloud credential field name their data has to be stored in
@@ -87,6 +88,7 @@ const driverToFieldMap = {
   eks:    'amazonec2',
   gke:    'google',
 
+  cce:     'huawei',
   tencent: 'tencent',
 };
 

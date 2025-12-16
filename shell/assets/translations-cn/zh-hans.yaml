@@ -2027,7 +2027,7 @@ cluster:
     softlayer: IBM 云
     tencenttke: 腾讯云 TKE
     tkeoperatorsetting: 腾讯云 TKE
-    tke: 腾讯云
+    tke: 腾讯云 TKE
     cceoperatorsetting: 华为 CCE
     cce: CCE
     upcloud: UpCloud
