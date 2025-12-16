@@ -620,7 +620,7 @@ async function fetchClusterVersion(cloudCredentialId) {
       store,
       externalParams: { regionId: tkeConfig.value.region },
     });
-    const versionRange = ['1.31', '1.32', '1.33'];
+    const versionRange = ['1.32', '1.33', '1.34'];
     const versions = res?.Response?.VersionInstanceSet?.map((item) => {
       const enabled = versionRange.find((v) => {
         return item.Version.startsWith(`${ v }`);
