@@ -321,6 +321,12 @@ export default class ProvCluster extends SteveModel {
         return this.mgmt.spec?.eksConfig?.privateAccess;
       case 'aks':
         return this.mgmt.spec?.aksConfig?.privateCluster;
+      case 'ack':
+        return this.mgmt.spec?.ackConfig?.endpointPublicAccess;
+      case 'cce':
+        return this.mgmt.spec?.cceConfig?.publicAccess;
+      case 'tke':
+        return this.mgmt.spec?.tkeConfig?.clusterEndpoint?.enable;
       }
     }
 
