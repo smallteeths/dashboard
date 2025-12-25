@@ -157,6 +157,7 @@ generic:
   tag: Tag
   tags: Tags
   upgradeable: Upgradeable
+  primeOnly: Prime Only
 locale:
   en-us: English
   zh-hans: 简体中文
@@ -8871,6 +8872,7 @@ plugins:
     experimental: This Extension is marked as experimental
     third-party: This Extension is provided by a Third-Party
     image: This Extension Image has been loaded manually
+    primeOnly: This Extension requires Rancher Prime
   developer:
     fields:
       name: Extension module name
@@ -8896,6 +8898,7 @@ plugins:
     developerPkg: This Extension has been loaded internally, so we won't load the external version
     apiAnnotationMissing: Unable to load Extension. The version installed is not compatible with the current Extensions API Version (Extension is missing the annotation catalog.cattle.io/ui-extensions-version which implies incompatibility with Rancher 2.10 and onwards)
     kubeVersion: Unable to load Extension. The version installed is not compatible with the current Rancher kubernetes version
+    primeOnly: Unable to load Rancher Prime Extension in Rancher Community
   helmError: An error occurred installing the extension via Helm
   info:
     detail: Detail
@@ -8907,6 +8910,7 @@ plugins:
     requiresExtensionApiVersion: Requires Extensions API version {required}
     requiresHost: Requires a host that matches "{mainHost}"
     requiresExtensionApiVersionMissing: Missing the annotation catalog.cattle.io/ui-extensions-version which implies incompatibility with Rancher 2.10 and onwards
+    requiresRancherPrime: Requires Rancher Prime
   install:
     label: Install
     prompt: Are you sure that you want to install this Extension?
@@ -8922,6 +8926,7 @@ plugins:
     image: Image
     menu: Extensions menu
     reloadRancher: Reload Rancher
+    primeOnly: Prime Only
   loadError: An error occurred loading the code for this extension
   manageRepos: Manage Repositories
   reload: Extensions changed - reload required
@@ -9050,6 +9055,7 @@ plugins:
   altIcon: Icon for {extension} extension card
   closePluginPanel: Close plugin description panel
   viewVersionDetails: View extension {name} version {version} details/Readme
+  incompatiblePrimeOnly: The latest version of this extension ({ version }) needs Rancher Prime in order to be installed.
 clusterConnectMode:
   actions:
     restartConfirm: Are You Sure You Want To Save Connect Mode And Restart {name} Cluster Controller？
