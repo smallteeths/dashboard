@@ -223,7 +223,7 @@ export default {
           {{ percent }}%
         </div>
         <PercentageBar
-          :value="percent"
+          :modelValue="percent"
           :color-stops="colorStops"
         />
       </div>
