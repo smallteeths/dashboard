@@ -79,5 +79,5 @@ mcs:
     cleared: Submariner CR 清理完成
     retrying: Submariner CR 查詢出錯，正在重試…
 product:
-  multiClusterService: 多集群服務
-  globalMultiClusterService: 多集群服務
+  multiClusterService: 多集群服務（實驗功能）
+  globalMultiClusterService: 多集群服務（實驗功能）
