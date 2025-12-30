@@ -79,5 +79,5 @@ mcs:
     cleared: Submariner CR cleanup done
     retrying: Error during Submariner CR query, retrying…
 product:
-  multiClusterService: Multi-Cluster Service
-  globalMultiClusterService: Multi-Cluster Service
+  multiClusterService: Multi-Cluster Service (Experimental)
+  globalMultiClusterService: Multi-Cluster Service (Experimental)
