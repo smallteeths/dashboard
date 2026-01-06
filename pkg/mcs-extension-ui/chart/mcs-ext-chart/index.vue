@@ -60,6 +60,15 @@
             />
           </div>
         </div>
+        <div class="row mb-10">
+          <div class="col span-6">
+            <Checkbox
+              v-model:value="airGappedDeployment"
+              :mode="mode"
+              label-key="mcs.chart.airGappedDeployment"
+            />
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -70,7 +79,9 @@ import { Banner } from '@components/Banner';
 import { LabeledInput } from '@components/Form/LabeledInput';
 import LabeledSelect from '@shell/components/form/LabeledSelect';
 import Loading from '@shell/components/Loading';
+import Checkbox from '@components/Form/Checkbox/Checkbox.vue';
 import { mapGetters } from 'vuex';
+import set from 'lodash/set';
 
 import { loadClusterInstallData, applyInstallDataToValue } from '../../utils/loadChartInstallData';
 
@@ -79,6 +90,7 @@ export default {
     LabeledInput,
     LabeledSelect,
     Loading,
+    Checkbox,
     Banner
   },
   props: {
@@ -103,13 +115,16 @@ export default {
       submarinerBrokerUrl: '',
       submarinerClusterID: '',
       isGlobal:            false,
+      airGappedDeployment: false,
       warnings:            [],
+      type:                'global',
     };
   },
   async fetch() {
     const installationType = this.currentCluster.id === 'local' ? 'global' : 'submariner';
     const type = this.mode === 'create' ? installationType : this?.value?.global?.installationType;
 
+    this.type = type;
     if (type === 'global') {
       this.isGlobal = true;
       // If it is a broker cluster, the submariner-operator configuration items are not required.
@@ -124,6 +139,11 @@ export default {
       this.serviceCIDR = data.serviceCIDR;
       this.submarinerBrokerUrl = data.submarinerBrokerUrl;
       this.submarinerClusterID = data.submarinerClusterID;
+      // init airGappedDeployment
+      const airGappedDeployment = this.value?.['submariner-operator']?.submariner?.airGappedDeployment ?? false;
+
+      this.airGappedDeployment = airGappedDeployment;
+      data.airGappedDeployment = airGappedDeployment;
       this.warnings = data.warnings;
 
       const applyValue = applyInstallDataToValue(this.value, data, type);
@@ -149,6 +169,10 @@ export default {
     async willSave() {
       const errors = [];
 
+      // Currently only `airGappedDeployment` is user-editable.
+      if (this.type !== 'global') {
+        set(this.value, 'submariner-operator.submariner.airGappedDeployment', this.airGappedDeployment);
+      }
       if (this.currentCluster.id !== 'local') {
         const nodes = await this.$store.dispatch('cluster/findAll', { type: NODE }, { root: true });
         const gatewayNodes = nodes.filter((node) => node?.metadata?.labels?.['submariner.io/gateway'] === 'true');

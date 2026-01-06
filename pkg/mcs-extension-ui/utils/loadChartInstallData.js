@@ -170,7 +170,8 @@ export function applyInstallDataToValue(
       ['submariner-operator.ipsec.psk', 'submarinerPsk'],
       ['submariner-operator.broker.token', 'submarinerToken'],
       ['submariner-operator.broker.ca', 'cacerts'],
-      ['submariner-operator.broker.namespace', 'namespace']
+      ['submariner-operator.broker.namespace', 'namespace'],
+      ['submariner-operator.submariner.airGappedDeployment', 'airGappedDeployment']
     ];
 
     mapping.forEach(([dst, src]) => setIfPresent(v, dst, data?.[src]));

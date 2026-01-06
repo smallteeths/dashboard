@@ -35,6 +35,7 @@ mcs:
     submarinerBrokerUrl: Submariner Broker Url
     submarinerClusterCIDR: Submariner 集群 CIDR
     submarinerServiceCIDR: Submariner 服務 CIDR
+    airGappedDeployment: 离线部署
   table:
     addCluster: 添加集群
     groupBy:
@@ -74,10 +75,10 @@ mcs:
     missNodeLabelError: "集群中必须有一个节点设置标签 submariner.io/gateway: 'true'"
     tooManyNodeLabelError: "叢集中只能有一個節點設定標籤 submariner.io/gateway: 'true'"
   progress:
-    deletingCrs: 正在刪除 Submariner CR
-    waitingCleanup: "删除可能会花费几分钟，请耐心等待 Submariner CR 清理完成……"
-    cleared: Submariner CR 清理完成
-    retrying: Submariner CR 查詢出錯，正在重試…
+    deletingCrs: 正在刪除 Submariner CRD
+    waitingCleanup: "删除可能会花费几分钟，请耐心等待 Submariner CRD 清理完成……"
+    cleared: Submariner CRD 清理完成
+    retrying: Submariner CRD 查詢出錯，正在重試…
 product:
   multiClusterService: 多集群服務（實驗功能）
   globalMultiClusterService: 多集群服務（實驗功能）

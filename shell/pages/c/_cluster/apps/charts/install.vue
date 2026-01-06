@@ -1411,7 +1411,7 @@ export default {
             :namespace-new-allowed="namespaceNewAllowed"
             :extra-columns="showProject ? ['project'] : []"
             :show-spacer="false"
-            :horizontal="false"
+            :horizontal="true"
             @isNamespaceNew="isNamespaceNew = $event"
           >
             <template
