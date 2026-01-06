@@ -17,6 +17,7 @@
       v-if="!isView"
       :value="value"
       :namespaced="false"
+      :nameRequired="false"
       :mode="mode"
     />
     <Tabbed
