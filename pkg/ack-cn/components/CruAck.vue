@@ -65,6 +65,8 @@ const options = ref({
   instanceTypeOptions: [],
   keyPairOptions:      [],
 });
+const RUNTIME_VERSION_LE_132 = '1.6.39';
+const RUNTIME_VERSION_LT_132 = '2.1.5';
 
 const state = ref({
   loading:                       false,
@@ -417,11 +419,20 @@ function addPool() {
     nextDefaultSuffix++;
   }
 
+  const v = ackConfig.value?.kubernetesVersion;
+  const m = String(v ?? '').match(/^(\d+)\.(\d+)\./);
+  const minor = m ? Number(m[2]) : NaN;
+  let runtimeVersion = RUNTIME_VERSION_LT_132;
+
+  if (!Number.isNaN(minor) && minor <= 32) {
+    runtimeVersion = RUNTIME_VERSION_LE_132;
+  }
   const name = `nodepool-${ nextDefaultSuffix }`;
   const ngConfig = {
     ...CONFIG_ENV.DEFAULT_NODE_GROUP_CONFIG,
+    runtime_version: runtimeVersion,
     name,
-    isNew: true,
+    isNew:           true,
   };
 
   nodePools.value.push(ngConfig);
@@ -489,6 +500,28 @@ function cancelCredential() {
 function setClusterName(name) {
   normanCluster.value['name'] = name;
   ackConfig.value['clusterName'] = name;
+}
+
+function changeContainerdVersion(version) {
+  if (props.mode !== _CREATE) {
+    return;
+  }
+
+  // '1.32.7-aliyun.1' -> minor = 32
+  const m = String(version).match(/^(\d+)\.(\d+)\./);
+  const minor = m ? Number(m[2]) : NaN;
+
+  if (!Number.isNaN(minor) && minor <= 32) {
+    nodePools.value = nodePools.value.map((np) => ({
+      ...np,
+      runtime_version: RUNTIME_VERSION_LE_132,
+    }));
+  } else {
+    nodePools.value = nodePools.value.map((np) => ({
+      ...np,
+      runtime_version: RUNTIME_VERSION_LT_132,
+    }));
+  }
 }
 
 const isImport = computed(() => {
@@ -881,6 +914,7 @@ watch(() => normanCluster.value.name, (name) => {
               :options="CONFIG_ENV.KUBERNETESVERSIONS"
               label-key="ackCn.version.label"
               :disabled="ackConfig.imported"
+              @update:value="changeContainerdVersion($event)"
             />
           </div>
         </div>
