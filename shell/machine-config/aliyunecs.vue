@@ -363,7 +363,6 @@ export default {
       if (!this.value?.imageId) {
         imageType = imageType || this.imageTypeChoose?.[0]?.value;
         imageVersionChoose = this.groupImages?.[imageType] || [] ;
-        this.value.imageId = imageVersionChoose?.[0].value;
       } else {
         const found = findBy(this.images, 'ImageId', this.value.imageId);
 
@@ -531,7 +530,7 @@ export default {
       }
 
       this.imageVersionChoose = imageVersionChoose;
-      this.value.imageId = imageVersionChoose.length ? imageVersionChoose[0]?.value : '';
+      this.value.imageId = '';
     },
 
     capitalizeFirst(str) {
