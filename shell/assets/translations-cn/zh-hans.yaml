@@ -7268,6 +7268,7 @@ action:
   runNow: 立即运行
   suspend: 暂停
   resume: 重新开始
+  showConfiguration: 查看配置
 unit:
   sec: 秒
   min: 分钟
