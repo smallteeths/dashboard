@@ -2034,6 +2034,7 @@ cluster:
     tencenttke: 腾讯云 TKE
     tkeoperatorsetting: 腾讯云 TKE
     tke: 腾讯云 TKE
+    tencent: 腾讯云
     cceoperatorsetting: 华为 CCE
     cce: CCE
     upcloud: UpCloud
