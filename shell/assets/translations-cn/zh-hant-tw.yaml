@@ -1002,7 +1002,7 @@ catalog:
       basics:
         label: 元數據
         subtext: 設置應用元數據
-        description: 這個過程有助於 {action, select, install { 創建 } upgrade { 升級 } update { 更新 } } 這個 {existing, select, true { 應用 } false { Chart} }。首先設置 {vendor} 用來管理應用的基本信息。
+        description: 該流程將幫助{action, select, install {建立} upgrade {升級} downgrade {降級} editVersion {更新}}此{existing, select, true {應用程式} false {Chart}}。請先設定一些基本資訊，{vendor} 將使用這些資訊來管理該應用程式。
         nsCreationDescription: "如果你要把應用安裝到新的命名空間，在命名空間字段中輸入其名稱，並選擇它。"
         createNamespace: "將創建命名空間 <code>{namespace}</code>。"
       clusterTplVersion:
