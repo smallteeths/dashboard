@@ -1247,9 +1247,9 @@ cluster:
         placeholder: CCE 访问密钥
         help: 創建访问密钥 ID 参考 <a href="https://support.huaweicloud.com/usermanual-ca/zh-cn_topic_0046606340.html" target="_blank">这里</a>.
       secretKey:
-        label: 访问密钥
-        placeholder: CCE 访问密钥
-        help: 获取访问密钥参考 <a href="https://support.huaweicloud.com/usermanual-ca/zh-cn_topic_0046606340.html" target="_blank">这里</a>.
+        label: 密文密钥
+        placeholder: CCE 密文密钥
+        help: 获取密文密钥参考 <a href="https://support.huaweicloud.com/usermanual-ca/zh-cn_topic_0046606340.html" target="_blank">这里</a>.
       projectId:
         label: 项目
         placeholder: CCE 项目
