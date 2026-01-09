@@ -1002,7 +1002,7 @@ catalog:
       basics:
         label: 元数据
         subtext: 设置应用元数据
-        description: 这个过程有助于 {action, select, install { 创建 } upgrade { 升级 } update { 更新 } } 这个 {existing, select, true { 应用 } false { Chart} }。首先设置 {vendor} 用来管理应用的基本信息。
+        description: 该流程将帮助{action, select, install {创建} upgrade {升级} downgrade {降级} editVersion {更新}}此{existing, select, true {应用} false {Chart}}。请先设置一些基础信息，{vendor} 将使用这些信息来管理该应用。
         nsCreationDescription: "如果你要把应用安装到新的命名空间，在命名空间字段中输入其名称，并选择它。"
         createNamespace: "将创建命名空间 <code>{namespace}</code>。"
       clusterTplVersion:
