@@ -2034,6 +2034,7 @@ cluster:
     tencenttke: 騰訊雲 TKE
     tkeoperatorsetting: 騰訊雲 TKE
     tke: 騰訊雲 TKE
+    tencent: 騰訊雲
     cceoperatorsetting: 華為 CCE
     cce: CCE
     upcloud: UpCloud

@@ -2563,6 +2563,7 @@ cluster:
     tencenttke: Tencent TKE
     tkeoperatorsetting: Tencent TKE
     tke: Tencent TKE
+    tencent: Tencent
     cceoperatorsetting: Huawei CCE
     cce: CCE
     upcloud: UpCloud

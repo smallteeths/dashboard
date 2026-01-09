@@ -292,6 +292,9 @@ export default {
       if (driver === 'aliyun') {
         return this.$store.getters['i18n/withFallback'](`cluster.provider.alibaba`, null, driver);
       }
+      if (driver === 'tke') {
+        return this.$store.getters['i18n/withFallback']('cluster.provider.tencent');
+      }
 
       return this.$store.getters['i18n/withFallback'](`cluster.provider."${ driver }"`, null, driver);
     },
