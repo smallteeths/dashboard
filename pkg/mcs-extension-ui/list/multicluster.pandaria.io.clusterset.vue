@@ -237,7 +237,7 @@ const genRowObj = (cluster, clusterset, that, clusterName) => {
       d.stateDescription = clusterset.status.memberStatus[cluster.metadata.name]?.message;
     }
   } else if (clusterset) {
-    const state = clusterset.status.phase;
+    const state = clusterset?.status?.phase;
 
     d.stateDisplay = state && `${ state.slice(0, 1).toUpperCase() }${ state.slice(1) }`;
     d.stateBackground = CLUSTER_SET_PHASE_BG_MAP[state] ?? 'bg-info';

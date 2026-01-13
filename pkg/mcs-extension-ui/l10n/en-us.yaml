@@ -75,10 +75,10 @@ mcs:
     missNodeLabelError: "The label submariner.io/gateway: 'true' must be set on one node in the cluster"
     tooManyNodeLabelError: "Only one node in the cluster can have the label submariner.io/gateway: 'true'. Please remove it from the extra nodes."
   progress:
-    deletingCrs: Deleting Submariner CRD
-    waitingCleanup: "Deletion may take a few minutes. Waiting for Submariner CRD cleanup…"
-    cleared: Submariner CRD cleanup done
-    retrying: Error during Submariner CRD query, retrying…
+    deletingCrs: Deleting Submariner CRs
+    waitingCleanup: "Deletion may take a few minutes. Waiting for Submariner CR cleanup…"
+    cleared: Submariner CR cleanup done
+    retrying: Error during Submariner CR query, retrying…
 product:
   multiClusterService: Multi-Cluster Service (Experimental)
   globalMultiClusterService: Multi-Cluster Service (Experimental)
