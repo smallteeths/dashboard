@@ -95,32 +95,16 @@ export function init($plugin: IPlugin, store: any) {
     namespaced:  true,
     showState:   true,
     canYaml:     true,
-    customRoute: {
-      name:   `c-cluster-${ CLUSTER_PRODUCT_NAME }-resource`,
-      params: {
-        product:  CLUSTER_PRODUCT_NAME,
-        resource: SERVICE_EXPORTS
-      },
-      meta: { product: CLUSTER_PRODUCT_NAME }
-    }
   });
   clusterConfigureType(SERVICE__IMPORTS, {
     displayName: 'Service Imports',
-    isCreatable: true,
-    isEditable:  true,
-    isRemovable: true,
+    isCreatable: false,
+    isEditable:  false,
+    isRemovable: false,
     showAge:     true,
     showState:   true,
     namespaced:  true,
     canYaml:     true,
-    customRoute: {
-      name:   `c-cluster-${ CLUSTER_PRODUCT_NAME }-resource`,
-      params: {
-        product:  CLUSTER_PRODUCT_NAME,
-        resource: SERVICE__IMPORTS
-      },
-      meta: { product: CLUSTER_PRODUCT_NAME }
-    }
   });
   clusterVirtualType({
     labelKey: 'mcs.nav.dashboard.label',

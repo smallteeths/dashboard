@@ -34,10 +34,6 @@
               <h3>Clusterset</h3>
             </div>
             <div class="gd-resource-item">
-              <h1>{{ resourceCounts.serviceexport?.summary?.count ?? 0 }}</h1>
-              <h3>Service Export</h3>
-            </div>
-            <div class="gd-resource-item">
               <h1>{{ resourceCounts.serviceimport?.summary?.count ?? 0 }}</h1>
               <h3>Service Import</h3>
             </div>
@@ -105,12 +101,10 @@ export default {
       const clusterCounts = this.$store.getters[`${ inStore }/all`](COUNT)?.[0]?.counts;
       const clusterset = clusterCounts?.['multicluster.pandaria.io.clusterset'] || {};
       const serviceimport = clusterCounts?.['multicluster.x-k8s.io.serviceimport'] || {};
-      const serviceexport = clusterCounts?.['multicluster.x-k8s.io.serviceexport'] || {};
 
       return {
         clusterset,
         serviceimport,
-        serviceexport
       };
     }
   },
