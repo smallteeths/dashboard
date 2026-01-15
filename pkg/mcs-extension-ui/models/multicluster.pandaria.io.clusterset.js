@@ -41,7 +41,7 @@ export default class ClusterSet extends SteveModel {
   }
 
   get canEditYaml() {
-    return true;
+    return false;
   }
 
   get canYaml() {
