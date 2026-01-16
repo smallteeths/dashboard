@@ -228,23 +228,23 @@ const genRowObj = (cluster, clusterset, that, clusterName) => {
   //   d.stateBackground = clusterset.metadata.error ? 'bg-info' : 'bg-success';
   // }
 
-  if (clusterset && cluster && clusterset.status?.memberStatus) {
-    const state = clusterset.status?.memberStatus[cluster.metadata.name]?.phase;
+  if (clusterset) {
+    const memberStatus = clusterset.status?.memberStatus;
+    const cname = cluster?.metadata?.name ?? deletedClusterName;
+    const member = cname && memberStatus ? memberStatus[cname] : undefined;
+    const state = member?.phase ?? clusterset.status?.phase;
 
-    d.stateDisplay = state && `${ state.slice(0, 1).toUpperCase() }${ state.slice(1) }`;
-    d.stateBackground = CLUSTER_SET_PHASE_BG_MAP[state] ?? 'bg-info';
-    if (state === 'Failed') {
-      d.stateDescription = clusterset.status.memberStatus[cluster.metadata.name]?.message;
+    if (state) {
+      d.stateDisplay = `${ state[0].toUpperCase() }${ state.slice(1) }`;
+    } else {
+      d.stateDisplay = state;
     }
-  } else if (clusterset) {
-    const state = clusterset?.status?.phase;
 
-    d.stateDisplay = state && `${ state.slice(0, 1).toUpperCase() }${ state.slice(1) }`;
     d.stateBackground = CLUSTER_SET_PHASE_BG_MAP[state] ?? 'bg-info';
-    // if (['Degraded', 'Failed'].includes(clusterset.status.phase)) {
-    //   d.showSubRow = true
-    //   d.stateDescription = Object.entries(clusterset.status.memberStatus).filter(([k, v]) => v.phase === 'Failed').map(([k,v]) => `${k}\n${v.message}`).join('\n')
-    // }
+
+    if (String(state).toLowerCase() === 'failed') {
+      d.stateDescription = member?.message;
+    }
   }
 
   return d;
