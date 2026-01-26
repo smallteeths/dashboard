@@ -472,6 +472,8 @@ async function fetchFlavors(cloudCredentialId) {
 
     options.value.flavorOptionsByZones = {};
     if (res.length === 0) {
+      state.value.flavorLoading = false;
+
       return;
     }
     res.forEach((flavor) => {
@@ -652,6 +654,8 @@ async function fetchVolumeTypes(cloudCredentialId) {
     options.value.volumeTypeChoicesByZones = {};
 
     if (res.length === 0) {
+      state.value.volumeTypesLoading = false;
+
       return;
     }
 
@@ -715,6 +719,8 @@ async function fetchOsAvailabilityZone(cloudCredentialId) {
 
     options.value.availableZoneOptions = [];
     if (res.length === 0) {
+      state.value.osAvailabilityZoneLoading = false;
+
       return;
     }
 
@@ -762,6 +768,8 @@ async function fetchSecurityGroups(cloudCredentialId) {
 
     options.value.securityGroupOptions = [];
     if (res.length === 0) {
+      state.value.securityGroupsLoading = false;
+
       return;
     }
 
@@ -793,6 +801,8 @@ async function fetchOsKeypairs(cloudCredentialId) {
 
     options.value.sshKeyOptions = [];
     if (res.length === 0) {
+      state.value.osKeypairsLoading = false;
+
       return;
     }
 
@@ -825,6 +835,7 @@ async function fetchClusters(cloudCredentialId) {
 
     if (res.length === 0) {
       options.value.clusterOptions = out;
+      state.value.clusterLoading = false;
 
       return;
     }
@@ -1168,6 +1179,7 @@ onMounted(async() => {
             v-model:description="normanCluster.description"
             v-model:clusterID="cceConfig.clusterID"
             :clusterOptions="options.clusterOptions"
+            :clusterLoading="state.clusterLoading"
             :rules="{
               name: fvGetAndReportPathRules('name'),
               clusterID: fvGetAndReportPathRules('clusterID'),
