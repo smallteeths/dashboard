@@ -1807,6 +1807,8 @@ cluster:
         placeholder: Private IP in Private Network
       privateAddressOnly:
         label: Private Address Only
+      allocatePublicStaticIp:
+        label: Allocate Public Static IP
       internetChargeType:
         label: Bandwidth Billing
         prompt: Choose Bandwidth Billing...
