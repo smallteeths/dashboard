@@ -1,5 +1,6 @@
 // useCreateEditView.js
-import { computed, getCurrentInstance } from 'vue';
+import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { exceptionToErrorsArray } from '@shell/utils/error';
 
 export function useCreateEditView(props, context) {
@@ -7,9 +8,7 @@ export function useCreateEditView(props, context) {
     normanCluster, tkeConfig, nodePools, state
   } = context;
 
-  const vm = getCurrentInstance();
-  const $router = vm?.proxy?.$router;
-
+  const $router = useRouter();
   const doneRoute = computed(() => {
     return props.value?.listLocation?.name;
   });
