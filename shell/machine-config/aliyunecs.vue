@@ -62,30 +62,24 @@ export default {
   components: {
     Banner, Loading, LabeledInput, LabeledSelect, Checkbox, RadioGroup, UnitInput, KeyValue, ArrayList
   },
-
   mixins: [CreateEditView],
-
-  props: {
+  props:  {
     uuid: {
       type:     String,
       required: true,
     },
-
     cluster: {
       type:    Object,
       default: () => ({})
     },
-
     credentialId: {
       type:     String,
       required: true,
     },
-
     disabled: {
       type:    Boolean,
       default: false
     },
-
     createOption: {
       default: (text) => {
         if (text) {
@@ -95,111 +89,85 @@ export default {
       type: Function
     },
   },
-
   async fetch() {
     this.errors = [];
     const cloudCredentialId = this.credentialId;
 
-    if ( !cloudCredentialId ) {
+    if (!cloudCredentialId) {
       return;
     }
-
     if (!this.defaultValue) {
       this.defaultValue = this.$store.getters['aliyun/defaultValue'];
     }
-
     try {
-      if ( this.credential?.id !== cloudCredentialId ) {
-        this.credential = await this.$store.dispatch('rancher/find', { type: NORMAN.CLOUD_CREDENTIAL, id: cloudCredentialId });
+      if (this.credential?.id !== cloudCredentialId) {
+        this.credential = await this.$store.dispatch('rancher/find', {
+          type: NORMAN.CLOUD_CREDENTIAL,
+          id:   cloudCredentialId
+        });
       }
     } catch (e) {
       this.credential = null;
     }
-
     if (!this.regions) {
       this.regions = await this.$store.dispatch('aliyun/regions', { cloudCredentialId });
     }
-
     try {
-      const region = this.value.region || this.$store.getters['aliyun/defaultRegion'];
+      const region = this.value?.region || this.$store.getters['aliyun/defaultRegion'];
       const hash = {};
 
-      if ( !this.value.region ) {
-        this.value.region = region;
-      }
-
-      if ( !this.value.resourceGroupId ) {
-        this.value.resourceGroupId = '';
-      }
-
+      this.setIfUnset('region', region);
+      this.setIfUnset('resourceGroupId', '');
       if (!this.resourceGroups) {
         hash.resourceGroups = this.$store.dispatch('aliyun/resourceGroups', { cloudCredentialId });
       }
-
-      if ( this.loadedRegionalFor !== region ) {
+      if (this.loadedRegionalFor !== region) {
         const { resourceGroupId } = this.value;
 
         hash.zones = this.$store.dispatch('aliyun/zones', { cloudCredentialId, regionId: region });
         hash.vpcs = this.$store.dispatch('aliyun/vpcs', {
           cloudCredentialId, regionId: region, resourceGroupId
         });
-        hash.instanceTypes = this.$store.dispatch('aliyun/instanceTypes', { cloudCredentialId, regionId: region });
       }
+      const res = await allHash(hash);
 
-      hash.availableInstanceTypes = this.$store.dispatch('aliyun/availableInstanceTypes', {
-        cloudCredentialId, regionId: region, destinationResource: 'InstanceType', zoneId: this.value?.zone, instanceChargeType: this.value?.instanceChargeType
-      });
-
-      const res = await allHash(hash).then((h) => {
-        const out = (h.instanceTypes || this.instanceTypes).filter((obj) => h.availableInstanceTypes.includes(obj.InstanceTypeId));
-
-        h.availableInstanceTypes = sortBy(out, ['isDefault:desc', 'InstanceTypeFamily']);
-
-        return h;
-      });
-
-      for ( const k in res ) {
+      for (const k in res) {
         this[k] = res[k];
       }
+      this.setIfUnset('zone', this.defaultValue?.zone);
+      this.setIfUnset('vpcId', this.defaultValue?.vpcId);
+      if (this.isUnset(this.value?.instanceType)) {
+        const defaultInstanceType = this.instanceOptions?.[0]?.value || '';
 
-      if (!this.value?.zone) {
-        this.value.zone = this.defaultValue.zone;
+        if (defaultInstanceType) {
+          this.value.instanceType = defaultInstanceType;
+        }
       }
+      this.setIfUnset('upgradeKernel', false);
+      this.setIfUnset('ioOptimized', 'optimized');
+      this.setIfUnset('diskFs', 'ext4');
+      this.setIfUnset('internetChargeType', 'PayByTraffic');
+      this.setIfUnset('instanceChargeType', this.defaultValue?.instanceChargeType);
 
-      if (!this.value?.vpcId) {
-        this.value.vpcId = this.defaultValue.vpcId;
-      }
+      const openPort = this.value?.openPort;
 
-      if (!this.value?.instanceType) {
-        this.value.instanceType = this.instanceOptions?.[1]?.value;
+      // NOTE (legacy behavior):
+      // Even when the user selects an existing Security Group, we still pass `openPort`.
+      // This is intentional for backward compatibility: many users have running environments created with
+      // this behavior. Changing how `openPort` is sent when an existing Security Group is chosen could
+      // unintentionally affect instances created previously (or automation relying on the old behavior).
+      // Therefore, we preserve the original/default logic here.
+      if (this.isUnset(openPort) || (Array.isArray(openPort) && openPort.length === 0)) {
+        this.value.openPort = this.defaultValue?.openPort || [];
       }
-
-      if (!this.value?.upgradeKernel) {
-        this.value.upgradeKernel = false;
-      }
-      if (!this.value?.ioOptimized) {
-        this.value.ioOptimized = 'optimized';
-      }
-      if (!this.value?.diskFs) {
-        this.value.diskFs = 'ext4';
-      }
-      if (!this.value?.internetChargeType) {
-        this.value.internetChargeType = 'PayByTraffic';
-      }
-      if (!this.value?.instanceChargeType) {
-        this.value.instanceChargeType = this.defaultValue?.instanceChargeType;
-      }
-      if (!this.value?.openPort || !this.value?.openPort.length) {
-        this.value.openPort = this.defaultValue?.openPort;
-      }
-
       this.initTags();
       this.loadedRegionalFor = region;
+      // Don not await instanceTypes, it will be fetched in instanceChangeFetch
+      this.fetchInstanceTypes({ cloudCredentialId, regionId: region });
     } catch (e) {
       this.errors = exceptionToErrorsArray(e);
     }
   },
-
   data() {
     return {
       securityGroupMode:     'default',
@@ -210,191 +178,227 @@ export default {
       loadedInstanceFor:     null,
       loadedIoOptiomizedFor: null,
 
-      regions:                null,
-      resourceGroups:         null,
-      zones:                  null,
-      vpcs:                   null,
-      vSwitches:              null,
-      securityGroups:         null,
-      instanceTypes:          null,
-      availableInstanceTypes: null,
-      images:                 null,
-      systemDiskCategories:   null,
-      dataDiskCategories:     null,
-      periodUnit:             null,
-      spotDuration:           true,
-      imageType:              null,
-      imageVersionChoose:     [],
-      previousImageIdOption:  {},
+      regions:                   null,
+      resourceGroups:            null,
+      zones:                     null,
+      vpcs:                      null,
+      vSwitches:                 null,
+      securityGroups:            null,
+      instanceTypes:             null,
+      availableInstanceTypes:    null,
+      images:                    null,
+      systemDiskCategories:      null,
+      dataDiskCategories:        null,
+      periodUnit:                null,
+      spotDuration:              true,
+      imageType:                 null,
+      imageVersionChoose:        [],
+      instanceTypeChangeLoading: false,
+      vswitchIdLoading:          false,
+      instanceTypeLoading:       false,
+      instanceTypeErrors:        [],
     };
   },
-
   mounted() {
     this.value?.vpcId && this.vpcChangeFetch();
     this.value?.instanceType && this.instanceChangeFetch();
 
     this.initInstanceChargeType();
   },
-
   watch: {
     'credentialId'() {
       this.$fetch();
     },
-    'spotDuration'(neu) {
-      this.value.spotDuration = neu ? '1' : '0';
-    },
-    'value.resourceGroupId'() {
-      this.loadedRegionalFor = null;
-      this.$fetch();
-    },
-    'value.region'(val) {
-      this.$fetch();
-    },
-    'value.zone'(val) {
-      if (val) {
-        this.$fetch();
-        this.instanceChangeFetch();
-      }
-    },
-    'value.vpcId'() {
-      this.vpcChangeFetch();
-    },
-    'value.instanceType'() {
-      this.instanceChangeFetch();
-    },
-    'instanceChargeType'(val) {
-      this.value.instanceChargeType = val;
-      if (val === 'SpotStrategy') {
-        this.value.instanceChargeType = this.defaultValue?.instanceChargeType;
-        this.value.spotDuration = '1';
-        this.spotDuration = true;
-        this.value.spotStrategy = 'SpotAsPriceGo';
-      } else {
-        this.value.spotStrategy = this.defaultValue.spotStrategy;
-        delete this.value.spotDuration;
-        delete this.value.spotStrategy;
-      }
-      if (this.value.instanceChargeType === this.defaultValue?.instanceChargeType) {
-        delete this.value.period;
-        delete this.value.periodUnit;
-      }
-      this.getAvailableInstanceTypes();
-    },
-    'periodUnit'(val) {
-      if (val) {
-        const ary = val.split('_');
-
-        if (ary[1]) {
-          this.value.period = ary[0];
-          this.value.periodUnit = ary[1];
-        }
-      } else {
-        delete this.value.period;
-        delete this.value.periodUnit;
-      }
-    },
-    'securityGroupMode'(val) {
-      if (val === 'default') {
-        this.value.securityGroup = DEFAULT_GROUP;
-      } else if (this.value?.securityGroup === DEFAULT_GROUP && !findBy(this.securityGroupOptions, 'value', this.value.securityGroup )) {
-        this.value.securityGroup = null;
-      }
-    },
   },
-
   methods: {
     stringify,
+    async fetchInstanceTypes({ cloudCredentialId, regionId } = {}) {
+      this.instanceTypeErrors = [];
+
+      const cloudCredential = cloudCredentialId || this.credentialId;
+      const region = regionId || (this.value?.region || this.$store.getters['aliyun/defaultRegion']);
+
+      if (!cloudCredential || !region) {
+        return;
+      }
+      this.instanceTypeLoading = true;
+      try {
+        const zoneId = this.value?.zone;
+        const instanceChargeType = this.value?.instanceChargeType;
+        const [all, allow] = await Promise.all([
+          this.$store.dispatch('aliyun/instanceTypes', { cloudCredentialId: cloudCredential, regionId: region }),
+          this.$store.dispatch('aliyun/availableInstanceTypes', {
+            cloudCredentialId:   cloudCredential,
+            regionId:            region,
+            destinationResource: 'InstanceType',
+            zoneId,
+            instanceChargeType,
+          }),
+        ]);
+        const allowSet = new Set(allow || []);
+        // availableInstanceTypes
+        const filtered = (all || []).filter((obj) => allowSet.has(obj.InstanceTypeId));
+
+        this.availableInstanceTypes = sortBy(filtered, ['isDefault:desc', 'InstanceTypeFamily']);
+        this.instanceTypes = all || this.instanceTypes || [];
+        if (this.isUnset(this.value?.instanceType)) {
+          const defaultInstanceType = this.instanceOptions?.[0]?.value || '';
+
+          if (defaultInstanceType) {
+            this.value.instanceType = defaultInstanceType;
+          }
+        }
+      } catch (e) {
+        this.instanceTypeErrors = exceptionToErrorsArray(e);
+      } finally {
+        this.instanceTypeLoading = false;
+      }
+    },
 
     async vpcChangeFetch() {
       const cloudCredentialId = this.credentialId;
-      const { region, vpcId, ResourceGroupId } = this.value;
+      const { region, vpcId, ResourceGroupId } = this.value || {};
 
       if (!vpcId) {
         return;
       }
+      this.vswitchIdLoading = true;
+      try {
+        const [vSwitches, securityGroups] = await Promise.all([
+          this.$store.dispatch('aliyun/vSwitches', {
+            cloudCredentialId,
+            regionId: region,
+            vpcId,
+            ResourceGroupId,
+          }),
+          this.$store.dispatch('aliyun/securityGroups', {
+            cloudCredentialId,
+            regionId: region,
+            vpcId,
+          }),
+        ]);
 
-      this.vSwitches = await this.$store.dispatch('aliyun/vSwitches', {
-        cloudCredentialId, regionId: region, vpcId, ResourceGroupId
-      });
-      this.securityGroups = await this.$store.dispatch('aliyun/securityGroups', {
-        cloudCredentialId, regionId: region, vpcId,
-      });
+        this.vSwitches = vSwitches;
+        this.securityGroups = securityGroups;
 
-      if (!this.value?.vswitchId) {
-        this.value.vswitchId = this.defaultValue.vswitchId;
-      }
+        const sg = this.value?.securityGroup;
+        const hasCustomSg = !!sg && (!!findBy(this.securityGroupOptions, 'value', sg) || sg !== DEFAULT_GROUP);
 
-      if (this.value?.securityGroup && (findBy(this.securityGroupOptions, 'value', this.value.securityGroup) || this.value?.securityGroup !== DEFAULT_GROUP)) {
-        this.securityGroupMode = 'custom';
-      } else {
-        this.securityGroupMode = 'default';
+        this.securityGroupMode = hasCustomSg ? 'custom' : 'default';
+      } catch (e) {
+        this.errors = exceptionToErrorsArray(e);
+      } finally {
+        this.vswitchIdLoading = false;
       }
     },
     async instanceChangeFetch() {
       const cloudCredentialId = this.credentialId;
       const {
-        region, instanceType, zone: zoneId, ioOptimized
-      } = this.value;
-      const hash = {};
+        region,
+        instanceType,
+        zone: zoneId,
+        ioOptimized,
+        resourceGroupId,
+        systemDiskCategory,
+        imageId,
+      } = this.value || {};
 
       if (!instanceType) {
         return;
       }
 
-      hash.images = this.$store.dispatch('aliyun/images', {
-        cloudCredentialId, regionId: region, instanceType, imageOwnerAlias: 'system', isSupportIoOptimized: true, resourceGroupId: this.value?.resourceGroupId,
-      });
-      hash.systemDiskCategories = this.$store.dispatch('aliyun/systemDiskCategories', {
-        cloudCredentialId, regionId: region, zoneId, instanceType, networkCategory: 'vpc', ioOptimized, destinationResource: 'SystemDisk',
-      });
-      hash.dataDiskCategories = this.$store.dispatch('aliyun/dataDiskCategories', {
-        cloudCredentialId, regionId: region, zoneId, instanceType, systemDiskCategory: this.value?.systemDiskCategory, networkCategory: 'vpc', ioOptimized, destinationResource: 'DataDisk',
-      });
+      const hash = {
+        images: this.$store.dispatch('aliyun/images', {
+          cloudCredentialId,
+          regionId:             region,
+          instanceType,
+          imageOwnerAlias:      'system',
+          isSupportIoOptimized: true,
+          resourceGroupId,
+        }),
+        systemDiskCategories: this.$store.dispatch('aliyun/systemDiskCategories', {
+          cloudCredentialId,
+          regionId:            region,
+          zoneId,
+          instanceType,
+          networkCategory:     'vpc',
+          ioOptimized,
+          destinationResource: 'SystemDisk',
+        }),
+        dataDiskCategories: this.$store.dispatch('aliyun/dataDiskCategories', {
+          cloudCredentialId,
+          regionId:            region,
+          zoneId,
+          instanceType,
+          systemDiskCategory,
+          networkCategory:     'vpc',
+          ioOptimized,
+          destinationResource: 'DataDisk',
+        }),
+      };
 
-      const res = await allHash(hash);
+      this.instanceTypeChangeLoading = true;
+      try {
+        const { images, systemDiskCategories, dataDiskCategories } = await allHash(hash);
 
-      for ( const k in res ) {
-        this[k] = res[k];
+        this.images = images;
+        this.systemDiskCategories = systemDiskCategories;
+        this.dataDiskCategories = dataDiskCategories;
+
+        const { imageType, imageVersionChoose } = this.resolveImageSelection({ images, imageId });
+
+        this.imageType = imageType;
+        this.imageVersionChoose = imageVersionChoose;
+      } catch (e) {
+        this.errors = exceptionToErrorsArray(e);
+      } finally {
+        this.instanceTypeChangeLoading = false;
       }
-
+    },
+    resolveImageSelection({ images, imageId }) {
       let imageType = this.imageType;
       let imageVersionChoose = this.imageVersionChoose;
 
-      if (!this.value?.imageId) {
+      if (!imageId) {
         imageType = imageType || this.imageTypeChoose?.[0]?.value;
-        imageVersionChoose = this.groupImages?.[imageType] || [] ;
-      } else {
-        const found = findBy(this.images, 'ImageId', this.value.imageId);
+        imageVersionChoose = this.groupImages?.[imageType] || [];
 
-        if (found) {
-          imageType = found?.Platform;
-          imageVersionChoose = this.groupImages?.[imageType] || [] ;
-        } else {
-          const segments = this.value.imageId.split('_');
-          const name = segments[0];
-          const formatMap = {
-            anolisos:   () => 'Anolis',
-            centos:     () => segments[1] === 'stream' ? 'CentOS Stream' : 'CentOS',
-            coreos:     () => 'CoreOS',
-            fcos:       () => 'Fedora CoreOS',
-            rockylinux: () => 'Rocky Linux',
-            opensuse:   () => 'openSUSE',
-          };
-          const system = formatMap[name] ? formatMap[name]() : this.capitalizeFirst(name);
-
-          imageType = system;
-          imageVersionChoose = this.groupImages?.[imageType] || [] ;
-
-          this.previousImageIdOption = {
-            label: `${ imageType } ${ this.value.imageId }`,
-            value: this.value.imageId
-          };
-          imageVersionChoose.push(this.previousImageIdOption);
-        }
+        return { imageType, imageVersionChoose };
       }
 
-      this.imageType = imageType;
-      this.imageVersionChoose = imageVersionChoose;
+      const found = findBy(images, 'ImageId', imageId);
+
+      if (found) {
+        imageType = found?.Platform;
+        imageVersionChoose = this.groupImages?.[imageType] || [];
+
+        return { imageType, imageVersionChoose };
+      }
+
+      const { systemName } = this.parseImageIdFallback(imageId);
+
+      imageType = systemName;
+      imageVersionChoose = (this.groupImages?.[imageType] || []).slice();
+
+      return { imageType, imageVersionChoose };
+    },
+    parseImageIdFallback(imageId) {
+      const segments = String(imageId).split('_');
+      const name = segments[0] || '';
+
+      const systemName = ({
+        anolisos:   () => 'Anolis',
+        centos:     () => (segments[1] === 'stream' ? 'CentOS Stream' : 'CentOS'),
+        coreos:     () => 'CoreOS',
+        fcos:       () => 'Fedora CoreOS',
+        rockylinux: () => 'Rocky Linux',
+        opensuse:   () => 'openSUSE',
+      }[name]?.() || this.capitalizeFirst(name));
+
+      return {
+        systemName,
+        label: `${ systemName } ${ imageId }`,
+      };
     },
     updateTags(tag) {
       const ary = [];
@@ -405,11 +409,9 @@ export default {
 
       this.value.tag = ary;
     },
-
     initTags() {
       const parts = this.value.tag || [];
       const out = {};
-
       let i = 0;
 
       while ( i < parts.length ) {
@@ -420,13 +422,10 @@ export default {
         if ( key ) {
           out[key] = value;
         }
-
         i += 1;
       }
-
       this.tag = out;
     },
-
     test() {
       const errors = [];
       const requiredList = [
@@ -466,7 +465,6 @@ export default {
 
       return { errors };
     },
-
     unitInputRangeLimit(ele, min, max, key) {
       this.$nextTick(() => {
         const value = ele?.target?.value;
@@ -492,14 +490,11 @@ export default {
       if (instanceChargeType === 'PrePaid') {
         this.periodUnit = `${ this.value.period }_${ this.value.periodUnit }`;
       }
-
       if (this.value.spotStrategy && this.value.spotStrategy !== 'NoSpot') {
         instanceChargeType = 'SpotStrategy';
       }
-
       this.instanceChargeType = instanceChargeType;
     },
-
     getAvailableInstanceTypes() {
       const hash = {};
       const cloudCredentialId = this?.credentialId;
@@ -508,12 +503,10 @@ export default {
       hash.availableInstanceTypes = this.$store.dispatch('aliyun/availableInstanceTypes', {
         cloudCredentialId, regionId, destinationResource: 'InstanceType', zoneId: this.value?.zone, instanceChargeType: this.value?.instanceChargeType
       });
-
       allHash(hash).then((h) => {
         const out = (this.instanceTypes || []).filter((obj) => h.availableInstanceTypes.includes(obj.InstanceTypeId));
 
         this.availableInstanceTypes = sortBy(out, ['isDefault:desc', 'InstanceTypeFamily']);
-
         if (!h.availableInstanceTypes.includes(this.value.instanceType)) {
           this.value.instanceType = '';
         }
@@ -521,25 +514,142 @@ export default {
         return h;
       });
     },
-
     imageTypeChanged(val) {
       let imageVersionChoose = [];
 
       if (val && this.groupImages) {
         imageVersionChoose = this.groupImages[val];
       }
-
       this.imageVersionChoose = imageVersionChoose;
       this.value.imageId = '';
     },
-
     capitalizeFirst(str) {
       if (typeof str !== 'string' || str.length === 0) return str;
 
       return str.charAt(0).toUpperCase() + str.slice(1);
     },
-  },
+    onPrivateAddressOnlyChange(next) {
+      this.value.privateAddressOnly = next;
+      if (next) {
+        this.value.allocatePublicStaticIp = false;
+      }
+    },
+    onAllocatePublicStaticIpChange(next) {
+      this.value.allocatePublicStaticIp = next;
+      if (next) {
+        this.value.privateAddressOnly = false;
+      }
+    },
+    isUnset(val) {
+      return val === undefined || val === null;
+    },
+    setIfUnset(key, fallback) {
+      if (!this.value) {
+        return;
+      }
+      if (this.isUnset(this.value[key])) {
+        this.value[key] = fallback;
+      }
+    },
+    updateRegion() {
+      this.resetValue();
+      this.value.zone = '';
+      this.$fetch();
+    },
+    updateResourceGroupId() {
+      this.$fetch();
+    },
+    updateZone(val) {
+      if (val) {
+        this.resetValue();
+        this.$fetch();
+        this.instanceChangeFetch();
+      }
+    },
+    updateVpcId(val) {
+      if (val) {
+        this.vswitchId = '';
+        this.vpcChangeFetch();
+      }
+    },
+    updateInstanceType(val) {
+      if (val) {
+        this.imageType = '';
+        this.value.imageId = '';
+        this.value.systemDiskCategory = '';
+        this.value.diskCategory = '';
+        this.instanceChangeFetch();
+      }
+    },
+    updateInstanceChargeType(val) {
+      this.value.instanceChargeType = val;
+      if (val === 'SpotStrategy') {
+        this.value.instanceChargeType = this.defaultValue?.instanceChargeType;
+        this.value.spotDuration = '1';
+        this.spotDuration = true;
+        this.value.spotStrategy = 'SpotAsPriceGo';
+      } else {
+        this.value.spotStrategy = this.defaultValue.spotStrategy;
+        delete this.value.spotDuration;
+        delete this.value.spotStrategy;
+      }
+      if (this.value.instanceChargeType === this.defaultValue?.instanceChargeType) {
+        delete this.value.period;
+        delete this.value.periodUnit;
+      }
+      this.getAvailableInstanceTypes();
+    },
+    updatePeriodUnit(val) {
+      if (val) {
+        const ary = val.split('_');
 
+        if (ary[1]) {
+          this.value.period = ary[0];
+          this.value.periodUnit = ary[1];
+        }
+      } else {
+        delete this.value.period;
+        delete this.value.periodUnit;
+      }
+    },
+    updateSpotDuration(val) {
+      this.value.spotDuration = val ? '1' : '0';
+    },
+    updateSecurityGroupMode(val) {
+      const cur = this.value?.securityGroup;
+
+      if (val === 'default') {
+        // Only force DEFAULT_GROUP when it isn't already set.
+        if (cur !== DEFAULT_GROUP) {
+          this.value.securityGroup = DEFAULT_GROUP;
+        }
+
+        return;
+      }
+      // val !== 'default' -> custom mode
+      if (cur !== DEFAULT_GROUP) {
+        return;
+      }
+      // If it is DEFAULT_GROUP but DEFAULT_GROUP is not a valid selectable option,
+      // clear it to let user pick a real security group.
+      const hasDefaultOption = !!findBy(this.securityGroupOptions || [], 'value', DEFAULT_GROUP);
+
+      if (!hasDefaultOption) {
+        this.value.securityGroup = null;
+      }
+    },
+    resetValue() {
+      if (this.value) {
+        this.value.vpcId = '';
+        this.value.vswitchId = '';
+        this.value.instanceType = '';
+        this.imageType = '';
+        this.value.imageId = '';
+        this.value.systemDiskCategory = '';
+        this.value.diskCategory = '';
+      }
+    },
+  },
   computed: {
     defaultGroup() {
       return DEFAULT_GROUP;
@@ -639,7 +749,6 @@ export default {
       if ( !this.availableInstanceTypes ) {
         return [];
       }
-
       let lastGroup;
       const out = [];
       const children = [];
@@ -650,7 +759,6 @@ export default {
             out.push(...sortBy(children, 'cpuCoreCount'));
           }
           children.length = 0;
-
           out.push({
             kind:     'group',
             disabled: true,
@@ -665,7 +773,6 @@ export default {
           cpuCoreCount: obj.CpuCoreCount
         });
       });
-
       if (children.length) {
         out.push(...sortBy(children, 'cpuCoreCount'));
       }
@@ -676,7 +783,6 @@ export default {
       if ( !this.images ) {
         return [];
       }
-
       const out = {};
 
       this.images.forEach((obj) => {
@@ -705,7 +811,6 @@ export default {
       if ( !this.systemDiskCategories ) {
         return [];
       }
-
       const out = [];
 
       DISKS.forEach((disk) => {
@@ -723,7 +828,6 @@ export default {
       if ( !this.dataDiskCategories ) {
         return [];
       }
-
       const out = [];
 
       DISKS.forEach((disk) => {
@@ -756,7 +860,6 @@ export default {
           value: `${ item }_Week`
         });
       });
-
       periodMonth.forEach((item) => {
         const month = Number(item);
         let label = '';
@@ -770,7 +873,6 @@ export default {
         } else {
           label = `${ item } ${ this.t('cluster.machineConfig.aliyunecs.periodUnit.month') }`;
         }
-
         out.push({
           label,
           value: `${ item }_Month`
@@ -820,7 +922,6 @@ export default {
           />
         </div>
       </div>
-
       <div class="row mb-20">
         <div class="col span-6">
           <LabeledSelect
@@ -830,6 +931,7 @@ export default {
             :required="true"
             :disabled="disabled"
             :label="t('cluster.machineConfig.aliyunecs.resourceGroup.label')"
+            @update:value="updateResourceGroupId"
           />
         </div>
         <div class="col span-6">
@@ -841,6 +943,7 @@ export default {
             :searchable="true"
             :disabled="disabled"
             :label="t('cluster.machineConfig.aliyunecs.region.label')"
+            @update:value="updateRegion"
           />
         </div>
       </div>
@@ -854,6 +957,7 @@ export default {
             :disabled="disabled"
             :label="t('cluster.machineConfig.aliyunecs.zone.label')"
             :placeholder="t('cluster.machineConfig.aliyunecs.zone.prompt')"
+            @update:value="updateZone"
           />
         </div>
         <div class="col span-6">
@@ -866,6 +970,7 @@ export default {
             :disabled="disabled"
             :label="t('cluster.machineConfig.aliyunecs.vpcId.label')"
             :placeholder="t('cluster.machineConfig.aliyunecs.vpcId.prompt')"
+            @update:value="updateVpcId"
           />
         </div>
       </div>
@@ -878,6 +983,7 @@ export default {
             :required="true"
             :searchable="true"
             :disabled="disabled"
+            :loading="vswitchIdLoading"
             :label="t('cluster.machineConfig.aliyunecs.vswitchId.label')"
             :placeholder="t('cluster.machineConfig.aliyunecs.vswitchId.prompt')"
           />
@@ -906,6 +1012,8 @@ export default {
             :searchable="true"
             :disabled="disabled"
             :label="t('cluster.machineConfig.aliyunecs.instanceType.label')"
+            :loading="instanceTypeLoading"
+            @update:value="updateInstanceType"
           >
             <template v-slot:option="opt">
               <template v-if="opt.kind === 'group'">
@@ -928,7 +1036,6 @@ export default {
           />
         </div>
       </div>
-
       <div class="row mb-20">
         <div class="col span-6">
           <LabeledSelect
@@ -940,6 +1047,7 @@ export default {
             :disabled="disabled"
             :label="t('cluster.machineConfig.aliyunecs.imageId.label')"
             :placeholder="t('cluster.machineConfig.aliyunecs.imageId.placeholder')"
+            :loading="instanceTypeChangeLoading"
             @update:value="imageTypeChanged"
           />
         </div>
@@ -951,18 +1059,19 @@ export default {
             :required="true"
             :searchable="true"
             :disabled="disabled"
+            :loading="instanceTypeChangeLoading"
             :label="t('cluster.machineConfig.aliyunecs.systemImageVersion.label')"
             :placeholder="t('cluster.machineConfig.aliyunecs.systemImageVersion.placeholder')"
           />
         </div>
       </div>
-
       <div class="row mb-20">
         <div class="col span-6">
           <LabeledSelect
             v-model:value="value.systemDiskCategory"
             :mode="mode"
             :options="systemDiskCategoryOptions"
+            :loading="instanceTypeChangeLoading"
             :required="true"
             :searchable="true"
             :disabled="disabled"
@@ -985,7 +1094,6 @@ export default {
           />
         </div>
       </div>
-
       <div class="row mb-20">
         <div class="col span-6">
           <UnitInput
@@ -1021,6 +1129,7 @@ export default {
               v-model:value="value.diskCategory"
               :mode="mode"
               :options="diskCategoryOptions"
+              :loading="instanceTypeChangeLoading"
               :searchable="true"
               :disabled="disabled"
               :label="t('cluster.machineConfig.aliyunecs.diskCategory.label')"
@@ -1040,7 +1149,6 @@ export default {
             />
           </div>
         </div>
-
         <div class="row mb-20">
           <div class="col span-6">
             <LabeledSelect
@@ -1051,6 +1159,7 @@ export default {
               :searchable="true"
               :disabled="disabled"
               :label="t('cluster.machineConfig.aliyunecs.instanceChargeType.label')"
+              @update:value="updateInstanceChargeType"
             />
           </div>
           <div
@@ -1066,10 +1175,10 @@ export default {
               :disabled="disabled"
               :placeholder="t('cluster.machineConfig.aliyunecs.periodUnit.placeholder')"
               :label="t('cluster.machineConfig.aliyunecs.periodUnit.label')"
+              @update:value="updatePeriodUnit"
             />
           </div>
         </div>
-
         <div
           v-if="instanceChargeType === 'SpotStrategy'"
           class="row mb-20"
@@ -1087,6 +1196,7 @@ export default {
               :disabled="disabled"
               :labels="[t('cluster.machineConfig.aliyunecs.spotDuration.default'), t('cluster.machineConfig.aliyunecs.spotDuration.none')]"
               :options="[true,false]"
+              @update:value="updateSpotDuration"
             />
           </div>
           <div class="col span-6">
@@ -1114,7 +1224,6 @@ export default {
             />
           </div>
         </div>
-
         <div class="row mb-20">
           <div class="col span-6">
             <div class="title">
@@ -1143,7 +1252,6 @@ export default {
             />
           </div>
         </div>
-
         <div class="row mt-20">
           <div class="col span-6">
             <ArrayList
@@ -1158,7 +1266,6 @@ export default {
             />
           </div>
         </div>
-
         <div class="row mt-20">
           <div class="col span-12">
             <h3>
@@ -1177,6 +1284,7 @@ export default {
               :disabled="!value.vpcId || disabled"
               :labels="securityGroupLabels"
               :options="['default','custom']"
+              @update:value="updateSecurityGroupMode"
             />
             <LabeledSelect
               v-if="value.vpcId && securityGroupMode === 'custom'"
@@ -1190,7 +1298,6 @@ export default {
             />
           </div>
         </div>
-
         <div class="row mt-20">
           <div class="col span-12">
             <div>
@@ -1199,6 +1306,20 @@ export default {
                 :mode="mode"
                 :disabled="disabled"
                 :label="t('cluster.machineConfig.aliyunecs.privateAddressOnly.label')"
+                @update:value="onPrivateAddressOnlyChange"
+              />
+            </div>
+          </div>
+        </div>
+        <div class="row mt-20">
+          <div class="col span-12">
+            <div>
+              <Checkbox
+                v-model:value="value.allocatePublicStaticIp"
+                :mode="mode"
+                :disabled="disabled"
+                :label="t('cluster.machineConfig.aliyunecs.allocatePublicStaticIp.label')"
+                @update:value="onAllocatePublicStaticIpChange"
               />
             </div>
           </div>
