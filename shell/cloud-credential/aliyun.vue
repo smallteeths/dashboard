@@ -32,7 +32,7 @@ export default {
         };
 
         await this.$store.dispatch('rancher/request', {
-          url:    '/meta/ack/ackCheckCredentials',
+          url:    '/meta/aliyuncn/aliyuncnCheckCredentials',
           method: 'POST',
           data:   authConfig,
         });

@@ -1513,6 +1513,8 @@ cluster:
         placeholder: 專用網絡中的私有 IP
       privateAddressOnly:
         label: 僅私網IP
+      allocatePublicStaticIp:
+        label: 分配公網靜態IP
       internetChargeType:
         label: 帶寬計費模式
         prompt: 選擇計費模式...

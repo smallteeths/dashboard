@@ -1,6 +1,7 @@
 import { addObjects } from '@shell/utils/array';
 
 const PAGE_SIZE = 50;
+const MAX_RESULTS = 500;
 const DEFAULT_GROUP = 'docker-machine';
 
 function toLowerCaseInitial(name) {
@@ -22,28 +23,45 @@ function getQueryParamsString(params, deep = false) {
 }
 
 function getAvailableResources(res) {
-  const results = [];
+  let results = [];
   const zones = res['AvailableZones'];
 
   if (!zones) {
     return results;
   }
 
-  zones.AvailableZone.forEach((zone) => {
-    zone['AvailableResources']['AvailableResource'].forEach((resource) => {
-      resource['SupportedResources']['SupportedResource'].forEach((support) => {
-        if ( support.Status === 'Available' && !results.includes(support.Value) ) {
-          results.push(support.Value);
-        }
-      });
-    });
-  });
+  results = [
+    ...new Set(
+      (zones?.AvailableZone ?? [])
+        .flatMap((z) => z?.AvailableResources?.AvailableResource ?? [])
+        .flatMap((r) => r?.SupportedResources?.SupportedResource ?? [])
+        .filter((s) => s?.Status === 'Available')
+        .map((s) => s?.Value)
+        .filter(Boolean)
+    )
+  ];
 
   return results;
 }
 
+function normalizeResourceName(resource, plural) {
+  let name = resource ? toLowerCaseInitial(resource) : toLowerCaseInitial(plural);
+
+  if (name === 'vSwitch') name = 'vswitch';
+
+  return name;
+}
+
+function getAcceptLanguage(rootGetters) {
+  return rootGetters['i18n/current']() === 'en-us' ? 'en-US' : 'zh-CN';
+}
+
+function isTokenPagination(resourceName) {
+  return resourceName === 'securityGroup' || resourceName === 'instanceType';
+}
+
 export const state = function() {
-  return { instanceTypes: null };
+  return { instanceTypes: [] };
 };
 
 export const getters = {
@@ -99,65 +117,93 @@ export const mutations = {
 };
 
 export const actions = {
-  async fetchALY({ dispatch, rootGetters }, {
-    resource, plural, params = {}, page = 1,
+  async fetchALY({ dispatch, commit, rootGetters }, {
+    resource,
+    plural,
+    params = {},
   }) {
-    let results = [];
-
     if (!params?.cloudCredentialId) {
-      return results;
+      return [];
     }
 
-    let resourceName = '';
-
-    if (resource) {
-      resourceName = toLowerCaseInitial(resource);
-    } else {
-      resourceName = toLowerCaseInitial(plural);
-    }
-    if (resourceName === 'vSwitch') {
-      resourceName = 'vswitch';
-    }
-
-    let acceptLanguage = 'zh-CN';
-
-    if (rootGetters['i18n/current']() === 'en-us') {
-      acceptLanguage = 'en-US';
-    }
-
-    const url = `/meta/ack/${ resourceName }`;
-    const query = Object.assign({}, params, {
-      acceptLanguage,
-      pageSize:   PAGE_SIZE,
-      pageNumber: page
-    });
-
-    const req = {
-      url:    `${ url }?${ getQueryParamsString(query) }`,
-      method: 'GET',
-    };
-
-    const res = await dispatch('rancher/request', req, { root: true });
+    const resourceName = normalizeResourceName(resource, plural);
+    const acceptLanguage = getAcceptLanguage(rootGetters);
+    const baseUrl = `/meta/aliyuncn/${ resourceName }`;
 
     if (resource === '') {
+      const query = {
+        ...params,
+        acceptLanguage,
+      };
+      const res = await dispatch('rancher/request', {
+        url:    `${ baseUrl }?${ getQueryParamsString(query) }`,
+        method: 'GET',
+      }, { root: true });
+
       return res;
     }
+    const results = [];
 
-    results = res[`${ plural }`][resource];
+    if (isTokenPagination(resourceName)) {
+      let nextToken;
 
-    if (res.TotalCount > ((PAGE_SIZE * (page - 1)) + results.length)) {
-      params.page = page + 1;
-      const data = await dispatch('fetchALY', {
-        resource,
-        plural,
-        params,
-        page: page + 1,
-      });
+      while (true) {
+        const query = {
+          ...params,
+          acceptLanguage,
+          maxResults: resourceName === 'instanceType' ? MAX_RESULTS : PAGE_SIZE,
+          ...(nextToken ? { nextToken } : {}),
+        };
 
-      addObjects(results, data);
+        const res = await dispatch('rancher/request', {
+          url:    `${ baseUrl }?${ getQueryParamsString(query) }`,
+          method: 'GET',
+        }, { root: true });
+
+        const pageData = res?.[plural]?.[resource] ?? [];
+
+        addObjects(results, pageData);
+        nextToken = res?.NextToken || res?.nextToken;
+        if (!nextToken) break;
+        if (!pageData?.length) break;
+      }
+
+      return results;
+    } else {
+      let page = 1;
+
+      while (true) {
+        const query = {
+          ...params,
+          acceptLanguage,
+          pageSize:   PAGE_SIZE,
+          pageNumber: page,
+        };
+
+        const res = await dispatch('rancher/request', {
+          url:    `${ baseUrl }?${ getQueryParamsString(query) }`,
+          method: 'GET',
+        }, { root: true });
+
+        const pageData = res?.[plural]?.[resource] ?? [];
+
+        addObjects(results, pageData);
+
+        const total = res?.TotalCount;
+
+        if (typeof total === 'number') {
+          const fetched = (PAGE_SIZE * (page - 1)) + pageData.length;
+
+          if (fetched >= total) break;
+        } else {
+          if (pageData.length < PAGE_SIZE) break;
+        }
+        if (!pageData.length) break;
+        page += 1;
+      }
+
+      return results;
     }
-
-    return results;
   },
 
   async fetchAvailableResource({ dispatch, rootGetters, state }, params) {
