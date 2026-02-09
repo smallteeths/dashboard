@@ -6,13 +6,38 @@ export async function fetchResources({
   externalParams = {},
   page = 1,
   pageSize = 50,
+  maxResults = 500,
 } = {}) {
   const resourceName = normalizeResourceName(resource || plural);
   const acceptLanguage = getAcceptLanguage(store);
-  const url = `${ window.location.origin }/meta/ack/${ resourceName }`;
+  const url = `${ window.location.origin }/meta/aliyuncn/${ resourceName }`;
   const results = [];
 
   try {
+    if (isTokenPagination(resourceName)) {
+      let token = '';
+
+      while (true) {
+        const data = await fetchPage(url, {
+          cloudCredentialId,
+          acceptLanguage,
+          maxResults: resourceName === 'instanceType' ? maxResults : pageSize,
+          ...(token ? { nextToken: token } : {}),
+          ...externalParams,
+        }, store);
+
+        const items = extractItems(data, resource, plural);
+
+        results.push(...items);
+
+        token = data?.NextToken || data?.nextToken;
+        if (!token) break;
+        if (!items?.length) break;
+      }
+
+      return results;
+    }
+
     const data = await fetchPage(url, {
       cloudCredentialId,
       acceptLanguage,
@@ -52,6 +77,10 @@ function normalizeResourceName(name) {
   const normalized = toLowerCaseInitial(name);
 
   return normalized === 'vSwitch' ? 'vswitch' : normalized;
+}
+
+function isTokenPagination(resourceName) {
+  return resourceName === 'securityGroup' || resourceName === 'instanceType';
 }
 
 function getAcceptLanguage(store) {
@@ -111,7 +140,7 @@ export async function fetchAvailableResources({
 } = {}) {
   const resourceName = normalizeResourceName(resource || plural);
   const acceptLanguage = getAcceptLanguage(store);
-  const url = `${ window.location.origin }/meta/ack/${ resourceName }`;
+  const url = `${ window.location.origin }/meta/aliyuncn/${ resourceName }`;
 
   try {
     const res = await fetchPage(url, {
@@ -127,22 +156,23 @@ export async function fetchAvailableResources({
 }
 
 function getAvailableResources(res) {
-  const results = [];
+  let results = [];
   const zones = res['AvailableZones'];
 
   if (!zones) {
     return results;
   }
 
-  zones.AvailableZone.forEach((zone) => {
-    zone['AvailableResources']['AvailableResource'].forEach((resource) => {
-      resource['SupportedResources']['SupportedResource'].forEach((support) => {
-        if ( support.Status === 'Available' && results.indexOf(support.Value) === -1 ) {
-          results.push(support.Value);
-        }
-      });
-    });
-  });
+  results = [
+    ...new Set(
+      (zones?.AvailableZone ?? [])
+        .flatMap((z) => z?.AvailableResources?.AvailableResource ?? [])
+        .flatMap((r) => r?.SupportedResources?.SupportedResource ?? [])
+        .filter((s) => s?.Status === 'Available')
+        .map((s) => s?.Value)
+        .filter(Boolean)
+    )
+  ];
 
   return results;
 }
