@@ -7435,6 +7435,8 @@ workload:
       status: Status
       volumeClaimTemplates: Volume Claim Templates
       upgrading: Scaling and Upgrade Policy
+    initContainer:
+      label: Init Containers
   cronSchedule: Schedule
   detail:
     services: Services
