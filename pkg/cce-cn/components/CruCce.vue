@@ -1,7 +1,8 @@
 <script setup>
 import {
-  ref, onMounted, computed, watch, watchEffect, getCurrentInstance
+  ref, onMounted, computed, watch, watchEffect,
 } from 'vue';
+import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 import CruResource from '@shell/components/CruResource.vue';
 import { useCreateEditView } from '../composables/useCreateEditView.js';
@@ -46,12 +47,11 @@ const props = defineProps({
 
 const store = useStore();
 const intl = computed(() => store.getters['i18n/t']);
+const route = useRoute();
 const cceConfig = ref({});
 const normanCluster = ref({});
 const nodePools = ref([]);
 const cruresource = ref(null);
-const vm = getCurrentInstance();
-const router = vm?.proxy?.$router;
 const options = ref({
   vpcOptions:                         [],
   subnetOptions:                      [],
@@ -104,16 +104,7 @@ const {
 } = useCreateEditView(props, {
   emit, normanCluster, cceConfig, nodePools, state
 });
-
-const isImport = computed(() => {
-  if (!router) {
-    return false;
-  }
-  const query = router?.currentRoute?.value?.query;
-
-  return query?.mode === _IMPORT;
-});
-
+const isImport = ref(route.query.mode === _IMPORT);
 const hasCredential = computed(() => {
   return !!cceConfig.value?.huaweiCredentialSecret;
 });

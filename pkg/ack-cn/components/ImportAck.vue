@@ -52,29 +52,53 @@ const intl = computed(() => store.getters['i18n/t']);
 watch(() => props.regionId, async(regionId) => {
   emit('update:clusterId', '');
   state.value.clustersLoading = true;
-  const externalParams = { regionId };
+  const url = `${ window.location.origin }/meta/aliyuncn/cluster`;
+  const pageSize = 200;
 
   try {
-    const url = `${ window.location.origin }/meta/ack/cluster`;
-    const res = await fetchPage(url, {
-      cloudCredentialId: props.ackConfig.aliyun_credential_secret,
-      ...externalParams,
-    }, store);
+    const all = [];
+    let pageNumber = 1;
 
-    const options = (res.clusters || []).map((item, index) => {
-      return {
-        value:  item.cluster_id,
-        label:  item.name,
-        region: item.region_id,
-      };
-    });
+    while (true) {
+      const res = await fetchPage(
+        url,
+        {
+          cloudCredentialId: props.ackConfig.aliyun_credential_secret,
+          regionId,
+          pageSize,
+          pageNumber,
+        },
+        store
+      );
 
-    clusterOptions.value = options;
+      const pageItems = res?.clusters || [];
+
+      all.push(...pageItems);
+
+      const total = res?.TotalCount;
+      const fetched = (pageNumber - 1) * pageSize + pageItems.length;
+
+      if (typeof total === 'number') {
+        if (fetched >= total) break;
+      } else {
+        if (pageItems.length < pageSize) break;
+      }
+
+      if (!pageItems.length) break;
+
+      pageNumber += 1;
+    }
+    clusterOptions.value = all.map((item) => ({
+      value:  item.cluster_id,
+      label:  item.name,
+      region: item.region_id,
+    }));
   } catch (err) {
     clusterOptions.value = [];
-    emit('errors', [err]);
+    emit('errors', [err?.detail || err]);
+  } finally {
+    state.value.clustersLoading = false;
   }
-  state.value.clustersLoading = false;
 }, { immediate: true });
 
 </script>

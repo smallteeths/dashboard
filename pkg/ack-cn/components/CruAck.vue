@@ -1,7 +1,6 @@
 <script setup>
-import {
-  ref, onMounted, computed, watch, watchEffect, getCurrentInstance
-} from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 import { NORMAN } from '@shell/config/types';
 import Loading from '@shell/components/Loading.vue';
@@ -29,7 +28,7 @@ import { stringify } from '@shell/utils/error';
 import { syncUpstreamConfig } from '@shell/utils/kontainer';
 import Accordion from '@components/Accordion/Accordion.vue';
 import {
-  filter, find, cloneDeep, pullAt, uniqBy, includes
+  filter, find, cloneDeep, pullAt, uniqBy, includes, sortBy
 } from 'lodash';
 
 const props = defineProps({
@@ -46,8 +45,7 @@ const props = defineProps({
 });
 
 const store = useStore();
-const vm = getCurrentInstance();
-const router = vm?.proxy?.$router;
+const route = useRoute();
 const intl = computed(() => store.getters['i18n/t']);
 const ackConfig = ref({});
 const normanCluster = ref({});
@@ -365,14 +363,80 @@ async function fetchInstanceType(regionId) {
       externalParams:    externalParamsForAvailable,
       store,
     });
+    const availableInstanceTypeOptions = filter(allInstanceTypeOptions, (option) => includes(availableInstanceTypeKeys, option.value));
 
-    options.value.instanceTypeOptions = filter(allInstanceTypeOptions, (option) => includes(availableInstanceTypeKeys, option.value));
+    // format instance type options
+    options.value.instanceTypeOptions = formatInstanceTypeOptions(availableInstanceTypeOptions);
   } catch (err) {
     options.value.instanceTypeOptions = [];
     state.value.errors = [];
     state.value.errors.push(err);
   }
   state.value.instanceTypeLoading = false;
+}
+
+function formatInstanceTypeOptions(instanceTypeOptions = []) {
+  if (!Array.isArray(instanceTypeOptions) || instanceTypeOptions.length === 0) {
+    return [];
+  }
+
+  // sort instance type options by family, cpu core count, memory size, and instance type id
+  const sorted = sortBy(instanceTypeOptions, [
+    (o) => o?.raw?.InstanceTypeFamily || '',
+    (o) => o?.raw?.CpuCoreCount ?? 0,
+    (o) => o?.raw?.MemorySize ?? 0,
+    (o) => o?.value || o?.raw?.InstanceTypeId || '',
+  ]);
+  let lastGroup;
+  const out = [];
+  const children = [];
+  // group instance type options by family
+  const flush = () => {
+    if (children.length) {
+      out.push(...sortBy(children, 'cpuCoreCount'));
+      children.length = 0;
+    }
+  };
+
+  for (const opt of sorted) {
+    const raw = opt?.raw || {};
+    const family = raw.InstanceTypeFamily || 'Unknown';
+
+    if (family !== lastGroup) {
+      flush();
+      out.push({
+        kind:     'group',
+        disabled: true,
+        label:    family,
+      });
+      lastGroup = family;
+    }
+
+    const cpu = raw.CpuCoreCount ?? 0;
+    const mem = raw.MemorySize ?? 0;
+    const id = opt.value || raw.InstanceTypeId || '';
+    const label = id ? `${ id } ( ${ cpu } ${ cpu > 1 ? 'Cores' : 'Core' } ${ mem }GB RAM )` : (opt.label || '');
+
+    children.push({
+      label,
+      value:        id,
+      cpuCoreCount: cpu,
+      raw,
+    });
+  }
+
+  // flush remaining children
+  flush();
+
+  // out is add group for instance type family
+  // [
+  //   { kind:'group', disabled:true, label:'ecs.g7' },
+  //   { label:'ecs.g7.large ( 2 Cores 8GB RAM )', value:'ecs.g7.large', ... },
+
+  //   { kind:'group', disabled:true, label:'ecs.n1' },
+  //   { label:'ecs.n1.tiny ( 1 Core 1GB RAM )', value:'ecs.n1.tiny', ... },
+  // ]
+  return out;
 }
 
 async function fetchKeyPairs(regionId) {
@@ -523,16 +587,7 @@ function changeContainerdVersion(version) {
     }));
   }
 }
-
-const isImport = computed(() => {
-  if (!router) {
-    return false;
-  }
-  const query = router?.currentRoute?.value?.query;
-
-  return query?.mode === _IMPORT;
-});
-
+const isImport = ref(route.query.mode === _IMPORT);
 const hasCredential = computed(() => {
   return !!ackConfig.value?.aliyun_credential_secret;
 });
@@ -711,24 +766,26 @@ watch(() => state.value.vswitchIds, async(vswitchIds) => {
   }
 });
 
-watchEffect(async() => {
-  const aliyunCredentialSecret = ackConfig.value.aliyun_credential_secret;
-  const regionId = ackConfig.value.regionId;
-
-  state.value.errors = [];
-  if (regionId && aliyunCredentialSecret && !isImport.value) {
-    if (isNewOrUnprovisioned.value) {
-      ackConfig.value.vpcId = '';
-      resetNodePool();
+watch(() => [ackConfig.value.regionId, ackConfig.value.aliyun_credential_secret],
+  async([regionId, aliyunCredentialSecret], [prevRegionId, prevSecret]) => {
+    if (regionId === prevRegionId && aliyunCredentialSecret === prevSecret) {
+      return;
     }
-    state.value.vpcLoading = true;
-    state.value.instanceTypeLoading = true;
-    state.value.keyPairLoading = true;
-    await fetchVpc(ackConfig.value.regionId);
-    await fetchInstanceType(ackConfig.value.regionId);
-    await fetchKeyPairs(ackConfig.value.regionId);
+    state.value.errors = [];
+    if (regionId && aliyunCredentialSecret && !isImport.value) {
+      if (isNewOrUnprovisioned.value) {
+        ackConfig.value.vpcId = '';
+        resetNodePool();
+      }
+      state.value.vpcLoading = true;
+      state.value.instanceTypeLoading = true;
+      state.value.keyPairLoading = true;
+      await fetchVpc(regionId);
+      await fetchInstanceType(regionId);
+      await fetchKeyPairs(regionId);
+    }
   }
-});
+);
 
 watch(() => ackConfig.value.vpcId, async(vpcId) => {
   if (isNewOrUnprovisioned.value) {
