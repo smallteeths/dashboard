@@ -1,6 +1,7 @@
 // useCreateEditView.js
-import { ref, computed, getCurrentInstance } from 'vue';
+import { ref, computed } from 'vue';
 import { useStore } from 'vuex';
+import { useRouter } from 'vue-router';
 import { _CREATE, _EDIT, _VIEW } from '@shell/config/query-params';
 import { LAST_NAMESPACE } from '@shell/store/prefs';
 import { exceptionToErrorsArray } from '@shell/utils/error';
@@ -16,8 +17,7 @@ export function useCreateEditView(props, context) {
   } = context;
 
   const errors = ref([]);
-  const vm = getCurrentInstance();
-  const $router = vm?.proxy?.$router;
+  const $router = useRouter();
   const $store = useStore();
 
   const { applyHooks } = useChildHook();
