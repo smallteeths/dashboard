@@ -10,7 +10,6 @@ export function useCreateEditView(props, context) {
 
   const $router = useRouter();
   const $route = useRoute();
-
   const doneRoute = computed(() => {
     if (props.value?.doneRoute) {
       return props.value.doneRoute;

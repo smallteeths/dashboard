@@ -16,7 +16,6 @@ export function useCreateEditView(props, context) {
   } = context;
 
   const errors = ref([]);
-
   const $router = useRouter();
   const $route = useRoute();
   const $store = useStore();

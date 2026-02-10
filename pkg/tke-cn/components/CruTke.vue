@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useStore } from 'vuex';
-import { useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { NORMAN } from '@shell/config/types';
 import CruResource from '@shell/components/CruResource.vue';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
@@ -44,9 +44,8 @@ const tkeConfig = ref({});
 const normanCluster = ref({});
 const cruresource = ref(null);
 const nodePools = ref([]);
-const router = useRouter();
-const query = router.currentRoute.value.query;
-const isImport = query?.mode === _IMPORT;
+const route = useRoute();
+const isImport = route?.query?.mode === _IMPORT;
 const DATA_DISK = 'DATA_DISK';
 const SYSTEM_DISK = 'SYSTEM_DISK';
 const options = ref({

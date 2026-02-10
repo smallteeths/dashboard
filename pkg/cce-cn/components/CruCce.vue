@@ -1,9 +1,9 @@
 <script setup>
 import {
-  ref, onMounted, computed, watch, watchEffect
+  ref, onMounted, computed, watch, watchEffect,
 } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
-import { useRouter } from 'vue-router';
 import CruResource from '@shell/components/CruResource.vue';
 import { useCreateEditView } from '../composables/useCreateEditView.js';
 import { useFormValidation } from '../composables/useFormValidation.js';
@@ -47,6 +47,7 @@ const props = defineProps({
 
 const store = useStore();
 const intl = computed(() => store.getters['i18n/t']);
+const route = useRoute();
 const cceConfig = ref({});
 const normanCluster = ref({});
 const nodePools = ref([]);
@@ -103,18 +104,7 @@ const {
 } = useCreateEditView(props, {
   emit, normanCluster, cceConfig, nodePools, state
 });
-
-const isImport = computed(() => {
-  const router = useRouter();
-
-  if (!router) {
-    return false;
-  }
-  const query = router?.currentRoute?.value?.query;
-
-  return query?.mode === _IMPORT;
-});
-
+const isImport = ref(route.query.mode === _IMPORT);
 const hasCredential = computed(() => {
   return !!cceConfig.value?.huaweiCredentialSecret;
 });
