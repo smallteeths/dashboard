@@ -1515,6 +1515,9 @@ cluster:
         label: 仅私网IP
       allocatePublicStaticIp:
         label: 分配公网静态IP
+      networkInterface:
+        label: 公网 IP 类型
+        desc: （未设置时默认分配 EIP）
       internetChargeType:
         label: 带宽计费模式
         prompt: 选择计费模式...

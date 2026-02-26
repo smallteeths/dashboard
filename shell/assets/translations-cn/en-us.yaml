@@ -1940,6 +1940,9 @@ cluster:
         label: Private Address Only
       allocatePublicStaticIp:
         label: Allocate Public Static IP
+      networkInterface:
+        label: Public IP Mode
+        desc: (Defaults to EIP if unset)
       internetChargeType:
         label: Bandwidth Billing
         prompt: Choose Bandwidth Billing...
