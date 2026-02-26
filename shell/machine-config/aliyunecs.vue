@@ -990,20 +990,6 @@ export default {
         </div>
         <div class="col span-6">
           <LabeledSelect
-            v-model:value="value.internetChargeType"
-            :mode="mode"
-            :options="internetChargeTypeOptions"
-            :required="true"
-            :searchable="true"
-            :disabled="disabled"
-            :label="t('cluster.machineConfig.aliyunecs.internetChargeType.label')"
-            :placeholder="t('cluster.machineConfig.aliyunecs.internetChargeType.prompt')"
-          />
-        </div>
-      </div>
-      <div class="row mb-20">
-        <div class="col span-6">
-          <LabeledSelect
             v-model:value="value.instanceType"
             :mode="mode"
             :options="instanceOptions"
@@ -1025,14 +1011,32 @@ export default {
             </template>
           </LabeledSelect>
         </div>
+      </div>
+      <div class="row mb-20">
         <div class="col span-6">
           <LabeledSelect
-            v-model:value="value.diskFs"
+            v-model:value="value.internetChargeType"
             :mode="mode"
-            :options="['ext4','xfs']"
+            :options="internetChargeTypeOptions"
             :required="true"
+            :searchable="true"
             :disabled="disabled"
-            :label="t('cluster.machineConfig.aliyunecs.diskFs.label')"
+            :label="t('cluster.machineConfig.aliyunecs.internetChargeType.label')"
+            :placeholder="t('cluster.machineConfig.aliyunecs.internetChargeType.prompt')"
+          />
+        </div>
+        <div class="col span-6">
+          <UnitInput
+            v-model:value="value.internetMaxBandwidth"
+            output-as="string"
+            :mode="mode"
+            :disabled="disabled"
+            :min="1"
+            :max="100"
+            :label="t('cluster.machineConfig.aliyunecs.internetMaxBandwidth.label')"
+            :placeholder="t('cluster.machineConfig.aliyunecs.internetMaxBandwidth.placeholder')"
+            :suffix="t('cluster.machineConfig.aliyunecs.internetMaxBandwidth.suffix')"
+            @blur="unitInputRangeLimit($event, 1, 100, 'internetMaxBandwidth')"
           />
         </div>
       </div>
@@ -1096,21 +1100,16 @@ export default {
       </div>
       <div class="row mb-20">
         <div class="col span-6">
-          <UnitInput
-            v-model:value="value.internetMaxBandwidth"
-            output-as="string"
+          <LabeledSelect
+            v-model:value="value.diskFs"
             :mode="mode"
+            :options="['ext4','xfs']"
+            :required="true"
             :disabled="disabled"
-            :min="1"
-            :max="100"
-            :label="t('cluster.machineConfig.aliyunecs.internetMaxBandwidth.label')"
-            :placeholder="t('cluster.machineConfig.aliyunecs.internetMaxBandwidth.placeholder')"
-            :suffix="t('cluster.machineConfig.aliyunecs.internetMaxBandwidth.suffix')"
-            @blur="unitInputRangeLimit($event, 1, 100, 'internetMaxBandwidth')"
+            :label="t('cluster.machineConfig.aliyunecs.diskFs.label')"
           />
         </div>
       </div>
-
       <portal :to="'advanced-'+uuid">
         <div class="row mb-20">
           <div class="col span-6">
@@ -1300,27 +1299,33 @@ export default {
         </div>
         <div class="row mt-20">
           <div class="col span-12">
+            <h3>
+              {{ t('cluster.machineConfig.aliyunecs.networkInterface.label') }}
+              <span
+                class="text-muted text-small"
+              >
+                {{ t('cluster.machineConfig.aliyunecs.networkInterface.desc') }}
+              </span>
+            </h3>
             <div>
-              <Checkbox
-                v-model:value="value.privateAddressOnly"
-                :mode="mode"
-                :disabled="disabled"
-                :label="t('cluster.machineConfig.aliyunecs.privateAddressOnly.label')"
-                @update:value="onPrivateAddressOnlyChange"
-              />
-            </div>
-          </div>
-        </div>
-        <div class="row mt-20">
-          <div class="col span-12">
-            <div>
-              <Checkbox
-                v-model:value="value.allocatePublicStaticIp"
-                :mode="mode"
-                :disabled="disabled"
-                :label="t('cluster.machineConfig.aliyunecs.allocatePublicStaticIp.label')"
-                @update:value="onAllocatePublicStaticIpChange"
-              />
+              <div>
+                <Checkbox
+                  v-model:value="value.privateAddressOnly"
+                  :mode="mode"
+                  :disabled="disabled"
+                  :label="t('cluster.machineConfig.aliyunecs.privateAddressOnly.label')"
+                  @update:value="onPrivateAddressOnlyChange"
+                />
+              </div>
+              <div>
+                <Checkbox
+                  v-model:value="value.allocatePublicStaticIp"
+                  :mode="mode"
+                  :disabled="disabled"
+                  :label="t('cluster.machineConfig.aliyunecs.allocatePublicStaticIp.label')"
+                  @update:value="onAllocatePublicStaticIpChange"
+                />
+              </div>
             </div>
           </div>
         </div>
