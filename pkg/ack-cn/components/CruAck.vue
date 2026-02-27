@@ -161,7 +161,7 @@ function formatAckConfig(normanCluster) {
   }
   // The vswitchIds field in ackconfig is a legacy field for proprietary clusters.
   // In the new version, it needs to echo the v_switch_ids field from nodepool
-  if (ackConfig?.node_pool_list[0] && ackConfig?.node_pool_list[0].v_switch_ids?.length > 0) {
+  if (ackConfig?.node_pool_list && ackConfig?.node_pool_list[0] && ackConfig?.node_pool_list[0].v_switch_ids?.length > 0) {
     state.value.vswitchIds = ackConfig?.node_pool_list[0].v_switch_ids;
   }
 
