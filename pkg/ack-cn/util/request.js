@@ -14,6 +14,7 @@ export async function fetchResources({
   const results = [];
 
   try {
+    // token pagination
     if (isTokenPagination(resourceName)) {
       let token = '';
 
@@ -25,53 +26,56 @@ export async function fetchResources({
           ...(token ? { nextToken: token } : {}),
           ...externalParams,
         }, store);
-
         const items = extractItems(data, resource, plural);
 
-        if (!items) break;
-        if (Array.isArray(items)) {
-          results.push(...items);
+        if (!Array.isArray(items) || items.length === 0) {
+          break;
         }
 
+        results.push(...items);
+
         token = data?.NextToken || data?.nextToken;
-        if (!token) break;
-        if (!items?.length) break;
+        if (!token) {
+          break;
+        }
       }
 
       return results;
     }
 
-    const data = await fetchPage(url, {
-      cloudCredentialId,
-      acceptLanguage,
-      pageSize,
-      pageNumber: page,
-      ...externalParams,
-    }, store);
+    // pageNumber pagination
+    let curPage = page;
 
-    const items = extractItems(data, resource, plural);
+    while (true) {
+      const data = await fetchPage(
+        url,
+        {
+          cloudCredentialId,
+          acceptLanguage,
+          pageSize,
+          pageNumber: curPage,
+          ...externalParams,
+        },
+        store
+      );
+      const items = extractItems(data, resource, plural);
 
-    if (Array.isArray(items)) {
+      if (!Array.isArray(items) || items.length === 0) {
+        break;
+      }
+
       results.push(...items);
-    } else {
-      return results;
-    }
 
-    const totalCount = data.TotalCount;
-    const fetchedCount = pageSize * (page - 1) + items?.length;
+      const totalCount = data?.TotalCount;
+      const fetchedCount = pageSize * curPage;
 
-    if (totalCount > fetchedCount) {
-      const nextPageResults = await fetchResources({
-        resource,
-        plural,
-        cloudCredentialId,
-        store,
-        externalParams,
-        page: page + 1,
-        pageSize,
-      });
+      if (typeof totalCount === 'number') {
+        if (fetchedCount >= totalCount) break;
+      } else {
+        if (items.length < pageSize) break;
+      }
 
-      results.push(...nextPageResults);
+      curPage += 1;
     }
 
     return results;
