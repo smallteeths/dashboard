@@ -14,6 +14,7 @@ export async function fetchResources({
   const results = [];
 
   try {
+    // token pagination
     if (isTokenPagination(resourceName)) {
       let token = '';
 
@@ -25,46 +26,56 @@ export async function fetchResources({
           ...(token ? { nextToken: token } : {}),
           ...externalParams,
         }, store);
-
         const items = extractItems(data, resource, plural);
+
+        if (!Array.isArray(items) || items.length === 0) {
+          break;
+        }
 
         results.push(...items);
 
         token = data?.NextToken || data?.nextToken;
-        if (!token) break;
-        if (!items?.length) break;
+        if (!token) {
+          break;
+        }
       }
 
       return results;
     }
 
-    const data = await fetchPage(url, {
-      cloudCredentialId,
-      acceptLanguage,
-      pageSize,
-      pageNumber: page,
-      ...externalParams,
-    }, store);
+    // pageNumber pagination
+    let curPage = page;
 
-    const items = extractItems(data, resource, plural);
+    while (true) {
+      const data = await fetchPage(
+        url,
+        {
+          cloudCredentialId,
+          acceptLanguage,
+          pageSize,
+          pageNumber: curPage,
+          ...externalParams,
+        },
+        store
+      );
+      const items = extractItems(data, resource, plural);
 
-    results.push(...items);
+      if (!Array.isArray(items) || items.length === 0) {
+        break;
+      }
 
-    const totalCount = data.TotalCount;
-    const fetchedCount = pageSize * (page - 1) + items.length;
+      results.push(...items);
 
-    if (totalCount > fetchedCount) {
-      const nextPageResults = await fetchResources({
-        resource,
-        plural,
-        cloudCredentialId,
-        store,
-        externalParams,
-        page: page + 1,
-        pageSize,
-      });
+      const totalCount = data?.TotalCount;
+      const fetchedCount = pageSize * curPage;
 
-      results.push(...nextPageResults);
+      if (typeof totalCount === 'number') {
+        if (fetchedCount >= totalCount) break;
+      } else {
+        if (items.length < pageSize) break;
+      }
+
+      curPage += 1;
     }
 
     return results;
