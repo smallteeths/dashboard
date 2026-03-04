@@ -24,7 +24,7 @@ const DEFAULTACKCONFIG = {
   podVswitchIds:        [],
   addons:               [
     {
-      name:   'flannel',
+      name:   'terway-eniip',
       config: '',
     }
   ]
@@ -74,10 +74,15 @@ const DEFAULT_NODE_GROUP_CONFIG = {
   category:             '',
   instances_num:        3,
   key_pair:             null,
-  instance_types:       '',
-  type:                 'nodePool',
-  runtime:              'containerd',
-  runtime_version:      '2.1.5'
+  instance_types:       [
+    'ecs.g6.xlarge',
+    'ecs.g7.xlarge',
+    'ecs.u1-c1m4.xlarge',
+    'ecs.g8i.xlarge'
+  ],
+  type:            'nodePool',
+  runtime:         'containerd',
+  runtime_version: '2.1.5'
 };
 
 const CLUSTER_TYPES = [
@@ -211,6 +216,55 @@ const PLATFORMTYPES = [
   }
 ];
 
+export const STATUS_AVAILABLE = 'Available';
+export const INSTANCE_TYPE = 'InstanceType';
+export const WITH_STOCK = 'WithStock';
+export const WITHOUT_STOCK = 'WithoutStock';
+export const DATA_DISK = 'DataDisk';
+export const INSTANCE_TYPE_COLUMNS = [
+  {
+    name:  'selected',
+    label: ' ',
+    width: 40,
+    align: 'center',
+  },
+  {
+    name:     'instanceFamily',
+    labelKey: 'ackCn.nodePool.instanceTypes.table.columns.instanceFamily',
+    value:    `instanceFamily`,
+    sort:     `instanceFamily`,
+    search:   `instanceFamily`,
+  }, {
+    name:     'instanceType',
+    labelKey: 'ackCn.nodePool.instanceTypes.table.columns.instanceType',
+    value:    `instanceType`,
+  }, {
+    name:     'vcpus',
+    labelKey: 'ackCn.nodePool.instanceTypes.table.columns.vcpus',
+    value:    `vcpus`,
+    sort:     `vcpus`,
+    search:   `vcpus`,
+  }, {
+    name:     'memory',
+    labelKey: 'ackCn.nodePool.instanceTypes.table.columns.memory',
+    value:    `memory`,
+    sort:     `memory`,
+    search:   `memory`,
+  }, {
+    name:     'stock',
+    labelKey: 'ackCn.nodePool.instanceTypes.table.columns.stock',
+    value:    `stock`,
+    sort:     `stock`,
+    search:   `stock`,
+  }, {
+    name:     'zones',
+    labelKey: 'ackCn.nodePool.instanceTypes.table.columns.zones',
+    value:    `zones`,
+    sort:     `zones`,
+    search:   `zones`,
+  }
+];
+
 export default {
   DEFAULTACKCONFIG,
   DEFAULT_NODE_GROUP_CONFIG,
@@ -223,5 +277,10 @@ export default {
   NODECIDRMASKS,
   DISKS,
   PLATFORMTYPES,
-  DEFAULTIMPORTACKCONFIG
+  DEFAULTIMPORTACKCONFIG,
+  STATUS_AVAILABLE,
+  INSTANCE_TYPE,
+  WITH_STOCK,
+  WITHOUT_STOCK,
+  DATA_DISK,
 };

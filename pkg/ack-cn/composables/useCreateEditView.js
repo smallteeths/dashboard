@@ -66,27 +66,28 @@ export function useCreateEditView(props, context) {
   }
 
   async function save(buttonDone, url, depth = 0) {
+    console.log(errors.value);
     if (errors.value) {
       clear(errors.value);
     }
 
     try {
-      await applyHooks(BEFORE_SAVE_HOOKS, props.value);
+      // await applyHooks(BEFORE_SAVE_HOOKS, props.value);
 
-      if (props.value?.metadata?.labels && Object.keys(props.value.metadata.labels || {}).length === 0) {
-        delete props.value.metadata.labels;
-      }
-      if (props.value?.metadata?.annotations && Object.keys(props.value.metadata.annotations || {}).length === 0) {
-        delete props.value.metadata.annotations;
-      }
+      // if (props.value?.metadata?.labels && Object.keys(props.value.metadata.labels || {}).length === 0) {
+      //   delete props.value.metadata.labels;
+      // }
+      // if (props.value?.metadata?.annotations && Object.keys(props.value.metadata.annotations || {}).length === 0) {
+      //   delete props.value.metadata.annotations;
+      // }
 
-      if (isCreate.value) {
-        const ns = props.value?.metadata?.namespace;
+      // if (isCreate.value) {
+      //   const ns = props.value?.metadata?.namespace;
 
-        if (ns && ns !== DEFAULT_WORKSPACE) {
-          $store.dispatch('prefs/set', { key: LAST_NAMESPACE, value: ns }, { root: true });
-        }
-      }
+      //   if (ns && ns !== DEFAULT_WORKSPACE) {
+      //     $store.dispatch('prefs/set', { key: LAST_NAMESPACE, value: ns }, { root: true });
+      //   }
+      // }
 
       await actuallySave(url);
 
@@ -122,6 +123,7 @@ export function useCreateEditView(props, context) {
     }
     ackConfig.value.node_pool_list = nodePools.value;
     normanCluster.value.ackConfig = formatNodePoolList(ackConfig);
+    console.log(normanCluster.value.ackConfig);
     await normanCluster.value.save();
 
     return await normanCluster.value.waitForCondition('InitialRolesPopulated');
@@ -137,7 +139,7 @@ export function useCreateEditView(props, context) {
         name:                 item.name,
         instance_types:       [item.instance_types],
         instances_num:        item.instances_num,
-        key_pair:             item.key_pair || this.config.keyPair,
+        key_pair:             item.key_pair,
         platform:             item.platform,
         system_disk_category: item.system_disk_category,
         system_disk_size:     item.system_disk_size,

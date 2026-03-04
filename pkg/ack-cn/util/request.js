@@ -28,7 +28,10 @@ export async function fetchResources({
 
         const items = extractItems(data, resource, plural);
 
-        results.push(...items);
+        if (!items) break;
+        if (Array.isArray(items)) {
+          results.push(...items);
+        }
 
         token = data?.NextToken || data?.nextToken;
         if (!token) break;
@@ -48,10 +51,14 @@ export async function fetchResources({
 
     const items = extractItems(data, resource, plural);
 
-    results.push(...items);
+    if (Array.isArray(items)) {
+      results.push(...items);
+    } else {
+      return results;
+    }
 
     const totalCount = data.TotalCount;
-    const fetchedCount = pageSize * (page - 1) + items.length;
+    const fetchedCount = pageSize * (page - 1) + items?.length;
 
     if (totalCount > fetchedCount) {
       const nextPageResults = await fetchResources({
@@ -175,4 +182,28 @@ function getAvailableResources(res) {
   ];
 
   return results;
+}
+
+export async function fetchAvailableResourcesRaw({
+  resource = '',
+  plural,
+  cloudCredentialId,
+  store,
+  externalParams = {},
+} = {}) {
+  const resourceName = normalizeResourceName(resource || plural);
+  const acceptLanguage = getAcceptLanguage(store);
+  const url = `${ window.location.origin }/meta/aliyuncn/${ resourceName }`;
+
+  try {
+    const res = await fetchPage(url, {
+      cloudCredentialId,
+      acceptLanguage,
+      ...externalParams,
+    }, store);
+
+    return res;
+  } catch (err) {
+    throw err?.detail || err;
+  }
 }

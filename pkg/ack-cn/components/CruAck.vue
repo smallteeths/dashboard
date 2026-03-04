@@ -27,9 +27,11 @@ import { _CREATE, _VIEW, _IMPORT } from '@shell/config/query-params';
 import { stringify } from '@shell/utils/error';
 import { syncUpstreamConfig } from '@shell/utils/kontainer';
 import Accordion from '@components/Accordion/Accordion.vue';
+import ClusterPlanSelector from './ClusterPlanSelector.vue';
 import {
   filter, find, cloneDeep, pullAt, uniqBy, includes, sortBy
 } from 'lodash';
+import { RadioGroup } from '@components/Form/Radio';
 
 const props = defineProps({
   mode: {
@@ -57,11 +59,12 @@ const options = ref({
       value: ''
     }
   ],
-  regionOptions:       [],
-  vpcOptions:          [],
-  vswitchOptions:      [],
-  instanceTypeOptions: [],
-  keyPairOptions:      [],
+  regionOptions:          [],
+  vpcOptions:             [],
+  vswitchOptions:         [],
+  keyPairOptions:         [],
+  zoneOptions:            [],
+  allInstanceTypeOptions: {},
 });
 const RUNTIME_VERSION_LE_132 = '1.6.39';
 const RUNTIME_VERSION_LT_132 = '2.1.5';
@@ -77,9 +80,11 @@ const state = ref({
   versionCustom:                 false,
   importClusterRegion:           false,
   errors:                        [],
-  ackCNI:                        'flannel',
+  ackCNI:                        'terway-eniip',
   vswitchIds:                    [],
   historyK8sVersion:             '',
+  autoCreateVpc:                 'auto',
+  zones:                         new Set(),
 });
 const emit = defineEmits(['done']);
 const cruresource = ref(null);
@@ -253,6 +258,44 @@ async function fetchImportALiyunResource() {
   state.value.importClusterRegion = false;
 }
 
+async function fetchZones(regionId) {
+  try {
+    const resourceGroupId = ackConfig.value.resourceGroupId;
+    const externalParams = { regionId };
+
+    if (!!resourceGroupId && resourceGroupId !== '') {
+      externalParams.resourceGroupId = resourceGroupId;
+    }
+    const zoneOptions = await fetchResources({
+      resource:          'Zone',
+      plural:            'Zones',
+      cloudCredentialId: ackConfig.value.aliyun_credential_secret,
+      externalParams,
+      store,
+    });
+
+    options.value.zoneOptions = zoneOptions.map((zone) => {
+      return {
+        ...zone,
+        label: zone.raw?.LocalName ?? zone.label,
+        value: zone.raw?.ZoneId ?? zone.value,
+      };
+    });
+
+    if (isNewOrUnprovisioned.value) {
+      ackConfig.value.zoneIds = (options.value.zoneOptions || [])
+        .slice(0, 5)
+        .map((zone) => zone.value);
+
+      updateZones(ackConfig.value.zoneIds);
+    }
+  } catch (err) {
+    options.value.zoneOptions = [];
+    state.value.errors = [];
+    state.value.errors.push(err);
+  }
+}
+
 async function fetchVpc(regionId) {
   try {
     const resourceGroupId = ackConfig.value.resourceGroupId;
@@ -332,6 +375,7 @@ async function fetchVSwitch(vpcId) {
 
 async function fetchInstanceType(regionId) {
   try {
+    state.value.instanceTypeLoading = true;
     const resourceGroupId = ackConfig.value.resourceGroupId;
     const externalParams = { regionId };
 
@@ -345,98 +389,29 @@ async function fetchInstanceType(regionId) {
       externalParams,
       store,
     });
-    const allInstanceTypeOptions = instanceTypeOptions.map((instanceType) => {
-      return {
-        ...instanceType,
-        label: `${ instanceType.raw.InstanceTypeId } ( ${ instanceType.raw.CpuCoreCount } ${ instanceType.raw.CpuCoreCount > 1 ? 'Cores' : 'Core' } ${ instanceType.raw.MemorySize }GB RAM )`,
+    const allInstanceTypes = {};
+
+    (instanceTypeOptions || []).forEach((it) => {
+      const raw = it?.raw || {};
+      const id = raw.InstanceTypeId;
+
+      if (!id) {
+        return;
+      }
+      allInstanceTypes[id] = {
+        instanceTypeFamily: raw.InstanceTypeFamily,
+        cpu:                raw.CpuCoreCount,
+        memory:             raw.MemorySize,
       };
     });
-    const externalParamsForAvailable = {
-      regionId,
-      networkCategory:     'vpc',
-      destinationResource: 'InstanceType'
-    };
-    const availableInstanceTypeKeys = await fetchAvailableResources({
-      resource:          '',
-      plural:            'AvailableResource',
-      cloudCredentialId: ackConfig.value.aliyun_credential_secret,
-      externalParams:    externalParamsForAvailable,
-      store,
-    });
-    const availableInstanceTypeOptions = filter(allInstanceTypeOptions, (option) => includes(availableInstanceTypeKeys, option.value));
 
-    // format instance type options
-    options.value.instanceTypeOptions = formatInstanceTypeOptions(availableInstanceTypeOptions);
+    options.value.allInstanceTypeOptions = allInstanceTypes;
   } catch (err) {
-    options.value.instanceTypeOptions = [];
+    options.value.allInstanceTypeOptions = {};
     state.value.errors = [];
     state.value.errors.push(err);
   }
   state.value.instanceTypeLoading = false;
-}
-
-function formatInstanceTypeOptions(instanceTypeOptions = []) {
-  if (!Array.isArray(instanceTypeOptions) || instanceTypeOptions.length === 0) {
-    return [];
-  }
-
-  // sort instance type options by family, cpu core count, memory size, and instance type id
-  const sorted = sortBy(instanceTypeOptions, [
-    (o) => o?.raw?.InstanceTypeFamily || '',
-    (o) => o?.raw?.CpuCoreCount ?? 0,
-    (o) => o?.raw?.MemorySize ?? 0,
-    (o) => o?.value || o?.raw?.InstanceTypeId || '',
-  ]);
-  let lastGroup;
-  const out = [];
-  const children = [];
-  // group instance type options by family
-  const flush = () => {
-    if (children.length) {
-      out.push(...sortBy(children, 'cpuCoreCount'));
-      children.length = 0;
-    }
-  };
-
-  for (const opt of sorted) {
-    const raw = opt?.raw || {};
-    const family = raw.InstanceTypeFamily || 'Unknown';
-
-    if (family !== lastGroup) {
-      flush();
-      out.push({
-        kind:     'group',
-        disabled: true,
-        label:    family,
-      });
-      lastGroup = family;
-    }
-
-    const cpu = raw.CpuCoreCount ?? 0;
-    const mem = raw.MemorySize ?? 0;
-    const id = opt.value || raw.InstanceTypeId || '';
-    const label = id ? `${ id } ( ${ cpu } ${ cpu > 1 ? 'Cores' : 'Core' } ${ mem }GB RAM )` : (opt.label || '');
-
-    children.push({
-      label,
-      value:        id,
-      cpuCoreCount: cpu,
-      raw,
-    });
-  }
-
-  // flush remaining children
-  flush();
-
-  // out is add group for instance type family
-  // [
-  //   { kind:'group', disabled:true, label:'ecs.g7' },
-  //   { label:'ecs.g7.large ( 2 Cores 8GB RAM )', value:'ecs.g7.large', ... },
-
-  //   { kind:'group', disabled:true, label:'ecs.n1' },
-  //   { label:'ecs.n1.tiny ( 1 Core 1GB RAM )', value:'ecs.n1.tiny', ... },
-  // ]
-  return out;
 }
 
 async function fetchKeyPairs(regionId) {
@@ -538,10 +513,7 @@ function resetNodePool() {
   nodePools.value = nodePools.value?.map((pool) => {
     return {
       ...pool,
-      system_disk_category: '',
-      category:             '',
-      instance_types:       '',
-      key_pair:             '',
+      key_pair: '',
     };
   }) || [];
 }
@@ -587,6 +559,44 @@ function changeContainerdVersion(version) {
     }));
   }
 }
+
+function updateAutoCreateVpc(value) {
+  state.value.autoCreateVpc = value;
+  if (value === 'auto') {
+    updateZones(ackConfig.value.zoneIds);
+  } else {
+    updateVswitchIds(state.value.vswitchIds);
+  }
+}
+
+function updateZones(value = []) {
+  if (!isAutoCreateVpc.value) {
+    return;
+  }
+
+  state.value.zones = new Set(value);
+}
+
+function updateVswitchIds(value) {
+  if (isAutoCreateVpc.value) {
+    return;
+  }
+  const zones = [];
+
+  if (value && value.length > 0) {
+    value.forEach((vswitchId) => {
+      const vswitch = find(options.value.vswitchOptions, (o) => {
+        return o.value === vswitchId;
+      });
+
+      if (vswitch && vswitch.raw && vswitch.raw.ZoneId) {
+        zones.push(vswitch.raw.ZoneId);
+      }
+    });
+  }
+  state.value.zones = new Set(zones);
+}
+
 const isImport = ref(route.query.mode === _IMPORT);
 const hasCredential = computed(() => {
   return !!ackConfig.value?.aliyun_credential_secret;
@@ -598,6 +608,10 @@ const CREATE = computed(() => {
 
 const VIEW = computed(() => {
   return _VIEW;
+});
+
+const isAutoCreateVpc = computed(() => {
+  return state.value.autoCreateVpc === 'auto';
 });
 
 const isNewOrUnprovisioned = computed(() => {
@@ -626,8 +640,8 @@ const fvExtraRules = computed(() => {
     const isImportMode = isImport.value || ackConfig.value.imported;
 
     const nonImportRules = !isImportMode ? {
-      vpcIdRequired:              ACKValidators.vpcIdRequired(ackConfig, intl),
-      vswitchIdsRequired:         ACKValidators.vswitchIdsRequired(state, intl),
+      // vpcIdRequired:              ACKValidators.vpcIdRequired(ackConfig, intl),
+      // vswitchIdsRequired:         ACKValidators.vswitchIdsRequired(state, intl),
       serviceCidrRequired:        ACKValidators.serviceCidrRequired(ackConfig, intl),
       podCidrRequired:            ACKValidators.podCidrRequired(ackConfig, intl, state),
       validatePodCidr:            ACKValidators.validatePodCidr(ackConfig, intl, state),
@@ -641,7 +655,7 @@ const fvExtraRules = computed(() => {
       diskSizeRequired:           ACKValidators.diskSizeRequired(nodePools, intl),
       dataDiskSizeRequired:       ACKValidators.dataDiskSizeRequired(nodePools, intl),
       platformRequired:           ACKValidators.platformRequired(nodePools, intl),
-      keyPairRequired:            ACKValidators.keyPairRequired(nodePools, intl),
+      // keyPairRequired:            ACKValidators.keyPairRequired(nodePools, intl),
     } : {};
 
     const importRules = isImportMode ? { clusterIdRequired: ACKValidators.clusterIdRequired(ackConfig, intl) } : {};
@@ -692,14 +706,14 @@ fvFormRuleSets.value = [
     path:  'clusterId',
     rules: ['clusterIdRequired'],
   },
-  {
-    path:  'vpcId',
-    rules: ['vpcIdRequired'],
-  },
-  {
-    path:  'vswitchIds',
-    rules: ['vswitchIdsRequired'],
-  },
+  // {
+  //   path:  'vpcId',
+  //   rules: ['vpcIdRequired'],
+  // },
+  // {
+  //   path:  'vswitchIds',
+  //   rules: ['vswitchIdsRequired'],
+  // },
   {
     path:  'containerCidr',
     rules: ['podCidrRequired', 'validatePodCidr'],
@@ -740,10 +754,10 @@ fvFormRuleSets.value = [
     path:  'platform',
     rules: ['platformRequired']
   },
-  {
-    path:  'keyPair',
-    rules: ['keyPairRequired']
-  },
+  // {
+  //   path:  'keyPair',
+  //   rules: ['keyPairRequired']
+  // },
 ];
 
 // watch
@@ -778,8 +792,8 @@ watch(() => [ackConfig.value.regionId, ackConfig.value.aliyun_credential_secret]
         resetNodePool();
       }
       state.value.vpcLoading = true;
-      state.value.instanceTypeLoading = true;
       state.value.keyPairLoading = true;
+      await fetchZones(regionId);
       await fetchVpc(regionId);
       await fetchInstanceType(regionId);
       await fetchKeyPairs(regionId);
@@ -912,68 +926,66 @@ watch(() => normanCluster.value.name, (name) => {
             />
           </div>
         </div>
-        <div class="row mb-10">
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="ackConfig.resourceGroupId"
-              data-testid="cruack-resourceGroup"
-              :mode="mode"
-              :options="options.resourceGroupOptions"
-              option-label="label"
-              option-key="value"
-              :loading="state.regionAndResourceGroupLoading"
-              label-key="ackCn.resourceGroup.label"
-              :disabled="!isNewOrUnprovisioned"
-            />
+        <div
+          class="m-0 mb-10 card-container"
+        >
+          <div>
+            <H3 class="title">
+              集群基础信息
+            </h3>
           </div>
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="ackConfig.regionId"
-              data-testid="cruack-resourceGroup"
-              required
-              :mode="mode"
-              :options="options.regionOptions"
-              option-label="label"
-              option-key="value"
-              :loading="state.regionAndResourceGroupLoading"
-              label-key="ackCn.region.label"
-              :disabled="!isNewOrUnprovisioned"
-              :rules="fvGetAndReportPathRules('regionId')"
-            />
+          <div class="row mb-10">
+            <div
+              class="col span-4"
+            >
+              <LabeledSelect
+                v-model:value="ackConfig.resourceGroupId"
+                data-testid="cruack-resourceGroup"
+                :mode="mode"
+                :options="options.resourceGroupOptions"
+                option-label="label"
+                option-key="value"
+                :loading="state.regionAndResourceGroupLoading"
+                label-key="ackCn.resourceGroup.label"
+                :disabled="!isNewOrUnprovisioned"
+              />
+            </div>
+            <div
+              class="col span-4"
+            >
+              <LabeledSelect
+                v-model:value="ackConfig.regionId"
+                data-testid="cruack-resourceGroup"
+                required
+                :mode="mode"
+                :options="options.regionOptions"
+                option-label="label"
+                option-key="value"
+                :loading="state.regionAndResourceGroupLoading"
+                label-key="ackCn.region.label"
+                :disabled="!isNewOrUnprovisioned"
+                :rules="fvGetAndReportPathRules('regionId')"
+              />
+            </div>
+            <div
+              class="col span-4"
+            >
+              <LabeledInputSelect
+                v-model:value="ackConfig.kubernetesVersion"
+                :mode="mode"
+                :options="CONFIG_ENV.KUBERNETESVERSIONS"
+                label-key="ackCn.version.label"
+                :disabled="ackConfig.imported"
+                @update:value="changeContainerdVersion($event)"
+              />
+            </div>
           </div>
-        </div>
-        <div class="row mb-10">
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="ackConfig.clusterType"
-              data-testid="cruack-clusterType"
-              :mode="mode"
-              :options="CONFIG_ENV.CLUSTER_TYPES"
-              option-label="label"
-              option-key="value"
-              label-key="ackCn.clusters.label"
-              :localizedLabel="true"
-              :disabled="!isNewOrUnprovisioned"
-            />
-          </div>
-          <div
-            class="col span-6"
-          >
-            <LabeledInputSelect
-              v-model:value="ackConfig.kubernetesVersion"
-              :mode="mode"
-              :options="CONFIG_ENV.KUBERNETESVERSIONS"
-              label-key="ackCn.version.label"
-              :disabled="ackConfig.imported"
-              @update:value="changeContainerdVersion($event)"
-            />
-          </div>
+          <ClusterPlanSelector
+            v-model="ackConfig.clusterSpec"
+            :disabled="!isNewOrUnprovisioned"
+            :options="CONFIG_ENV.ACK_CLUSTER_SPEC_OPTIONS"
+            :intl="intl"
+          />
         </div>
         <div
           v-if="!kubernetesSupport.rancherEnabled || !kubernetesSupport.aliyunEnabled || changedHistoryK8sVersion"
@@ -994,144 +1006,194 @@ watch(() => normanCluster.value.name, (name) => {
             :label="intl('ackCn.changedHistoryK8sVerison')"
           />
         </div>
-        <div class="row mb-10">
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="ackConfig.clusterSpec"
-              data-testid="cruack-clusterSpec"
-              :mode="mode"
-              :options="CONFIG_ENV.ACK_CLUSTER_SPEC_OPTIONS"
-              option-label="label"
-              option-key="value"
-              label-key="ackCn.clusterSpec.label"
-              :localizedLabel="true"
-              :disabled="!isNewOrUnprovisioned"
-            />
+        <div
+          class="m-0 mb-10 card-container"
+        >
+          <div>
+            <H3 class="title">
+              网络配置
+            </H3>
           </div>
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="state.ackCNI"
-              data-testid="cruack-ackcni"
-              :mode="mode"
-              :options="CONFIG_ENV.ACK_CNI_OPTIONS"
-              option-label="label"
-              option-key="value"
-              label-key="ackCn.cni.label"
-              :disabled="!isNewOrUnprovisioned"
-            />
+          <div class="row">
+            <div
+              class="col span-6"
+            >
+              <LabeledSelect
+                v-model:value="state.ackCNI"
+                data-testid="cruack-ackcni"
+                :mode="mode"
+                :options="CONFIG_ENV.ACK_CNI_OPTIONS"
+                option-label="label"
+                option-key="value"
+                label-key="ackCn.cni.label"
+                :disabled="!isNewOrUnprovisioned"
+              />
+            </div>
+            <div
+              class="col span-6 desc-info"
+            >
+              <Icon class="icon-info" />
+              <span
+                v-if="!state.isFlannel"
+                class="type-description"
+              >
+                Terway 是阿里云自研的网络插件，基于 ENI 实现 Pod 网络通信，支持 eBPF 加速、NetworkPolicy，以及 Pod 级交换机/安全组能力。
+              </span>
+            </div>
           </div>
-        </div>
-        <div class="row mb-10">
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="ackConfig.vpcId"
-              required
-              data-testid="cruack-vpc"
-              :mode="mode"
-              :options="options.vpcOptions"
-              option-label="label"
-              option-key="value"
-              label-key="ackCn.vpcId.label"
-              :loading="state.vpcLoading"
-              :disabled="!isNewOrUnprovisioned"
-              :placeholder="intl('ackCn.vpcId.prompt')"
-              :rules="fvGetAndReportPathRules('vpcId')"
-            />
+          <div class="row mt-10">
+            <div
+              class="col span-6"
+            >
+              <LabeledSelect
+                v-model:value="ackConfig.proxyMode"
+                data-testid="cruack-proxy-mode"
+                :mode="mode"
+                :options="CONFIG_ENV.MODES"
+                option-label="label"
+                option-key="value"
+                label-key="ackCn.proxyMode.label"
+                :disabled="!isNewOrUnprovisioned"
+              />
+            </div>
+            <div
+              class="col span-6"
+            >
+              <LabeledSelect
+                v-model:value="ackConfig.nodeCidrMask"
+                data-testid="cruack-node-cidr-mask"
+                :mode="mode"
+                :options="CONFIG_ENV.NODECIDRMASKS"
+                option-label="label"
+                option-key="value"
+                label-key="ackCn.nodeCidrMask.label"
+                :disabled="!isNewOrUnprovisioned"
+              />
+            </div>
           </div>
-          <div class="col span-6">
-            <LabeledMultiSelect
-              v-model:value="state.vswitchIds"
-              required
-              :mode="mode"
-              :options="options.vswitchOptions"
-              :disabled="!isNewOrUnprovisioned"
-              label-key="ackCn.vswitchId.label"
-              :loading="state.vswitchLoading"
-              :rules="fvGetAndReportPathRules('vswitchIds')"
-            />
+          <div class="row mt-10">
+            <div class="col span-6">
+              <LabeledInput
+                v-model:value="ackConfig.serviceCidr"
+                :mode="mode"
+                tooltipKey="ackCn.serviceCidr.placeholder"
+                label-key="ackCn.serviceCidr.label"
+                :disabled="!isNewOrUnprovisioned"
+                required
+                :rules="fvGetAndReportPathRules('serviceCidr')"
+              />
+            </div>
+            <div
+              class="col span-6"
+            >
+              <LabeledInput
+                v-if="state.isFlannel"
+                v-model:value="ackConfig.containerCidr"
+                :mode="mode"
+                tooltipKey="ackCn.containerCidr.placeholder"
+                label-key="ackCn.containerCidr.label"
+                :disabled="!isNewOrUnprovisioned"
+                required
+                :rules="fvGetAndReportPathRules('containerCidr')"
+              />
+            </div>
           </div>
-        </div>
-        <div class="row mb-10">
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="ackConfig.proxyMode"
-              data-testid="cruack-proxy-mode"
-              :mode="mode"
-              :options="CONFIG_ENV.MODES"
-              option-label="label"
-              option-key="value"
-              label-key="ackCn.proxyMode.label"
-              :disabled="!isNewOrUnprovisioned"
-            />
+          <div class="row mt-10">
+            <div class="col span-12">
+              <Checkbox
+                v-model:value="ackConfig.endpointPublicAccess"
+                :mode="mode"
+                :disabled="!isNewOrUnprovisioned"
+                label-key="ackCn.endpointPublicAccess.label"
+                required
+              />
+            </div>
           </div>
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="ackConfig.nodeCidrMask"
-              data-testid="cruack-node-cidr-mask"
-              :mode="mode"
-              :options="CONFIG_ENV.NODECIDRMASKS"
-              option-label="label"
-              option-key="value"
-              label-key="ackCn.nodeCidrMask.label"
-              :disabled="!isNewOrUnprovisioned"
-            />
-          </div>
-        </div>
-        <div class="row mb-10">
-          <div
-            v-if="state.isFlannel"
-            class="col span-6"
-          >
-            <LabeledInput
-              v-model:value="ackConfig.containerCidr"
-              :mode="mode"
-              tooltipKey="ackCn.containerCidr.placeholder"
-              label-key="ackCn.containerCidr.label"
-              :disabled="!isNewOrUnprovisioned"
-              required
-              :rules="fvGetAndReportPathRules('containerCidr')"
-            />
-          </div>
-          <div class="col span-6">
-            <LabeledInput
-              v-model:value="ackConfig.serviceCidr"
-              :mode="mode"
-              tooltipKey="ackCn.serviceCidr.placeholder"
-              label-key="ackCn.serviceCidr.label"
-              :disabled="!isNewOrUnprovisioned"
-              required
-              :rules="fvGetAndReportPathRules('serviceCidr')"
-            />
-          </div>
-        </div>
-        <div class="row mt-10 mb-20">
-          <div class="col span-6">
-            <Checkbox
-              v-model:value="ackConfig.snatEntry"
-              :mode="mode"
-              label-key="ackCn.snatEntry.label"
-              :disabled="!isNewOrUnprovisioned"
-              required
-            />
-          </div>
-          <div class="col span-6">
-            <Checkbox
-              v-model:value="ackConfig.endpointPublicAccess"
-              :mode="mode"
-              :disabled="!isNewOrUnprovisioned"
-              label-key="ackCn.endpointPublicAccess.label"
-              required
-            />
+          <div class="pd-10">
+            <div class="mt-10">
+              <h3 class="title">
+                专有网络
+              </h3>
+              <p class="type-description">
+                自动创建专有网络会自动创建 VPC/vSwitch
+              </p>
+            </div>
+            <div class="row mt-10">
+              <div class="col span-2">
+                <RadioGroup
+                  v-model:value="state.autoCreateVpc"
+                  name="autoCreateVpc"
+                  :mode="mode"
+                  :disabled="!isNewOrUnprovisioned"
+                  :labels="['自动创建','使用已有']"
+                  :options="['auto','custom']"
+                  @update:value="updateAutoCreateVpc"
+                />
+              </div>
+              <div
+                v-if="isAutoCreateVpc"
+                class="col span-8"
+              >
+                <LabeledMultiSelect
+                  v-model:value="ackConfig.zoneIds"
+                  :mode="mode"
+                  :options="options.zoneOptions"
+                  :disabled="!isNewOrUnprovisioned"
+                  label-key="ackCn.vswitchId.label"
+                  :loading="state.vswitchLoading"
+                  @update:value="updateZones"
+                />
+              </div>
+              <div
+                v-if="!isAutoCreateVpc"
+                class="col span-10"
+              >
+                <div class="row">
+                  <div
+                    class="col span-8"
+                  >
+                    <LabeledSelect
+                      v-model:value="ackConfig.vpcId"
+                      required
+                      data-testid="cruack-vpc"
+                      :mode="mode"
+                      :options="options.vpcOptions"
+                      option-label="label"
+                      option-key="value"
+                      label-key="ackCn.vpcId.label"
+                      :loading="state.vpcLoading"
+                      :disabled="!isNewOrUnprovisioned"
+                      :placeholder="intl('ackCn.vpcId.prompt')"
+                    />
+                  </div>
+                </div>
+                <div class="row mt-10">
+                  <div class="col span-8">
+                    <LabeledMultiSelect
+                      v-model:value="state.vswitchIds"
+                      required
+                      :mode="mode"
+                      :options="options.vswitchOptions"
+                      :disabled="!isNewOrUnprovisioned"
+                      label-key="ackCn.vswitchId.label"
+                      :loading="state.vswitchLoading"
+                      @update:value="updateVswitchIds"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row mt-10">
+              <div class="col span-6">
+                <Checkbox
+                  v-model:value="ackConfig.snatEntry"
+                  :mode="mode"
+                  label-key="ackCn.snatEntry.label"
+                  :disabled="!isNewOrUnprovisioned"
+                  required
+                />
+              </div>
+            </div>
           </div>
         </div>
         <Tabbed
@@ -1161,13 +1223,16 @@ watch(() => normanCluster.value.name, (name) => {
               v-model:size="pool.size"
               v-model:platform="pool.platform"
               v-model:keyPair="pool.key_pair"
+              :isNew="pool.isNew"
+              :isNewOrUnprovisioned="isNewOrUnprovisioned"
               :ackConfig="ackConfig"
               :disabled="(!isNewOrUnprovisioned && !pool.isNew) || changedHistoryK8sVersion"
               :disabledInstancesNum="changedHistoryK8sVersion"
-              :instanceTypeOptions="options.instanceTypeOptions"
+              :allInstanceTypeOptions="options.allInstanceTypeOptions"
               :keyPairOptions="options.keyPairOptions"
               :instanceTypeLoading="state.instanceTypeLoading"
               :keyPairLoading="state.keyPairLoading"
+              :zones="state.zones"
               :rules="{
                 name: fvGetAndReportPathRules('nodePoolName'),
                 runtimeVersion: fvGetAndReportPathRules('runtimeVersion'),
@@ -1177,7 +1242,6 @@ watch(() => normanCluster.value.name, (name) => {
                 diskSize: fvGetAndReportPathRules('diskSize'),
                 dataDiskSize: fvGetAndReportPathRules('dataDiskSize'),
                 platform: fvGetAndReportPathRules('platform'),
-                keyPair: fvGetAndReportPathRules('keyPair'),
               }"
               :mode="mode"
               @errors="e=>state.errors=e"
@@ -1205,3 +1269,38 @@ watch(() => normanCluster.value.name, (name) => {
     </template>
   </CruResource>
 </template>
+
+<style lang='scss' scoped>
+ .card-container {
+    &.highlight-border {
+      border-left: 5px solid var(--primary);
+    }
+    border-radius: var(--border-radius);
+    flex-basis: 40%;
+    margin: 10px;
+    min-height: 100px;
+    padding: 10px;
+    box-shadow: 0 0 20px var(--shadow);
+ }
+ .type-description {
+  color: var(--input-label);
+ }
+ .title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 10px;
+  }
+  .desc-info {
+    Icon{
+      color: var(--on-tertiary, var(--link));
+      margin: 0px 10px;
+    }
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    background: linear-gradient(51deg, rgb(111 210 74 / 0.12), rgba(34, 239, 171, 0));
+    border-radius: var(--border-radius);
+  }
+</style>

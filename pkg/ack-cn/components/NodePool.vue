@@ -2,10 +2,11 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import CONFIG_ENV from '../util/config';
 import { useStore } from 'vuex';
-import { fetchAvailableResources } from '../util/request';
+import { fetchAvailableResources, fetchAvailableResourcesRaw } from '../util/request';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
 import UnitInput from '@shell/components/form/UnitInput';
 import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
+import InstanceType from './InstanceType.vue';
 
 const props = defineProps({
   name: {
@@ -72,13 +73,25 @@ const props = defineProps({
     type:    Object,
     default: () => ({}),
   },
-  instanceTypeOptions: {
-    type:    Array,
-    default: () => ([]),
+  allInstanceTypeOptions: {
+    type:    Object,
+    default: () => ({}),
   },
   keyPairOptions: {
     type:    Array,
     default: () => ([]),
+  },
+  zones: {
+    type:    Array,
+    default: () => (new Set()),
+  },
+  isNew: {
+    type:    Boolean,
+    default: false,
+  },
+  isNewOrUnprovisioned: {
+    type:    Boolean,
+    default: false,
   },
   mode: { type: String, default: 'edit' },
 });
@@ -107,56 +120,83 @@ onMounted(() => {
 
 const intl = computed(() => store.getters['i18n/t']);
 
-async function fetchCategoryOptions(instanceType) {
+const fetchCategoryOptions = async() => {
   state.value.categoryOptionsloading = true;
-  if (!instanceType) {
-    state.value.categoryOptionsloading = false;
+  options.value.categoryOptions = [];
 
-    return;
-  }
   try {
-    const regionId = props.ackConfig.regionId;
-    const externalParams = {
-      regionId,
-      instanceType,
-      networkCategory:     'vpc',
-      ioOptimized:         'optimized',
-      destinationResource: 'SystemDisk'
-    };
-    const results = await fetchAvailableResources({
-      resource:          '',
-      plural:            'AvailableResource',
-      cloudCredentialId: props.ackConfig.aliyun_credential_secret,
-      externalParams,
-      store,
-    });
+    const types = {};
+    let maxCount = 0;
+    const instanceTypesLength = props?.instanceTypes?.length || 0;
 
-    const dataDiskChoices = [];
+    for (let i = 0; i < instanceTypesLength; i++) {
+      const instanceType = props.instanceTypes[i];
+      const externalParamsForAvailable = {
+        regionId:            props.ackConfig.regionId,
+        destinationResource: 'DataDisk',
+        resourceType:        'disk',
+        instanceType,
+      };
+      const res = await fetchAvailableResourcesRaw({
+        resource:          '',
+        plural:            'AvailableResource',
+        cloudCredentialId: props.ackConfig.aliyun_credential_secret,
+        externalParams:    externalParamsForAvailable,
+        store,
+      });
+      const availableZones = res?.AvailableZones?.AvailableZone || [];
 
-    if (results && results?.length > 0) {
-      results.forEach((item) => {
-        const disk = CONFIG_ENV.DISKS.find((disk) => disk.value === item);
+      availableZones.forEach((zone) => {
+        const zoneAllowed = props.zones.size === 0 || (zone.ZoneId && props.zones.has(zone.ZoneId)) || !props.isNew;
 
-        if (disk) {
-          dataDiskChoices.push({
-            value: item,
-            label: disk.label
+        if (zoneAllowed && zone.Status === CONFIG_ENV.STATUS_AVAILABLE) {
+          const availableResources = zone.AvailableResources?.AvailableResource || [];
+
+          availableResources.forEach((resource) => {
+            if (resource.Type === CONFIG_ENV.DATA_DISK) {
+              const dataDisks = resource.SupportedResources?.SupportedResource;
+
+              dataDisks.forEach((disk) => {
+                if (!types[disk.Value]) {
+                  types[disk.Value] = {
+                    min:      disk.Min,
+                    max:      disk.Max,
+                    counter:  1,
+                    lastType: instanceType
+                  };
+                } else {
+                  const cur = types[disk.Value];
+                  const shouldIncrement = cur.lastType !== instanceType;
+
+                  types[disk.Value] = {
+                    min:      Math.min(types[disk.Value].min, disk.Min),
+                    max:      Math.max(cur.max, disk.Max),
+                    counter:  !shouldIncrement ? cur.counter : cur.counter + 1,
+                    lastType: instanceType
+                  };
+                }
+                maxCount = Math.max(maxCount, types[disk.Value].counter);
+              });
+            }
           });
         }
       });
     }
+    const out = [];
 
-    if (dataDiskChoices?.length > 0) {
-      options.value.categoryOptions = dataDiskChoices;
-    } else {
-      options.value.categoryOptions = CONFIG_ENV.DISKS;
+    for (const type in types) {
+      if (types[type].counter === maxCount) {
+        out.push({ value: type, label: intl.value( `ackCn.nodePool.diskCategory.options.${ type }`) });
+      }
     }
+    options.value.categoryOptions = out;
   } catch (err) {
-    options.value.categoryOptions = [];
-    emit('errors', [err]);
+    const parsedError = err.error || '';
+
+    emit('errors', [parsedError]);
   }
   state.value.categoryOptionsloading = false;
-}
+};
 
 function blurInstancesNum(num) {
   if (num === '') {
@@ -164,22 +204,30 @@ function blurInstancesNum(num) {
   }
 }
 
-watch(() => props.instanceTypes, async(instanceTypes) => {
-  await fetchCategoryOptions(instanceTypes);
-  if (options.value.categoryOptions?.length > 0 && instanceTypes) {
+watch(
+  () => props.instanceTypes,
+  async(instanceTypes) => {
+    await fetchCategoryOptions(instanceTypes);
+    // 只有新创建的或者未 provisioned 的 nodepool 才需要初始化 category
+    if (props.isNew || props.isNewOrUnprovisioned) {
+      initCategory();
+    }
+  },
+  { immediate: true }
+);
+
+function initCategory() {
+  if (options.value.categoryOptions?.length > 0 && props.instanceTypes?.length > 0) {
     emit('update:category', options.value.categoryOptions[0].value);
     emit('update:systemDiskCategory', options.value.categoryOptions[0].value);
-  } else {
-    emit('update:systemDiskCategory', '');
-    emit('update:category', '');
   }
-});
+}
 
 </script>
 <template>
   <div>
     <div class="row mb-10">
-      <div class="col span-6">
+      <div class="col span-4">
         <LabeledInput
           :value="name"
           label-key="ackCn.nodePoolName.label"
@@ -191,7 +239,7 @@ watch(() => props.instanceTypes, async(instanceTypes) => {
           @update:value="emit('update:name', $event)"
         />
       </div>
-      <div class="col span-6">
+      <div class="col span-4">
         <LabeledInput
           :value="runtimeVersion"
           label-key="ackCn.runtime.label"
@@ -203,8 +251,23 @@ watch(() => props.instanceTypes, async(instanceTypes) => {
           @update:value="emit('update:runtimeVersion', $event)"
         />
       </div>
+      <div class="col span-4">
+        <LabeledInput
+          :value="instancesNum"
+          :disabled="disabledInstancesNum || ackConfig.imported"
+          label-key="ackCn.numOfNodes.label"
+          :mode="mode"
+          type="number"
+          data-testid="ack-node-instances-num"
+          :rules="rules.instancesNum"
+          min="0"
+          required
+          @blur="blurInstancesNum(instancesNum)"
+          @update:value="$emit('update:instancesNum', $event)"
+        />
+      </div>
     </div>
-    <div class="row mb-10">
+    <!-- <div class="row mb-10">
       <div
         class="col span-6"
       >
@@ -225,22 +288,15 @@ watch(() => props.instanceTypes, async(instanceTypes) => {
           @update:value="$emit('update:instanceTypes', $event)"
         />
       </div>
-      <div class="col span-6">
-        <LabeledInput
-          :value="instancesNum"
-          :disabled="disabledInstancesNum || ackConfig.imported"
-          label-key="ackCn.numOfNodes.label"
-          :mode="mode"
-          type="number"
-          data-testid="ack-node-instances-num"
-          :rules="rules.instancesNum"
-          min="0"
-          required
-          @blur="blurInstancesNum(instancesNum)"
-          @update:value="$emit('update:instancesNum', $event)"
-        />
-      </div>
-    </div>
+    </div> -->
+    <InstanceType
+      :config="ackConfig"
+      :value="instanceTypes"
+      :allInstanceTypes="allInstanceTypeOptions"
+      :loadingInstanceTypes="instanceTypeLoading"
+      :zones="zones"
+      @update:value="$emit('update:instanceTypes', $event)"
+    />
     <div class="row mb-10">
       <div
         class="col span-6"
@@ -338,7 +394,6 @@ watch(() => props.instanceTypes, async(instanceTypes) => {
           label-key="ackCn.keyPair.label"
           :loading="keyPairLoading"
           :disabled="disabled"
-          :rules="rules.keyPair"
           required
           :placeholder="intl('ackCn.keyPair.placeholder')"
           @update:value="$emit('update:keyPair', $event)"

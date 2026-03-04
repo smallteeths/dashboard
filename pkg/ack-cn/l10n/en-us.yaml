@@ -59,6 +59,43 @@ ackCn:
     placeholder: e.g. nodepool
     required: Worker Node Name is required
     unique: Node pool names must be unique.
+  nodePool:
+    instanceTypes:
+      list:
+        title: Instance Type Order
+        subtitle: Nodes are created based on the order of the instance types. If one instance type is unavailable, the next instance type is used. The actual instance types used to create nodes are subject to inventory availability.
+        warning: This instance type might be unavailable in selected zones.
+      table:
+        title: Instance Types
+        subtitle: Select one or more instance types. Nodes are created based on the order of the instance types in the Instance Order list below.
+        add: Add
+        columns:
+          instanceFamily: Instance Family
+          instanceType: Instance Type
+          vcpus: vCPU
+          memory: Memory  
+          stock: Stock Availability 
+          zones: Zones  
+        labelParts:
+          vcpus: '{val} vCPU'
+          memory: '{val} GB'         
+      cpu:
+        label: Number of vCPUs
+        option: '{val} vCPU'
+      memory:
+        label: Memory
+        option: '{val} GB'
+      label: Instance Types
+      banner: You can select multiple instance types. Nodes are created based on the order of the instance types in the above list. If one instance type is unavailable, the next instance type is used. The actual instance types used to create nodes are subject to inventory availability.
+    diskCategory:
+      label: Category
+      options:
+         cloud: Basic Disk
+         cloud_efficiency: Ultra Disk
+         cloud_ssd: Standard SSD Disk
+         cloud_essd: ESSD Disk
+         cloud_auto: ESSD AutoPL Disk
+         cloud_essd_entry: ESSD Entry Disk  
   runtime:
     label: Containerd Version
   instanceType:
@@ -103,4 +140,8 @@ ackCn:
     importCluster: Cluster
     required: Import Cluster is required
     placeholder: 'Choose'
-  
+  generic:
+    arrayList: Array List
+    moveUp: Move Up
+    moveDown: Move Down
+    remove: Remove
