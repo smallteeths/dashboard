@@ -21,6 +21,7 @@ const DEFAULTTKECONFIG = {
   vpcId:          null,
   zoneId:         null,
   subnetId:       null,
+  domain:         null,
   securityGroup:  null,
   instanceType:   null,
   osName:         'tlinux3.1x86_64',

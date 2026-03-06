@@ -114,3 +114,9 @@ tkeCn:
   master:
     title: Master&Etcd 節點配置
     detail: 配置用於啟動騰訊雲 Kubernetes 服務的主節點
+  clusterVersion:
+    upgradeTip: "目前叢集版本為 {current}，可升級至更高版本（不支援降級）。"
+    latestTip: "目前叢集版本為 {current}，已是可用的最新版本。"
+  domain:
+    label: 叢集域名
+    placeholder: e.g. example.com

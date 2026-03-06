@@ -79,6 +79,7 @@ const state = ref({
   instanceTypeSet:              {},
   allSubnets:                   [],
   errors:                       [],
+  upgradeTip:                   '',
 });
 const emit = defineEmits(['done']);
 
@@ -436,6 +437,7 @@ function fixConfig(config) {
     region:              config.region,
     clusterId:           config.clusterId,
     subnetId:            clusterEndpoint.subnetId,
+    domain:              clusterEndpoint.domain,
     tkeCredentialSecret: config.tkeCredentialSecret,
     securityGroup:       clusterEndpoint.securityGroup,
     osName:              clusterBasicSettings.clusterOs,
@@ -608,6 +610,29 @@ async function fetchClusterLevelAttribute(cloudCredentialId) {
   state.value.clusterLevelAttributeLoading = false;
 }
 
+function parseSemver(v = '') {
+  const m = String(v).match(/(\d+)\.(\d+)\.(\d+)/);
+
+  return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
+}
+
+function cmpSemver(a, b) {
+  const pa = parseSemver(a);
+  const pb = parseSemver(b);
+
+  if (!pa || !pb) {
+    return 0;
+  }
+
+  for (let i = 0; i < 3; i++) {
+    if (pa[i] !== pb[i]) {
+      return pa[i] > pb[i] ? 1 : -1;
+    }
+  }
+
+  return 0;
+}
+
 async function fetchClusterVersion(cloudCredentialId) {
   state.value.clusterVersionLoading = true;
   try {
@@ -630,15 +655,29 @@ async function fetchClusterVersion(cloudCredentialId) {
       };
     });
 
-    if (!tkeConfig.value.clusterVersion) {
-      const version = versions.reverse().find((item) => item.rancherEnabled);
+    if (isNewOrUnprovisioned.value) {
+      if (!tkeConfig.value.clusterVersion) {
+        const version = [...versions].reverse().find((item) => item.rancherEnabled);
 
-      if (version) {
-        tkeConfig.value.clusterVersion = version.value;
+        if (version) {
+          tkeConfig.value.clusterVersion = version.value;
+        }
       }
+
+      options.value.versionOptions = versions;
+      state.value.upgradeTip = '';
+      state.value.clusterVersionLoading = false;
+
+      return;
     }
 
-    options.value.versionOptions = versions || [];
+    const cur = tkeConfig.value.clusterVersion;
+    const filtered = cur ? versions.filter((v) => cmpSemver(v.value, cur) >= 0) : versions;
+
+    options.value.versionOptions = filtered;
+    const hasUpgrade = cur ? filtered.some((v) => cmpSemver(v.value, cur) > 0) : false;
+
+    state.value.upgradeTip = hasUpgrade ? intl.value('tkeCn.clusterVersion.upgradeTip', { current: cur }) : intl.value('tkeCn.clusterVersion.latestTip', { current: cur });
   } catch (err) {
     state.value.errors = [];
     options.value.versionOptions = [];
@@ -1057,7 +1096,6 @@ function poolIsValid(pool) {
               option-label="label"
               option-key="value"
               label-key="tkeCn.version.label"
-              :disabled="!isNewOrUnprovisioned"
               :rules="ruleSets.clusterVersion"
             />
           </div>
@@ -1080,6 +1118,11 @@ function poolIsValid(pool) {
             />
           </div>
         </div>
+        <Banner
+          v-if="!isNewOrUnprovisioned && state.upgradeTip"
+          color="info"
+          :label="state.upgradeTip"
+        />
         <div class="row mb-10">
           <Banner
             v-if="kubernetesSupport.rancherDisabled"
@@ -1153,6 +1196,20 @@ function poolIsValid(pool) {
               :disabled="!isNewOrUnprovisioned"
               :rules="ruleSets.clusterCidr"
               :placeholder="intl('tkeCn.clusterCidr.placeholder')"
+            />
+          </div>
+        </div>
+        <div class="row mb-10">
+          <div
+            class="col span-6"
+          >
+            <LabeledInput
+              v-model:value="tkeConfig.domain"
+              data-testid="crutke-resource-domain"
+              :mode="mode"
+              label-key="tkeCn.domain.label"
+              :disabled="!isNewOrUnprovisioned"
+              :placeholder="intl('tkeCn.domain.placeholder')"
             />
           </div>
         </div>

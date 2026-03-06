@@ -114,3 +114,9 @@ tkeCn:
   master:
     title: Master&Etcd 节点配置
     detail: 配置用于启动腾讯云 Kubernetes 服务的主节点
+  clusterVersion:
+    upgradeTip: 当前集群版本为 {current}，可升级到更高版本（不支持降级）。
+    latestTip: 当前集群版本为 {current}，已是可用的最新版本。
+  domain:
+    label: 集群域名
+    placeholder: e.g. example.com

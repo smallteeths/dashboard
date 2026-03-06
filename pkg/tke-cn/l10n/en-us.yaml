@@ -114,4 +114,9 @@ tkeCn:
   master:
     title: Master Nodes
     detail: Configure the master nodes that will be used to launch Tencent Kubernetes Service
-
+  clusterVersion:
+    upgradeTip: "Current cluster version is {current}. Upgrade to a higher version is supported (downgrades are not supported)."
+    latestTip: "Current cluster version is {current}. It is already the latest available version."
+  domain:
+    label: Domain
+    placeholder: e.g. example.com

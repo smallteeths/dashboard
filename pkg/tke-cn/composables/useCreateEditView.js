@@ -114,6 +114,7 @@ export function useCreateEditView(props, context) {
       enable:        config.clusterEndpoint,
       subnetId:      config.subnetId,
       securityGroup: config.securityGroup,
+      domain:        config.domain,
     };
     const clusterBasicSettings = {
       clusterDescription: '',
