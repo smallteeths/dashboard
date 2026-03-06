@@ -9,13 +9,13 @@ const ACK_CLUSTER_SPEC_PRO = 'ack.pro.small';
 const DEFAULTACKCONFIG = {
   clusterType:          MANAGED,
   clusterSpec:          ACK_CLUSTER_SPEC_STANDARD,
-  containerCidr:        '172.20.0.0/16',
+  containerCidr:        '',
   kubernetesVersion:    DEFAULT_KUBERNETES_VERSION,
   proxyMode:            'ipvs',
   name:                 null,
   displayName:          null,
   regionId:             'cn-beijing',
-  serviceCidr:          '172.21.0.0/20',
+  serviceCidr:          '',
   nodeCidrMask:         26,
   snatEntry:            true,
   endpointPublicAccess: true,
@@ -70,11 +70,16 @@ const DEFAULT_NODE_GROUP_CONFIG = {
   platform:             'AliyunLinux3',
   system_disk_category: '',
   system_disk_size:     120,
-  size:                 0,
-  category:             '',
-  instances_num:        3,
-  key_pair:             null,
-  instance_types:       [
+  data_disk:            [
+    {
+      encrypted: false,
+      size:      0,
+      category:  '',
+    }
+  ],
+  instances_num:  3,
+  key_pair:       null,
+  instance_types: [
     'ecs.g6.xlarge',
     'ecs.g7.xlarge',
     'ecs.u1-c1m4.xlarge',
@@ -264,6 +269,11 @@ export const INSTANCE_TYPE_COLUMNS = [
     search:   `zones`,
   }
 ];
+export const DEFAULT_DISK_VALUE = {
+  category:  'cloud_essd',
+  size:      40,
+  encrypted: 'false'
+};
 
 export default {
   DEFAULTACKCONFIG,
@@ -283,4 +293,5 @@ export default {
   WITH_STOCK,
   WITHOUT_STOCK,
   DATA_DISK,
+  DEFAULT_DISK_VALUE,
 };

@@ -1,14 +1,11 @@
 // useCreateEditView.js
 import { ref, computed } from 'vue';
-import { _CREATE, _EDIT, _VIEW } from '@shell/config/query-params';
-import { LAST_NAMESPACE } from '@shell/store/prefs';
+import { _EDIT } from '@shell/config/query-params';
 import { exceptionToErrorsArray } from '@shell/utils/error';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { clear } from '@shell/utils/array';
-import { DEFAULT_WORKSPACE } from '@shell/config/types';
 import { handleConflict } from '@shell/plugins/dashboard-store/normalize';
-import { useChildHook, BEFORE_SAVE_HOOKS, AFTER_SAVE_HOOKS } from './useChildHook';
 
 export function useCreateEditView(props, context) {
   const {
@@ -18,30 +15,7 @@ export function useCreateEditView(props, context) {
   const errors = ref([]);
   const $router = useRouter();
   const $store = useStore();
-
-  const { applyHooks } = useChildHook();
-
-  const isCreate = computed(() => props.mode === _CREATE);
   const isEdit = computed(() => props.mode === _EDIT);
-  const isView = computed(() => props.mode === _VIEW);
-
-  const schema = computed(() => {
-    const inStore = props.storeOverride || $store.getters['currentStore'](props.value.type);
-
-    return $store.getters[`${ inStore }/schemaFor`](props.value.type);
-  });
-
-  const isNamespaced = computed(() => schema.value?.attributes?.namespaced || false);
-
-  const labels = computed({
-    get: () => props.value?.labels,
-    set: (neu) => props.value.setLabels(neu),
-  });
-
-  const annotations = computed({
-    get: () => props.value?.annotations,
-    set: (neu) => props.value.setAnnotations(neu),
-  });
 
   const doneRoute = computed(() => {
     return props.value?.listLocation?.name;
@@ -66,36 +40,12 @@ export function useCreateEditView(props, context) {
   }
 
   async function save(buttonDone, url, depth = 0) {
-    console.log(errors.value);
     if (errors.value) {
       clear(errors.value);
     }
 
     try {
-      // await applyHooks(BEFORE_SAVE_HOOKS, props.value);
-
-      // if (props.value?.metadata?.labels && Object.keys(props.value.metadata.labels || {}).length === 0) {
-      //   delete props.value.metadata.labels;
-      // }
-      // if (props.value?.metadata?.annotations && Object.keys(props.value.metadata.annotations || {}).length === 0) {
-      //   delete props.value.metadata.annotations;
-      // }
-
-      // if (isCreate.value) {
-      //   const ns = props.value?.metadata?.namespace;
-
-      //   if (ns && ns !== DEFAULT_WORKSPACE) {
-      //     $store.dispatch('prefs/set', { key: LAST_NAMESPACE, value: ns }, { root: true });
-      //   }
-      // }
-
       await actuallySave(url);
-
-      if ($store.getters['type-map/isSpoofed'](props.value.type)) {
-        await $store.dispatch('cluster/findAll', { type: props.value.type, opt: { force: true } }, { root: true });
-      }
-
-      await applyHooks(AFTER_SAVE_HOOKS, props.value);
       buttonDone && buttonDone(true);
       done();
     } catch (err) {
@@ -110,6 +60,7 @@ export function useCreateEditView(props, context) {
       } else {
         errors.value = exceptionToErrorsArray(err);
       }
+      setErrors(errors.value);
       buttonDone && buttonDone(false);
     }
   }
@@ -121,9 +72,14 @@ export function useCreateEditView(props, context) {
 
       return await normanCluster.value.waitForCondition('InitialRolesPopulated');
     }
+    // 保存时如果自动创建VPC，则删除VPC ID。如果手动选择VPC，则清空Zone ID列表。
+    if (state.value.autoCreateVpc === 'auto') {
+      delete ackConfig.value.vpcId;
+    } else {
+      ackConfig.value.zoneIds = [];
+    }
     ackConfig.value.node_pool_list = nodePools.value;
     normanCluster.value.ackConfig = formatNodePoolList(ackConfig);
-    console.log(normanCluster.value.ackConfig);
     await normanCluster.value.save();
 
     return await normanCluster.value.waitForCondition('InitialRolesPopulated');
@@ -137,7 +93,7 @@ export function useCreateEditView(props, context) {
         ...item,
         nodepool_id:          item.nodepool_id,
         name:                 item.name,
-        instance_types:       [item.instance_types],
+        instance_types:       item.instance_types,
         instances_num:        item.instances_num,
         key_pair:             item.key_pair,
         platform:             item.platform,
@@ -145,12 +101,9 @@ export function useCreateEditView(props, context) {
         system_disk_size:     item.system_disk_size,
         runtime:              item.runtime,
         runtime_version:      item.runtime_version,
-        data_disk:            (!item.size || !item.category) ? [] : [{
-          size:     item.size,
-          category: item.category,
-        }],
+        data_disk:            item.data_disk || [],
         // All nodepools use the same v_switch_ids
-        v_switch_ids: state.value.vswitchIds
+        v_switch_ids:         state.value.vswitchIds
       };
 
       delete node.isNew;
@@ -164,22 +117,11 @@ export function useCreateEditView(props, context) {
   }
 
   function setErrors(newErrors) {
-    errors.value = newErrors;
+    state.value.errors = newErrors;
   }
 
   return {
-    errors,
-    isCreate,
-    isEdit,
-    isView,
-    schema,
-    isNamespaced,
-    labels,
-    annotations,
     doneRoute,
-    done,
     save,
-    actuallySave,
-    setErrors,
   };
 }

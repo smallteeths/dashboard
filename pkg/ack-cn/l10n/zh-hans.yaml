@@ -74,7 +74,16 @@ ackCn:
     required: 必须选择交换机
     default: 默认交换机
   cni:
+    title: 网络配置
     label: 网络插件
+    privateNetwork: 专有网络
+    autoCreateVpc:
+      label: 自动创建专有网络会自动创建 VPC/vSwitch
+      autoCreateVpcTip: 自动创建专有网络
+      useAlreadyCreatedVpcTip: 使用已创建的专有网络
+    description:
+      terway: Terway 是阿里云自研的网络插件，基于 ENI 实现 Pod 网络通信，支持 eBPF 加速、NetworkPolicy，以及 Pod 级交换机/安全组能力。
+      flannel: Flannel 是一种轻量级的 Overlay 网络方案，用于在 Kubernetes 集群中为 Pod 提供跨节点的网络连通性，实现不同节点上 Pod 之间的通信。
   proxyMode:
     label: kube-proxy 代理模式
   nodeCidrMask:
@@ -137,6 +146,21 @@ ackCn:
         cloud_essd: ESSD 云盘
         cloud_auto: ESSD AutoPL 云盘
         cloud_essd_entry: ESSD Entry 云盘
+        elastic_ephemeral_disk_standard: 标准弹性临时盘
+        elastic_ephemeral_disk_premium: 高级弹性临时盘
+    diskSize:
+      label: 磁盘大小
+    diskGroup:
+      add: 添加磁盘
+      remove: 移除磁盘
+    diskEncrypted:
+      label: 加密
+    remove:
+      label: 移除磁盘
+    systemDisk:
+      title: 系统盘
+    dataDisks:
+      title: 数据盘
   runtime:
     label: Containerd 版本
   instanceType:
@@ -181,5 +205,6 @@ ackCn:
     importCluster: 集群
     required: 必须设置需要导入的集群
     placeholder: '请选择'
-  
+  clusterBasicInfo:
+    title: 集群基础信息
     

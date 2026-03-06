@@ -2,11 +2,12 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import CONFIG_ENV from '../util/config';
 import { useStore } from 'vuex';
-import { fetchAvailableResources, fetchAvailableResourcesRaw } from '../util/request';
+import { fetchAvailableResourcesRaw } from '../util/request';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
-import UnitInput from '@shell/components/form/UnitInput';
 import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
 import InstanceType from './InstanceType.vue';
+import DiskGroup from './DiskGroup.vue';
+import DiskType from './DiskType.vue';
 
 const props = defineProps({
   name: {
@@ -33,9 +34,9 @@ const props = defineProps({
     type:    String,
     default: ''
   },
-  category: {
-    type:    String,
-    default: ''
+  dataDisks: {
+    type:    Array,
+    default: () => ([]),
   },
   instancesNum: {
     type:    Number,
@@ -44,10 +45,6 @@ const props = defineProps({
   systemDiskSize: {
     type:    Number,
     default: 120,
-  },
-  size: {
-    type:    Number,
-    default: 0,
   },
   instanceTypeLoading: {
     type:    Boolean,
@@ -107,8 +104,7 @@ const emit = defineEmits([
   'update:instancesNum',
   'update:systemDiskCategory',
   'update:systemDiskSize',
-  'update:category',
-  'update:size',
+  'update:dataDisks',
   'update:platform',
   'update:keyPair',
   'errors',
@@ -119,7 +115,6 @@ onMounted(() => {
 });
 
 const intl = computed(() => store.getters['i18n/t']);
-
 const fetchCategoryOptions = async() => {
   state.value.categoryOptionsloading = true;
   options.value.categoryOptions = [];
@@ -185,10 +180,21 @@ const fetchCategoryOptions = async() => {
     const out = [];
 
     for (const type in types) {
+      // 返回的是所有 instance type 中都支持的磁盘类型 也就是 .counter === maxCount
       if (types[type].counter === maxCount) {
-        out.push({ value: type, label: intl.value( `ackCn.nodePool.diskCategory.options.${ type }`) });
+        out.push({
+          value: type, label: intl.value( `ackCn.nodePool.diskCategory.options.${ type }`), raw: types[type]
+        });
       }
     }
+    const PREFERRED = 'cloud_essd';
+
+    out.sort((a, b) => {
+      if (a.value === PREFERRED && b.value !== PREFERRED) return -1;
+      if (b.value === PREFERRED && a.value !== PREFERRED) return 1;
+
+      return 0;
+    });
     options.value.categoryOptions = out;
   } catch (err) {
     const parsedError = err.error || '';
@@ -218,8 +224,24 @@ watch(
 
 function initCategory() {
   if (options.value.categoryOptions?.length > 0 && props.instanceTypes?.length > 0) {
-    emit('update:category', options.value.categoryOptions[0].value);
-    emit('update:systemDiskCategory', options.value.categoryOptions[0].value);
+    const first = options.value.categoryOptions?.[0];
+
+    if (!first) {
+      return;
+    }
+    const category = first.value;
+    const min = Number(first?.raw?.min ?? 0);
+    const size = Math.max(40, min);
+
+    emit('update:systemDiskCategory', category);
+    emit('update:systemDiskSize', size);
+    const dataDisks = (props.dataDisks || []).map((disk) => ({
+      ...disk,
+      category,
+      size,
+    }));
+
+    emit('update:dataDisks', dataDisks);
   }
 }
 
@@ -267,104 +289,6 @@ function initCategory() {
         />
       </div>
     </div>
-    <!-- <div class="row mb-10">
-      <div
-        class="col span-6"
-      >
-        <LabeledSelect
-          :value="instanceTypes"
-          required
-          data-testid="cruack-instance-types"
-          :mode="mode"
-          :options="instanceTypeOptions"
-          option-label="label"
-          option-key="value"
-          label-key="ackCn.instanceType.label"
-          :rules="rules.instanceTypes"
-          :searchable="true"
-          :loading="instanceTypeLoading"
-          :disabled="disabled"
-          :placeholder="intl('ackCn.instanceType.placeholder')"
-          @update:value="$emit('update:instanceTypes', $event)"
-        />
-      </div>
-    </div> -->
-    <InstanceType
-      :config="ackConfig"
-      :value="instanceTypes"
-      :allInstanceTypes="allInstanceTypeOptions"
-      :loadingInstanceTypes="instanceTypeLoading"
-      :zones="zones"
-      @update:value="$emit('update:instanceTypes', $event)"
-    />
-    <div class="row mb-10">
-      <div
-        class="col span-6"
-      >
-        <LabeledSelect
-          :value="systemDiskCategory"
-          required
-          data-testid="cruack-system-disk-category"
-          :mode="mode"
-          :options="options.categoryOptions"
-          option-label="label"
-          option-key="value"
-          label-key="ackCn.rootType.label"
-          :rules="rules.category"
-          :loading="state.categoryOptionsloading"
-          :disabled="disabled"
-          :localizedLabel="true"
-          :placeholder="intl('ackCn.rootType.placeholder')"
-          @update:value="$emit('update:systemDiskCategory', $event)"
-        />
-      </div>
-      <div class="col span-6">
-        <UnitInput
-          :disabled="disabled"
-          :value="systemDiskSize"
-          :label="intl('ackCn.rootSize.label')"
-          :mode="mode"
-          :placeholder="intl('ackCn.rootSize.placeholder')"
-          :rules="rules.diskSize"
-          :required="true"
-          suffix="GB"
-          @update:value="$emit('update:systemDiskSize', $event)"
-        />
-      </div>
-    </div>
-    <div
-      v-if="!disabled || category"
-      class="row mb-10"
-    >
-      <div class="col span-6">
-        <LabeledSelect
-          :value="category"
-          data-testid="cruack-category"
-          :mode="mode"
-          :options="options.categoryOptions"
-          option-label="label"
-          option-key="value"
-          label-key="ackCn.storageType.label"
-          :loading="state.categoryOptionsloading"
-          :disabled="disabled"
-          :localizedLabel="true"
-          :placeholder="intl('ackCn.storageType.placeholder')"
-          @update:value="$emit('update:category', $event)"
-        />
-      </div>
-      <div class="col span-6">
-        <UnitInput
-          :disabled="disabled"
-          :value="size"
-          :label="intl('ackCn.storageSize.label')"
-          :mode="mode"
-          :placeholder="intl('ackCn.storageSize.placeholder')"
-          :rules="rules.dataDiskSize"
-          suffix="GB"
-          @update:value="$emit('update:size', $event)"
-        />
-      </div>
-    </div>
     <div class="row mb-10">
       <div
         class="col span-6"
@@ -394,11 +318,45 @@ function initCategory() {
           label-key="ackCn.keyPair.label"
           :loading="keyPairLoading"
           :disabled="disabled"
-          required
           :placeholder="intl('ackCn.keyPair.placeholder')"
           @update:value="$emit('update:keyPair', $event)"
         />
       </div>
     </div>
+    <InstanceType
+      :config="ackConfig"
+      :value="instanceTypes"
+      :allInstanceTypes="allInstanceTypeOptions"
+      :loadingInstanceTypes="instanceTypeLoading"
+      :disabled="disabled"
+      :zones="zones"
+      @update:value="$emit('update:instanceTypes', $event)"
+    />
+    <p class="mb-10">
+      {{ t('ackCn.nodePool.systemDisk.title') }}
+    </p>
+    <DiskType
+      :category="systemDiskCategory"
+      :size="systemDiskSize"
+      :mode="mode"
+      :disabled="disabled"
+      :show-encrypted="false"
+      :options="options.categoryOptions"
+      :loading="state.categoryOptionsloading"
+      class="mb-30"
+      @update:category="$emit('update:systemDiskCategory', $event)"
+      @update:size="$emit('update:systemDiskSize', $event)"
+    />
+    <p class="mb-10">
+      {{ t('ackCn.nodePool.dataDisks.title') }}
+    </p>
+    <DiskGroup
+      :value="dataDisks"
+      :mode="mode"
+      :disabled="disabled"
+      :options="options.categoryOptions"
+      :loading="state.categoryOptionsloading"
+      @update:value="$emit('update:dataDisks', $event)"
+    />
   </div>
 </template>

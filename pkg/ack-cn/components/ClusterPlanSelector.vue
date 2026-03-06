@@ -170,7 +170,6 @@ const normalizedOptions = computed(() => {
           { key: 'ackCn.clusterSpec.detail.quota', val: 'ackCn.clusterSpec.detailValue.pro.quota' },
           { key: 'ackCn.clusterSpec.detail.capability', val: 'ackCn.clusterSpec.detailValue.pro.capability' },
           { key: 'ackCn.clusterSpec.detail.support', val: 'ackCn.clusterSpec.detailValue.pro.support' },
-          { key: 'ackCn.clusterSpec.detail.change', val: 'ackCn.clusterSpec.detailValue.common.change' },
         ],
       };
     }
@@ -189,7 +188,6 @@ const normalizedOptions = computed(() => {
         { key: 'ackCn.clusterSpec.detail.quota', val: 'ackCn.clusterSpec.detailValue.standard.quota' },
         { key: 'ackCn.clusterSpec.detail.capability', val: 'ackCn.clusterSpec.detailValue.standard.capability' },
         { key: 'ackCn.clusterSpec.detail.support', val: 'ackCn.clusterSpec.detailValue.standard.support' },
-        { key: 'ackCn.clusterSpec.detail.change', val: 'ackCn.clusterSpec.detailValue.common.change' },
       ],
     };
   });

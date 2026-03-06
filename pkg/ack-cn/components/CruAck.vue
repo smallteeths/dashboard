@@ -13,14 +13,14 @@ import CruResource from '@shell/components/CruResource.vue';
 import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
 import LabeledInputSelect from './LabeledInputSelect';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
-import ACKValidators from '../util/validators';
+import ACKValidators, { doCidrOverlap, isValidCIDR } from '../util/validators';
 import Checkbox from '@components/Form/Checkbox/Checkbox.vue';
 import SelectCredential from '@shell/edit/provisioning.cattle.io.cluster/SelectCredential.vue';
 import { CREATOR_PRINCIPAL_ID } from '@shell/config/labels-annotations';
 import Labels from '@shell/components/form/Labels.vue';
 import Banner from '@components/Banner/Banner.vue';
 import CONFIG_ENV from '../util/config';
-import { fetchResources, fetchAvailableResources } from '../util/request';
+import { fetchResources } from '../util/request';
 import Tab from '@shell/components/Tabbed/Tab.vue';
 import Tabbed from '@shell/components/Tabbed/index.vue';
 import { _CREATE, _VIEW, _IMPORT } from '@shell/config/query-params';
@@ -29,7 +29,7 @@ import { syncUpstreamConfig } from '@shell/utils/kontainer';
 import Accordion from '@components/Accordion/Accordion.vue';
 import ClusterPlanSelector from './ClusterPlanSelector.vue';
 import {
-  filter, find, cloneDeep, pullAt, uniqBy, includes, sortBy
+  filter, find, cloneDeep, pullAt, uniqBy,
 } from 'lodash';
 import { RadioGroup } from '@components/Form/Radio';
 
@@ -88,13 +88,14 @@ const state = ref({
 });
 const emit = defineEmits(['done']);
 const cruresource = ref(null);
-
 const {
   save,
   doneRoute,
 } = useCreateEditView(props, {
   emit, normanCluster, ackConfig, nodePools, state
 });
+const SERVICE_CIDR_CANDIDATES = ['172.21.0.0/20', '172.22.0.0/20', '172.23.0.0/20'];
+const CONTAINER_CIDR_CANDIDATES = ['172.20.0.0/16', '172.30.0.0/16', '192.168.0.0/16'];
 
 async function initCustomConfig() {
   state.value.loading = true;
@@ -170,19 +171,7 @@ function formatAckConfig(normanCluster) {
   }
 
   if (ackConfig['node_pool_list'] && ackConfig['node_pool_list'].length > 0) {
-    const nodePool = ackConfig['node_pool_list'].map((node) => {
-      if (node.data_disk && node.data_disk.length > 0) {
-        return {
-          ...node,
-          category: node.data_disk[0].category,
-          size:     node.data_disk[0].size
-        };
-      }
-
-      return node;
-    });
-
-    ackConfig['node_pool_list'] = nodePool;
+    ackConfig.node_pool_list = (ackConfig.node_pool_list || []).map((node) => ({ ...node }));
   }
 }
 
@@ -284,7 +273,7 @@ async function fetchZones(regionId) {
 
     if (isNewOrUnprovisioned.value) {
       ackConfig.value.zoneIds = (options.value.zoneOptions || [])
-        .slice(0, 5)
+        .slice(0, 3)
         .map((zone) => zone.value);
 
       updateZones(ackConfig.value.zoneIds);
@@ -324,6 +313,11 @@ async function fetchVpc(regionId) {
         label
       };
     });
+
+    if (isNewOrUnprovisioned.value) {
+      ensureServiceCidrNotOverlapVpc();
+      ensureContainerCidrNotOverlapVpcOrService();
+    }
   } catch (err) {
     options.value.vpcOptions = [];
     state.value.errors = [];
@@ -495,7 +489,7 @@ function poolIsValid(pool) {
   if (
     !pool.runtime_version ||
     !pool.name ||
-    !pool.instance_types ||
+    !pool.instance_types?.length ||
     isNaN(pool.instances_num) ||
     pool.instances_num < 0 ||
     !pool.platform ||
@@ -595,6 +589,110 @@ function updateVswitchIds(value) {
     });
   }
   state.value.zones = new Set(zones);
+}
+
+function getVpcCidr(vpcId) {
+  if (!vpcId) {
+    return '';
+  }
+
+  const vpc = find(options.value.vpcOptions || [], (o) => o.value === vpcId);
+
+  return vpc?.raw?.CidrBlock || '';
+}
+
+function pickFirstNonOverlapping(candidates = [], checks = []) {
+  for (const c of candidates) {
+    if (!c || !isValidCIDR(c)) {
+      continue;
+    }
+
+    const ok = checks.every((x) => !x || !doCidrOverlap(c, x));
+
+    if (ok) {
+      return c;
+    }
+  }
+
+  return '';
+}
+
+function getAllVpcCidrs() {
+  return (options.value.vpcOptions || [])
+    .map((o) => o?.raw?.CidrBlock)
+    .filter(Boolean);
+}
+
+function pickBestNonOverlapping(candidates = [], { preferAllVpc = true, vpcCidr = '', extraBlocks = [] } = {}) {
+  const allVpcCidrs = getAllVpcCidrs();
+
+  const primaryBlocks = [
+    ...(preferAllVpc ? allVpcCidrs : (vpcCidr ? [vpcCidr] : [])),
+    ...(extraBlocks || []),
+  ].filter(Boolean);
+
+  let next = pickFirstNonOverlapping(candidates, primaryBlocks);
+
+  if (next) {
+    return next;
+  }
+
+  if (preferAllVpc) {
+    const fallbackBlocks = [
+      ...(vpcCidr ? [vpcCidr] : []),
+      ...(extraBlocks || []),
+    ].filter(Boolean);
+
+    next = pickFirstNonOverlapping(candidates, fallbackBlocks);
+    if (next) {
+      return next;
+    }
+  }
+
+  return '';
+}
+
+function ensureServiceCidrNotOverlapVpc() {
+  const vpcCidr = getVpcCidr(ackConfig.value.vpcId);
+  const overlapAll = getAllVpcCidrs();
+
+  if (!overlapAll) {
+    return;
+  }
+
+  const cur = ackConfig.value.containerCidr;
+
+  if (!cur || !isValidCIDR(cur)) {
+    const next = pickBestNonOverlapping(SERVICE_CIDR_CANDIDATES, {
+      preferAllVpc: true,
+      vpcCidr,
+      extraBlocks:  [],
+    });
+
+    if (next) {
+      ackConfig.value.serviceCidr = next;
+    }
+  }
+}
+
+function ensureContainerCidrNotOverlapVpcOrService() {
+  if (!state.value.isFlannel) {
+    return;
+  }
+
+  const vpcCidr = getVpcCidr(ackConfig.value.vpcId);
+  const serviceCidr = ackConfig.value.serviceCidr;
+  const cur = ackConfig.value.containerCidr;
+
+  if (!cur || !isValidCIDR(cur)) {
+    const next = pickBestNonOverlapping(CONTAINER_CIDR_CANDIDATES, {
+      preferAllVpc: true,
+      vpcCidr,
+      extraBlocks:  [serviceCidr],
+    });
+
+    ackConfig.value.containerCidr = next || '';
+  }
 }
 
 const isImport = ref(route.query.mode === _IMPORT);
@@ -814,12 +912,13 @@ watch(() => state.value.ackCNI, (newAckCNI) => {
   state.value.isFlannel = newAckCNI === 'flannel';
   if (isNewOrUnprovisioned.value) {
     if (state.value.isFlannel) {
-      ackConfig.value.containerCidr = '172.20.0.0/16';
       delete ackConfig.value.podVswitchIds;
     } else {
       delete ackConfig.value.containerCidr;
     }
     state.value.vswitchIds = [];
+    ensureServiceCidrNotOverlapVpc();
+    ensureContainerCidrNotOverlapVpcOrService();
     if (newAckCNI && ackConfig.value?.addons?.length > 0) {
       ackConfig.value.addons = [{ name: newAckCNI, config: '' }];
     }
@@ -931,7 +1030,7 @@ watch(() => normanCluster.value.name, (name) => {
         >
           <div>
             <H3 class="title">
-              集群基础信息
+              {{ intl('ackCn.clusterBasicInfo.title') }}
             </h3>
           </div>
           <div class="row mb-10">
@@ -1011,7 +1110,7 @@ watch(() => normanCluster.value.name, (name) => {
         >
           <div>
             <H3 class="title">
-              网络配置
+              {{ intl('ackCn.cni.title') }}
             </H3>
           </div>
           <div class="row">
@@ -1037,7 +1136,13 @@ watch(() => normanCluster.value.name, (name) => {
                 v-if="!state.isFlannel"
                 class="type-description"
               >
-                Terway 是阿里云自研的网络插件，基于 ENI 实现 Pod 网络通信，支持 eBPF 加速、NetworkPolicy，以及 Pod 级交换机/安全组能力。
+                {{ intl('ackCn.cni.description.terway') }}
+              </span>
+              <span
+                v-else
+                class="type-description"
+              >
+                {{ intl('ackCn.cni.description.flannel') }}
               </span>
             </div>
           </div>
@@ -1112,10 +1217,10 @@ watch(() => normanCluster.value.name, (name) => {
           <div class="pd-10">
             <div class="mt-10">
               <h3 class="title">
-                专有网络
+                {{ intl('ackCn.cni.privateNetwork') }}
               </h3>
               <p class="type-description">
-                自动创建专有网络会自动创建 VPC/vSwitch
+                {{ intl('ackCn.cni.autoCreateVpc.label') }}
               </p>
             </div>
             <div class="row mt-10">
@@ -1125,7 +1230,7 @@ watch(() => normanCluster.value.name, (name) => {
                   name="autoCreateVpc"
                   :mode="mode"
                   :disabled="!isNewOrUnprovisioned"
-                  :labels="['自动创建','使用已有']"
+                  :labels="[intl('ackCn.cni.autoCreateVpc.autoCreateVpcTip'), intl('ackCn.cni.autoCreateVpc.useAlreadyCreatedVpcTip')]"
                   :options="['auto','custom']"
                   @update:value="updateAutoCreateVpc"
                 />
@@ -1219,8 +1324,7 @@ watch(() => normanCluster.value.name, (name) => {
               v-model:instancesNum="pool.instances_num"
               v-model:systemDiskCategory="pool.system_disk_category"
               v-model:systemDiskSize="pool.system_disk_size"
-              v-model:category="pool.category"
-              v-model:size="pool.size"
+              v-model:dataDisks="pool.data_disk"
               v-model:platform="pool.platform"
               v-model:keyPair="pool.key_pair"
               :isNew="pool.isNew"
