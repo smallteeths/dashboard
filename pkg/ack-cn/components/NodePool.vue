@@ -78,6 +78,10 @@ const props = defineProps({
     type:    Array,
     default: () => ([]),
   },
+  platformOptions: {
+    type:    Array,
+    default: () => ([]),
+  },
   zones: {
     type:    Array,
     default: () => (new Set()),
@@ -297,7 +301,7 @@ function initCategory() {
           :value="platform"
           data-testid="cruack-platform"
           :mode="mode"
-          :options="CONFIG_ENV.PLATFORMTYPES"
+          :options="platformOptions"
           option-label="label"
           option-key="value"
           label-key="ackCn.platform.label"

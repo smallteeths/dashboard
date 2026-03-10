@@ -1,4 +1,5 @@
 <script setup>
+import semver from 'semver';
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
@@ -20,7 +21,7 @@ import { CREATOR_PRINCIPAL_ID } from '@shell/config/labels-annotations';
 import Labels from '@shell/components/form/Labels.vue';
 import Banner from '@components/Banner/Banner.vue';
 import CONFIG_ENV from '../util/config';
-import { fetchResources } from '../util/request';
+import { fetchResources, fetchResourcesNoPagination } from '../util/request';
 import Tab from '@shell/components/Tabbed/Tab.vue';
 import Tabbed from '@shell/components/Tabbed/index.vue';
 import { _CREATE, _VIEW, _IMPORT } from '@shell/config/query-params';
@@ -29,7 +30,7 @@ import { syncUpstreamConfig } from '@shell/utils/kontainer';
 import Accordion from '@components/Accordion/Accordion.vue';
 import ClusterPlanSelector from './ClusterPlanSelector.vue';
 import {
-  filter, find, cloneDeep, pullAt, uniqBy,
+  filter, find, cloneDeep, pullAt, uniqBy, uniq
 } from 'lodash';
 import { RadioGroup } from '@components/Form/Radio';
 
@@ -46,6 +47,7 @@ const props = defineProps({
   }
 });
 
+const SUPPORTED_VERSION_RANGE = '>=1.32.0 <1.35.0';
 const store = useStore();
 const route = useRoute();
 const intl = computed(() => store.getters['i18n/t']);
@@ -64,6 +66,9 @@ const options = ref({
   vswitchOptions:         [],
   keyPairOptions:         [],
   zoneOptions:            [],
+  k8sVersionOptions:      [],
+  k8sAllImages:           {},
+  platformOptions:        [],
   allInstanceTypeOptions: {},
 });
 const RUNTIME_VERSION_LE_132 = '1.6.39';
@@ -324,6 +329,134 @@ async function fetchVpc(regionId) {
     state.value.errors.push(err);
   }
   state.value.vpcLoading = false;
+}
+
+async function fetchKubernetesMetadata(regionId) {
+  const credentialId = ackConfig.value.aliyun_credential_secret;
+  const isEdit = !isNewOrUnprovisioned.value;
+  const isCreate = isNewOrUnprovisioned.value;
+  const originalVersion = ackConfig.value.kubernetesVersion || state.value.historyK8sVersion || '';
+
+  try {
+    const supportedParams = {
+      regionId,
+      clusterType: 'ManagedKubernetes',
+      mode:        'supported',
+    };
+
+    const supportedRes = await fetchResourcesNoPagination({
+      resource:          'kubernetesMetadata',
+      cloudCredentialId: credentialId,
+      store,
+      externalParams:    supportedParams,
+    });
+
+    const allVersions = Array.isArray(supportedRes) ? supportedRes : (supportedRes?.versions || []);
+
+    let upgradableSet = null;
+
+    if (isEdit && originalVersion) {
+      const upgradeParams = {
+        regionId,
+        clusterType:           'ManagedKubernetes',
+        mode:                  'supported',
+        kubernetesVersion:     originalVersion,
+        getUpgradableVersions: 'true',
+      };
+
+      const upgradeRes = await fetchResourcesNoPagination({
+        resource:          'kubernetesMetadata',
+        cloudCredentialId: credentialId,
+        store,
+        externalParams:    upgradeParams,
+      });
+
+      const uv = Array.isArray(upgradeRes) ? (upgradeRes?.[0]?.upgradable_versions || []) : (upgradeRes?.upgradable_versions || []);
+
+      upgradableSet = new Set(uv);
+    }
+
+    const currentImages = getCurrentPoolImageTypes();
+    const { options: versionOptions, allImages } = processK8sVersions({
+      allVersions,
+      isCreate,
+      isEdit,
+      originalVersion,
+      upgradableSet,
+      currentImages,
+    });
+
+    options.value.k8sVersionOptions = versionOptions;
+    // { version : [image]}
+    options.value.k8sAllImages = allImages;
+
+    if (isCreate && !ackConfig.value.kubernetesVersion && versionOptions.length) {
+      ackConfig.value.kubernetesVersion = versionOptions[0].value;
+    }
+  } catch (err) {
+    options.value.k8sVersionOptions = [];
+    options.value.k8sAllImages = {};
+    state.value.errors = [];
+    state.value.errors.push(err);
+  }
+}
+
+function inSupportedRange(version) {
+  const coerced = semver.coerce(version);
+
+  return !SUPPORTED_VERSION_RANGE || (coerced && semver.satisfies(coerced, SUPPORTED_VERSION_RANGE));
+}
+
+function getCurrentPoolImageTypes() {
+  return uniq((nodePools.value || []).map((p) => p.platform || p.imageType).filter(Boolean));
+}
+
+function versionSupportsAllCurrentImages(versionImages = [], currentImages = []) {
+  if (!currentImages.length) {
+    return true;
+  }
+  const supported = new Set((versionImages || []).map((x) => x.image_type || x.imageType).filter(Boolean));
+
+  return currentImages.every((img) => supported.has(img));
+}
+
+function processK8sVersions({
+  allVersions = [],
+  isCreate,
+  isEdit,
+  originalVersion,
+  upgradableSet,
+  currentImages,
+}) {
+  const newAllImages = {};
+  const out = [];
+
+  for (const v of allVersions) {
+    const value = v.version || v.value;
+    const creatable = !!v.creatable;
+    const images = v.images || [];
+
+    if (!value || !inSupportedRange(value)) {
+      continue;
+    }
+
+    const isCurrentValue = isEdit && value === originalVersion;
+
+    let canUpgradeTo = false;
+
+    if (isEdit && upgradableSet && upgradableSet.has(value)) {
+      canUpgradeTo = versionSupportsAllCurrentImages(images, currentImages);
+    }
+
+    if ((isCreate && creatable) || isCurrentValue || canUpgradeTo) {
+      out.push({ label: value, value });
+      newAllImages[value] = images;
+    }
+  }
+
+  out.sort((a, b) => semver.rcompare(semver.coerce(a.value), semver.coerce(b.value)));
+
+  return { options: out, allImages: newAllImages };
 }
 
 async function fetchVSwitch(vpcId) {
@@ -892,6 +1025,7 @@ watch(() => [ackConfig.value.regionId, ackConfig.value.aliyun_credential_secret]
       state.value.vpcLoading = true;
       state.value.keyPairLoading = true;
       await fetchZones(regionId);
+      await fetchKubernetesMetadata(regionId);
       await fetchVpc(regionId);
       await fetchInstanceType(regionId);
       await fetchKeyPairs(regionId);
@@ -1072,7 +1206,7 @@ watch(() => normanCluster.value.name, (name) => {
               <LabeledInputSelect
                 v-model:value="ackConfig.kubernetesVersion"
                 :mode="mode"
-                :options="CONFIG_ENV.KUBERNETESVERSIONS"
+                :options="options.k8sVersionOptions"
                 label-key="ackCn.version.label"
                 :disabled="ackConfig.imported"
                 @update:value="changeContainerdVersion($event)"
@@ -1334,6 +1468,7 @@ watch(() => normanCluster.value.name, (name) => {
               :disabledInstancesNum="changedHistoryK8sVersion"
               :allInstanceTypeOptions="options.allInstanceTypeOptions"
               :keyPairOptions="options.keyPairOptions"
+              :platformOptions="options.platformOptions"
               :instanceTypeLoading="state.instanceTypeLoading"
               :keyPairLoading="state.keyPairLoading"
               :zones="state.zones"
