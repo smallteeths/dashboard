@@ -606,6 +606,7 @@ export interface StorePaginationRequest {
    * The single namespace to filter results by (as part of url path, not pagination params)
    */
   namespace?: string,
+
   /**
    * The set of pagination args used to create the request
    */
@@ -615,6 +616,11 @@ export interface StorePaginationRequest {
    * Does this request stem from a list with manual refresh?
    */
   hasManualRefresh?: boolean,
+
+  /**
+   * When making a supporting HTTP request include associated resource data
+   */
+  includeAssociatedData?: boolean,
 }
 
 /**
