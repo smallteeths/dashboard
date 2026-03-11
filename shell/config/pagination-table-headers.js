@@ -4,7 +4,9 @@ import {
   EVENT_LAST_SEEN_TIME,
   EVENT_TYPE,
   SECRET_CLONE,
-  EVENT_FIRST_SEEN_TIME
+  EVENT_FIRST_SEEN_TIME,
+  WORKLOAD_HEALTH_SCALE
+
 } from '@shell/config/table-headers';
 
 // This file contains table headers
@@ -92,4 +94,10 @@ export const STEVE_LIST_GROUPS = [{
 export const STEVE_SECRET_CLONE = {
   ...SECRET_CLONE,
   sort: `metadata.annotations[${ UI_PROJECT_SECRET_COPY }]`,
+};
+
+export const STEVE_WORKLOAD_HEALTH_SCALE = {
+  ...WORKLOAD_HEALTH_SCALE,
+  sort:   false,
+  search: false,
 };
