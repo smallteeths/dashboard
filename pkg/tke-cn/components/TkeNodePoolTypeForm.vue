@@ -121,7 +121,7 @@ const props = defineProps({
   },
   isNewOrUnprovisioned: {
     type:    Boolean,
-    default: true,
+    default: false,
   },
   tkeConfig: {
     type:    Object,
@@ -177,11 +177,14 @@ const selectedType = computed({
 });
 
 function selectType(v) {
+  if (!props.isNewOrUnprovisioned) {
+    return;
+  }
   selectedType.value = v;
 }
 
-const superMoreLink = computed(() => 'https://cloud.tencent.com/document/product/457'); // 你可以换成真实“超级节点”文档
-const nativeMoreLink = computed(() => 'https://cloud.tencent.com/document/product/457'); // 普通节点文档
+const superMoreLink = computed(() => 'https://cloud.tencent.com/document/product/457/74014');
+const nativeMoreLink = computed(() => 'https://cloud.tencent.com/document/product/457/43719');
 </script>
 
 <template>

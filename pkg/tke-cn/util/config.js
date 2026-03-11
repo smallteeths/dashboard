@@ -65,8 +65,8 @@ const DEFAULT_NODE_GROUP_CONFIG = {
     labels:             [],
     taints:             [],
     virtualNodes:       [],
-    deletionProtection: false,
-    os:                 '',
+    deletionProtection: true,
+    os:                 'linux',
   }
 };
 

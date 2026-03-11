@@ -1,5 +1,5 @@
 <script setup>
-import { computed, watchEffect } from 'vue';
+import { computed } from 'vue';
 import { useStore } from 'vuex';
 import Accordion from '@components/Accordion/Accordion.vue';
 import Checkbox from '@components/Form/Checkbox/Checkbox.vue';
@@ -32,17 +32,6 @@ const osOptions = computed(() => [
   },
 ]);
 
-watchEffect(() => {
-  if (!props.isNewOrUnprovisioned) {
-    return;
-  }
-  if (!props.value?.os) {
-    patch({ os: 'linux' });
-  }
-  if (!props.value?.deletionProtection) {
-    patch({ deletionProtection: true });
-  }
-});
 </script>
 <template>
   <Accordion
@@ -68,7 +57,6 @@ watchEffect(() => {
         <Checkbox
           :value="value.deletionProtection"
           :mode="mode"
-          :disabled="!isNewOrUnprovisioned"
           :label="intl('tkeCn.superNodePool.advanced.deletionProtection')"
           @update:value="patch({ deletionProtection: $event })"
         />

@@ -113,7 +113,6 @@ function setTag(ni, ti, key, val) {
         <button
           class="btn-link"
           type="button"
-          :disabled="disabled"
           @click="addLabel"
         >
           {{ intl('tkeCn.superNodePool.advanced.actions.add') }}
@@ -135,7 +134,6 @@ function setTag(ni, ti, key, val) {
             :value="r.name"
             :mode="mode"
             :label="intl('tkeCn.superNodePool.advanced.fields.key')"
-            :disabled="disabled"
             @update:value="setLabel(i, 'name', $event)"
           />
         </div>
@@ -144,7 +142,6 @@ function setTag(ni, ti, key, val) {
             :value="r.value"
             :mode="mode"
             :label="intl('tkeCn.superNodePool.advanced.fields.value')"
-            :disabled="disabled"
             @update:value="setLabel(i, 'value', $event)"
           />
         </div>
@@ -152,7 +149,6 @@ function setTag(ni, ti, key, val) {
           <button
             class="btn-danger"
             type="button"
-            :disabled="disabled"
             @click="removeLabel(i)"
           >
             {{ intl('tkeCn.superNodePool.advanced.actions.delete') }}
@@ -166,7 +162,6 @@ function setTag(ni, ti, key, val) {
         <button
           class="btn-link"
           type="button"
-          :disabled="disabled"
           @click="addTaint"
         >
           {{ intl('tkeCn.superNodePool.advanced.actions.add') }}
@@ -188,7 +183,6 @@ function setTag(ni, ti, key, val) {
             :value="t.key"
             :mode="mode"
             :label="intl('tkeCn.superNodePool.advanced.fields.key')"
-            :disabled="disabled"
             @update:value="setTaint(i, 'key', $event)"
           />
         </div>
@@ -197,7 +191,6 @@ function setTag(ni, ti, key, val) {
             :value="t.value"
             :mode="mode"
             :label="intl('tkeCn.superNodePool.advanced.fields.value')"
-            :disabled="disabled"
             @update:value="setTaint(i, 'value', $event)"
           />
         </div>
@@ -209,7 +202,6 @@ function setTag(ni, ti, key, val) {
             option-label="label"
             option-key="value"
             :label="intl('tkeCn.superNodePool.advanced.fields.effect')"
-            :disabled="disabled"
             @update:value="setTaint(i, 'effect', $event)"
           />
         </div>
@@ -245,6 +237,7 @@ function setTag(ni, ti, key, val) {
             {{ vn.displayName || intl('tkeCn.superNodePool.advanced.virtualNodeTags.defaultNodeName', { index: ni + 1 }) }}
           </div>
           <button
+            v-show="!disabled"
             class="btn-link"
             type="button"
             :disabled="disabled"
@@ -284,6 +277,7 @@ function setTag(ni, ti, key, val) {
           </div>
           <div class="col span-2 actions">
             <button
+              v-show="!disabled"
               class="btn-danger"
               type="button"
               :disabled="disabled"
@@ -316,6 +310,7 @@ function setTag(ni, ti, key, val) {
   padding: 10px;
 }
 .vn-head {
+  height: 40px;
   display:flex;
   justify-content:space-between;
   align-items:center;

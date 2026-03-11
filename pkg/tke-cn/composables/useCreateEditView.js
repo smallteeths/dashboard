@@ -54,8 +54,6 @@ export function useCreateEditView(props, context) {
     }
     normanCluster.value.tkeConfig = formatConfig();
 
-    console.log(normanCluster.value.tkeConfig);
-
     await normanCluster.value.save();
 
     return await normanCluster.value.waitForCondition('InitialRolesPopulated');
@@ -67,11 +65,15 @@ export function useCreateEditView(props, context) {
     const virtualNodePoolList = [];
 
     nodePools.value.forEach((node) => {
+      delete node.isNew;
       if (node.nodePoolType === 'super') {
-        virtualNodePoolList.push({
+        const virtualNode = {
           ...node.virtualNodePool,
           name: node.nodePoolName,
-        });
+        };
+
+        delete virtualNode.nodePoolType;
+        virtualNodePoolList.push(virtualNode);
 
         return;
       }

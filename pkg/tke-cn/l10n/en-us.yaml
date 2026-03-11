@@ -176,6 +176,7 @@ tkeCn:
       resourceType: Resource Type
       postpaid: Pay-as-you-go
       nodeNetwork: Node Network
+      availabilityZone: Availability Zone
     securityGroup:
       title: Security Group
       label: Security Group

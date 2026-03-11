@@ -19,7 +19,6 @@ const props = defineProps({
   rules:                { type: Object, default: () => ({}) },
   vpcId:                { type: String, default: '' },
 });
-
 const emit = defineEmits(['update:value', 'update:nodePoolName']);
 const errors = ref([]);
 const store = useStore();
@@ -77,6 +76,12 @@ function displaySubnetLabel(id) {
   const row = subnetRowById(id);
 
   return row?.label || id || '-';
+}
+
+function displayAvailableZone(subnetId) {
+  const row = find(filteredSubnetOptions.value || [], (r) => r.value === subnetId);
+
+  return row?.zoneLabel || '-';
 }
 
 function saveDraftToList() {
@@ -160,7 +165,7 @@ const SUBNET_COLUMNS = computed(() => [
     name: 'cidr', label: t('tkeCn.superNodePool.subnetTable.cidr'), value: 'CidrBlock'
   },
   {
-    name: 'zone', label: t('tkeCn.superNodePool.subnetTable.zone'), value: 'Zone'
+    name: 'zone', label: t('tkeCn.superNodePool.subnetTable.zone'), value: 'zoneLabel'
   },
   {
     name: 'ip', label: t('tkeCn.superNodePool.subnetTable.availableIp'), value: 'AvailableIpAddressCount'
@@ -178,6 +183,16 @@ watch(
 
     const exists = zoneOptions.some((item) => item.value === zone.value);
 
+    if (!props.isNewOrUnprovisioned || props.value.subnetIds?.length > 0) {
+      const currentSubnet = find(props.subnetOptions || [], (r) => r.value === props.value.subnetIds[0]);
+
+      if (currentSubnet) {
+        zone.value = currentSubnet.Zone;
+      }
+
+      return;
+    }
+
     if (!zone.value || !exists) {
       zone.value = zoneOptions[0].value;
     }
@@ -191,15 +206,20 @@ watch(
 const isEditing = computed(() => editingIndex.value !== null);
 const actionText = computed(() => (isEditing.value ? t('tkeCn.superNodePool.actions.save') : t('tkeCn.superNodePool.actions.add')));
 const filteredSubnetOptions = computed(() => {
-  if (!props.vpcId) {
+  if (!props.vpcId || !zone.value) {
     return [];
   }
 
-  if (!zone.value) {
-    return [];
-  }
+  return props.subnetOptions
+    .filter((item) => item.Zone === zone.value && item.VpcId === props.vpcId)
+    .map((item) => {
+      const matchedZone = props.zoneOptions.find((z) => z.value === item.Zone);
 
-  return props.subnetOptions.filter((item) => item.Zone === zone.value && item.VpcId === props.vpcId);
+      return {
+        ...item,
+        zoneLabel: matchedZone?.label || item.Zone,
+      };
+    });
 });
 </script>
 
@@ -286,7 +306,7 @@ const filteredSubnetOptions = computed(() => {
       </div>
       <div class="col span-6 actions-right">
         <button
-          class="btn-primary"
+          class="btn btn-primary"
           type="button"
           :disabled="!isNewOrUnprovisioned"
           @click="saveDraftToList"
@@ -362,6 +382,7 @@ const filteredSubnetOptions = computed(() => {
 
           <div class="vn-actions">
             <button
+              v-show="isNewOrUnprovisioned"
               class="btn-link"
               type="button"
               :disabled="!isNewOrUnprovisioned"
@@ -370,6 +391,7 @@ const filteredSubnetOptions = computed(() => {
               {{ intl('tkeCn.superNodePool.actions.edit') }}
             </button>
             <button
+              v-show="isNewOrUnprovisioned"
               class="btn-danger"
               type="button"
               :disabled="!isNewOrUnprovisioned"
@@ -383,6 +405,10 @@ const filteredSubnetOptions = computed(() => {
           <div class="kv">
             <span class="k">{{ intl('tkeCn.superNodePool.card.resourceType') }}</span>
             <span class="v">{{ intl('tkeCn.superNodePool.card.postpaid') }}</span>
+          </div>
+          <div class="kv">
+            <span class="k">{{ intl('tkeCn.superNodePool.card.availabilityZone') }}</span>
+            <span class="k">{{ displayAvailableZone(vn.subnetId) }}</span>
           </div>
           <div class="kv">
             <span class="k">{{ intl('tkeCn.superNodePool.card.nodeNetwork') }}</span>
@@ -489,7 +515,7 @@ const filteredSubnetOptions = computed(() => {
 }
 .kv {
   display: grid;
-  grid-template-columns: 90px 1fr;
+  grid-template-columns: 140px 1fr;
   gap: 10px;
   margin-top: 6px;
   font-size: 13px;

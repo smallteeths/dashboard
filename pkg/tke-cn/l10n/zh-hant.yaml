@@ -167,6 +167,7 @@ tkeCn:
       resourceType: 資源類型
       postpaid: 按量計費
       nodeNetwork: 節點網路
+      availabilityZone: 可用區
     securityGroup:
       title: 安全組
       label: 安全組

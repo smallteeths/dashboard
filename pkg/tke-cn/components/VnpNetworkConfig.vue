@@ -6,7 +6,7 @@ import VnpSecurityGroups from './VnpSecurityGroups.vue';
 const props = defineProps({
   value:                { type: Object, default: () => ({}) },
   mode:                 { type: String, required: true },
-  isNewOrUnprovisioned: { type: Boolean, default: true },
+  isNewOrUnprovisioned: { type: Boolean, default: false },
   securityGroupOptions: { type: Array, default: () => ([]) },
   loadingSubnets:       { type: Boolean, default: false },
   rules:                { type: Object, default: () => ({}) },
@@ -28,8 +28,8 @@ function patch(p) {
     <VnpSecurityGroups
       :value="value.securityGroupIds"
       :mode="mode"
-      :isNewOrUnprovisioned="isNewOrUnprovisioned"
       :options="securityGroupOptions"
+      :isNewOrUnprovisioned="isNewOrUnprovisioned"
       :rules="rules.securityGroupIds"
       @update:value="patch({ securityGroupIds: $event })"
     />

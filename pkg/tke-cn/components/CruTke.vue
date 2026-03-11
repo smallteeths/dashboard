@@ -462,9 +462,11 @@ function fixConfig(config) {
   if (virtualNodePoolList?.length > 0) {
     virtualNodePoolList.forEach((item) => {
       const obj = {
-        ...item,
-        nodePoolId:   item.nodePoolId,
-        nodePoolName: item.name,
+        virtualNodePool: { ...item },
+        nodePoolId:      item.nodePoolId,
+        nodePoolName:    item.name,
+        nodePoolType:    'super',
+        isNew:           false,
       };
 
       nodePool.push(obj);
@@ -476,6 +478,7 @@ function fixConfig(config) {
       const { autoScalingGroupPara, launchConfigurePara } = item;
 
       const obj = {
+        nodePoolType:   'native',
         clusterId:      item.clusterId,
         nodePoolId:     item.nodePoolId,
         nodePoolName:   item.name,
@@ -491,6 +494,7 @@ function fixConfig(config) {
         bandwidth:      launchConfigurePara.internetMaxBandwidthOut,
         keyPair:        launchConfigurePara.keyIds[0],
         securityGroup:  launchConfigurePara.securityGroupIds[0],
+        isNew:          false,
       };
 
       nodePool.push(obj);
@@ -965,23 +969,36 @@ function removePool(index) {
 }
 
 function poolIsValid(pool) {
-  if (
-    !pool.nodePoolName ||
-    !pool.instanceType ||
-    !pool.osName ||
-    !pool.systemDiskType ||
-    !pool.subnetId ||
-    !pool.keyPair ||
-    isNaN(pool.instanceNum) ||
-    pool.instanceNum < 0 ||
-    !pool.securityGroup
-  ) {
-    return false;
-  }
+  const hasValues = (arr) => Array.isArray(arr) && arr.length > 0;
 
-  const names = nodePools.value?.map((pool) => pool.nodePoolName) || [];
+  const hasUniqueNames = () => {
+    const names = (nodePools.value || []).map((item) => item.nodePoolName).filter(Boolean);
 
-  return uniqBy(names, (name) => name).length === names.length;
+    return new Set(names).size === names.length;
+  };
+
+  const isSuperPoolValid = () => {
+    return !!pool.nodePoolName &&
+      hasValues(pool?.virtualNodePool?.securityGroupIds) &&
+      hasValues(pool?.virtualNodePool?.virtualNodes) &&
+      hasValues(pool?.virtualNodePool?.subnetIds);
+  };
+
+  const isNativePoolValid = () => {
+    return !!pool.nodePoolName &&
+      !!pool.instanceType &&
+      !!pool.osName &&
+      !!pool.systemDiskType &&
+      !!pool.subnetId &&
+      !!pool.keyPair &&
+      !!pool.securityGroup &&
+      !isNaN(pool.instanceNum) &&
+      pool.instanceNum >= 0;
+  };
+
+  const valid = pool.nodePoolType === 'super' ? isSuperPoolValid() : isNativePoolValid();
+
+  return valid && hasUniqueNames();
 }
 
 </script>

@@ -9,7 +9,7 @@ const props = defineProps({
   nodePoolName:         { type: String, default: '' },
   vpcId:                { type: String, default: '' },
   mode:                 { type: String, required: true },
-  isNewOrUnprovisioned: { type: Boolean, default: true },
+  isNewOrUnprovisioned: { type: Boolean, default: false },
   subnetOptions:        { type: Array, default: () => ([]) },
   zoneOptions:          { type: Array, default: () => ([]) },
   securityGroupOptions: { type: Array, default: () => ([]) },

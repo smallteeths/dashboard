@@ -7,7 +7,7 @@ const props = defineProps({
   value:                { type: Array, default: () => ([]) }, // securityGroupIds
   options:              { type: Array, default: () => ([]) },
   mode:                 { type: String, required: true },
-  isNewOrUnprovisioned: { type: Boolean, default: true },
+  isNewOrUnprovisioned: { type: Boolean, default: false },
   disabled:             { type: Boolean, default: false },
   rules:                { type: Array, default: () => ([]) },
 });
@@ -36,6 +36,9 @@ function add() {
 }
 
 function remove(i) {
+  if (rows.value.length <= 1) {
+    return;
+  }
   const next = [...rows.value];
 
   next.splice(i, 1);
@@ -92,8 +95,8 @@ watchEffect(() => {
           :options="getOptionsForRow(i)"
           option-label="label"
           option-key="value"
-          :label="intl('tkeCn.superNodePool.securityGroup.label')"
           :disabled="disabled"
+          :label="intl('tkeCn.superNodePool.securityGroup.label')"
           @update:value="set(i, $event)"
         />
       </div>
