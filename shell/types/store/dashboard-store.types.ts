@@ -81,6 +81,20 @@ export interface ActionFindPageArgs extends ActionCoreFindArgs {
    * If true don't persist the http response to the store, just pass it back
    */
   transient?: boolean,
+
+  saveCountAs?: string,
+
+  /**
+   * When making a supporting HTTP request include associated resource data
+   */
+  includeAssociatedData?: boolean,
+
+  /**
+   * The target minimum revision for the resource.
+   *
+   * If this is higher than the latest revision known to rancher then an error will be returned
+   */
+  revision?: string
 }
 
 export type ActionFindPageResponse<T = any> = {
