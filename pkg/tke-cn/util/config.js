@@ -44,20 +44,30 @@ const DEFAULTTKECONFIG = {
 };
 
 const DEFAULT_NODE_GROUP_CONFIG = {
-  nodePoolName:   'default-nodepool',
-  systemDiskSize: 20,
-  dataDiskSize:   0,
-  instanceNum:    1,
-  bandwidth:      10,
-  bandwidthType:  'TRAFFIC_POSTPAID_BY_HOUR',
-  systemDiskType: '',
-  dataDiskType:   '',
-  osName:         'tlinux3.1x86_64',
-  subnetId:       '',
-  keyPair:        '',
-  instanceType:   '',
-  securityGroup:  '',
-  type:           'nodePool',
+  nodePoolName:    'default-nodepool',
+  systemDiskSize:  20,
+  dataDiskSize:    0,
+  instanceNum:     1,
+  bandwidth:       10,
+  bandwidthType:   'TRAFFIC_POSTPAID_BY_HOUR',
+  systemDiskType:  '',
+  dataDiskType:    '',
+  osName:          'tlinux3.1x86_64',
+  subnetId:        '',
+  keyPair:         '',
+  instanceType:    '',
+  securityGroup:   '',
+  type:            'nodePool',
+  nodePoolType:    'super',
+  virtualNodePool: {
+    securityGroupIds:   [],
+    subnetIds:          [],
+    labels:             [],
+    taints:             [],
+    virtualNodes:       [],
+    deletionProtection: false,
+    os:                 '',
+  }
 };
 
 const OS_IMAGE = [
@@ -233,6 +243,29 @@ const BAND_WIDTH = [
   }
 ];
 
+const CSI_ADDON_MAP = {
+  CBS: {
+    addonName:    'CBS',
+    chartName:    'cbs',
+    chartVersion: '1.1.12',
+  },
+  COS: {
+    addonName:    'COS',
+    chartName:    'cos',
+    chartVersion: '1.0.11',
+  },
+  CFSTurbo: {
+    addonName:    'CFSTurbo',
+    chartName:    'cfsturbo',
+    chartVersion: '1.0.4',
+  },
+  CFS: {
+    addonName:    'CFS',
+    chartName:    'cfs',
+    chartVersion: '1.1.9',
+  },
+};
+
 export default {
   CONTAINER,
   DEFAULTTKECONFIG,
@@ -241,4 +274,5 @@ export default {
   DEFAULT_NODE_GROUP_CONFIG,
   CURRENTDISK,
   BAND_WIDTH,
+  CSI_ADDON_MAP,
 };

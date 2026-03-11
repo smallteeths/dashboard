@@ -120,3 +120,96 @@ tkeCn:
   domain:
     label: Domain
     placeholder: e.g. example.com
+  nodePool:
+    type:
+      title: Node Pool Type
+      help: Select a node pool type to proceed with the corresponding configuration.
+      more: Learn More
+      editTip: The node pool type can only be selected during creation.
+      badge:
+        recommended: Recommended
+      super:
+        title: Super Node
+        desc: Super Node is Tencent Cloud’s pioneering Kubernetes node type for managing Serverless containers. It offers advanced capabilities such as second-level scaling, strong isolation between Pods, and fine-grained billing, while remaining compatible with existing resource and budget management workflows.
+        points:
+          "0": Advanced Serverless concepts and technologies for lighter operations
+          "1": Each Pod exclusively occupies a lightweight virtual machine, providing strong isolation, no interference, and stable security
+          "2": Second-level auto scaling to easily handle elastic workloads, ensuring business continuity while reducing costs
+          "3": Supports node-level management and is compatible with existing operations tools and financial management processes
+      native:
+        title: Native Node
+        desc: Native Node is built on Tencent Cloud CVM to provide underlying compute capacity, is compatible with community Kubernetes capabilities, and is suitable for business scenarios requiring stronger customization.
+        points:
+          "0": Supports dozens of Tencent Cloud CVM instance types
+          "1": Provides auto scaling based on Tencent Cloud Auto Scaling Service
+          "2": Serverful management model with stronger user control over resources and operations
+  superNodePool:
+    basic:
+      title: NodePool Configuration
+      hint: A subnet must be selected for the node pool.
+    config:
+      title: Add Super Node
+      hint: To ensure the cluster's normal operation, please add a super node. Select a subnet from the table below and enter a node name. After clicking "{action}", a configuration card will be created. Click "Edit" on the card to load the configuration back.
+    fields:
+      nodeName: Node Name
+      nodeNamePlaceholder: Auto-generated
+    actions:
+      add: Add Super Node
+      save: Save
+      cancel: Cancel
+      edit: Edit
+      delete: Delete
+    errors:
+      subnetRequired: A subnet must be selected
+    subnetTable:
+      name: Subnet Name
+      id: Subnet ID
+      cidr: CIDR
+      zone: Availability Zone
+      availableIp: Available IPs
+    subnetEmpty: No subnet is currently available. Please select a region or network first.
+    added:
+      title: Added Nodes
+      empty: No node configuration has been added yet.
+      defaultNodeName: Node {index}
+    card:
+      resourceType: Resource Type
+      postpaid: Pay-as-you-go
+      nodeNetwork: Node Network
+    securityGroup:
+      title: Security Group
+      label: Security Group
+      empty: Please select at least one security group.
+      actions:
+        add: + Add
+        delete: Delete
+    networkConfig:
+      title: Network Configuration
+    advanced:
+      title: Advanced Configuration
+      os: Operating System
+      deletionProtection: Deletion Protection
+      osOptions:
+        linux: Linux
+        windows: Windows
+      actions:
+        add: + Add
+        delete: Delete
+      fields:
+        key: Key
+        value: Value
+        effect: Effect
+      labels:
+        title: Labels
+        hint: "Optional: add labels to the node pool."
+      taints:
+        title: Taints
+        hint: "Optional: configure taints for scheduling control."
+      virtualNodeTags:
+        title: Virtual Node Tags
+        empty: Add virtual nodes in the basic configuration first.
+        addTag: + Add Tag
+        unconfigured: No tags configured
+        defaultNodeName: Virtual Node {index}
+  csi:
+    label: CSI Driver

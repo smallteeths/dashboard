@@ -628,6 +628,7 @@ export default {
 
     showHeaderRow() {
       // All of these are used to show content in the header
+
       return this.search ||
         this.tableActions ||
         this.$slots['header-left'] ||

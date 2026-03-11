@@ -54,6 +54,8 @@ export function useCreateEditView(props, context) {
     }
     normanCluster.value.tkeConfig = formatConfig();
 
+    console.log(normanCluster.value.tkeConfig);
+
     await normanCluster.value.save();
 
     return await normanCluster.value.waitForCondition('InitialRolesPopulated');
@@ -62,8 +64,17 @@ export function useCreateEditView(props, context) {
   function formatConfig() {
     const config = tkeConfig.value;
     const nodePoolList = [];
+    const virtualNodePoolList = [];
 
     nodePools.value.forEach((node) => {
+      if (node.nodePoolType === 'super') {
+        virtualNodePoolList.push({
+          ...node.virtualNodePool,
+          name: node.nodePoolName,
+        });
+
+        return;
+      }
       const dataDisks = [{
         diskSize: node.dataDiskSize,
         diskType: node.dataDiskType
@@ -187,6 +198,7 @@ export function useCreateEditView(props, context) {
       runInstancesForNode,
       clusterAdvancedSettings,
       extensionAddon,
+      virtualNodePoolList,
     };
   }
 

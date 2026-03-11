@@ -20,7 +20,8 @@ import Accordion from '@components/Accordion/Accordion.vue';
 import Tabbed from '@shell/components/Tabbed/index.vue';
 import { queryFromTencent } from '../util/request';
 import Labels from '@shell/components/form/Labels.vue';
-import NodePool from './NodePool';
+import LabeledMultiSelect from './LabeledMultiSelect';
+import TkeNodePoolTypeForm from './TkeNodePoolTypeForm';
 import ImportTke from './ImportTke';
 import MasterNode from './MasterNode';
 import { find, pullAt, uniqBy } from 'lodash';
@@ -57,7 +58,25 @@ const options = ref({
   keyPairOptions:       [],
   securityGroupOptions: [],
   clusterOptions:       [],
-  ipvsOptions:          [
+  csiOptions:           [
+    {
+      label: 'CBS',
+      value: 'CBS',
+    },
+    {
+      label: 'COS',
+      value: 'COS',
+    },
+    {
+      label: 'CFSTurbo',
+      value: 'CFSTurbo',
+    },
+    {
+      label: 'CFS',
+      value: 'CFS',
+    },
+  ],
+  ipvsOptions: [
     intl.value('generic.enabled'),
     intl.value('generic.disabled'),
   ],
@@ -80,6 +99,7 @@ const state = ref({
   allSubnets:                   [],
   errors:                       [],
   upgradeTip:                   '',
+  csi:                          ['CBS'],
 });
 const emit = defineEmits(['done']);
 
@@ -103,16 +123,17 @@ const ruleSets = computed(() => {
   const clusterCidr = tkeConfig.value.clusterCidr;
   const securityGroup = tkeConfig.value.securityGroup;
   const instanceType = tkeConfig.value.instanceType;
-  const keyPair = tkeConfig.value.keyPair;
   const copyNodePools = nodePools.value.map((pool) => {
     return {
-      nodePoolName:   pool.nodePoolName,
-      instanceType:   pool.instanceType,
-      osName:         pool.osName,
-      systemDiskType: pool.systemDiskType,
-      subnetId:       pool.subnetId,
-      keyPair:        pool.keyPair,
-      securityGroup:  pool.securityGroup,
+      nodePoolName:    pool.nodePoolName,
+      instanceType:    pool.instanceType,
+      osName:          pool.osName,
+      systemDiskType:  pool.systemDiskType,
+      subnetId:        pool.subnetId,
+      keyPair:         pool.keyPair,
+      securityGroup:   pool.securityGroup,
+      nodePoolType:    pool.nodePoolType,
+      virtualNodePool: pool.virtualNodePool,
     };
   });
 
@@ -167,20 +188,17 @@ const ruleSets = computed(() => {
     nodePoolSubnetIdRequired: !importCluster ? [
       TKEValidators.nodePoolSubnetIdRequired(copyNodePools, intl),
     ] : [],
-    keyPairRequired: !importCluster ? [
-      TKEValidators.keyPairRequired(copyNodePools, intl),
-    ] : [],
     nodePoolSecurityGroupRequired: !importCluster ? [
       TKEValidators.nodePoolSecurityGroupRequired(copyNodePools, intl),
+    ] : [],
+    virtualNodePoolRequired: !importCluster ? [
+      TKEValidators.virtualNodePoolRequired(copyNodePools, intl),
     ] : [],
     masterInstanceType: !importCluster && !isManagedCluster.value ? [
       TKEValidators.masterInstanceTypeRequired({ instanceType }, intl),
     ] : [],
     masterOsNameRequired: !importCluster && !isManagedCluster.value ? [
       TKEValidators.osNameRequired({ osName }, intl),
-    ] : [],
-    masterKeyPairRequired: !importCluster && !isManagedCluster.value ? [
-      TKEValidators.masterKeyPairRequired({ keyPair }, intl),
     ] : [],
     clusterID: importCluster ? [
       TKEValidators.clusterIDRequired({ clusterID }, intl),
@@ -328,6 +346,39 @@ function setClusterName(name) {
   normanCluster.value['name'] = name;
 }
 
+function handleCsiChange(value) {
+  const selectedValues = Array.isArray(value) ? value : (value ? [value] : []);
+
+  const components = selectedValues
+    .map((key) => {
+      const addon = CONFIG_ENV.CSI_ADDON_MAP[key];
+
+      if (!addon) {
+        return null;
+      }
+
+      return {
+        addonName:  addon.addonName,
+        addonParam: {
+          kind: 'App',
+          spec: {
+            chart: {
+              chartName:    addon.chartName,
+              chartVersion: addon.chartVersion,
+            },
+            values: {
+              values:        [],
+              rawValues:     'e30=',
+              rawValuesType: 'json',
+            },
+          },
+        },
+      };
+    });
+
+  tkeConfig.value.component = JSON.stringify(components);
+}
+
 function resetConfig() {
   tkeConfig.value.subnetId = '';
   tkeConfig.value.securityGroup = '';
@@ -404,32 +455,47 @@ function fixConfig(config) {
     nodePoolList = [],
     runInstancesForNode = {},
     clusterAdvancedSettings = {},
-    extensionAddon = []
+    extensionAddon = [],
+    virtualNodePoolList = [],
   } = config;
 
-  nodePoolList.forEach((item) => {
-    const { autoScalingGroupPara, launchConfigurePara } = item;
+  if (virtualNodePoolList?.length > 0) {
+    virtualNodePoolList.forEach((item) => {
+      const obj = {
+        ...item,
+        nodePoolId:   item.nodePoolId,
+        nodePoolName: item.name,
+      };
 
-    const obj = {
-      clusterId:      item.clusterId,
-      nodePoolId:     item.nodePoolId,
-      nodePoolName:   item.name,
-      osName:         item.nodePoolOs,
-      instanceNum:    autoScalingGroupPara.desiredCapacity,
-      subnetId:       autoScalingGroupPara.subnetIds[0],
-      instanceType:   launchConfigurePara.instanceType,
-      systemDiskSize: launchConfigurePara.systemDisk.diskSize,
-      systemDiskType: launchConfigurePara.systemDisk.diskType,
-      dataDiskType:   launchConfigurePara.dataDisks?.[0].diskType,
-      dataDiskSize:   launchConfigurePara.dataDisks?.[0].diskSize,
-      bandwidthType:  launchConfigurePara.internetChargeType,
-      bandwidth:      launchConfigurePara.internetMaxBandwidthOut,
-      keyPair:        launchConfigurePara.keyIds[0],
-      securityGroup:  launchConfigurePara.securityGroupIds[0],
-    };
+      nodePool.push(obj);
+    });
+  }
 
-    nodePool.push(obj);
-  });
+  if (nodePoolList?.length > 0) {
+    nodePoolList.forEach((item) => {
+      const { autoScalingGroupPara, launchConfigurePara } = item;
+
+      const obj = {
+        clusterId:      item.clusterId,
+        nodePoolId:     item.nodePoolId,
+        nodePoolName:   item.name,
+        osName:         item.nodePoolOs,
+        instanceNum:    autoScalingGroupPara.desiredCapacity,
+        subnetId:       autoScalingGroupPara.subnetIds[0],
+        instanceType:   launchConfigurePara.instanceType,
+        systemDiskSize: launchConfigurePara.systemDisk.diskSize,
+        systemDiskType: launchConfigurePara.systemDisk.diskType,
+        dataDiskType:   launchConfigurePara.dataDisks?.[0].diskType,
+        dataDiskSize:   launchConfigurePara.dataDisks?.[0].diskSize,
+        bandwidthType:  launchConfigurePara.internetChargeType,
+        bandwidth:      launchConfigurePara.internetMaxBandwidthOut,
+        keyPair:        launchConfigurePara.keyIds[0],
+        securityGroup:  launchConfigurePara.securityGroupIds[0],
+      };
+
+      nodePool.push(obj);
+    });
+  }
 
   const out = {
     clusterEndpoint:     clusterEndpoint.enable === undefined ? true : !!clusterEndpoint.enable,
@@ -756,10 +822,11 @@ async function fetchSubnets(cloudCredentialId) {
     });
     const allSubnets = res?.Response?.SubnetSet?.map((subnet) => {
       return {
+        ...subnet,
         label: subnet.SubnetName,
         value: subnet.SubnetId,
         vpcId: subnet.VpcId,
-        zone:  subnet.Zone,
+        zone:  subnet.Zone
       };
     });
 
@@ -1212,6 +1279,22 @@ function poolIsValid(pool) {
               :placeholder="intl('tkeCn.domain.placeholder')"
             />
           </div>
+          <div
+            class="col span-6"
+          >
+            <LabeledMultiSelect
+              v-model:value="state.csi"
+              data-testid="crutke-resource-csi"
+              required
+              :mode="mode"
+              :options="options.csiOptions"
+              option-label="label"
+              option-key="value"
+              label-key="tkeCn.csi.label"
+              :disabled="!isNewOrUnprovisioned"
+              @update:value="handleCsiChange"
+            />
+          </div>
         </div>
         <div class="row mb-10">
           <div class="col span-12">
@@ -1280,7 +1363,6 @@ function poolIsValid(pool) {
             :rules="{
               instanceType: ruleSets.masterInstanceType,
               osName: ruleSets.masterOsNameRequired,
-              keyPair: ruleSets.masterKeyPairRequired,
             }"
           />
         </GroupPanel>
@@ -1300,7 +1382,8 @@ function poolIsValid(pool) {
             :label="pool.nodePoolName"
             :error="!poolIsValid(pool)"
           >
-            <NodePool
+            <TkeNodePoolTypeForm
+              v-model:nodePoolType="pool.nodePoolType"
               v-model:name="pool.nodePoolName"
               v-model:instanceType="pool.instanceType"
               v-model:osName="pool.osName"
@@ -1314,9 +1397,12 @@ function poolIsValid(pool) {
               v-model:subnetId="pool.subnetId"
               v-model:keyPair="pool.keyPair"
               v-model:securityGroup="pool.securityGroup"
+              v-model:virtualNodePool="pool.virtualNodePool"
               :keyPairLoading="keyPairLoading"
               :systemDiskTypeOptions="getDiskOptions.systemDiskTypes"
               :subnetOptions="subnetOptions"
+              :zoneOptions="options.zoneOptions"
+              :allSubnets="state.allSubnets"
               :securityGroupOptions="options.securityGroupOptions"
               :keyPairOptions="options.keyPairOptions"
               :dataDiskTypeOptions="getDiskOptions.dataDiskTypes"
@@ -1332,8 +1418,8 @@ function poolIsValid(pool) {
                 osName: ruleSets.nodePoolOsNameRequired,
                 systemDiskType: ruleSets.systemDiskTypeRequired,
                 subnetId: ruleSets.nodePoolSubnetIdRequired,
-                keyPair: ruleSets.keyPairRequired,
                 securityGroup: ruleSets.nodePoolSecurityGroupRequired,
+                virtualNodePoolRequired: ruleSets.virtualNodePoolRequired,
               }"
               :isNewOrUnprovisioned="isNewOrUnprovisioned || pool.isNew"
               @errors="e=>state.errors=e"

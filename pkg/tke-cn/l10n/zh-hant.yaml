@@ -120,3 +120,88 @@ tkeCn:
   domain:
     label: 叢集域名
     placeholder: e.g. example.com
+  nodePool:
+    type:
+      title: 節點池類型
+      help: 選擇節點池類型以進入對應的配置。
+      more: 了解更多
+      editTip: 節點池類型僅支援在建立時選擇。
+      badge:
+        recommended: 推薦
+      super:
+        title: 超級節點
+        desc: 超級節點是騰訊雲首創的用於管理 Serverless 容器的 K8s 節點，具備秒級擴縮、Pod 間強隔離、細粒度計費等進階特性，同時相容現有節點資源及預算管理流程。
+        points:
+          "0": 先進的 Serverless 理念與技術，讓運維工作更輕量化
+          "1": 單個 Pod 獨佔輕量虛擬機，強隔離、無干擾，安全穩定
+          "2": 秒級擴縮容，輕鬆應對彈性需求，在保障業務的同時降低成本
+  superNodePool:
+    basic:
+      title: 節點池基礎配置
+    config:
+      title: 添加超級節點
+      hint: 透過下方表格選擇子網並填寫節點名稱，點擊「{action}」後會生成一張配置卡片。點擊卡片上的「編輯」可回填配置。
+    fields:
+      nodeName: 節點名稱
+      nodeNamePlaceholder: 自動生成
+    actions:
+      add: 添加超級節點
+      save: 保存
+      cancel: 取消
+      edit: 編輯
+      delete: 刪除
+    errors:
+      subnetRequired: 必須選擇子網
+    subnetTable:
+      name: 子網名稱
+      id: 子網 ID
+      cidr: CIDR
+      zone: 可用區
+      availableIp: 剩餘 IP 數
+    subnetEmpty: 暫無可用子網，請先選擇區域或網路後再試。
+    added:
+      title: 已添加的節點
+      empty: 暫無已添加的節點配置。
+      defaultNodeName: 節點{index}
+    card:
+      resourceType: 資源類型
+      postpaid: 按量計費
+      nodeNetwork: 節點網路
+    securityGroup:
+      title: 安全組
+      label: 安全組
+      empty: 請至少選擇一個安全組。
+      actions:
+        add: + 添加
+        delete: 刪除
+    networkConfig:
+      title: 網絡配置
+      hint: 選擇節點池的子網並配置 IP 地址。
+    advanced:
+      title: 進階配置
+      os: 操作系統
+      deletionProtection: 刪除保護
+      osOptions:
+        linux: Linux
+        windows: Windows
+      actions:
+        add: + 添加
+        delete: 刪除
+      fields:
+        key: 鍵
+        value: 值
+        effect: 效果
+      labels:
+        title: 標籤
+        hint: 可選：為節點池添加標籤。
+      taints:
+        title: 污點
+        hint: 可選：設定污點用於調度控制。
+      virtualNodeTags:
+        title: 虛擬節點標籤
+        empty: 請先在基礎配置中添加虛擬節點。
+        addTag: + 添加 Tag
+        unconfigured: 尚未配置 Tags
+        defaultNodeName: 虛擬節點 {index}
+  csi:
+    label: CSI 驅動

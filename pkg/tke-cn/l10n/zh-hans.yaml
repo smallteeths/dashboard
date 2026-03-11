@@ -120,3 +120,96 @@ tkeCn:
   domain:
     label: 集群域名
     placeholder: e.g. example.com
+  nodePool:
+    type:
+      title: 节点池类型
+      help: 选择节点池类型以进入对应的配置。
+      more: 了解更多
+      editTip: 节点池类型仅支持在创建时选择。
+      badge:
+        recommended: 推荐
+      super:
+        title: 超级节点
+        desc: 超级节点是腾讯云首创的管理 Serverless 容器的 K8s 节点，具有秒级扩缩、Pod 间强隔离、细颗粒度计费等先进特性，同时兼容现有节点资源及预算管理流程。
+        points:
+          "0": 先进的 Serverless 理念与技术，运维工作轻量化
+          "1": 单 Pod 独占轻量虚拟机，强隔离无干扰，安全稳定
+          "2": 秒级扩缩容，轻松应对弹性需求，保障业务降低成本
+          "3": 支持节点级管理，兼容现有运维工具、财务管理流程
+      native:
+        title: 普通节点
+        desc: 普通节点基于腾讯云 CVM 产品提供底层计算能力，兼容社区 Kubernetes 能力，适用于定制化较强的业务场景。
+        points:
+          "0": 适配腾讯云 CVM 数十种机型实例
+          "1": 基于腾讯云弹性伸缩服务提供自动扩缩容功能
+          "2": Serverful 模式管理，用户对资源和运维的管控能力强
+  superNodePool:
+    basic:
+      title: 节点池基础配置
+      hint: 必须为节点池选择一个子网。
+    config:
+      title: 添加超级节点
+      hint: 为保证集群正常运行，请添加超级节点。通过下方表格选择子网并填写节点名称，点击“{action}”后会生成一张配置卡片。点击卡片“编辑”可回填配置。
+    fields:
+      nodeName: 节点名称
+      nodeNamePlaceholder: 自动生成
+    actions:
+      add: 添加超级节点
+      save: 保存
+      cancel: 取消
+      edit: 编辑
+      delete: 删除
+    errors:
+      subnetRequired: 必须选择子网
+    subnetTable:
+      name: 子网名称
+      id: 子网ID
+      cidr: CIDR
+      zone: 可用区
+      availableIp: 剩余IP数
+    subnetEmpty: 暂无可用子网，请先选择区域/网络后再试。
+    added:
+      title: 已添加的节点
+      empty: 暂无已添加节点配置。
+      defaultNodeName: 节点{index}
+    card:
+      resourceType: 资源类型
+      postpaid: 按量计费
+      nodeNetwork: 节点网络
+    securityGroup:
+      title: 安全组
+      label: 安全组
+      empty: 请选择至少一个安全组。
+      actions:
+        add: + 添加
+        delete: 删除
+    networkConfig:
+      title: 网络配置
+    advanced:
+      title: 高级配置
+      os: 操作系统
+      deletionProtection: 删除保护
+      osOptions:
+        linux: Linux
+        windows: Windows
+      actions:
+        add: + 添加
+        delete: 删除
+      fields:
+        key: Key
+        value: Value
+        effect: Effect
+      labels:
+        title: Labels
+        hint: 可选：为节点池添加标签。
+      taints:
+        title: Taints
+        hint: 可选：设置污点用于调度控制。
+      virtualNodeTags:
+        title: Virtual Nodes Tags
+        empty: 先在基础配置中添加虚拟节点。
+        addTag: + 添加 Tag
+        unconfigured: 未配置 Tags
+        defaultNodeName: Virtual Node {index}
+  csi:
+    label: CSI 驱动
