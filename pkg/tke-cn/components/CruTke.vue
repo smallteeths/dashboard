@@ -4,6 +4,7 @@ import { useStore } from 'vuex';
 import { useRoute } from 'vue-router';
 import { NORMAN } from '@shell/config/types';
 import CruResource from '@shell/components/CruResource.vue';
+import Checkbox from '@components/Form/Checkbox/Checkbox.vue';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
 import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
 import Banner from '@components/Banner/Banner.vue';
@@ -20,10 +21,14 @@ import Accordion from '@components/Accordion/Accordion.vue';
 import Tabbed from '@shell/components/Tabbed/index.vue';
 import { queryFromTencent } from '../util/request';
 import Labels from '@shell/components/form/Labels.vue';
-import NodePool from './NodePool';
+import { isBase64 } from '@shell/utils/string';
+import { base64Decode } from '@shell/utils/crypto';
+import TkeCsiCardSelect from './TkeCsiCardSelect';
+import TkeNodePoolTypeForm from './TkeNodePoolTypeForm';
+// import TkeClusterLevelSelect from './TkeClusterLevelSelect';
 import ImportTke from './ImportTke';
 import MasterNode from './MasterNode';
-import { find, pullAt, uniqBy } from 'lodash';
+import { find, pullAt } from 'lodash';
 import CONFIG_ENV from '../util/config';
 
 const props = defineProps({
@@ -46,8 +51,6 @@ const cruresource = ref(null);
 const nodePools = ref([]);
 const route = useRoute();
 const isImport = route?.query?.mode === _IMPORT;
-const DATA_DISK = 'DATA_DISK';
-const SYSTEM_DISK = 'SYSTEM_DISK';
 const options = ref({
   regionOptions:        [],
   clusterLevelOptions:  [],
@@ -57,7 +60,26 @@ const options = ref({
   keyPairOptions:       [],
   securityGroupOptions: [],
   clusterOptions:       [],
-  ipvsOptions:          [
+  DiskConfigQuota:      [],
+  csiOptions:           [
+    {
+      label: 'CBS',
+      value: 'CBS',
+    },
+    {
+      label: 'COS',
+      value: 'COS',
+    },
+    {
+      label: 'CFSTurbo',
+      value: 'CFSTurbo',
+    },
+    {
+      label: 'CFS',
+      value: 'CFS',
+    },
+  ],
+  ipvsOptions: [
     intl.value('generic.enabled'),
     intl.value('generic.disabled'),
   ],
@@ -76,13 +98,15 @@ const state = ref({
   vpcIdLoading:                 false,
   subnetLoading:                false,
   securityGroupLoading:         false,
+  showPrivateRegistryInput:     false,
+  userData:                     '',
   instanceTypeSet:              {},
   allSubnets:                   [],
   errors:                       [],
   upgradeTip:                   '',
+  csi:                          ['CBS'],
 });
 const emit = defineEmits(['done']);
-
 const isManagedCluster = computed(() => {
   return tkeConfig.value.clusterType === 'MANAGED_CLUSTER';
 });
@@ -103,16 +127,17 @@ const ruleSets = computed(() => {
   const clusterCidr = tkeConfig.value.clusterCidr;
   const securityGroup = tkeConfig.value.securityGroup;
   const instanceType = tkeConfig.value.instanceType;
-  const keyPair = tkeConfig.value.keyPair;
   const copyNodePools = nodePools.value.map((pool) => {
     return {
-      nodePoolName:   pool.nodePoolName,
-      instanceType:   pool.instanceType,
-      osName:         pool.osName,
-      systemDiskType: pool.systemDiskType,
-      subnetId:       pool.subnetId,
-      keyPair:        pool.keyPair,
-      securityGroup:  pool.securityGroup,
+      nodePoolName:    pool.nodePoolName,
+      instanceType:    pool.instanceType,
+      osName:          pool.osName,
+      systemDiskType:  pool.systemDiskType,
+      subnetId:        pool.subnetId,
+      keyPair:         pool.keyPair,
+      securityGroup:   pool.securityGroup,
+      nodePoolType:    pool.nodePoolType,
+      virtualNodePool: pool.virtualNodePool,
     };
   });
 
@@ -167,20 +192,17 @@ const ruleSets = computed(() => {
     nodePoolSubnetIdRequired: !importCluster ? [
       TKEValidators.nodePoolSubnetIdRequired(copyNodePools, intl),
     ] : [],
-    keyPairRequired: !importCluster ? [
-      TKEValidators.keyPairRequired(copyNodePools, intl),
-    ] : [],
     nodePoolSecurityGroupRequired: !importCluster ? [
       TKEValidators.nodePoolSecurityGroupRequired(copyNodePools, intl),
+    ] : [],
+    virtualNodePoolRequired: !importCluster ? [
+      TKEValidators.virtualNodePoolRequired(copyNodePools, intl),
     ] : [],
     masterInstanceType: !importCluster && !isManagedCluster.value ? [
       TKEValidators.masterInstanceTypeRequired({ instanceType }, intl),
     ] : [],
     masterOsNameRequired: !importCluster && !isManagedCluster.value ? [
       TKEValidators.osNameRequired({ osName }, intl),
-    ] : [],
-    masterKeyPairRequired: !importCluster && !isManagedCluster.value ? [
-      TKEValidators.masterKeyPairRequired({ keyPair }, intl),
     ] : [],
     clusterID: importCluster ? [
       TKEValidators.clusterIDRequired({ clusterID }, intl),
@@ -254,43 +276,11 @@ const instanceTypeOptions = computed(() => {
   const zoneId = tkeConfig.value.zoneId;
   const instances = allInstances[zoneId];
 
-  if (!allInstances) {
+  if (!allInstances || !zoneId) {
     return [];
-  } else if (!zoneId) {
-    const all = Object.values(allInstances).reduce((acc, arr) => acc.concat(arr), []);
-
-    return all;
   }
 
   return instances;
-});
-const getDiskOptions = computed(() => {
-  const systemDiskTypes = {};
-  const dataDiskTypes = {};
-
-  CONFIG_ENV.CURRENTDISK.forEach((d) => {
-    if (d.DiskUsage === DATA_DISK) {
-      dataDiskTypes[d.DiskType] = {
-        label:       `tkeCn.disk.${ d.DiskType }`,
-        value:       d.DiskType,
-        maxDiskSize: d.MaxDiskSize,
-        minDiskSize: d.MinDiskSize,
-      };
-    }
-    if (d.DiskUsage === SYSTEM_DISK) {
-      systemDiskTypes[d.DiskType] = {
-        label:       `tkeCn.disk.${ d.DiskType }`,
-        value:       d.DiskType,
-        maxDiskSize: d.MaxDiskSize,
-        minDiskSize: d.MinDiskSize,
-      };
-    }
-  });
-
-  return {
-    systemDiskTypes: Object.values(systemDiskTypes),
-    dataDiskTypes:   Object.values(dataDiskTypes),
-  };
 });
 const clusterActive = computed(() => {
   if (!isNewOrUnprovisioned.value) {
@@ -317,6 +307,9 @@ const hasCredential = computed(() => {
 const isNewOrUnprovisioned = computed(() => {
   return props.mode === _CREATE || !normanCluster.value?.tkeStatus?.upstreamSpec;
 });
+const isCreate = computed(() => {
+  return props.mode === _CREATE;
+});
 
 function cancelCredential() {
   if (cruresource.value) {
@@ -328,17 +321,62 @@ function setClusterName(name) {
   normanCluster.value['name'] = name;
 }
 
-function resetConfig() {
+function handleCsiChange(value) {
+  const selectedValues = Array.isArray(value) ? [...value] : (value ? [value] : []);
+
+  if (!selectedValues.includes('CBS')) {
+    selectedValues.unshift('CBS');
+  }
+
+  const components = selectedValues
+    .map((key) => {
+      const addon = CONFIG_ENV.CSI_ADDON_MAP[key];
+
+      if (!addon) {
+        return null;
+      }
+
+      return {
+        addonName:  addon.addonName,
+        addonParam: {
+          kind: 'App',
+          spec: {
+            chart: {
+              chartName:    addon.chartName,
+              chartVersion: addon.chartVersion,
+            },
+            values: {
+              values:        [],
+              rawValues:     'e30=',
+              rawValuesType: 'json',
+            },
+          },
+        },
+      };
+    })
+    .filter(Boolean);
+
+  tkeConfig.value.component = JSON.stringify(components);
+}
+
+function resetConfig(resetZone = true) {
+  if (!isNewOrUnprovisioned.value) {
+    return;
+  }
   tkeConfig.value.subnetId = '';
   tkeConfig.value.securityGroup = '';
   tkeConfig.value.vpcId = '';
-  tkeConfig.value.zoneId = '';
+  if (resetZone) {
+    tkeConfig.value.zoneId = '';
+  }
   nodePools.value = nodePools.value.map((pool) => {
     return {
       ...pool,
       subnetId:      '',
       securityGroup: '',
       keyPair:       '',
+      instanceType:  '',
+      osName:        '',
     };
   });
 }
@@ -363,8 +401,14 @@ async function initImportConfig() {
       clusterEndpoint:     true,
       region:              '',
     };
+    if (!normanCluster.value?.importedConfig?.privateRegistryURL) {
+      normanCluster.value.importedConfig = { privateRegistryURL: null };
+    }
   } else {
     fixConfig(normanCluster.value.tkeConfig);
+    if (normanCluster.value?.importedConfig?.privateRegistryURL) {
+      state.value.showPrivateRegistryInput = true;
+    }
   }
 
   state.value.loading = false;
@@ -380,9 +424,14 @@ async function initCustomConfig() {
     if (normanCluster.value.tkeConfig) {
       fixConfig(normanCluster.value.tkeConfig);
     }
+    if (normanCluster.value?.importedConfig?.privateRegistryURL) {
+      state.value.showPrivateRegistryInput = true;
+    }
   } else {
     normanCluster.value = await store.dispatch('rancher/create', { type: NORMAN.CLUSTER }, { root: true });
-
+    if (!normanCluster.value?.importedConfig?.privateRegistryURL) {
+      normanCluster.value.importedConfig = { privateRegistryURL: null };
+    }
     const principalId = store.getters['auth/principalId'];
 
     if (principalId.includes('local://')) {
@@ -404,32 +453,58 @@ function fixConfig(config) {
     nodePoolList = [],
     runInstancesForNode = {},
     clusterAdvancedSettings = {},
-    extensionAddon = []
+    extensionAddon = [],
+    virtualNodePoolList = [],
   } = config;
 
-  nodePoolList.forEach((item) => {
-    const { autoScalingGroupPara, launchConfigurePara } = item;
+  if (virtualNodePoolList?.length > 0) {
+    virtualNodePoolList.forEach((item) => {
+      const obj = {
+        virtualNodePool: { ...item },
+        nodePoolId:      item.nodePoolId,
+        nodePoolName:    item.name,
+        nodePoolType:    'super',
+        isNew:           false,
+      };
 
-    const obj = {
-      clusterId:      item.clusterId,
-      nodePoolId:     item.nodePoolId,
-      nodePoolName:   item.name,
-      osName:         item.nodePoolOs,
-      instanceNum:    autoScalingGroupPara.desiredCapacity,
-      subnetId:       autoScalingGroupPara.subnetIds[0],
-      instanceType:   launchConfigurePara.instanceType,
-      systemDiskSize: launchConfigurePara.systemDisk.diskSize,
-      systemDiskType: launchConfigurePara.systemDisk.diskType,
-      dataDiskType:   launchConfigurePara.dataDisks?.[0].diskType,
-      dataDiskSize:   launchConfigurePara.dataDisks?.[0].diskSize,
-      bandwidthType:  launchConfigurePara.internetChargeType,
-      bandwidth:      launchConfigurePara.internetMaxBandwidthOut,
-      keyPair:        launchConfigurePara.keyIds[0],
-      securityGroup:  launchConfigurePara.securityGroupIds[0],
-    };
+      nodePool.push(obj);
+    });
+  }
 
-    nodePool.push(obj);
-  });
+  if (nodePoolList?.length > 0) {
+    nodePoolList.forEach((item) => {
+      const { autoScalingGroupPara, launchConfigurePara } = item;
+      let userScript = item.userScript;
+
+      if (isBase64(item.userScript)) {
+        userScript = base64Decode(item.userScript);
+      }
+      const obj = {
+        nodePoolType:   'native',
+        clusterId:      item.clusterId,
+        nodePoolId:     item.nodePoolId,
+        nodePoolName:   item.name,
+        osName:         item.nodePoolOs,
+        userScript,
+        instanceNum:    autoScalingGroupPara.desiredCapacity,
+        subnetId:       autoScalingGroupPara.subnetIds?.[0] || '',
+        instanceType:   launchConfigurePara.instanceType,
+        systemDiskSize: launchConfigurePara.systemDisk.diskSize,
+        systemDiskType: launchConfigurePara.systemDisk.diskType,
+        dataDisks:      launchConfigurePara.dataDisks?.map((disk) => ({
+          size: disk.diskSize,
+          type: disk.diskType,
+        })),
+        bandwidthType: launchConfigurePara.internetChargeType,
+        bandwidth:     launchConfigurePara.internetMaxBandwidthOut,
+        keyPair:       launchConfigurePara.keyIds?.[0] || '',
+        securityGroup: launchConfigurePara.securityGroupIds?.[0] || '',
+        isNew:         false,
+      };
+
+      nodePool.push(obj);
+    });
+  }
 
   const out = {
     clusterEndpoint:     clusterEndpoint.enable === undefined ? true : !!clusterEndpoint.enable,
@@ -462,6 +537,10 @@ function fixConfig(config) {
     component:           JSON.stringify(extensionAddon)
   };
 
+  // init csi addon
+  if (extensionAddon?.length > 0 && !isNewOrUnprovisioned.value) {
+    state.value.csi = extensionAddon?.map((item) => item.addonName);
+  }
   nodePools.value = nodePool;
   tkeConfig.value = out;
 }
@@ -542,12 +621,45 @@ function registerWatch() {
     tkeConfig.value.subnetId = '';
   });
 
-  watch(() => tkeConfig.value.zoneId, () => {
-    tkeConfig.value.subnetId = '';
-    nodePools.value = nodePools.value.map((pool) => ({
-      ...pool,
-      instanceType: '',
-    }));
+  watch(
+    () => [tkeConfig.value.subnetId, subnetOptions.value],
+    ([subnetId, options]) => {
+      if (tkeConfig.value.zoneId || !subnetId || !options?.length) {
+        return;
+      }
+
+      const matchedSubnet = find(options, { SubnetId: subnetId });
+
+      // 因为编辑的时候后端不会返回 zone 但是创建的时候需要 zone 去获得对应的参数
+      // 比如 instancetype 以及其他参数
+      // 所以从对应的 subnet 去取，如果后端设置了 zone 则这段就不需要了
+      if (matchedSubnet?.Zone && !isNewOrUnprovisioned.value) {
+        tkeConfig.value.zoneId = matchedSubnet.Zone;
+      }
+    },
+    { immediate: true }
+  );
+
+  watch(() => subnetOptions, (options) => {
+    if (!Array.isArray(options.value) || options.value.length === 0) {
+      if (isCreate.value) {
+        tkeConfig.value.subnetId = '';
+      }
+
+      return;
+    }
+
+    // 只有在创建的时候才会初始化
+    // 没有用 isNewOrUnprovisioned.value 是因为当创建了之后但是没有完全成功时，isNewOrUnprovisioned.value 是 true
+    // 会导致覆盖默认值
+    // subnetId 初始化比较特殊它没有监听 zoneId 的变化去做 = '' 的 reset 操作
+    // 所以联动时需要判断是否是创建模式，只有在创建模式才可以初始化 subnetId
+    if (isCreate.value && options.value.length > 0) {
+      tkeConfig.value.subnetId = options.value[0].value;
+    }
+  }, {
+    immediate: true,
+    deep:      true
   });
 }
 
@@ -608,6 +720,13 @@ async function fetchClusterLevelAttribute(cloudCredentialId) {
     state.value.errors.push(err);
   }
   state.value.clusterLevelAttributeLoading = false;
+}
+
+function updatePrivateRegistryInput(val) {
+  state.value.showPrivateRegistryInput = val;
+  if (!val) {
+    normanCluster.value.importedConfig.privateRegistryURL = null;
+  }
 }
 
 function parseSemver(v = '') {
@@ -688,20 +807,12 @@ async function fetchClusterVersion(cloudCredentialId) {
 
 async function fetchZone(cloudCredentialId) {
   state.value.zoneIdLoading = true;
-  let acceptLanguage = '';
-
-  if (!store.getters['i18n/current']() === 'en-us') {
-    acceptLanguage = 'zh-CN';
-  }
   try {
     const res = await queryFromTencent({
       resource:       'zones',
       cloudCredentialId,
       store,
-      externalParams: {
-        regionId: tkeConfig.value.region,
-        language: acceptLanguage,
-      },
+      externalParams: { regionId: tkeConfig.value.region },
     });
 
     const zoneOptions = res?.Response.ZoneSet.map((zone) => {
@@ -712,12 +823,49 @@ async function fetchZone(cloudCredentialId) {
     });
 
     options.value.zoneOptions = zoneOptions || [];
+
+    if (isNewOrUnprovisioned.value && options.value.zoneOptions.length > 0 && !tkeConfig.value.zoneId) {
+      tkeConfig.value.zoneId = options.value.zoneOptions[0].value;
+    }
   } catch (err) {
     state.value.errors = [];
     options.value.zoneOptions = [];
     state.value.errors.push(err);
   }
   state.value.zoneIdLoading = false;
+}
+
+async function handleZoneChange(value) {
+  tkeConfig.value.zoneId = value;
+
+  const credential = tkeConfig.value.tkeCredentialSecret;
+
+  state.value.errors = [];
+
+  if (!credential) {
+    return;
+  }
+
+  const promises = [];
+
+  if (!isImport) {
+    resetConfig(false);
+    promises.push(
+      fetchVpc(credential),
+      fetchSubnets(credential),
+      fetchSecurityGroup(credential),
+      fetchInstanceTypes(credential),
+      fetchKeyPair(credential),
+    );
+  }
+
+  try {
+    await Promise.all(promises);
+  } catch (err) {
+    if (state.value.errors.length === 0) {
+      state.value.errors.push(err);
+    }
+  }
 }
 
 async function fetchVpc(cloudCredentialId) {
@@ -737,6 +885,9 @@ async function fetchVpc(cloudCredentialId) {
     });
 
     options.value.vpcOptions = vpcOptions || [];
+    if (isNewOrUnprovisioned.value && options.value.vpcOptions.length > 0 && !tkeConfig.value.vpcId) {
+      tkeConfig.value.vpcId = options.value.vpcOptions[0].value;
+    }
   } catch (err) {
     state.value.errors = [];
     options.value.vpcOptions = [];
@@ -756,10 +907,11 @@ async function fetchSubnets(cloudCredentialId) {
     });
     const allSubnets = res?.Response?.SubnetSet?.map((subnet) => {
       return {
+        ...subnet,
         label: subnet.SubnetName,
         value: subnet.SubnetId,
         vpcId: subnet.VpcId,
-        zone:  subnet.Zone,
+        zone:  subnet.Zone
       };
     });
 
@@ -789,6 +941,9 @@ async function fetchSecurityGroup(cloudCredentialId) {
     });
 
     options.value.securityGroupOptions = securityGroupOptions || [];
+    if (isNewOrUnprovisioned.value && options.value.securityGroupOptions.length > 0 && !tkeConfig.value.securityGroup) {
+      tkeConfig.value.securityGroup = options.value.securityGroupOptions[0].value;
+    }
   } catch (err) {
     state.value.errors = [];
     options.value.securityGroupOptions = [];
@@ -819,6 +974,7 @@ async function fetchInstanceTypes(cloudCredentialId) {
         label: `${ instance.TypeName } (CPU ${ instance.Cpu } Memory ${ instance.Memory } GiB)`,
         group: instance.InstanceFamily,
         zone:  instance.Zone,
+        raw:   instance,
       };
 
       if (!out[instance.Zone]) {
@@ -898,23 +1054,34 @@ function removePool(index) {
 }
 
 function poolIsValid(pool) {
-  if (
-    !pool.nodePoolName ||
-    !pool.instanceType ||
-    !pool.osName ||
-    !pool.systemDiskType ||
-    !pool.subnetId ||
-    !pool.keyPair ||
-    isNaN(pool.instanceNum) ||
-    pool.instanceNum < 0 ||
-    !pool.securityGroup
-  ) {
-    return false;
-  }
+  const hasValues = (arr) => Array.isArray(arr) && arr.length > 0;
 
-  const names = nodePools.value?.map((pool) => pool.nodePoolName) || [];
+  const hasUniqueNames = () => {
+    const names = (nodePools.value || []).map((item) => item.nodePoolName).filter(Boolean);
 
-  return uniqBy(names, (name) => name).length === names.length;
+    return new Set(names).size === names.length;
+  };
+
+  const isSuperPoolValid = () => {
+    return !!pool.nodePoolName &&
+      hasValues(pool?.virtualNodePool?.securityGroupIds) &&
+      hasValues(pool?.virtualNodePool?.virtualNodes);
+  };
+
+  const isNativePoolValid = () => {
+    return !!pool.nodePoolName &&
+      !!pool.instanceType &&
+      !!pool.osName &&
+      !!pool.systemDiskType &&
+      !!pool.subnetId &&
+      !!pool.securityGroup &&
+      !isNaN(pool.instanceNum) &&
+      pool.instanceNum >= 0;
+  };
+
+  const valid = pool.nodePoolType === 'super' ? isSuperPoolValid() : isNativePoolValid();
+
+  return valid && hasUniqueNames();
 }
 
 </script>
@@ -990,132 +1157,89 @@ function poolIsValid(pool) {
           color="error"
           :label="stringify(err)"
         />
-        <div class="row mb-10">
-          <div class="col span-6">
-            <LabeledInput
-              :value="normanCluster.name"
-              :mode="mode"
-              label-key="generic.name"
-              required
-              :rules="ruleSets.name"
-              @update:value="setClusterName"
-            />
+        <div class="cluster-basic-card">
+          <div class="cluster-basic-card__header">
+            <h3 class="cluster-basic-card__title">
+              {{ intl('tkeCn.basicConfig.title') }}
+            </h3>
+            <div class="cluster-basic-card__desc">
+              {{ intl('tkeCn.basicConfig.description') }}
+            </div>
           </div>
-          <div class="col span-6">
-            <LabeledInput
-              v-model:value="normanCluster.description"
-              :mode="mode"
-              label-key="nameNsDescription.description.label"
-              :placeholder="intl('nameNsDescription.description.placeholder')"
-            />
+          <div class="row mb-10">
+            <div class="col span-6">
+              <LabeledInput
+                :value="normanCluster.name"
+                :mode="mode"
+                label-key="generic.name"
+                required
+                :rules="ruleSets.name"
+                @update:value="setClusterName"
+              />
+            </div>
+            <div class="col span-6">
+              <LabeledInput
+                v-model:value="normanCluster.description"
+                :mode="mode"
+                label-key="nameNsDescription.description.label"
+                :placeholder="intl('nameNsDescription.description.placeholder')"
+              />
+            </div>
           </div>
-        </div>
-        <div class="row mb-10">
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="tkeConfig.region"
-              data-testid="crutke-resource-region"
-              required
-              :mode="mode"
-              :options="options.regionOptions"
-              option-label="label"
-              option-key="value"
-              :loading="state.regionLoading"
-              label-key="tkeCn.region.label"
-              :disabled="!isNewOrUnprovisioned"
-              :rules="ruleSets.region"
-            />
+          <div class="row mb-20">
+            <div
+              class="col span-6"
+            >
+              <LabeledSelect
+                v-model:value="tkeConfig.region"
+                data-testid="crutke-resource-region"
+                required
+                :mode="mode"
+                :options="options.regionOptions"
+                option-label="label"
+                option-key="value"
+                :loading="state.regionLoading"
+                label-key="tkeCn.region.label"
+                :disabled="!isNewOrUnprovisioned"
+                :rules="ruleSets.region"
+              />
+            </div>
+            <div
+              class="col span-6"
+            >
+              <LabeledSelect
+                v-model:value="tkeConfig.clusterVersion"
+                data-testid="crutke-resource-cluster-version"
+                :loading="state.clusterVersionLoading"
+                required
+                :disabled="tkeConfig.imported"
+                :mode="mode"
+                :options="options.versionOptions"
+                option-label="label"
+                option-key="value"
+                label-key="tkeCn.version.label"
+                :rules="ruleSets.clusterVersion"
+              />
+            </div>
           </div>
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="tkeConfig.container"
-              data-testid="crutke-resource-container"
-              required
-              :mode="mode"
-              :options="CONFIG_ENV.CONTAINER"
-              option-label="label"
-              option-key="value"
-              label-key="tkeCn.container.label"
-              :disabled="!isNewOrUnprovisioned"
-              :rules="ruleSets.container"
-            />
-          </div>
-        </div>
-        <div class="row mb-10">
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="tkeConfig.clusterType"
-              data-testid="crutke-resource-cluster-type"
-              required
-              :mode="mode"
-              :options="CONFIG_ENV.CLUSTER_TYPES"
-              option-label="label"
-              option-key="value"
-              label-key="tkeCn.clusterType.label"
-              :localizedLabel="true"
-              :disabled="!isNewOrUnprovisioned"
-              :rules="ruleSets.clusterType"
-            />
-          </div>
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-if="isManagedCluster"
-              v-model:value="tkeConfig.clusterLevel"
-              :loading="state.clusterLevelAttributeLoading"
-              data-testid="crutke-resource-cluster-level"
-              required
-              :mode="mode"
-              :options="options.clusterLevelOptions"
-              option-label="label"
-              option-key="value"
-              label-key="tkeCn.clusterLevel.label"
-              :disabled="tkeConfig.imported"
-              :rules="ruleSets.clusterLevel"
-            />
-          </div>
-        </div>
-        <div class="row mb-10">
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="tkeConfig.clusterVersion"
-              data-testid="crutke-resource-cluster-version"
-              :loading="state.clusterVersionLoading"
-              required
-              :mode="mode"
-              :options="options.versionOptions"
-              option-label="label"
-              option-key="value"
-              label-key="tkeCn.version.label"
-              :rules="ruleSets.clusterVersion"
-            />
-          </div>
-          <div
-            v-if="isNewOrUnprovisioned || tkeConfig.zoneId"
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="tkeConfig.zoneId"
-              data-testid="crutke-resource-zone"
-              :loading="state.zoneIdLoading"
-              required
-              :mode="mode"
-              :options="options.zoneOptions"
-              option-label="label"
-              option-key="value"
-              label-key="tkeCn.zone.label"
-              :disabled="!isNewOrUnprovisioned"
-              :rules="ruleSets.zoneId"
-            />
+          <div class="row mb-20">
+            <div
+              class="col span-6"
+            >
+              <LabeledSelect
+                v-model:value="tkeConfig.clusterLevel"
+                :loading="state.clusterLevelAttributeLoading"
+                data-testid="crutke-resource-cluster-level"
+                required
+                :mode="mode"
+                :options="options.clusterLevelOptions"
+                option-label="label"
+                option-key="value"
+                label-key="tkeCn.clusterLevel.label"
+                :disabled="tkeConfig.imported"
+                :rules="ruleSets.clusterLevel"
+              />
+            </div>
           </div>
         </div>
         <Banner
@@ -1130,127 +1254,151 @@ function poolIsValid(pool) {
             label-key="tkeCn.version.warning"
           />
         </div>
-        <div class="row mb-10">
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="tkeConfig.vpcId"
-              data-testid="crutke-resource-vpc"
-              :loading="state.vpcIdLoading"
-              required
-              :mode="mode"
-              :options="options.vpcOptions"
-              option-label="label"
-              option-key="value"
-              label-key="tkeCn.vpc.label"
-              :disabled="!isNewOrUnprovisioned"
-              :rules="ruleSets.vpc"
-            />
-          </div>
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="tkeConfig.subnetId"
-              data-testid="crutke-resource-subnet"
-              :loading="state.subnetLoading"
-              required
-              :mode="mode"
-              :options="subnetOptions"
-              option-label="label"
-              option-key="value"
-              label-key="tkeCn.subnet.label"
-              :disabled="!isNewOrUnprovisioned"
-              :rules="ruleSets.subnet"
-            />
-          </div>
-        </div>
-        <div class="row mb-10">
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="tkeConfig.securityGroup"
-              data-testid="crutke-resource-security-group"
-              :loading="state.securityGroupLoading"
-              required
-              :mode="mode"
-              :options="options.securityGroupOptions"
-              option-label="label"
-              option-key="value"
-              label-key="tkeCn.securityGroup.label"
-              :disabled="!isNewOrUnprovisioned"
-              :rules="ruleSets.securityGroup"
-            />
-          </div>
-          <div
-            class="col span-6"
-          >
-            <LabeledInput
-              v-model:value="tkeConfig.clusterCidr"
-              data-testid="crutke-resource-cluster-cidr"
-              required
-              :mode="mode"
-              label-key="tkeCn.clusterCidr.label"
-              :disabled="!isNewOrUnprovisioned"
-              :rules="ruleSets.clusterCidr"
-              :placeholder="intl('tkeCn.clusterCidr.placeholder')"
-            />
-          </div>
-        </div>
-        <div class="row mb-10">
-          <div
-            class="col span-6"
-          >
-            <LabeledInput
-              v-model:value="tkeConfig.domain"
-              data-testid="crutke-resource-domain"
-              :mode="mode"
-              label-key="tkeCn.domain.label"
-              :disabled="!isNewOrUnprovisioned"
-              :placeholder="intl('tkeCn.domain.placeholder')"
-            />
-          </div>
-        </div>
-        <div class="row mb-10">
-          <div class="col span-12">
-            <h3 class="clearfix">
-              {{ intl('tkeCn.ipvs.label') }}
+        <div class="cluster-basic-card mb-10">
+          <div class="cluster-basic-card__header">
+            <h3 class="cluster-basic-card__title">
+              {{ intl('tkeCn.networkConfig.title') }}
             </h3>
-            <RadioGroup
-              v-model:value="tkeConfig.ipvs"
-              :disabled="!isNewOrUnprovisioned"
-              name="ipvs"
-              :options="[true, false]"
-              :labels="options.ipvsOptions"
-              :mode="mode"
-            />
+            <div class="cluster-basic-card__desc">
+              {{ intl('tkeCn.networkConfig.description') }}
+            </div>
+          </div>
+          <div class="row mb-10">
             <div
-              class="mt-5"
-              style="font-size:12px"
+              class="col span-4"
             >
-              ({{ intl('tkeCn.ipvs.help') }})
+              <LabeledSelect
+                :value="tkeConfig.zoneId"
+                data-testid="crutke-resource-zone"
+                :loading="state.zoneIdLoading"
+                required
+                :mode="mode"
+                :options="options.zoneOptions"
+                option-label="label"
+                option-key="value"
+                label-key="tkeCn.zone.label"
+                :disabled="!isNewOrUnprovisioned"
+                :rules="ruleSets.zoneId"
+                @update:value="handleZoneChange"
+              />
+            </div>
+            <div class="col span-4">
+              <LabeledSelect
+                v-model:value="tkeConfig.vpcId"
+                data-testid="crutke-resource-vpc"
+                :loading="state.vpcIdLoading"
+                required
+                :mode="mode"
+                :options="options.vpcOptions"
+                option-label="label"
+                option-key="value"
+                label-key="tkeCn.vpc.label"
+                :disabled="!isNewOrUnprovisioned"
+                :rules="ruleSets.vpc"
+              />
+            </div>
+            <div class="col span-4">
+              <LabeledSelect
+                v-model:value="tkeConfig.subnetId"
+                data-testid="crutke-resource-subnet"
+                :loading="state.subnetLoading"
+                required
+                :mode="mode"
+                :options="subnetOptions"
+                option-label="label"
+                option-key="value"
+                label-key="tkeCn.subnet.label"
+                :disabled="!isNewOrUnprovisioned"
+                :rules="ruleSets.subnet"
+              />
+            </div>
+          </div>
+          <div class="row mb-10">
+            <div class="col span-4">
+              <LabeledSelect
+                v-model:value="tkeConfig.securityGroup"
+                data-testid="crutke-resource-security-group"
+                :loading="state.securityGroupLoading"
+                required
+                :mode="mode"
+                :options="options.securityGroupOptions"
+                option-label="label"
+                option-key="value"
+                label-key="tkeCn.securityGroup.label"
+                :disabled="!isNewOrUnprovisioned"
+                :rules="ruleSets.securityGroup"
+              />
+            </div>
+            <div class="col span-4">
+              <LabeledInput
+                v-model:value="tkeConfig.clusterCidr"
+                data-testid="crutke-resource-cluster-cidr"
+                required
+                :mode="mode"
+                label-key="tkeCn.clusterCidr.label"
+                :disabled="!isNewOrUnprovisioned"
+                :rules="ruleSets.clusterCidr"
+                :placeholder="intl('tkeCn.clusterCidr.placeholder')"
+              />
+            </div>
+            <div class="col span-4">
+              <LabeledInput
+                v-model:value="tkeConfig.domain"
+                data-testid="crutke-resource-domain"
+                :mode="mode"
+                label-key="tkeCn.domain.label"
+                :disabled="!isNewOrUnprovisioned"
+                :placeholder="intl('tkeCn.domain.placeholder')"
+              />
+            </div>
+          </div>
+          <div class="network-option-card mt-15">
+            <div class="network-option-card__title">
+              {{ intl('tkeCn.ipvs.label') }}
+            </div>
+            <div class="network-option-card__desc">
+              {{ intl('tkeCn.ipvs.help') }}
+            </div>
+            <div class="mt-10">
+              <RadioGroup
+                v-model:value="tkeConfig.ipvs"
+                :disabled="!isNewOrUnprovisioned"
+                name="ipvs"
+                :options="[true, false]"
+                :labels="options.ipvsOptions"
+                :mode="mode"
+              />
+            </div>
+          </div>
+          <div class="network-option-card mt-15">
+            <div class="network-option-card__title">
+              {{ intl('tkeCn.proxy.label') }}
+            </div>
+            <div class="network-option-card__desc">
+              {{ intl('tkeCn.proxy.info') }}
+            </div>
+            <div class="mt-10">
+              <RadioGroup
+                v-model:value="tkeConfig.clusterEndpoint"
+                :disabled="!isNewOrUnprovisioned"
+                name="clusterEndpoint"
+                :options="[true, false]"
+                :labels="options.clusterEndpointOptions"
+                :mode="mode"
+              />
             </div>
           </div>
         </div>
-        <div class="row mb-10">
-          <div class="col span-6">
-            <h3 class="clearfix">
-              {{ intl('tkeCn.proxy.label') }}
-            </h3>
-            <RadioGroup
-              v-model:value="tkeConfig.clusterEndpoint"
-              :disabled="!isNewOrUnprovisioned"
-              name="clusterEndpoint"
-              :options="[true, false]"
-              :labels="options.clusterEndpointOptions"
-              :mode="mode"
-            />
-          </div>
+        <div class="cluster-basic-card mb-10">
+          <TkeCsiCardSelect
+            v-model:value="state.csi"
+            :mode="mode"
+            :disabled="!isNewOrUnprovisioned"
+            @update:value="handleCsiChange"
+          />
         </div>
         <GroupPanel
-          v-if="!isManagedCluster"
+          v-if="!tkeConfig.imported && !isManagedCluster"
           label-key="tkeCn.master.title"
           class="mt-20 mb-20"
         >
@@ -1268,10 +1416,8 @@ function poolIsValid(pool) {
             class="mt-10"
             :mode="mode"
             :keyPairLoading="keyPairLoading"
-            :systemDiskTypeOptions="getDiskOptions.systemDiskTypes"
             :subnetOptions="subnetOptions"
             :keyPairOptions="options.keyPairOptions"
-            :dataDiskTypeOptions="getDiskOptions.dataDiskTypes"
             :imageOptions="imageOptions"
             :instanceTypeOptions="instanceTypeOptions"
             :instanceTypeLoading="state.instanceTypeLoading"
@@ -1280,7 +1426,6 @@ function poolIsValid(pool) {
             :rules="{
               instanceType: ruleSets.masterInstanceType,
               osName: ruleSets.masterOsNameRequired,
-              keyPair: ruleSets.masterKeyPairRequired,
             }"
           />
         </GroupPanel>
@@ -1300,27 +1445,28 @@ function poolIsValid(pool) {
             :label="pool.nodePoolName"
             :error="!poolIsValid(pool)"
           >
-            <NodePool
+            <TkeNodePoolTypeForm
+              v-model:nodePoolType="pool.nodePoolType"
               v-model:name="pool.nodePoolName"
               v-model:instanceType="pool.instanceType"
               v-model:osName="pool.osName"
               v-model:instanceNum="pool.instanceNum"
               v-model:systemDiskType="pool.systemDiskType"
               v-model:systemDiskSize="pool.systemDiskSize"
-              v-model:dataDiskType="pool.dataDiskType"
-              v-model:dataDiskSize="pool.dataDiskSize"
+              v-model:dataDisks="pool.dataDisks"
               v-model:bandwidthType="pool.bandwidthType"
               v-model:bandwidth="pool.bandwidth"
               v-model:subnetId="pool.subnetId"
               v-model:keyPair="pool.keyPair"
+              v-model:userScript="pool.userScript"
               v-model:securityGroup="pool.securityGroup"
+              v-model:virtualNodePool="pool.virtualNodePool"
               :keyPairLoading="keyPairLoading"
-              :systemDiskTypeOptions="getDiskOptions.systemDiskTypes"
               :subnetOptions="subnetOptions"
+              :zoneOptions="options.zoneOptions"
+              :allSubnets="state.allSubnets"
               :securityGroupOptions="options.securityGroupOptions"
               :keyPairOptions="options.keyPairOptions"
-              :dataDiskTypeOptions="getDiskOptions.dataDiskTypes"
-              :imageOptions="imageOptions"
               :instanceTypeOptions="instanceTypeOptions"
               :instanceTypeLoading="state.instanceTypeLoading"
               :bandwidthTypeOptions="CONFIG_ENV.BAND_WIDTH"
@@ -1332,8 +1478,8 @@ function poolIsValid(pool) {
                 osName: ruleSets.nodePoolOsNameRequired,
                 systemDiskType: ruleSets.systemDiskTypeRequired,
                 subnetId: ruleSets.nodePoolSubnetIdRequired,
-                keyPair: ruleSets.keyPairRequired,
                 securityGroup: ruleSets.nodePoolSecurityGroupRequired,
+                virtualNodePoolRequired: ruleSets.virtualNodePoolRequired,
               }"
               :isNewOrUnprovisioned="isNewOrUnprovisioned || pool.isNew"
               @errors="e=>state.errors=e"
@@ -1352,6 +1498,35 @@ function poolIsValid(pool) {
           />
         </Accordion>
       </div>
+      <Accordion
+        class="mb-20 accordion"
+        title-key="imported.accordions.registries"
+        data-testid="registries-accordion"
+        :open-initially="false"
+      >
+        <Banner
+          color="info"
+          class="mt-0"
+        >
+          {{ intl('cluster.privateRegistry.importedDescription') }}
+        </Banner>
+        <Checkbox
+          :value="state.showPrivateRegistryInput"
+          class="mb-20"
+          :mode="mode"
+          :label="t('cluster.privateRegistry.label')"
+          data-testid="private-registry-enable-checkbox"
+          @update:value="updatePrivateRegistryInput($event)"
+        />
+        <LabeledInput
+          v-if="state.showPrivateRegistryInput"
+          v-model:value="normanCluster.importedConfig.privateRegistryURL"
+          :mode="mode"
+          label-key="catalog.chart.registry.custom.inputLabel"
+          data-testid="private-registry-url"
+          :placeholder="t('catalog.chart.registry.custom.placeholder')"
+        />
+      </Accordion>
     </div>
     <template
       v-if="!hasCredential"
@@ -1361,5 +1536,63 @@ function poolIsValid(pool) {
     </template>
   </CruResource>
 </template>
-<style>
+<style scoped lang="scss">
+.cluster-basic-card {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  background: var(--body-bg);
+  box-shadow: 0 0 16px var(--shadow);
+}
+.cluster-basic-card__header {
+  margin-bottom: 20px;
+}
+.cluster-basic-card__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--body-text);
+  line-height: 1.4;
+}
+.cluster-basic-card__desc {
+  margin-top: 8px;
+  max-width: 980px;
+  color: var(--input-label);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.cluster-level-section {
+  margin-top: 20px;
+}
+.cluster-level-section__title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--body-text);
+}
+.required-mark {
+  color: var(--error);
+}
+.network-option-card {
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--body-bg);
+}
+.network-option-card__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--body-text);
+  line-height: 1.4;
+}
+.network-option-card__desc {
+  margin-top: 6px;
+  color: var(--input-label);
+  font-size: 13px;
+  line-height: 1.6;
+}
 </style>

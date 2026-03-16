@@ -34,6 +34,43 @@ tkeCn:
   clusterLevel:
     label: Cluster Level
     help: "{level} (At most {node} nodes, {pod} pods, {configMap} ConfigMaps, {crd} CRDs can be managed)"
+    more: More Levels
+    less: Less Levels
+    maxManaged: Max Managed
+    nodes: Nodes
+    pods: Pods
+    fee: Management Fee
+    levels:
+      L5:
+        title: Starter - L5
+        desc: Personal development testing
+        badge: High performance cost ratio
+      L20:
+        title: Small - L20
+        desc: SMEs basic business
+      L50:
+        title: Small - L50
+        desc: SMEs basic business
+      L100:
+        title: Medium - L100
+        desc: Multi-domain general business
+      L200:
+        title: Medium - L200
+        desc: Industry preferred, high-performance isolation
+        badge: Recommended
+      L500:
+        title: Large - L500
+        desc: High-concurrency high-performance requirements
+      L1000:
+        title: Large - L1000
+        desc: High-concurrency high-performance requirements
+      L3000:
+        title: Large - L3000
+        desc: High-concurrency high-performance requirements
+      L5000:
+        title: Super Large - L5000
+        desc: Super high-performance professional special domain
+        badge: Optimal discount
   version:
     label: Kubernetes Version
     warning: "This version is not supported by Rancher. Reference <a href='https://www.suse.com/suse-rancher/support-matrix/all-supported-versions' target='_blank' rel='noopener nofollow noreferrer'>Rancher support matrix.</a>"
@@ -56,10 +93,10 @@ tkeCn:
     label: Security Group
     required: Security Group is required
   ipvs:
-    label: Support IPVS
+    label: IPVS Support
     enabled: Enabled
     disabled: Disabled
-    help: IPVS is suitable for providing better forwarding performance in large-scale scenarios. Note that once selected, changes are not supported.
+    help: IPVS can provide better service forwarding performance in large-scale workload scenarios. This setting is usually not changeable after cluster creation, so please choose carefully.
   proxy:
     label: Access cluster APIServer
     inner: Inner Net
@@ -72,6 +109,36 @@ tkeCn:
     same: Node pool name is not unique
   instanceType:
     label: Instance Type
+    selected:
+      title: Selected Instance Type
+    table:
+      title: Instance Type
+      subtitle: Select one instance type and optionally filter by CPU and memory. You can refer to the
+      linkText: TKE support matrix
+      columns:
+        instanceSpec: Model
+        instanceType: Specification
+        instanceFamily: Family
+        vcpus: CPU
+        memory: Memory
+        zone: Zone
+    cpu:
+      label: Filter by CPU
+    memory:
+      label: Filter by Memory
+    errorTooltip: Instance type is required
+    familyCategory:
+      standard: Standard
+      premium: Premium
+      compute: Compute
+      highio: High I/O
+      memory: Memory
+      highPerformance: High Performance
+      gpu: GPU
+      bigData: Big Data
+      bareMetal: Bare Metal
+      beeFast: BeeFast
+      other: Other
   numOfNodes:
     label: Worker Nodes Count
     placeholder: e.g. 3
@@ -81,6 +148,9 @@ tkeCn:
     label: Root Disk Size
   systemDiskType:
     label: Root Disk Type
+  dataDisk:
+    add: Add Data Disk
+    remove: Remove
   dataDiskType:
     label: Data Disk Type
   dataDiskSize:
@@ -89,6 +159,7 @@ tkeCn:
     label: Band Width
     placeholder: e.g. 10
   disk:
+    title: Disk Configuration
     LOCAL_BASIC: Local Basic
     LOCAL_SSD: Local SSD
     CLOUD_BASIC: Cloud Basic
@@ -120,3 +191,132 @@ tkeCn:
   domain:
     label: Domain
     placeholder: e.g. example.com
+  nodePool:
+    basic:
+      title: NodePool Configuration
+    network:
+      title: Network Configuration
+    other:
+      title: Other Configuration
+    type:
+      title: Node Pool Type
+      help: Select a node pool type to proceed with the corresponding configuration.
+      more: Learn More
+      editTip: The node pool type can only be selected during creation.
+      badge:
+        recommended: Recommended
+      super:
+        title: Super Node
+        desc: Super Node is Tencent Cloud’s pioneering Kubernetes node type for managing Serverless containers. It offers advanced capabilities such as second-level scaling, strong isolation between Pods, and fine-grained billing, while remaining compatible with existing resource and budget management workflows.
+        points:
+          "0": Advanced Serverless concepts and technologies for lighter operations
+          "1": Each Pod exclusively occupies a lightweight virtual machine, providing strong isolation, no interference, and stable security
+          "2": Second-level auto scaling to easily handle elastic workloads, ensuring business continuity while reducing costs
+          "3": Supports node-level management and is compatible with existing operations tools and financial management processes
+      native:
+        title: Native Node
+        desc: Native Node is built on Tencent Cloud CVM to provide underlying compute capacity, is compatible with community Kubernetes capabilities, and is suitable for business scenarios requiring stronger customization.
+        points:
+          "0": Supports dozens of Tencent Cloud CVM instance types
+          "1": Provides auto scaling based on Tencent Cloud Auto Scaling Service
+          "2": Serverful management model with stronger user control over resources and operations
+  superNodePool:
+    basic:
+      title: NodePool Configuration
+      hint: A subnet must be selected for the node pool.
+    config:
+      title: Add Super Node
+      hint: To ensure the cluster's normal operation, please add a super node. Select a subnet from the table below and enter a node name. After clicking "{action}", a configuration card will be created. Click "Edit" on the card to load the configuration back.
+    fields:
+      nodeName: Node Name
+      nodeNamePlaceholder: Auto-generated
+    actions:
+      add: Add Super Node
+      save: Save
+      cancel: Cancel
+      edit: Edit
+      delete: Delete
+    errors:
+      subnetRequired: A subnet must be selected
+    subnetTable:
+      name: Subnet Name
+      id: Subnet ID
+      cidr: CIDR
+      zone: Availability Zone
+      availableIp: Available IPs
+    subnetEmpty: No subnet is currently available. Please select a region or network first.
+    added:
+      title: Added Nodes
+      empty: No node configuration has been added yet.
+      defaultNodeName: Node {index}
+    card:
+      resourceType: Resource Type
+      postpaid: Pay-as-you-go
+      nodeNetwork: Node Network
+      availabilityZone: Availability Zone
+    securityGroup:
+      title: Security Group
+      label: Security Group
+      empty: Please select at least one security group.
+      actions:
+        add: + Add
+        delete: Delete
+    networkConfig:
+      title: Security Group Configuration
+    advanced:
+      title: Advanced Configuration
+      os: Operating System
+      deletionProtection: Deletion Protection
+      osOptions:
+        linux: Linux
+        windows: Windows
+      actions:
+        add: + Add
+        delete: Delete
+      fields:
+        key: Key
+        value: Value
+        effect: Effect
+      labels:
+        title: Labels
+        hint: "Optional: add labels to the node pool."
+      taints:
+        title: Taints
+        hint: "Optional: configure taints for scheduling control."
+      virtualNodeTags:
+        title: Virtual Node Tags
+        empty: Add virtual nodes in the basic configuration first.
+        addTag: + Add Tag
+        unconfigured: No tags configured
+        defaultNodeName: Virtual Node {index}
+  csi:
+    label: CSI Driver
+    description: Select the storage components to enable for the cluster. One or more CSI drivers can be enabled based on workload requirements. After selecting COS or CFS, you need to complete the corresponding StorageClass / PersistentVolume configuration on the Tencent Cloud side before it can be used properly.
+    cards:
+      CBS:
+        title: CBS
+        desc: Provides Tencent Cloud block storage capability, suitable for block storage scenarios.
+      COS:
+        title: COS
+        desc: Provides object storage capability, suitable for object storage access scenarios. 
+      CFSTurbo:
+        title: CFSTurbo
+        desc: Provides high-performance file storage, suitable for high-throughput and low-latency scenarios.
+      CFS:
+        title: CFS
+        desc: Provides shared file storage, suitable for multi-node shared mount scenarios.
+  basicConfig:
+    title: Cluster Basic Configuration
+    description: Configure the basic settings of the Tencent Cloud TKE cluster, including region, Kubernetes version, and cluster level. The cluster level determines the maximum number of managed nodes and pods. Choose an appropriate level based on your workload size.
+  networkConfig:
+    title: Network Basic Configuration
+    description: Configure the cluster network settings, including availability zone, VPC, subnet, security group, cluster CIDR, and cluster access method. Please configure them according to your network planning and access requirements.
+  fields:
+    securityGroupIds: Security Group IDs
+    virtualNodes: Virtual Nodes
+  userData:
+    preview: No user data configured
+    description: Provide a custom cloud-init or shell script that will run during node initialization.
+  image:
+    label: Image
+    

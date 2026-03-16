@@ -1980,6 +1980,7 @@ cluster:
     description: 如果啓用，Rancher 將在集羣配置期間從該鏡像倉庫中拉取容器鏡像。默認情況下，Rancher 在安裝 Rancher 的官方 Helm Chart 應用程序時也會使用此鏡像倉庫。如果集羣級別的鏡像倉庫被禁用，將從全局設置中的系統默認鏡像倉庫中拉取系統鏡像。
     docsLinkK3s: 如需配置私有鏡像倉庫 mirror 的幫助，請參閱 K3s <a href="https://docs.k3s.io/installation/private-registry" target="_blank">文檔</a>。
     docsLinkRke2: 如需配置私有鏡像倉庫 mirror 的幫助，請參閱 RKE2 <a href="https://docs.rke2.io/install/private_registry" target="_blank">文檔</a>。
+    importedDescription: 如果啓用，Rancher 將在集羣配置期間從該鏡像倉庫中拉取容器鏡像。默認情況下，Rancher 在安裝 Rancher 的官方 Helm Chart 應用程序時也會使用此鏡像倉庫。如果集羣級別的鏡像倉庫被禁用，將從全局設置中的系統默認鏡像倉庫中拉取系統鏡像。
     label: 爲 Rancher 系統容器鏡像啓用集羣級別的容器鏡像倉庫
   provider:
     ack: ACK
