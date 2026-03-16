@@ -1,6 +1,7 @@
 // useCreateEditView.js
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { base64Encode } from '@shell/utils/crypto';
 import { exceptionToErrorsArray } from '@shell/utils/error';
 
 export function useCreateEditView(props, context) {
@@ -62,12 +63,26 @@ export function useCreateEditView(props, context) {
   function formatConfig() {
     const config = tkeConfig.value;
     const nodePoolList = [];
+    const virtualNodePoolList = [];
 
     nodePools.value.forEach((node) => {
-      const dataDisks = [{
-        diskSize: node.dataDiskSize,
-        diskType: node.dataDiskType
-      }];
+      delete node.isNew;
+      if (node.nodePoolType === 'super') {
+        const virtualNode = {
+          ...node.virtualNodePool,
+          name: node.nodePoolName,
+        };
+
+        delete virtualNode.nodePoolType;
+        virtualNodePoolList.push(virtualNode);
+
+        return;
+      }
+      const dataDisks = node.dataDisks?.filter((disk) => Number(disk.size) > 0).map((disk) => ({
+        diskSize: disk.size,
+        diskType: disk.type,
+      }));
+
       const autoScalingGroupPara = {
         autoScalingGroupName: '',
         desiredCapacity:      node.instanceNum,
@@ -86,7 +101,7 @@ export function useCreateEditView(props, context) {
         internetChargeType:      node.bandwidthType,
         internetMaxBandwidthOut: node.bandwidth,
         publicIpAssigned:        true,
-        dataDisks:               node.dataDiskSize ? dataDisks : [],
+        dataDisks:               dataDisks?.length ? dataDisks : [],
         keyIds:                  [node.keyPair],
         securityGroupIds:        [node.securityGroup],
         instanceChargeType:      'POSTPAID_BY_HOUR', // todo POSTPAID_BY_HOUR | SPOTPAID | PREPAID
@@ -105,6 +120,7 @@ export function useCreateEditView(props, context) {
         osCustomizeType:    'GENERAL',
         tags:               [],
         deletionProtection: false,
+        userScript:         base64Encode(node.userScript),
       };
 
       nodePoolList.push(out);
@@ -187,6 +203,7 @@ export function useCreateEditView(props, context) {
       runInstancesForNode,
       clusterAdvancedSettings,
       extensionAddon,
+      virtualNodePoolList,
     };
   }
 

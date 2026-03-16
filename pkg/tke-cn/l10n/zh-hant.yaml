@@ -34,10 +34,47 @@ tkeCn:
   clusterLevel:
     label: 集群規格
     help: '{level} (最多管理{node}個節點，{pod}個 Pod，{configMap}個 ConfigMap，{crd}個 CRD)'
+    more: 更多規格
+    less: 收起規格
+    maxManaged: 最大管理
+    nodes: 節點
+    pods: Pod
+    fee: 管理費用
+    levels:
+      L5:
+        title: 入門型 - L5
+        desc: 個人開發測試
+        badge: 高性价比
+      L20:
+        title: 小型 - L20
+        desc: SMEs 基礎業務
+      L50:
+        title: 小型 - L50
+        desc: SMEs 基礎業務
+      L100:
+        title: 中型 - L100
+        desc: 多領域通用業務
+      L200:
+        title: 中型 - L200
+        desc: 產業首選，高性能隔離
+        badge: 推薦
+      L500:
+        title: 大型 - L500
+        desc: 高並發高性能需求
+      L1000:
+        title: 大型 - L1000
+        desc: 高並發高性能需求
+      L3000:
+        title: 大型 - L3000
+        desc: 高並發高性能需求
+      L5000:
+        title: 超大型 - L5000
+        desc: 超高性能專業特殊領域
+        badge: 最优折扣
   version:
     label: Kubernetes版本
-    warning: "此版本不在 Rancher 支持矩陣範圍內。可參考 可参考<a href='https://www.suse.com/suse-rancher/support-matrix/all-supported-versions' target='_blank' rel='noopener nofollow noreferrer'>Rancher 支持矩陣。</a>"
-    warningTip: Rancher 支持矩陣。
+    warning: "此版本不在 TKE 支持矩陣範圍內。可參考 <a href='https://www.suse.com/suse-rancher/support-matrix/all-supported-versions' target='_blank' rel='noopener nofollow noreferrer'>TKE 支持矩陣。</a>"
+    warningTip: TKE 支持矩陣。
   zone:
     label: 可用區
     required: 請選擇可用區
@@ -56,15 +93,15 @@ tkeCn:
     label: 安全組
     required: 請選擇安全組
   ipvs:
-    label: ipvs 支持
+    label: IPVS 支援
     enabled: 啟用
     disabled: 停用
-    help: IPVS適用於大規模場景下提供更優的轉發性能。注意一經選擇將不支持更改。
+    help: IPVS 在大規模業務場景下可提供更佳的服務轉發效能。此設定在叢集建立後通常不可修改，請謹慎選擇。
   proxy:
-    label: 訪問集群 APIServer
-    inner: 內網訪問
-    outer: 外網訪問
-    info: 需要確保準備導入的集群已開啟集群訪問代理，且使用的安全組開放了443端口
+    label: 叢集 APIServer 存取方式
+    inner: 內網存取
+    outer: 外網存取
+    info: 若選擇外網存取，請確認網路存取策略與安全組配置允許存取叢集 APIServer。
   nodePoolName:
     label: 節點池名稱
     placeholder: 例如：nodepool
@@ -72,6 +109,21 @@ tkeCn:
     same: 節點池名稱不唯一
   instanceType:
     label: 實例類型
+    table:
+      title: 實例類型
+      subtitle: 選擇一個實例類型並根據 CPU 和內存進行篩選 可參考
+      linkText: TKE 支持矩陣
+      columns:
+        instanceType: 實例類型
+        instanceFamily: 家族
+        vcpus: CPU
+        memory: 內存
+        zone: 可用區
+    cpu:
+      label: 根據 CPU 篩選
+    memory:
+      label: 根據內存篩選
+    errorTooltip: 請選擇實例類型
   numOfNodes:
     label: Worker 節點數
     placeholder: '例如: 3'
@@ -81,6 +133,9 @@ tkeCn:
     label: 系統盤大小
   systemDiskType:
     label: 系統盤類型
+  dataDisk:
+    add: 添加數據盤
+    remove: 刪除
   dataDiskType:
     label: 數據盤類型
   dataDiskSize:
@@ -89,6 +144,7 @@ tkeCn:
     label: 帶寬
     placeholder: '例如: 10'
   disk:
+    title: 磁盘配置
     LOCAL_BASIC: 本地硬盤
     LOCAL_SSD: 本地 SSD 硬盤
     CLOUD_BASIC: 普通雲硬盤
@@ -120,3 +176,123 @@ tkeCn:
   domain:
     label: 叢集域名
     placeholder: e.g. example.com
+  nodePool:
+    basic:
+      title: 節點池配置
+    network:
+      title: 網絡配置
+    other:
+      title: 其他配置
+    type:
+      title: 節點池類型
+      help: 選擇節點池類型以進入對應的配置。
+      more: 了解更多
+      editTip: 節點池類型僅支援在建立時選擇。
+      badge:
+        recommended: 推薦
+      super:
+        title: 超級節點
+        desc: 超級節點是騰訊雲首創的用於管理 Serverless 容器的 K8s 節點，具備秒級擴縮、Pod 間強隔離、細粒度計費等進階特性，同時相容現有節點資源及預算管理流程。
+        points:
+          "0": 先進的 Serverless 理念與技術，讓運維工作更輕量化
+          "1": 單個 Pod 獨佔輕量虛擬機，強隔離、無干擾，安全穩定
+          "2": 秒級擴縮容，輕鬆應對彈性需求，在保障業務的同時降低成本
+  superNodePool:
+    basic:
+      title: 節點池基礎配置
+    config:
+      title: 添加超級節點
+      hint: 透過下方表格選擇子網並填寫節點名稱，點擊「{action}」後會生成一張配置卡片。點擊卡片上的「編輯」可回填配置。
+    fields:
+      nodeName: 節點名稱
+      nodeNamePlaceholder: 自動生成
+    actions:
+      add: 添加超級節點
+      save: 保存
+      cancel: 取消
+      edit: 編輯
+      delete: 刪除
+    errors:
+      subnetRequired: 必須選擇子網
+    subnetTable:
+      name: 子網名稱
+      id: 子網 ID
+      cidr: CIDR
+      zone: 可用區
+      availableIp: 剩餘 IP 數
+    subnetEmpty: 暫無可用子網，請先選擇區域或網路後再試。
+    added:
+      title: 已添加的節點
+      empty: 暫無已添加的節點配置。
+      defaultNodeName: 節點{index}
+    card:
+      resourceType: 資源類型
+      postpaid: 按量計費
+      nodeNetwork: 節點網路
+      availabilityZone: 可用區
+    securityGroup:
+      title: 安全組
+      label: 安全組
+      empty: 請至少選擇一個安全組。
+      actions:
+        add: + 添加
+        delete: 刪除
+    networkConfig:
+      title: 網絡配置
+      hint: 選擇節點池的子網並配置 IP 地址。
+    advanced:
+      title: 進階配置
+      os: 操作系統
+      deletionProtection: 刪除保護
+      osOptions:
+        linux: Linux
+        windows: Windows
+      actions:
+        add: + 添加
+        delete: 刪除
+      fields:
+        key: 鍵
+        value: 值
+        effect: 效果
+      labels:
+        title: 標籤
+        hint: 可選：為節點池添加標籤。
+      taints:
+        title: 污點
+        hint: 可選：設定污點用於調度控制。
+      virtualNodeTags:
+        title: 虛擬節點標籤
+        empty: 請先在基礎配置中添加虛擬節點。
+        addTag: + 添加 Tag
+        unconfigured: 尚未配置 Tags
+        defaultNodeName: 虛擬節點 {index}
+  csi:
+    label: CSI 驅動
+    description: 選擇叢集需要啟用的儲存組件。可依業務場景啟用一個或多個 CSI 驅動。
+    cards:
+      CBS:
+        title: CBS
+        desc: 提供騰訊雲雲硬碟儲存能力，適用於區塊儲存場景。
+      COS:
+        title: COS
+        desc: 提供物件儲存能力，適用於物件儲存存取場景。
+      CFSTurbo:
+        title: CFSTurbo
+        desc: 提供高效能檔案儲存能力，適用於高吞吐與低延遲場景。
+      CFS:
+        title: CFS
+        desc: 提供共享檔案儲存能力，適用於多節點共享掛載場景。
+  basicConfig:
+    title: 集群基礎配置
+    description: 配置腾讯云 TKE 集群的基礎信息，包括地域、Kubernetes 版本和集群规格。集群规格决定可管理的节点与 Pod 数量上限，建议根據業務規模選擇合適规格。
+  networkConfig:
+    title: 網路基礎配置
+    description: 配置叢集網路相關參數，包括可用區、VPC、子網、安全組、容器網路 CIDR，以及叢集存取方式。請根據現有網路規劃與業務存取需求進行設定。
+  fields:
+    securityGroupIds: 安全組 ID
+    virtualNodes: 虛擬節點
+  userData:
+    preview: 無用戶數據配置
+    description: 提供自定義的 cloud-init 或 shell 腳本，在節點初始化時運行。
+  image:
+    label: 镜像
