@@ -31,6 +31,13 @@ export async function queryFromTencent({
   store,
   externalParams = {},
 } = {}) {
+  let acceptLanguage = 'zh-CN';
+
+  if (store.getters['i18n/current']() === 'en-us') {
+    acceptLanguage = 'en-US';
+  }
+
+  externalParams.language = acceptLanguage;
   const url = `/meta/tke/${ resource }`;
   const query = Object.assign({}, externalParams, { cloudCredentialId });
 
