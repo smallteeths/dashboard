@@ -96,12 +96,6 @@ const masterInstanceTypeRequired = (tkeConfig, intl) => {
   };
 };
 
-const masterKeyPairRequired = (tkeConfig, intl) => {
-  return () => {
-    return !tkeConfig?.keyPair ? intl.value('validation.required', { key: intl.value('tkeCn.keyPair.label') }) : null;
-  };
-};
-
 const nodePoolNameRequired = (nodePools, intl) => {
   return (nodeName) => {
     if (nodeName !== undefined) {
@@ -142,7 +136,7 @@ const instanceTypeRequired = (nodePools, intl) => {
       return instanceType === '' ? intl.value('validation.required', { key: intl.value('tkeCn.instanceType.label') }) : null;
     }
 
-    return !!nodePools?.find((pool) => !pool.instanceType) ? intl.value('validation.required', { key: intl.value('tkeCn.instanceType.label') }) : null;
+    return !!nodePools?.find((pool) => pool.nodePoolType !== 'super' && !pool.instanceType) ? intl.value('validation.required', { key: intl.value('tkeCn.instanceType.label') }) : null;
   };
 };
 
@@ -152,7 +146,7 @@ const nodePoolOsNameRequired = (nodePools, intl) => {
       return osName === '' ? intl.value('validation.required', { key: intl.value('tkeCn.osName.label') }) : null;
     }
 
-    return !!nodePools?.find((pool) => !pool.osName) ? intl.value('validation.required', { key: intl.value('tkeCn.osName.label') }) : null;
+    return !!nodePools?.find((pool) => pool.nodePoolType !== 'super' && !pool.osName) ? intl.value('validation.required', { key: intl.value('tkeCn.osName.label') }) : null;
   };
 };
 
@@ -162,7 +156,7 @@ const systemDiskTypeRequired = (nodePools, intl) => {
       return systemDiskType === '' ? intl.value('validation.required', { key: intl.value('tkeCn.systemDiskType.label') }) : null;
     }
 
-    return !!nodePools?.find((pool) => !pool.systemDiskType) ? intl.value('validation.required', { key: intl.value('tkeCn.systemDiskType.label') }) : null;
+    return !!nodePools?.find((pool) => pool.nodePoolType !== 'super' && !pool.systemDiskType) ? intl.value('validation.required', { key: intl.value('tkeCn.systemDiskType.label') }) : null;
   };
 };
 
@@ -172,17 +166,7 @@ const nodePoolSubnetIdRequired = (nodePools, intl) => {
       return subnetId === '' ? intl.value('validation.required', { key: intl.value('tkeCn.subnet.label') }) : null;
     }
 
-    return !!nodePools?.find((pool) => !pool.subnetId) ? intl.value('validation.required', { key: intl.value('tkeCn.subnet.label') }) : null;
-  };
-};
-
-const keyPairRequired = (nodePools, intl) => {
-  return (keyPair) => {
-    if (keyPair !== undefined) {
-      return keyPair === '' ? intl.value('validation.required', { key: intl.value('tkeCn.keyPair.label') }) : null;
-    }
-
-    return !!nodePools?.find((pool) => !pool.keyPair) ? intl.value('validation.required', { key: intl.value('tkeCn.keyPair.label') }) : null;
+    return !!nodePools?.find((pool) => pool.nodePoolType !== 'super' && !pool.subnetId) ? intl.value('validation.required', { key: intl.value('tkeCn.subnet.label') }) : null;
   };
 };
 
@@ -192,7 +176,54 @@ const nodePoolSecurityGroupRequired = (nodePools, intl) => {
       return securityGroup === '' ? intl.value('validation.required', { key: intl.value('tkeCn.securityGroup.label') }) : null;
     }
 
-    return !!nodePools?.find((pool) => !pool.securityGroup) ? intl.value('validation.required', { key: intl.value('tkeCn.securityGroup.label') }) : null;
+    return !!nodePools?.find((pool) => pool.nodePoolType !== 'super' && !pool.securityGroup) ? intl.value('validation.required', { key: intl.value('tkeCn.securityGroup.label') }) : null;
+  };
+};
+
+const virtualNodePoolRequired = (nodePools, intl) => {
+  const label = intl.value('tkeCn.virtualNodePool.label');
+
+  const buildError = (fieldKey) => {
+    return intl.value('validation.required', { key: `${ label } ${ intl.value(fieldKey) }` });
+  };
+
+  const validateVirtualNodePool = (virtualNodePool) => {
+    if (!virtualNodePool || typeof virtualNodePool !== 'object') {
+      return buildError('tkeCn.virtualNodePool.fields.securityGroupIds');
+    }
+
+    const securityGroupIds = Array.isArray(virtualNodePool.securityGroupIds) ? virtualNodePool.securityGroupIds : [];
+    const virtualNodes = Array.isArray(virtualNodePool.virtualNodes) ? virtualNodePool.virtualNodes : [];
+    // const subnetIds = Array.isArray(virtualNodePool.subnetIds) ? virtualNodePool.subnetIds : [];
+
+    if (securityGroupIds.length === 0) {
+      return buildError('tkeCn.virtualNodePool.fields.securityGroupIds');
+    }
+
+    if (virtualNodes.length === 0) {
+      return buildError('tkeCn.virtualNodePool.fields.virtualNodes');
+    }
+
+    // if (subnetIds.length === 0) {
+    //   return buildError('tkeCn.virtualNodePool.fields.subnetIds');
+    // }
+
+    return null;
+  };
+
+  return (virtualNodePool) => {
+    if (virtualNodePool !== undefined) {
+      return validateVirtualNodePool(virtualNodePool);
+    }
+    const invalidSuperPool = (nodePools || []).find((pool) => {
+      return pool.nodePoolType === 'super' && validateVirtualNodePool(pool.virtualNodePool);
+    });
+
+    if (!invalidSuperPool) {
+      return null;
+    }
+
+    return validateVirtualNodePool(invalidSuperPool.virtualNodePool);
   };
 };
 
@@ -217,8 +248,7 @@ export default {
   nodePoolOsNameRequired,
   systemDiskTypeRequired,
   nodePoolSubnetIdRequired,
-  keyPairRequired,
   nodePoolSecurityGroupRequired,
   masterInstanceTypeRequired,
-  masterKeyPairRequired,
+  virtualNodePoolRequired,
 };
