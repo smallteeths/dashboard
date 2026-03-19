@@ -1,4 +1,5 @@
 <script setup>
+import semver from 'semver';
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
@@ -13,23 +14,25 @@ import CruResource from '@shell/components/CruResource.vue';
 import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
 import LabeledInputSelect from './LabeledInputSelect';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
-import ACKValidators from '../util/validators';
+import ACKValidators, { doCidrOverlap, isValidCIDR } from '../util/validators';
 import Checkbox from '@components/Form/Checkbox/Checkbox.vue';
 import SelectCredential from '@shell/edit/provisioning.cattle.io.cluster/SelectCredential.vue';
 import { CREATOR_PRINCIPAL_ID } from '@shell/config/labels-annotations';
 import Labels from '@shell/components/form/Labels.vue';
 import Banner from '@components/Banner/Banner.vue';
 import CONFIG_ENV from '../util/config';
-import { fetchResources, fetchAvailableResources } from '../util/request';
+import { fetchResources, fetchResourcesNoPagination } from '../util/request';
 import Tab from '@shell/components/Tabbed/Tab.vue';
 import Tabbed from '@shell/components/Tabbed/index.vue';
 import { _CREATE, _VIEW, _IMPORT } from '@shell/config/query-params';
 import { stringify } from '@shell/utils/error';
 import { syncUpstreamConfig } from '@shell/utils/kontainer';
 import Accordion from '@components/Accordion/Accordion.vue';
+import ClusterPlanSelector from './ClusterPlanSelector.vue';
 import {
-  filter, find, cloneDeep, pullAt, uniqBy, includes, sortBy
+  filter, find, cloneDeep, pullAt, uniqBy, uniq
 } from 'lodash';
+import { RadioGroup } from '@components/Form/Radio';
 
 const props = defineProps({
   mode: {
@@ -44,6 +47,7 @@ const props = defineProps({
   }
 });
 
+const SUPPORTED_VERSION_RANGE = '>=1.32.0 <1.35.0';
 const store = useStore();
 const route = useRoute();
 const intl = computed(() => store.getters['i18n/t']);
@@ -57,11 +61,15 @@ const options = ref({
       value: ''
     }
   ],
-  regionOptions:       [],
-  vpcOptions:          [],
-  vswitchOptions:      [],
-  instanceTypeOptions: [],
-  keyPairOptions:      [],
+  regionOptions:          [],
+  vpcOptions:             [],
+  vswitchOptions:         [],
+  keyPairOptions:         [],
+  zoneOptions:            [],
+  k8sVersionOptions:      [],
+  k8sAllImages:           {},
+  platformOptions:        [],
+  allInstanceTypeOptions: {},
 });
 const RUNTIME_VERSION_LE_132 = '1.6.39';
 const RUNTIME_VERSION_LT_132 = '2.1.5';
@@ -76,20 +84,24 @@ const state = ref({
   isFlannel:                     true,
   versionCustom:                 false,
   importClusterRegion:           false,
+  showPrivateRegistryInput:      false,
   errors:                        [],
-  ackCNI:                        'flannel',
+  ackCNI:                        'terway-eniip',
   vswitchIds:                    [],
   historyK8sVersion:             '',
+  autoCreateVpc:                 'auto',
+  zones:                         new Set(),
 });
 const emit = defineEmits(['done']);
 const cruresource = ref(null);
-
 const {
   save,
   doneRoute,
 } = useCreateEditView(props, {
   emit, normanCluster, ackConfig, nodePools, state
 });
+const SERVICE_CIDR_CANDIDATES = ['172.21.0.0/20', '172.22.0.0/20', '172.23.0.0/20'];
+const CONTAINER_CIDR_CANDIDATES = ['172.20.0.0/16', '172.30.0.0/16', '192.168.0.0/16'];
 
 async function initCustomConfig() {
   state.value.loading = true;
@@ -103,6 +115,9 @@ async function initCustomConfig() {
     }
 
     formatAckConfig(normanCluster);
+    if (normanCluster.value?.importedConfig?.privateRegistryURL) {
+      state.value.showPrivateRegistryInput = true;
+    }
     state.value.historyK8sVersion = normanCluster.value?.ackConfig?.kubernetesVersion;
   } else {
     normanCluster.value = await store.dispatch('rancher/create', { type: NORMAN.CLUSTER }, { root: true });
@@ -111,6 +126,9 @@ async function initCustomConfig() {
 
     if (principalId.includes('local://')) {
       normanCluster.value.annotations = { ...normanCluster.value.annotations, [CREATOR_PRINCIPAL_ID]: principalId };
+    }
+    if (!normanCluster.value?.importedConfig?.privateRegistryURL) {
+      normanCluster.value.importedConfig = { privateRegistryURL: null };
     }
   }
 
@@ -122,6 +140,9 @@ async function initCustomConfig() {
   }
   ackConfig.value = cloneDeep({ ...normanCluster.value.ackConfig });
   nodePools.value = cloneDeep(normanCluster.value.ackConfig['node_pool_list']);
+  if (!isNewOrUnprovisioned.value && !ackConfig.value.zoneIds) {
+    state.value.autoCreateVpc = 'custom';
+  }
   state.value.loading = false;
 }
 
@@ -141,6 +162,11 @@ async function initImportConfig() {
   }
   if (normanCluster?.value?.ackConfig['node_pool_list'] && normanCluster?.value?.ackConfig['node_pool_list'].length > 0) {
     nodePools.value = cloneDeep(normanCluster.value.ackConfig['node_pool_list']);
+  }
+  if (normanCluster.value?.importedConfig?.privateRegistryURL) {
+    state.value.showPrivateRegistryInput = true;
+  } else {
+    normanCluster.value.importedConfig = { privateRegistryURL: null };
   }
 
   ackConfig.value = cloneDeep({ ...normanCluster.value.ackConfig });
@@ -165,19 +191,7 @@ function formatAckConfig(normanCluster) {
   }
 
   if (ackConfig['node_pool_list'] && ackConfig['node_pool_list'].length > 0) {
-    const nodePool = ackConfig['node_pool_list'].map((node) => {
-      if (node.data_disk && node.data_disk.length > 0) {
-        return {
-          ...node,
-          category: node.data_disk[0].category,
-          size:     node.data_disk[0].size
-        };
-      }
-
-      return node;
-    });
-
-    ackConfig['node_pool_list'] = nodePool;
+    ackConfig.node_pool_list = (ackConfig.node_pool_list || []).map((node) => ({ ...node }));
   }
 }
 
@@ -253,6 +267,44 @@ async function fetchImportALiyunResource() {
   state.value.importClusterRegion = false;
 }
 
+async function fetchZones(regionId) {
+  try {
+    const resourceGroupId = ackConfig.value.resourceGroupId;
+    const externalParams = { regionId };
+
+    if (!!resourceGroupId && resourceGroupId !== '') {
+      externalParams.resourceGroupId = resourceGroupId;
+    }
+    const zoneOptions = await fetchResources({
+      resource:          'Zone',
+      plural:            'Zones',
+      cloudCredentialId: ackConfig.value.aliyun_credential_secret,
+      externalParams,
+      store,
+    });
+
+    options.value.zoneOptions = zoneOptions.map((zone) => {
+      return {
+        ...zone,
+        label: zone.raw?.LocalName ?? zone.label,
+        value: zone.raw?.ZoneId ?? zone.value,
+      };
+    });
+
+    if (isNewOrUnprovisioned.value) {
+      ackConfig.value.zoneIds = (options.value.zoneOptions || [])
+        .slice(0, 3)
+        .map((zone) => zone.value);
+
+      updateZones(ackConfig.value.zoneIds);
+    }
+  } catch (err) {
+    options.value.zoneOptions = [];
+    state.value.errors = [];
+    state.value.errors.push(err);
+  }
+}
+
 async function fetchVpc(regionId) {
   try {
     const resourceGroupId = ackConfig.value.resourceGroupId;
@@ -281,12 +333,145 @@ async function fetchVpc(regionId) {
         label
       };
     });
+
+    if (isNewOrUnprovisioned.value) {
+      ensureServiceCidrNotOverlapVpc();
+      ensureContainerCidrNotOverlapVpcOrService();
+    }
   } catch (err) {
     options.value.vpcOptions = [];
     state.value.errors = [];
     state.value.errors.push(err);
   }
   state.value.vpcLoading = false;
+}
+
+async function fetchKubernetesMetadata(regionId) {
+  const credentialId = ackConfig.value.aliyun_credential_secret;
+  const isEdit = !isNewOrUnprovisioned.value;
+  const isCreate = isNewOrUnprovisioned.value;
+  const originalVersion = ackConfig.value.kubernetesVersion || state.value.historyK8sVersion || '';
+
+  try {
+    const supportedParams = {
+      regionId,
+      clusterType: 'ManagedKubernetes',
+      mode:        'supported',
+    };
+
+    const supportedRes = await fetchResourcesNoPagination({
+      resource:          'kubernetesMetadata',
+      cloudCredentialId: credentialId,
+      store,
+      externalParams:    supportedParams,
+    });
+
+    const allVersions = Array.isArray(supportedRes) ? supportedRes : (supportedRes?.versions || []);
+
+    let upgradableSet = null;
+
+    if (isEdit && originalVersion) {
+      const upgradeParams = {
+        regionId,
+        clusterType:           'ManagedKubernetes',
+        mode:                  'supported',
+        kubernetesVersion:     originalVersion,
+        getUpgradableVersions: 'true',
+      };
+
+      const upgradeRes = await fetchResourcesNoPagination({
+        resource:          'kubernetesMetadata',
+        cloudCredentialId: credentialId,
+        store,
+        externalParams:    upgradeParams,
+      });
+
+      const uv = Array.isArray(upgradeRes) ? (upgradeRes?.[0]?.upgradable_versions || []) : (upgradeRes?.upgradable_versions || []);
+
+      upgradableSet = new Set(uv);
+    }
+
+    const currentImages = getCurrentPoolImageTypes();
+    const { options: versionOptions, allImages } = processK8sVersions({
+      allVersions,
+      isCreate,
+      isEdit,
+      originalVersion,
+      upgradableSet,
+      currentImages,
+    });
+
+    options.value.k8sVersionOptions = versionOptions;
+    // { version : [image]}
+    options.value.k8sAllImages = allImages;
+
+    if (isCreate && !ackConfig.value.kubernetesVersion && versionOptions.length) {
+      ackConfig.value.kubernetesVersion = versionOptions[0].value;
+    }
+  } catch (err) {
+    options.value.k8sVersionOptions = [];
+    options.value.k8sAllImages = {};
+    state.value.errors = [];
+    state.value.errors.push(err);
+  }
+}
+
+function inSupportedRange(version) {
+  const coerced = semver.coerce(version);
+
+  return !SUPPORTED_VERSION_RANGE || (coerced && semver.satisfies(coerced, SUPPORTED_VERSION_RANGE));
+}
+
+function getCurrentPoolImageTypes() {
+  return uniq((nodePools.value || []).map((p) => p.platform || p.imageType).filter(Boolean));
+}
+
+function versionSupportsAllCurrentImages(versionImages = [], currentImages = []) {
+  if (!currentImages.length) {
+    return true;
+  }
+  const supported = new Set((versionImages || []).map((x) => x.image_type || x.imageType).filter(Boolean));
+
+  return currentImages.every((img) => supported.has(img));
+}
+
+function processK8sVersions({
+  allVersions = [],
+  isCreate,
+  isEdit,
+  originalVersion,
+  upgradableSet,
+  currentImages,
+}) {
+  const newAllImages = {};
+  const out = [];
+
+  for (const v of allVersions) {
+    const value = v.version || v.value;
+    const creatable = !!v.creatable;
+    const images = v.images || [];
+
+    if (!value || !inSupportedRange(value)) {
+      continue;
+    }
+
+    const isCurrentValue = isEdit && value === originalVersion;
+
+    let canUpgradeTo = false;
+
+    if (isEdit && upgradableSet && upgradableSet.has(value)) {
+      canUpgradeTo = versionSupportsAllCurrentImages(images, currentImages);
+    }
+
+    if ((isCreate && creatable) || isCurrentValue || canUpgradeTo) {
+      out.push({ label: value, value });
+      newAllImages[value] = images;
+    }
+  }
+
+  out.sort((a, b) => semver.rcompare(semver.coerce(a.value), semver.coerce(b.value)));
+
+  return { options: out, allImages: newAllImages };
 }
 
 async function fetchVSwitch(vpcId) {
@@ -332,6 +517,7 @@ async function fetchVSwitch(vpcId) {
 
 async function fetchInstanceType(regionId) {
   try {
+    state.value.instanceTypeLoading = true;
     const resourceGroupId = ackConfig.value.resourceGroupId;
     const externalParams = { regionId };
 
@@ -345,98 +531,29 @@ async function fetchInstanceType(regionId) {
       externalParams,
       store,
     });
-    const allInstanceTypeOptions = instanceTypeOptions.map((instanceType) => {
-      return {
-        ...instanceType,
-        label: `${ instanceType.raw.InstanceTypeId } ( ${ instanceType.raw.CpuCoreCount } ${ instanceType.raw.CpuCoreCount > 1 ? 'Cores' : 'Core' } ${ instanceType.raw.MemorySize }GB RAM )`,
+    const allInstanceTypes = {};
+
+    (instanceTypeOptions || []).forEach((it) => {
+      const raw = it?.raw || {};
+      const id = raw.InstanceTypeId;
+
+      if (!id) {
+        return;
+      }
+      allInstanceTypes[id] = {
+        instanceTypeFamily: raw.InstanceTypeFamily,
+        cpu:                raw.CpuCoreCount,
+        memory:             raw.MemorySize,
       };
     });
-    const externalParamsForAvailable = {
-      regionId,
-      networkCategory:     'vpc',
-      destinationResource: 'InstanceType'
-    };
-    const availableInstanceTypeKeys = await fetchAvailableResources({
-      resource:          '',
-      plural:            'AvailableResource',
-      cloudCredentialId: ackConfig.value.aliyun_credential_secret,
-      externalParams:    externalParamsForAvailable,
-      store,
-    });
-    const availableInstanceTypeOptions = filter(allInstanceTypeOptions, (option) => includes(availableInstanceTypeKeys, option.value));
 
-    // format instance type options
-    options.value.instanceTypeOptions = formatInstanceTypeOptions(availableInstanceTypeOptions);
+    options.value.allInstanceTypeOptions = allInstanceTypes;
   } catch (err) {
-    options.value.instanceTypeOptions = [];
+    options.value.allInstanceTypeOptions = {};
     state.value.errors = [];
     state.value.errors.push(err);
   }
   state.value.instanceTypeLoading = false;
-}
-
-function formatInstanceTypeOptions(instanceTypeOptions = []) {
-  if (!Array.isArray(instanceTypeOptions) || instanceTypeOptions.length === 0) {
-    return [];
-  }
-
-  // sort instance type options by family, cpu core count, memory size, and instance type id
-  const sorted = sortBy(instanceTypeOptions, [
-    (o) => o?.raw?.InstanceTypeFamily || '',
-    (o) => o?.raw?.CpuCoreCount ?? 0,
-    (o) => o?.raw?.MemorySize ?? 0,
-    (o) => o?.value || o?.raw?.InstanceTypeId || '',
-  ]);
-  let lastGroup;
-  const out = [];
-  const children = [];
-  // group instance type options by family
-  const flush = () => {
-    if (children.length) {
-      out.push(...sortBy(children, 'cpuCoreCount'));
-      children.length = 0;
-    }
-  };
-
-  for (const opt of sorted) {
-    const raw = opt?.raw || {};
-    const family = raw.InstanceTypeFamily || 'Unknown';
-
-    if (family !== lastGroup) {
-      flush();
-      out.push({
-        kind:     'group',
-        disabled: true,
-        label:    family,
-      });
-      lastGroup = family;
-    }
-
-    const cpu = raw.CpuCoreCount ?? 0;
-    const mem = raw.MemorySize ?? 0;
-    const id = opt.value || raw.InstanceTypeId || '';
-    const label = id ? `${ id } ( ${ cpu } ${ cpu > 1 ? 'Cores' : 'Core' } ${ mem }GB RAM )` : (opt.label || '');
-
-    children.push({
-      label,
-      value:        id,
-      cpuCoreCount: cpu,
-      raw,
-    });
-  }
-
-  // flush remaining children
-  flush();
-
-  // out is add group for instance type family
-  // [
-  //   { kind:'group', disabled:true, label:'ecs.g7' },
-  //   { label:'ecs.g7.large ( 2 Cores 8GB RAM )', value:'ecs.g7.large', ... },
-
-  //   { kind:'group', disabled:true, label:'ecs.n1' },
-  //   { label:'ecs.n1.tiny ( 1 Core 1GB RAM )', value:'ecs.n1.tiny', ... },
-  // ]
-  return out;
 }
 
 async function fetchKeyPairs(regionId) {
@@ -520,11 +637,9 @@ function poolIsValid(pool) {
   if (
     !pool.runtime_version ||
     !pool.name ||
-    !pool.instance_types ||
+    !pool.instance_types?.length ||
     isNaN(pool.instances_num) ||
-    pool.instances_num < 0 ||
-    !pool.platform ||
-    !pool.key_pair
+    !pool.platform
   ) {
     return false;
   }
@@ -538,10 +653,7 @@ function resetNodePool() {
   nodePools.value = nodePools.value?.map((pool) => {
     return {
       ...pool,
-      system_disk_category: '',
-      category:             '',
-      instance_types:       '',
-      key_pair:             '',
+      key_pair: '',
     };
   }) || [];
 }
@@ -587,6 +699,155 @@ function changeContainerdVersion(version) {
     }));
   }
 }
+
+function updateAutoCreateVpc(value) {
+  state.value.autoCreateVpc = value;
+  if (value === 'auto') {
+    updateZones(ackConfig.value.zoneIds);
+  } else {
+    updateVswitchIds(state.value.vswitchIds);
+  }
+}
+
+function updateZones(value = []) {
+  if (!isAutoCreateVpc.value) {
+    return;
+  }
+
+  state.value.zones = new Set(value);
+}
+
+function updateVswitchIds(value) {
+  if (isAutoCreateVpc.value) {
+    return;
+  }
+  const zones = [];
+
+  if (value && value.length > 0) {
+    value.forEach((vswitchId) => {
+      const vswitch = find(options.value.vswitchOptions, (o) => {
+        return o.value === vswitchId;
+      });
+
+      if (vswitch && vswitch.raw && vswitch.raw.ZoneId) {
+        zones.push(vswitch.raw.ZoneId);
+      }
+    });
+  }
+  state.value.zones = new Set(zones);
+}
+
+function getVpcCidr(vpcId) {
+  if (!vpcId) {
+    return '';
+  }
+
+  const vpc = find(options.value.vpcOptions || [], (o) => o.value === vpcId);
+
+  return vpc?.raw?.CidrBlock || '';
+}
+
+function pickFirstNonOverlapping(candidates = [], checks = []) {
+  for (const c of candidates) {
+    if (!c || !isValidCIDR(c)) {
+      continue;
+    }
+
+    const ok = checks.every((x) => !x || !doCidrOverlap(c, x));
+
+    if (ok) {
+      return c;
+    }
+  }
+
+  return '';
+}
+
+function getAllVpcCidrs() {
+  return (options.value.vpcOptions || [])
+    .map((o) => o?.raw?.CidrBlock)
+    .filter(Boolean);
+}
+
+function pickBestNonOverlapping(candidates = [], { preferAllVpc = true, vpcCidr = '', extraBlocks = [] } = {}) {
+  const allVpcCidrs = getAllVpcCidrs();
+
+  const primaryBlocks = [
+    ...(preferAllVpc ? allVpcCidrs : (vpcCidr ? [vpcCidr] : [])),
+    ...(extraBlocks || []),
+  ].filter(Boolean);
+
+  let next = pickFirstNonOverlapping(candidates, primaryBlocks);
+
+  if (next) {
+    return next;
+  }
+
+  if (preferAllVpc) {
+    const fallbackBlocks = [
+      ...(vpcCidr ? [vpcCidr] : []),
+      ...(extraBlocks || []),
+    ].filter(Boolean);
+
+    next = pickFirstNonOverlapping(candidates, fallbackBlocks);
+    if (next) {
+      return next;
+    }
+  }
+
+  return '';
+}
+
+function ensureServiceCidrNotOverlapVpc() {
+  const vpcCidr = getVpcCidr(ackConfig.value.vpcId);
+  const overlapAll = getAllVpcCidrs();
+
+  if (!overlapAll) {
+    return;
+  }
+
+  const cur = ackConfig.value.containerCidr;
+
+  if (!cur || !isValidCIDR(cur)) {
+    const next = pickBestNonOverlapping(SERVICE_CIDR_CANDIDATES, {
+      preferAllVpc: true,
+      vpcCidr,
+      extraBlocks:  [],
+    });
+
+    if (next) {
+      ackConfig.value.serviceCidr = next;
+    }
+  }
+}
+
+function ensureContainerCidrNotOverlapVpcOrService() {
+  if (!state.value.isFlannel) {
+    return;
+  }
+
+  const vpcCidr = getVpcCidr(ackConfig.value.vpcId);
+  const serviceCidr = ackConfig.value.serviceCidr;
+  const cur = ackConfig.value.containerCidr;
+
+  if (!cur || !isValidCIDR(cur)) {
+    const next = pickBestNonOverlapping(CONTAINER_CIDR_CANDIDATES, {
+      preferAllVpc: true,
+      vpcCidr,
+      extraBlocks:  [serviceCidr],
+    });
+
+    ackConfig.value.containerCidr = next || '';
+  }
+}
+
+function updatePrivateRegistryURL(value) {
+  state.value.showPrivateRegistryInput = value;
+  if (!value) {
+    normanCluster.value.importedConfig = { privateRegistryURL: null };
+  }
+}
+
 const isImport = ref(route.query.mode === _IMPORT);
 const hasCredential = computed(() => {
   return !!ackConfig.value?.aliyun_credential_secret;
@@ -598,6 +859,10 @@ const CREATE = computed(() => {
 
 const VIEW = computed(() => {
   return _VIEW;
+});
+
+const isAutoCreateVpc = computed(() => {
+  return state.value.autoCreateVpc === 'auto';
 });
 
 const isNewOrUnprovisioned = computed(() => {
@@ -626,8 +891,8 @@ const fvExtraRules = computed(() => {
     const isImportMode = isImport.value || ackConfig.value.imported;
 
     const nonImportRules = !isImportMode ? {
-      vpcIdRequired:              ACKValidators.vpcIdRequired(ackConfig, intl),
-      vswitchIdsRequired:         ACKValidators.vswitchIdsRequired(state, intl),
+      vpcIdRequired:              !isAutoCreateVpc.value ? ACKValidators.vpcIdRequired(ackConfig, intl) : undefined,
+      vswitchIdsRequired:         !isAutoCreateVpc.value ? ACKValidators.vswitchIdsRequired(state, intl) : undefined,
       serviceCidrRequired:        ACKValidators.serviceCidrRequired(ackConfig, intl),
       podCidrRequired:            ACKValidators.podCidrRequired(ackConfig, intl, state),
       validatePodCidr:            ACKValidators.validatePodCidr(ackConfig, intl, state),
@@ -641,7 +906,7 @@ const fvExtraRules = computed(() => {
       diskSizeRequired:           ACKValidators.diskSizeRequired(nodePools, intl),
       dataDiskSizeRequired:       ACKValidators.dataDiskSizeRequired(nodePools, intl),
       platformRequired:           ACKValidators.platformRequired(nodePools, intl),
-      keyPairRequired:            ACKValidators.keyPairRequired(nodePools, intl),
+      // keyPairRequired:            ACKValidators.keyPairRequired(nodePools, intl),
     } : {};
 
     const importRules = isImportMode ? { clusterIdRequired: ACKValidators.clusterIdRequired(ackConfig, intl) } : {};
@@ -740,10 +1005,10 @@ fvFormRuleSets.value = [
     path:  'platform',
     rules: ['platformRequired']
   },
-  {
-    path:  'keyPair',
-    rules: ['keyPairRequired']
-  },
+  // {
+  //   path:  'keyPair',
+  //   rules: ['keyPairRequired']
+  // },
 ];
 
 // watch
@@ -778,8 +1043,9 @@ watch(() => [ackConfig.value.regionId, ackConfig.value.aliyun_credential_secret]
         resetNodePool();
       }
       state.value.vpcLoading = true;
-      state.value.instanceTypeLoading = true;
       state.value.keyPairLoading = true;
+      await fetchZones(regionId);
+      await fetchKubernetesMetadata(regionId);
       await fetchVpc(regionId);
       await fetchInstanceType(regionId);
       await fetchKeyPairs(regionId);
@@ -800,12 +1066,13 @@ watch(() => state.value.ackCNI, (newAckCNI) => {
   state.value.isFlannel = newAckCNI === 'flannel';
   if (isNewOrUnprovisioned.value) {
     if (state.value.isFlannel) {
-      ackConfig.value.containerCidr = '172.20.0.0/16';
       delete ackConfig.value.podVswitchIds;
     } else {
       delete ackConfig.value.containerCidr;
     }
     state.value.vswitchIds = [];
+    ensureServiceCidrNotOverlapVpc();
+    ensureContainerCidrNotOverlapVpcOrService();
     if (newAckCNI && ackConfig.value?.addons?.length > 0) {
       ackConfig.value.addons = [{ name: newAckCNI, config: '' }];
     }
@@ -912,68 +1179,66 @@ watch(() => normanCluster.value.name, (name) => {
             />
           </div>
         </div>
-        <div class="row mb-10">
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="ackConfig.resourceGroupId"
-              data-testid="cruack-resourceGroup"
-              :mode="mode"
-              :options="options.resourceGroupOptions"
-              option-label="label"
-              option-key="value"
-              :loading="state.regionAndResourceGroupLoading"
-              label-key="ackCn.resourceGroup.label"
-              :disabled="!isNewOrUnprovisioned"
-            />
+        <div
+          class="m-0 mb-10 card-container"
+        >
+          <div>
+            <H3 class="title">
+              {{ intl('ackCn.clusterBasicInfo.title') }}
+            </h3>
           </div>
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="ackConfig.regionId"
-              data-testid="cruack-resourceGroup"
-              required
-              :mode="mode"
-              :options="options.regionOptions"
-              option-label="label"
-              option-key="value"
-              :loading="state.regionAndResourceGroupLoading"
-              label-key="ackCn.region.label"
-              :disabled="!isNewOrUnprovisioned"
-              :rules="fvGetAndReportPathRules('regionId')"
-            />
+          <div class="row mb-10">
+            <div
+              class="col span-4"
+            >
+              <LabeledSelect
+                v-model:value="ackConfig.resourceGroupId"
+                data-testid="cruack-resourceGroup"
+                :mode="mode"
+                :options="options.resourceGroupOptions"
+                option-label="label"
+                option-key="value"
+                :loading="state.regionAndResourceGroupLoading"
+                label-key="ackCn.resourceGroup.label"
+                :disabled="!isNewOrUnprovisioned"
+              />
+            </div>
+            <div
+              class="col span-4"
+            >
+              <LabeledSelect
+                v-model:value="ackConfig.regionId"
+                data-testid="cruack-resourceGroup"
+                required
+                :mode="mode"
+                :options="options.regionOptions"
+                option-label="label"
+                option-key="value"
+                :loading="state.regionAndResourceGroupLoading"
+                label-key="ackCn.region.label"
+                :disabled="!isNewOrUnprovisioned"
+                :rules="fvGetAndReportPathRules('regionId')"
+              />
+            </div>
+            <div
+              class="col span-4"
+            >
+              <LabeledInputSelect
+                v-model:value="ackConfig.kubernetesVersion"
+                :mode="mode"
+                :options="options.k8sVersionOptions"
+                label-key="ackCn.version.label"
+                :disabled="ackConfig.imported"
+                @update:value="changeContainerdVersion($event)"
+              />
+            </div>
           </div>
-        </div>
-        <div class="row mb-10">
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="ackConfig.clusterType"
-              data-testid="cruack-clusterType"
-              :mode="mode"
-              :options="CONFIG_ENV.CLUSTER_TYPES"
-              option-label="label"
-              option-key="value"
-              label-key="ackCn.clusters.label"
-              :localizedLabel="true"
-              :disabled="!isNewOrUnprovisioned"
-            />
-          </div>
-          <div
-            class="col span-6"
-          >
-            <LabeledInputSelect
-              v-model:value="ackConfig.kubernetesVersion"
-              :mode="mode"
-              :options="CONFIG_ENV.KUBERNETESVERSIONS"
-              label-key="ackCn.version.label"
-              :disabled="ackConfig.imported"
-              @update:value="changeContainerdVersion($event)"
-            />
-          </div>
+          <ClusterPlanSelector
+            v-model="ackConfig.clusterSpec"
+            :disabled="!isNewOrUnprovisioned"
+            :options="CONFIG_ENV.ACK_CLUSTER_SPEC_OPTIONS"
+            :intl="intl"
+          />
         </div>
         <div
           v-if="!kubernetesSupport.rancherEnabled || !kubernetesSupport.aliyunEnabled || changedHistoryK8sVersion"
@@ -994,144 +1259,208 @@ watch(() => normanCluster.value.name, (name) => {
             :label="intl('ackCn.changedHistoryK8sVerison')"
           />
         </div>
-        <div class="row mb-10">
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="ackConfig.clusterSpec"
-              data-testid="cruack-clusterSpec"
-              :mode="mode"
-              :options="CONFIG_ENV.ACK_CLUSTER_SPEC_OPTIONS"
-              option-label="label"
-              option-key="value"
-              label-key="ackCn.clusterSpec.label"
-              :localizedLabel="true"
-              :disabled="!isNewOrUnprovisioned"
-            />
+        <div
+          class="m-0 mb-10 card-container"
+        >
+          <div>
+            <H3 class="title">
+              {{ intl('ackCn.cni.title') }}
+            </H3>
           </div>
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="state.ackCNI"
-              data-testid="cruack-ackcni"
-              :mode="mode"
-              :options="CONFIG_ENV.ACK_CNI_OPTIONS"
-              option-label="label"
-              option-key="value"
-              label-key="ackCn.cni.label"
-              :disabled="!isNewOrUnprovisioned"
-            />
+          <div class="row">
+            <div
+              class="col span-6"
+            >
+              <LabeledSelect
+                v-model:value="state.ackCNI"
+                data-testid="cruack-ackcni"
+                :mode="mode"
+                :options="CONFIG_ENV.ACK_CNI_OPTIONS"
+                option-label="label"
+                option-key="value"
+                label-key="ackCn.cni.label"
+                :disabled="!isNewOrUnprovisioned"
+              />
+            </div>
+            <div
+              class="col span-6 desc-info"
+            >
+              <Icon class="icon-info" />
+              <span
+                v-if="!state.isFlannel"
+                class="type-description"
+              >
+                {{ intl('ackCn.cni.description.terway') }}
+              </span>
+              <span
+                v-else
+                class="type-description"
+              >
+                {{ intl('ackCn.cni.description.flannel') }}
+              </span>
+            </div>
           </div>
-        </div>
-        <div class="row mb-10">
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="ackConfig.vpcId"
-              required
-              data-testid="cruack-vpc"
-              :mode="mode"
-              :options="options.vpcOptions"
-              option-label="label"
-              option-key="value"
-              label-key="ackCn.vpcId.label"
-              :loading="state.vpcLoading"
-              :disabled="!isNewOrUnprovisioned"
-              :placeholder="intl('ackCn.vpcId.prompt')"
-              :rules="fvGetAndReportPathRules('vpcId')"
-            />
+          <div class="row mt-10">
+            <div
+              class="col span-6"
+            >
+              <LabeledSelect
+                v-model:value="ackConfig.proxyMode"
+                data-testid="cruack-proxy-mode"
+                :mode="mode"
+                :options="CONFIG_ENV.MODES"
+                option-label="label"
+                option-key="value"
+                label-key="ackCn.proxyMode.label"
+                :disabled="!isNewOrUnprovisioned"
+              />
+            </div>
+            <div
+              class="col span-6"
+            >
+              <LabeledSelect
+                v-model:value="ackConfig.nodeCidrMask"
+                data-testid="cruack-node-cidr-mask"
+                :mode="mode"
+                :options="CONFIG_ENV.NODECIDRMASKS"
+                option-label="label"
+                option-key="value"
+                label-key="ackCn.nodeCidrMask.label"
+                :disabled="!isNewOrUnprovisioned"
+              />
+            </div>
           </div>
-          <div class="col span-6">
-            <LabeledMultiSelect
-              v-model:value="state.vswitchIds"
-              required
-              :mode="mode"
-              :options="options.vswitchOptions"
-              :disabled="!isNewOrUnprovisioned"
-              label-key="ackCn.vswitchId.label"
-              :loading="state.vswitchLoading"
-              :rules="fvGetAndReportPathRules('vswitchIds')"
-            />
+          <div class="row mt-10">
+            <div class="col span-6">
+              <LabeledInput
+                v-model:value="ackConfig.serviceCidr"
+                :mode="mode"
+                tooltipKey="ackCn.serviceCidr.placeholder"
+                label-key="ackCn.serviceCidr.label"
+                :disabled="!isNewOrUnprovisioned"
+                required
+                :rules="fvGetAndReportPathRules('serviceCidr')"
+              />
+            </div>
+            <div
+              class="col span-6"
+            >
+              <LabeledInput
+                v-if="state.isFlannel"
+                v-model:value="ackConfig.containerCidr"
+                :mode="mode"
+                tooltipKey="ackCn.containerCidr.placeholder"
+                label-key="ackCn.containerCidr.label"
+                :disabled="!isNewOrUnprovisioned"
+                required
+                :rules="fvGetAndReportPathRules('containerCidr')"
+              />
+            </div>
           </div>
-        </div>
-        <div class="row mb-10">
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="ackConfig.proxyMode"
-              data-testid="cruack-proxy-mode"
-              :mode="mode"
-              :options="CONFIG_ENV.MODES"
-              option-label="label"
-              option-key="value"
-              label-key="ackCn.proxyMode.label"
-              :disabled="!isNewOrUnprovisioned"
-            />
+          <div class="row mt-10">
+            <div class="col span-12">
+              <Checkbox
+                v-model:value="ackConfig.endpointPublicAccess"
+                :mode="mode"
+                :disabled="!isNewOrUnprovisioned"
+                label-key="ackCn.endpointPublicAccess.label"
+                required
+              />
+            </div>
           </div>
-          <div
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="ackConfig.nodeCidrMask"
-              data-testid="cruack-node-cidr-mask"
-              :mode="mode"
-              :options="CONFIG_ENV.NODECIDRMASKS"
-              option-label="label"
-              option-key="value"
-              label-key="ackCn.nodeCidrMask.label"
-              :disabled="!isNewOrUnprovisioned"
-            />
-          </div>
-        </div>
-        <div class="row mb-10">
-          <div
-            v-if="state.isFlannel"
-            class="col span-6"
-          >
-            <LabeledInput
-              v-model:value="ackConfig.containerCidr"
-              :mode="mode"
-              tooltipKey="ackCn.containerCidr.placeholder"
-              label-key="ackCn.containerCidr.label"
-              :disabled="!isNewOrUnprovisioned"
-              required
-              :rules="fvGetAndReportPathRules('containerCidr')"
-            />
-          </div>
-          <div class="col span-6">
-            <LabeledInput
-              v-model:value="ackConfig.serviceCidr"
-              :mode="mode"
-              tooltipKey="ackCn.serviceCidr.placeholder"
-              label-key="ackCn.serviceCidr.label"
-              :disabled="!isNewOrUnprovisioned"
-              required
-              :rules="fvGetAndReportPathRules('serviceCidr')"
-            />
-          </div>
-        </div>
-        <div class="row mt-10 mb-20">
-          <div class="col span-6">
-            <Checkbox
-              v-model:value="ackConfig.snatEntry"
-              :mode="mode"
-              label-key="ackCn.snatEntry.label"
-              :disabled="!isNewOrUnprovisioned"
-              required
-            />
-          </div>
-          <div class="col span-6">
-            <Checkbox
-              v-model:value="ackConfig.endpointPublicAccess"
-              :mode="mode"
-              :disabled="!isNewOrUnprovisioned"
-              label-key="ackCn.endpointPublicAccess.label"
-              required
-            />
+          <div class="pd-10">
+            <div class="mt-10">
+              <h3 class="title">
+                {{ intl('ackCn.cni.privateNetwork') }}
+              </h3>
+              <p class="type-description">
+                {{ intl('ackCn.cni.autoCreateVpc.label') }}
+              </p>
+            </div>
+            <div class="row mt-10">
+              <div class="col span-2">
+                <RadioGroup
+                  v-model:value="state.autoCreateVpc"
+                  name="autoCreateVpc"
+                  :mode="mode"
+                  :disabled="!isNewOrUnprovisioned"
+                  :labels="[intl('ackCn.cni.autoCreateVpc.autoCreateVpcTip'), intl('ackCn.cni.autoCreateVpc.useAlreadyCreatedVpcTip')]"
+                  :options="['auto','custom']"
+                  @update:value="updateAutoCreateVpc"
+                />
+              </div>
+              <div class="col span-10">
+                <div class="row">
+                  <div
+                    v-if="isAutoCreateVpc"
+                    class="col span-12"
+                  >
+                    <LabeledMultiSelect
+                      v-model:value="ackConfig.zoneIds"
+                      :mode="mode"
+                      :options="options.zoneOptions"
+                      :disabled="!isNewOrUnprovisioned"
+                      label-key="ackCn.zone.label"
+                      :loading="state.vswitchLoading"
+                      @update:value="updateZones"
+                    />
+                  </div>
+                </div>
+                <div :class="{'row': true, 'mt-10': !isNewOrUnprovisioned && isAutoCreateVpc}">
+                  <div
+                    v-if="!isAutoCreateVpc || !isNewOrUnprovisioned"
+                    class="col span-12"
+                  >
+                    <div class="row">
+                      <div
+                        class="col span-8"
+                      >
+                        <LabeledSelect
+                          v-model:value="ackConfig.vpcId"
+                          required
+                          data-testid="cruack-vpc"
+                          :mode="mode"
+                          :options="options.vpcOptions"
+                          option-label="label"
+                          option-key="value"
+                          label-key="ackCn.vpcId.label"
+                          :loading="state.vpcLoading"
+                          :disabled="!isNewOrUnprovisioned"
+                          :rules="fvGetAndReportPathRules('vpcId')"
+                          :placeholder="intl('ackCn.vpcId.prompt')"
+                        />
+                      </div>
+                    </div>
+                    <div class="row mt-10">
+                      <div class="col span-8">
+                        <LabeledMultiSelect
+                          v-model:value="state.vswitchIds"
+                          required
+                          :mode="mode"
+                          :options="options.vswitchOptions"
+                          :disabled="!isNewOrUnprovisioned"
+                          :rules="fvGetAndReportPathRules('vswitchIds')"
+                          label-key="ackCn.vswitchId.label"
+                          :loading="state.vswitchLoading"
+                          @update:value="updateVswitchIds"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row mt-10">
+              <div class="col span-6">
+                <Checkbox
+                  v-model:value="ackConfig.snatEntry"
+                  :mode="mode"
+                  label-key="ackCn.snatEntry.label"
+                  :disabled="!isNewOrUnprovisioned"
+                  required
+                />
+              </div>
+            </div>
           </div>
         </div>
         <Tabbed
@@ -1157,17 +1486,23 @@ watch(() => normanCluster.value.name, (name) => {
               v-model:instancesNum="pool.instances_num"
               v-model:systemDiskCategory="pool.system_disk_category"
               v-model:systemDiskSize="pool.system_disk_size"
-              v-model:category="pool.category"
-              v-model:size="pool.size"
+              v-model:autoScalingEnabled="pool.auto_scaling_enabled"
+              v-model:minInstances="pool.min_instances"
+              v-model:maxInstances="pool.max_instances"
+              v-model:dataDisks="pool.data_disk"
               v-model:platform="pool.platform"
               v-model:keyPair="pool.key_pair"
+              :isNew="pool.isNew"
+              :isNewOrUnprovisioned="isNewOrUnprovisioned"
               :ackConfig="ackConfig"
               :disabled="(!isNewOrUnprovisioned && !pool.isNew) || changedHistoryK8sVersion"
               :disabledInstancesNum="changedHistoryK8sVersion"
-              :instanceTypeOptions="options.instanceTypeOptions"
+              :allInstanceTypeOptions="options.allInstanceTypeOptions"
               :keyPairOptions="options.keyPairOptions"
+              :platformOptions="options.platformOptions"
               :instanceTypeLoading="state.instanceTypeLoading"
               :keyPairLoading="state.keyPairLoading"
+              :zones="state.zones"
               :rules="{
                 name: fvGetAndReportPathRules('nodePoolName'),
                 runtimeVersion: fvGetAndReportPathRules('runtimeVersion'),
@@ -1177,7 +1512,6 @@ watch(() => normanCluster.value.name, (name) => {
                 diskSize: fvGetAndReportPathRules('diskSize'),
                 dataDiskSize: fvGetAndReportPathRules('dataDiskSize'),
                 platform: fvGetAndReportPathRules('platform'),
-                keyPair: fvGetAndReportPathRules('keyPair'),
               }"
               :mode="mode"
               @errors="e=>state.errors=e"
@@ -1195,6 +1529,35 @@ watch(() => normanCluster.value.name, (name) => {
             :mode="mode"
           />
         </Accordion>
+        <Accordion
+          class="mb-20 accordion"
+          title-key="imported.accordions.registries"
+          data-testid="registries-accordion"
+          :open-initially="false"
+        >
+          <Banner
+            color="info"
+            class="mt-0"
+          >
+            {{ t('cluster.privateRegistry.importedDescription') }}
+          </Banner>
+          <Checkbox
+            :value="state.showPrivateRegistryInput"
+            class="mb-20"
+            :mode="mode"
+            :label="t('cluster.privateRegistry.label')"
+            data-testid="private-registry-enable-checkbox"
+            @update:value="updatePrivateRegistryURL($event)"
+          />
+          <LabeledInput
+            v-if="state.showPrivateRegistryInput"
+            v-model:value="normanCluster.importedConfig.privateRegistryURL"
+            :mode="mode"
+            label-key="catalog.chart.registry.custom.inputLabel"
+            data-testid="private-registry-url"
+            :placeholder="t('catalog.chart.registry.custom.placeholder')"
+          />
+        </Accordion>
       </div>
     </div>
     <template
@@ -1205,3 +1568,38 @@ watch(() => normanCluster.value.name, (name) => {
     </template>
   </CruResource>
 </template>
+
+<style lang='scss' scoped>
+ .card-container {
+    &.highlight-border {
+      border-left: 5px solid var(--primary);
+    }
+    border-radius: var(--border-radius);
+    flex-basis: 40%;
+    margin: 10px;
+    min-height: 100px;
+    padding: 10px;
+    box-shadow: 0 0 20px var(--shadow);
+ }
+ .type-description {
+  color: var(--input-label);
+ }
+ .title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 10px;
+  }
+  .desc-info {
+    Icon{
+      color: var(--on-tertiary, var(--link));
+      margin: 0px 10px;
+    }
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    background: linear-gradient(51deg, rgb(111 210 74 / 0.12), rgba(34, 239, 171, 0));
+    border-radius: var(--border-radius);
+  }
+</style>

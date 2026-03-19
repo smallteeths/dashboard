@@ -11,6 +11,8 @@ ackCn:
   clusters:
     managed: 托管Kubernetes
     label: 集群类型
+  zone:
+    label: 可用区
   version:
     label: Kubernetes版本
     warningAliyun: “{version}”，此版本阿里云不在支持，如果继续部署将会导致集群部署失败，请更换其他版本。
@@ -21,7 +23,48 @@ ackCn:
   clusterSpec:
     pro: Pro 版
     standard: 基础版本
-    label: 集群规格
+    title: 集群规格
+    help: 选择集群的默认资源配额与能力级别。不同规格会影响可创建的集群规模、可用功能以及适用场景。
+    viewDetails: 查看规格详情
+    detailsTitle: 规格详情
+    badge:
+      recommended: 推荐
+    pill:
+      devtest: 开发 / 测试
+      production: 生产 / 发布
+    feature:
+      quota: 配额
+      capability: 能力
+      support: 支持
+    value:
+      quota:
+        standard: 标准
+        high: 高
+      capability:
+        standard: 基础
+        full: 完整
+      support:
+        community: 社区支持
+        sla: SLA 支持
+    detail:
+      scenario: 适用场景
+      quota: 资源与规模
+      capability: 功能范围
+      support: 支持级别
+      change: 变更说明
+    detailValue:
+      standard:
+        scenario: 适用于开发、测试与功能验证等场景。
+        quota: 满足一般测试规模需求，适合小规模集群与短周期验证。
+        capability: 提供基础能力，适合日常开发与联调。
+        support: 提供社区支持与自助排障能力。
+      pro:
+        scenario: 适用于生产环境与关键业务工作负载。
+        quota: 面向更高规模与更高并发场景，提供更充足的资源配额。
+        capability: 提供更完整的生产能力与可运维性。
+        support: 提供 SLA 支持与更高优先级的服务保障。
+      common:
+        change: 规格可在创建后升级；若需降级，请确认业务影响与平台策略。
   vpcId:
     label: 专有网络
     prompt: 选择专有网络...
@@ -33,7 +76,16 @@ ackCn:
     required: 必须选择交换机
     default: 默认交换机
   cni:
+    title: 网络配置
     label: 网络插件
+    privateNetwork: 专有网络
+    autoCreateVpc:
+      label: 自动创建专有网络会自动创建 VPC/vSwitch
+      autoCreateVpcTip: 自动创建专有网络
+      useAlreadyCreatedVpcTip: 使用已创建的专有网络
+    description:
+      terway: Terway 是阿里云自研的网络插件，基于 ENI 实现 Pod 网络通信，支持 eBPF 加速、NetworkPolicy，以及 Pod 级交换机/安全组能力。
+      flannel: Flannel 是一种轻量级的 Overlay 网络方案，用于在 Kubernetes 集群中为 Pod 提供跨节点的网络连通性，实现不同节点上 Pod 之间的通信。
   proxyMode:
     label: kube-proxy 代理模式
   nodeCidrMask:
@@ -49,16 +101,79 @@ ackCn:
     invalid: Service CIDR 网段不可选
     placeholder: "可选范围：10.0.0.0/16-24，172.16-31.0.0/16-24，192.168.0.0/16-24。不能与VPC及VPC内已有kubernetes集群使用的网段重复"
   snatEntry:
-    label: 配置 SNAT
+    label: 配置 SNAT (SNAT 配置后集群节点和应用将具有公网访问能力)
     placeholder: 为专有网络配置 SNAT
   endpointPublicAccess:
-    label: 公网访问
+    label: 公网访问 (开启后，将为 API server 私网 CLB 实例绑定一个 EIP，获得从公网访问集群 API server 的能力)
     placeholder: 使用 EIP 暴露 API Server
   nodePoolName:
     label: 节点池名称
     placeholder: e.g. nodepool
     required: 必须设置worker节点池名称
     unique: 节点池名称重复
+  nodePool:
+    name: 基本配置
+    scalingMode:
+      label: 缩放模式
+      manual: 手动
+      auto: 自动
+    desiredSize:
+      label: 期望节点数
+    minInstances:
+      label: 最小实例数
+    maxInstances:
+      label: 最大实例数
+    instanceTypes:
+      list:
+        title: 实例规格顺序
+        subtitle: 节点将按照实例规格的顺序创建。如果某个实例规格不可用，将自动使用下一个实例规格。实际用于创建节点的实例规格以库存情况为准。
+        warning: 该实例规格在所选可用区中可能不可用。
+      table:
+        title: 实例规格
+        subtitle: 请选择一个或多个实例规格。节点将按照下方“实例规格顺序”列表中的顺序创建。
+        add: 添加
+        columns:
+          instanceFamily: 实例族
+          instanceType: 实例规格
+          vcpus: vCPU
+          memory: 内存
+          stock: 库存状态
+          zones: 可用区
+        labelParts:
+          vcpus: '{val} vCPU'
+          memory: '{val} GB'
+      cpu:
+        label: vCPU 数量
+        option: '{val} vCPU'
+      memory:
+        label: 内存
+        option: '{val} GB'
+      label: 实例规格
+      banner: 选择多个实例规格。节点将按照上方列表中的实例规格顺序创建；当某个实例规格不可用时，将自动使用下一个实例规格。实际用于创建节点的实例规格以库存情况为准。
+    diskCategory:
+      label: 磁盘类型
+      options:
+        cloud: 普通云盘
+        cloud_efficiency: 高效云盘
+        cloud_ssd: SSD 云盘
+        cloud_essd: ESSD 云盘
+        cloud_auto: ESSD AutoPL 云盘
+        cloud_essd_entry: ESSD Entry 云盘
+        elastic_ephemeral_disk_standard: 标准弹性临时盘
+        elastic_ephemeral_disk_premium: 高级弹性临时盘
+    diskSize:
+      label: 磁盘大小
+    diskGroup:
+      add: 添加磁盘
+      remove: 移除磁盘
+    diskEncrypted:
+      label: 加密
+    remove:
+      label: 移除磁盘
+    systemDisk:
+      title: 系统盘
+    dataDisks:
+      title: 数据盘
   runtime:
     label: Containerd 版本
   instanceType:
@@ -103,4 +218,6 @@ ackCn:
     importCluster: 集群
     required: 必须设置需要导入的集群
     placeholder: '请选择'
+  clusterBasicInfo:
+    title: 集群基础信息
     
