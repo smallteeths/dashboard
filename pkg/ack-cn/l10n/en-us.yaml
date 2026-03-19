@@ -11,6 +11,8 @@ ackCn:
   clusters:
     managed: Managed Kubernetes
     label: Cluster Type
+  zone:
+    label: Zone
   version:
     label: Kubernetes Version
     warningAliyun: “{version}”, Ali Cloud is not supported in this version. If you continue to deploy it, cluster deployment will fail, please replace it with another version.
@@ -19,9 +21,50 @@ ackCn:
     warningEdited: It is detected that the Kubernetes version has been modified, and other configuration items will not support modification temporarily. Historical version is {vsersion}。
     toggle: Switch Mode
   clusterSpec:
-    pro: Pro 
-    standard: STANDARD
-    label: Cluster specifications
+    pro: Pro Edition
+    standard: Standard Edition
+    title: Cluster Specification
+    help: Select the default resource quotas and capability level for the cluster. Different specifications affect the cluster scale you can create, available features, and intended use cases.
+    viewDetails: details
+    detailsTitle: Specification Details
+    badge:
+      recommended: Recommended
+    pill:
+      devtest: Dev / Test
+      production: Production / Release
+    feature:
+      quota: Quota
+      capability: Capabilities
+      support: Support
+    value:
+      quota:
+        standard: Standard
+        high: High
+      capability:
+        standard: Basic
+        full: Full
+      support:
+        community: Community Support
+        sla: SLA Support
+    detail:
+      scenario: Use cases
+      quota: Resources and scale
+      capability: Feature scope
+      support: Support level
+      change: Change notes
+    detailValue:
+      standard:
+        scenario: Suitable for development, testing, and feature validation.
+        quota: Meets typical test-scale needs and is ideal for small clusters and short-cycle validation.
+        capability: Provides essential capabilities for day-to-day development and integration.
+        support: Includes community support and self-service troubleshooting.
+      pro:
+        scenario: Suitable for production environments and mission-critical workloads.
+        quota: Designed for larger scale and higher concurrency, with more generous resource quotas.
+        capability: Offers a more complete set of production-grade capabilities and operability.
+        support: Provides SLA-backed support with higher-priority service assurance.
+      common:
+        change: The specification can be upgraded after creation. For downgrades, please confirm business impact and platform policies.
   vpcId:
     label: VPC
     prompt: Choose VPC...
@@ -33,7 +76,16 @@ ackCn:
     required: VSwitch is required
     default: Default VSwitch
   cni:
+    title: Network Configuration
     label: Network Plugin
+    privateNetwork: Private Network
+    autoCreateVpc:
+      label: Automatically creating a private network will create the VPC and vSwitch automatically.
+      autoCreateVpcTip: Automatically create a private network
+      useAlreadyCreatedVpcTip: Use an existing private network
+    description: 
+      terway: Terway is Alibaba Cloud’s self-developed networking plugin. It uses ENIs to provide Pod networking, supports eBPF acceleration and NetworkPolicy, and enables Pod-level vSwitch and security group capabilities.
+      flannel: Flannel is a lightweight overlay networking solution that provides cross-node connectivity for Pods in a Kubernetes cluster, enabling Pod-to-Pod communication across different nodes.
   proxyMode:
     label: Kube-Proxy Mode
   nodeCidrMask:
@@ -59,6 +111,69 @@ ackCn:
     placeholder: e.g. nodepool
     required: Worker Node Name is required
     unique: Node pool names must be unique.
+  nodePool:
+    name: Basic Configuration
+    scalingMode: 
+      label: Scaling Mode
+      manual: Manual
+      auto: Auto
+    desiredSize:
+      label: Expected Nodes
+    minInstances:
+      label: Min Instances
+    maxInstances:
+      label: Max Instances
+    instanceTypes:
+      list:
+        title: Instance Type Order
+        subtitle: Nodes are created based on the order of the instance types. If one instance type is unavailable, the next instance type is used. The actual instance types used to create nodes are subject to inventory availability.
+        warning: This instance type might be unavailable in selected zones.
+      table:
+        title: Instance Types
+        subtitle: Select one or more instance types. Nodes are created based on the order of the instance types in the Instance Order list below.
+        add: Add
+        columns:
+          instanceFamily: Instance Family
+          instanceType: Instance Type
+          vcpus: vCPU
+          memory: Memory  
+          stock: Stock Availability 
+          zones: Zones  
+        labelParts:
+          vcpus: '{val} vCPU'
+          memory: '{val} GB'         
+      cpu:
+        label: Number of vCPUs
+        option: '{val} vCPU'
+      memory:
+        label: Memory
+        option: '{val} GB'
+      label: Instance Types
+      banner: You can select multiple instance types. Nodes are created based on the order of the instance types in the above list. If one instance type is unavailable, the next instance type is used. The actual instance types used to create nodes are subject to inventory availability.
+    diskCategory:
+      label: Category
+      options:
+        cloud: Basic Disk
+        cloud_efficiency: Ultra Disk
+        cloud_ssd: Standard SSD Disk
+        cloud_essd: ESSD Disk
+        cloud_auto: ESSD AutoPL Disk
+        cloud_essd_entry: ESSD Entry Disk
+        elastic_ephemeral_disk_standard: Standard Elastic Ephemeral Disk
+        elastic_ephemeral_disk_premium: Premium Elastic Ephemeral Disk
+    diskSize:
+      label: Disk size
+    diskGroup:
+      add: Add disk
+      remove: Remove disk
+    diskEncrypted:
+      label: Encryption
+    remove:
+      label: Remove Disk
+    systemDisk:
+      title: System Disk
+    dataDisks:
+      title: Data Disks
   runtime:
     label: Containerd Version
   instanceType:
@@ -103,4 +218,10 @@ ackCn:
     importCluster: Cluster
     required: Import Cluster is required
     placeholder: 'Choose'
-  
+  generic:
+    arrayList: Array List
+    moveUp: Move Up
+    moveDown: Move Down
+    remove: Remove
+  clusterBasicInfo:
+    title: Cluster Basic Information
