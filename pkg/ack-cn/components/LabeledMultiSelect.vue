@@ -318,6 +318,7 @@ onUnmounted(() => {
   .multiple-input {
     display: flex;
     background-color: transparent;
+    padding: 0px 0px 5px;
     .multiple-input-options {
       display: flex;
       flex-basis: 100%;
@@ -326,7 +327,7 @@ onUnmounted(() => {
       padding: 0;
       position: relative;
       overflow: auto;
-      height: 30px;
+      max-height: 80px;
       background-color: transparent;
     }
     .multiple-input-actions {
@@ -350,14 +351,15 @@ onUnmounted(() => {
   }
 
   .selected-item {
-    background: var(--dropdown-hover-bg);
-    padding: 2px 4px;
+    background: rgb(66 150 35 / 80%);
+    color: #fff;
+    padding: 2px 6px;
     border-radius: 2px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 2px;
-    width: 100px;
+    max-width: 200px;
     text-overflow: ellipsis;
     white-space: nowrap;
     margin-left: 4px;
@@ -366,7 +368,7 @@ onUnmounted(() => {
 
     .item {
       display: block;
-      width: 80px;
+      max-width: 180px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
