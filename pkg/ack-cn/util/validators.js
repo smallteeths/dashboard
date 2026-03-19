@@ -1,3 +1,4 @@
+import ipaddr from 'ipaddr.js';
 
 const nameRequired = (normanCluster, intl) => {
   return () => {
@@ -273,6 +274,53 @@ const keyPairRequired = (nodePools, intl) => {
     return !!nodePools.value?.find((pool) => !pool.key_pair) ? intl.value('validation.required', { key: intl.value('ackCn.keyPair.label') }) : null;
   };
 };
+
+function ipToLong(ip) {
+  return (
+    ip.split('.').reduce((cur, octet) => (cur << 8) + parseInt(octet, 10), 0) >>> 0
+  );
+}
+
+function getCidrRange(cidr) {
+  try {
+    const [ip, prefix] = ipaddr.parseCIDR(cidr);
+
+    if (ip.kind() !== 'ipv4') {
+      return null;
+    }
+
+    const ipLong = ipToLong(ip.toString());
+    // Create a subnet mask
+    const mask = (0xffffffff << (32 - prefix)) >>> 0;
+    // Get a start of the ip range
+    const start = ipLong & mask;
+    // Get an end of the ip range
+    const end = start | (~mask >>> 0);
+
+    return { start, end };
+  } catch (e) {
+    // We can swallow this error
+    return null;
+  }
+}
+
+export function doCidrOverlap(cidr1, cidr2) {
+  if (!isValidCIDR(cidr1) || !isValidCIDR(cidr2)) {
+    return false;
+  }
+  const range1 = getCidrRange(cidr1);
+  const range2 = getCidrRange(cidr2);
+
+  if (!range1 || !range2) {
+    return false;
+  }
+
+  return range1.start <= range2.end && range2.start <= range1.end;
+}
+
+export function isValidCIDR(cidr) {
+  return ipaddr.isValidCIDR(cidr);
+}
 
 export default {
   nameRequired,

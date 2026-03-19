@@ -11,6 +11,8 @@ ackCn:
   clusters:
     managed: 託管Kubernetes
     label: 叢集類型
+  zone:
+    label: 可用區
   version:
     label: Kubernetes版本
     warningAliyun: “{version}”，此版本阿里雲不在支持，如果繼續部署將會導致集群部署失敗，請更換其他版本。
@@ -19,9 +21,50 @@ ackCn:
     warningEdited: 檢測到 Kubernetes 版本被修改，其他配置項將暫時不支持修改。歷史版本為 {vsersion}。
     toggle: 切換
   clusterSpec:
-    pro: 專業版
-    standard: 基礎版
-    label: 集群規格
+    pro: Pro 版
+    standard: 基礎版本
+    title: 叢集規格
+    help: 選擇叢集的預設資源配額與能力等級。不同規格會影響可建立的叢集規模、可用功能以及適用情境。
+    viewDetails: 查看規格詳情
+    detailsTitle: 規格詳情
+    badge:
+      recommended: 推薦
+    pill:
+      devtest: 開發 / 測試
+      production: 生產 / 發佈
+    feature:
+      quota: 配額
+      capability: 能力
+      support: 支援
+    value:
+      quota:
+        standard: 標準
+        high: 高
+      capability:
+        standard: 基礎
+        full: 完整
+      support:
+        community: 社群支援
+        sla: SLA 支援
+    detail:
+      scenario: 適用情境
+      quota: 資源與規模
+      capability: 功能範圍
+      support: 支援等級
+      change: 變更說明
+    detailValue:
+      standard:
+        scenario: 適用於開發、測試與功能驗證等情境。
+        quota: 滿足一般測試規模需求，適合小規模叢集與短週期驗證。
+        capability: 提供基礎能力，適合日常開發與聯調。
+        support: 提供社群支援與自助排障能力。
+      pro:
+        scenario: 適用於生產環境與關鍵業務工作負載。
+        quota: 面向更高規模與更高併發情境，提供更充足的資源配額。
+        capability: 提供更完整的生產能力與可維運性。
+        support: 提供 SLA 支援與更高優先級的服務保障。
+      common:
+        change: 規格可在建立後升級；若需降級，請先確認業務影響與平台策略。
   vpcId:
     label: 專有網絡
     prompt: 選擇專有網絡...
@@ -33,7 +76,16 @@ ackCn:
     required: 必須選擇交換機
     default: 默認交換機
   cni:
-    label: 網路外掛程式
+    title: 網路設定
+    label: 網路外掛
+    privateNetwork: 專有網路
+    autoCreateVpc:
+      label: 自動建立專有網路會自動建立 VPC/vSwitch
+      autoCreateVpcTip: 自動建立專有網路
+      useAlreadyCreatedVpcTip: 使用已建立的專有網路
+    description:
+      terway: Terway 是阿里雲自研的網路外掛，基於 ENI 實現 Pod 網路通訊，支援 eBPF 加速與 NetworkPolicy，並提供 Pod 級 vSwitch 與安全性群組能力。
+      flannel: Flannel 是一種輕量級的 Overlay 網路方案，用於在 Kubernetes 叢集中提供 Pod 的跨節點連通性，讓不同節點上的 Pod 能夠彼此通訊。
   proxyMode:
     label: kube-proxy 代理模式
   nodeCidrMask:
@@ -59,6 +111,69 @@ ackCn:
     placeholder: e.g. nodepool
     required: 必須設置worker節點池名稱
     unique: 节節點池名稱重复
+  nodePool:
+    name: 基本配置
+    scalingMode:
+      label: 縮放模式
+      manual: 手動
+      auto: 自動
+    desiredSize:
+      label: 期望節點數
+    minInstances:
+      label: 最小實例數
+    maxInstances:
+      label: 最大實例數
+    instanceTypes:
+      list:
+        title: 執行個體規格順序
+        subtitle: 節點將依照執行個體規格的順序建立。若某個執行個體規格不可用，將自動改用下一個執行個體規格。實際用於建立節點的執行個體規格以庫存狀況為準。
+        warning: 此執行個體規格在所選可用區中可能不可用。
+      table:
+        title: 執行個體規格
+        subtitle: 請選擇一個或多個執行個體規格。節點將依照下方「執行個體規格順序」清單中的順序建立。
+        add: 新增
+        columns:
+          instanceFamily: 執行個體族
+          instanceType: 執行個體規格
+          vcpus: vCPU
+          memory: 記憶體
+          stock: 庫存狀態
+          zones: 可用區
+        labelParts:
+          vcpus: '{val} vCPU'
+          memory: '{val} GB'
+      cpu:
+        label: vCPU 數量
+        option: '{val} vCPU'
+      memory:
+        label: 記憶體
+        option: '{val} GB'
+      label: 執行個體規格
+      banner: 你可以選擇多個執行個體規格。節點將依照上方清單中的執行個體規格順序建立；當某個執行個體規格不可用時，將自動改用下一個執行個體規格。實際用於建立節點的執行個體規格以庫存狀況為準。
+  diskCategory:
+    label: 磁碟類型
+    options:
+      cloud: 普通云盘
+      cloud_efficiency: 高效云盘
+      cloud_ssd: SSD 云盘
+      cloud_essd: ESSD 云盘
+      cloud_auto: ESSD AutoPL 云盘
+      cloud_essd_entry: ESSD Entry 云盘
+      elastic_ephemeral_disk_standard: 標準弹性临时盘
+      elastic_ephemeral_disk_premium: 高級弹性临时盘
+    diskSize:
+      label: 磁碟大小
+    diskGroup:
+      add: 新增磁碟
+      remove: 移除磁碟
+    diskEncrypted:
+      label: 加密
+    remove:
+      label: 移除磁碟
+    systemDisk:
+      title: 系統碟
+    dataDisks:
+      title: 資料碟
   runtime:
     label: Containerd 版本
   instanceType:
@@ -103,3 +218,5 @@ ackCn:
     importCluster: 集群
     required: 必須設置需要導入的集群
     placeholder: '請選擇'
+  clusterBasicInfo:
+    title: 叢集基本資訊

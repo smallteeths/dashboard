@@ -187,3 +187,51 @@ function getAvailableResources(res) {
 
   return results;
 }
+
+export async function fetchAvailableResourcesRaw({
+  resource = '',
+  plural,
+  cloudCredentialId,
+  store,
+  externalParams = {},
+} = {}) {
+  const resourceName = normalizeResourceName(resource || plural);
+  const acceptLanguage = getAcceptLanguage(store);
+  const url = `${ window.location.origin }/meta/aliyuncn/${ resourceName }`;
+
+  try {
+    const res = await fetchPage(url, {
+      cloudCredentialId,
+      acceptLanguage,
+      ...externalParams,
+    }, store);
+
+    return res;
+  } catch (err) {
+    throw err?.detail || err;
+  }
+}
+
+export async function fetchResourcesNoPagination({
+  resource = '',
+  plural,
+  cloudCredentialId,
+  store,
+  externalParams = {},
+} = {}) {
+  const resourceName = normalizeResourceName(resource || plural);
+  const acceptLanguage = getAcceptLanguage(store);
+  const url = `${ window.location.origin }/meta/aliyuncn/${ resourceName }`;
+
+  try {
+    const results = await fetchPage(url, {
+      cloudCredentialId,
+      acceptLanguage,
+      ...externalParams,
+    }, store);
+
+    return results;
+  } catch (err) {
+    throw err?.detail || err;
+  }
+}
