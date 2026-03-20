@@ -23,6 +23,7 @@ import KeyValue from '@shell/components/form/KeyValue';
 import UnitInput from '@shell/components/form/UnitInput';
 import FileSelector from '@shell/components/form/FileSelector.vue';
 import { RadioGroup } from '@components/Form/Radio';
+import { Checkbox } from '@components/Form/Checkbox';
 import { queryHuawei } from '../util/request';
 import CONFIG_ENV from '../util/config';
 import { find, pullAt, uniqBy, cloneDeep } from 'lodash';
@@ -96,6 +97,7 @@ const state = ref({
   eniNetworks:              [],
   errors:                   [],
   isFirstRun:               true,
+  showPrivateRegistryInput: false,
 });
 const emit = defineEmits(['done']);
 const {
@@ -875,6 +877,9 @@ async function initCustomConfig() {
 
     normanCluster.value = await store.dispatch(`rancher/clone`, { resource: liveNormanCluster });
 
+    if (normanCluster.value?.importedConfig?.privateRegistryURL) {
+      state.value.showPrivateRegistryInput = true;
+    }
     if (normanCluster.value.cceConfig) {
       fixConfig(normanCluster);
     }
@@ -887,6 +892,9 @@ async function initCustomConfig() {
       normanCluster.value.annotations = { ...normanCluster.value.annotations, [CREATOR_PRINCIPAL_ID]: principalId };
     }
 
+    if (!normanCluster.value?.importedConfig?.privateRegistryURL) {
+      normanCluster.value.importedConfig = { privateRegistryURL: null };
+    }
     nodePools.value = [{ ...CONFIG_ENV.DEFAULT_NODE_GROUP_CONFIG }];
     cceConfig.value = { ...CONFIG_ENV.DEFAULTCCECONFIG };
   }
@@ -902,6 +910,12 @@ async function initImportConfig() {
 
   if (principalId.includes('local://')) {
     normanCluster.value.annotations = { ...normanCluster.value.annotations, [CREATOR_PRINCIPAL_ID]: principalId };
+  }
+
+  if (normanCluster.value?.importedConfig?.privateRegistryURL) {
+    state.value.showPrivateRegistryInput = true;
+  } else {
+    normanCluster.value.importedConfig = { privateRegistryURL: null };
   }
 
   if (!normanCluster?.value?.cceConfig) {
@@ -1102,6 +1116,13 @@ function poolIsValid(pool) {
 
 function updateCceConfigTags(tags) {
   cceConfig.value.tags = tags;
+}
+
+function updatePrivateRegistryInput(val) {
+  state.value.showPrivateRegistryInput = val;
+  if (!val) {
+    normanCluster.value.importedConfig.privateRegistryURL = null;
+  }
 }
 
 onMounted(async() => {
@@ -1648,6 +1669,35 @@ onMounted(async() => {
         >
           <Labels
             v-model:value="normanCluster"
+          />
+        </Accordion>
+        <Accordion
+          class="mb-20 accordion"
+          title-key="imported.accordions.registries"
+          data-testid="registries-accordion"
+          :open-initially="false"
+        >
+          <Banner
+            color="info"
+            class="mt-0"
+          >
+            {{ t('cluster.privateRegistry.importedDescription') }}
+          </Banner>
+          <Checkbox
+            :value="state.showPrivateRegistryInput"
+            class="mb-20"
+            :mode="mode"
+            :label="t('cluster.privateRegistry.label')"
+            data-testid="private-registry-enable-checkbox"
+            @update:value="updatePrivateRegistryInput($event)"
+          />
+          <LabeledInput
+            v-if="state.showPrivateRegistryInput"
+            v-model:value="normanCluster.importedConfig.privateRegistryURL"
+            :mode="mode"
+            label-key="catalog.chart.registry.custom.inputLabel"
+            data-testid="private-registry-url"
+            :placeholder="t('catalog.chart.registry.custom.placeholder')"
           />
         </Accordion>
       </div>
