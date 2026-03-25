@@ -748,13 +748,13 @@ export default {
       />
       <button
         v-if="_showBulkActions"
-        v-shortkey.once="['del']"
+        v-shortkey.once="['ctrl', 'del']"
         class="hide"
         @shortkey="keyAction('remove')"
       />
       <button
         v-if="_showBulkActions"
-        v-shortkey.once="['backspace']"
+        v-shortkey.once="['ctrl', 'backspace']"
         class="hide"
         @shortkey="keyAction('remove')"
       />
