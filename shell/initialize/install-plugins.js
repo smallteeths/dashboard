@@ -41,7 +41,7 @@ export async function installPlugins(vueApp) {
     ShortKey,
     {
       prevent:          ['input', 'textarea', 'select'],
-      preventContainer: ['#modal-container-element']
+      preventContainer: ['#modal-container-element', '.code-editor__container']
     });
   vueApp.use(InstallCodeMirror);
   vueApp.component('v-select', vSelect);
