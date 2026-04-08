@@ -65,11 +65,17 @@ const DEFAULT_NODE_GROUP_CONFIG = {
   nodePoolType:    'super',
   userScript:      '',
   virtualNodePool: {
-    securityGroupIds:   [],
-    subnetIds:          [],
-    labels:             [],
-    taints:             [],
-    virtualNodes:       [],
+    securityGroupIds: [],
+    subnetIds:        [],
+    labels:           [],
+    taints:           [],
+    virtualNodes:     [
+      {
+        displayName: '',
+        subnetId:    '',
+        tags:        [],
+      }
+    ],
     deletionProtection: true,
     os:                 'linux',
   }
@@ -462,6 +468,26 @@ export const INSTANCE_FAMILY_CATEGORY_MAP = {
   CH2:   'other',
 };
 
+const CLUSTER_CIDR_CANDIDATES = [
+  '10.42.0.0/16',
+  '10.43.0.0/16',
+  '10.44.0.0/16',
+  '10.45.0.0/16',
+  '10.46.0.0/16',
+  '10.47.0.0/16',
+  '10.48.0.0/16',
+  '10.49.0.0/16',
+  '172.16.0.0/16',
+  '172.17.0.0/16',
+  '172.18.0.0/16',
+  '172.19.0.0/16',
+  '172.20.0.0/16',
+  '172.21.0.0/16',
+  '172.22.0.0/16',
+  '172.23.0.0/16',
+  '192.168.0.0/16',
+];
+
 export default {
   CONTAINER,
   DEFAULTTKECONFIG,
@@ -471,4 +497,5 @@ export default {
   CURRENTDISK,
   BAND_WIDTH,
   CSI_ADDON_MAP,
+  CLUSTER_CIDR_CANDIDATES,
 };

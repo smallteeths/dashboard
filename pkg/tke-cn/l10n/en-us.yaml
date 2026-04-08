@@ -89,6 +89,7 @@ tkeCn:
     placeholder: e.g. 172.16.0.0/16
     required: Container Network CIDR is required
     formatError: Container Network CIDR format error
+    conflictError: Container Network CIDR conflict error
   securityGroup:
     label: Security Group
     required: Security Group is required
@@ -225,8 +226,8 @@ tkeCn:
       title: NodePool Configuration
       hint: A subnet must be selected for the node pool.
     config:
-      title: Add Super Node
-      hint: To ensure the cluster's normal operation, please add a super node. Select a subnet from the table below and enter a node name. After clicking "{action}", a configuration card will be created. Click "Edit" on the card to load the configuration back.
+      title: Super Node
+      hint: To keep the cluster running normally, add at least one super node. Select a subnet from the table below and enter a node name to create a configuration card. You can click Edit on the card at any time to load the configuration back for further changes.
     fields:
       nodeName: Node Name
       nodeNamePlaceholder: Auto-generated
@@ -312,9 +313,12 @@ tkeCn:
     title: Network Basic Configuration
     description: Configure the cluster network settings, including availability zone, VPC, subnet, security group, cluster CIDR, and cluster access method. Please configure them according to your network planning and access requirements.
   fields:
-    securityGroupIds: Security Group IDs
-    virtualNodes: Virtual Nodes
+    help: Please complete the following required configuration fields.
+    securityGroupIds: Super Node Security Group IDs
+    virtualNodes: Super Nodes
+    subnetId: Super Node Subnet ID
   userData:
+    label: User Data
     preview: No user data configured
     description: Provide a custom cloud-init or shell script that will run during node initialization.
   image:

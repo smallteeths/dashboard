@@ -181,15 +181,13 @@ const nodePoolSecurityGroupRequired = (nodePools, intl) => {
 };
 
 const virtualNodePoolRequired = (nodePools, intl) => {
-  const label = intl.value('tkeCn.virtualNodePool.label');
-
   const buildError = (fieldKey) => {
-    return intl.value('validation.required', { key: `${ label } ${ intl.value(fieldKey) }` });
+    return intl.value('validation.required', { key: `${ intl.value(fieldKey) }` });
   };
 
   const validateVirtualNodePool = (virtualNodePool) => {
     if (!virtualNodePool || typeof virtualNodePool !== 'object') {
-      return buildError('tkeCn.virtualNodePool.fields.securityGroupIds');
+      return buildError('tkeCn.fields.virtualNodes');
     }
 
     const securityGroupIds = Array.isArray(virtualNodePool.securityGroupIds) ? virtualNodePool.securityGroupIds : [];
@@ -197,11 +195,19 @@ const virtualNodePoolRequired = (nodePools, intl) => {
     // const subnetIds = Array.isArray(virtualNodePool.subnetIds) ? virtualNodePool.subnetIds : [];
 
     if (securityGroupIds.length === 0) {
-      return buildError('tkeCn.virtualNodePool.fields.securityGroupIds');
+      return buildError('tkeCn.fields.securityGroupIds');
     }
 
     if (virtualNodes.length === 0) {
-      return buildError('tkeCn.virtualNodePool.fields.virtualNodes');
+      return buildError('tkeCn.fields.virtualNodes');
+    }
+
+    if (virtualNodes.length > 0) {
+      const hasMissingSubnetId = virtualNodes.some((node) => !node?.subnetId);
+
+      if (hasMissingSubnetId) {
+        return buildError('tkeCn.fields.subnetId');
+      }
     }
 
     // if (subnetIds.length === 0) {

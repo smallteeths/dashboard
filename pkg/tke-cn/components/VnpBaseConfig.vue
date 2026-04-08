@@ -10,7 +10,7 @@ import SortableTable from '@shell/components/SortableTable';
 import Checkbox from '@components/Form/Checkbox/Checkbox.vue';
 
 const props = defineProps({
-  value:                { type: Object, default: () => ({}) },
+  virtualNodes:         { type: Array, default: () => ([]) },
   nodePoolName:         { type: String, default: '' },
   mode:                 { type: String, required: true },
   isNewOrUnprovisioned: { type: Boolean, default: false },
@@ -19,38 +19,85 @@ const props = defineProps({
   rules:                { type: Object, default: () => ({}) },
   vpcId:                { type: String, default: '' },
 });
+
 const emit = defineEmits(['update:value', 'update:nodePoolName']);
 const errors = ref([]);
 const store = useStore();
 const intl = computed(() => store.getters['i18n/t']);
 const zone = ref('');
+const editingIndex = ref(null);
+const currentIndex = ref(0);
+const showEditModal = ref(false);
+const draft = ref(createEmptyVirtualNode());
 
 function t(key, args) {
   return intl.value(key, args);
 }
 
-function patch(p) {
-  emit('update:value', { ...(props.value || {}), ...p });
+function createEmptyVirtualNode() {
+  return {
+    displayName: '',
+    subnetId:    '',
+    tags:        [],
+  };
 }
 
-function virtualNodes() {
-  return Array.isArray(props.value?.virtualNodes) ? props.value.virtualNodes : [];
+function getVirtualNodes() {
+  return Array.isArray(props.virtualNodes) ? props.virtualNodes : [];
 }
 
 function setVirtualNodes(next) {
-  patch({ virtualNodes: next });
+  emit('update:value', { virtualNodes: next });
 }
 
-const editingIndex = ref(null);
-const draft = ref({
-  displayName: '',
-  subnetId:    '',
-});
+function isValidIndex(index, list = getVirtualNodes()) {
+  return index >= 0 && index < list.length;
+}
 
-function resetDraft() {
+function loadDraftByIndex(index) {
+  const list = getVirtualNodes();
+  const cur = list[index] || createEmptyVirtualNode();
+
+  draft.value = {
+    displayName: cur.displayName || '',
+    subnetId:    cur.subnetId || '',
+    tags:        Array.isArray(cur.tags) ? cur.tags : [],
+  };
+}
+
+function syncDraftToCurrentNode() {
+  if (!props.isNewOrUnprovisioned || editingIndex.value !== null) {
+    return;
+  }
+
   errors.value = [];
-  editingIndex.value = null;
-  draft.value = { displayName: '', subnetId: '' };
+
+  const next = cloneDeep(getVirtualNodes());
+
+  if (!next[currentIndex.value]) {
+    next[currentIndex.value] = createEmptyVirtualNode();
+  }
+
+  next[currentIndex.value] = {
+    ...(next[currentIndex.value] || {}),
+    displayName: draft.value.displayName || '',
+    subnetId:    draft.value.subnetId || '',
+    tags:        Array.isArray(draft.value.tags) ? draft.value.tags : [],
+  };
+
+  setVirtualNodes(next);
+}
+
+function validateNode(node) {
+  errors.value = [];
+
+  if (!node.subnetId) {
+    errors.value.push(t('tkeCn.superNodePool.errors.subnetRequired'));
+
+    return false;
+  }
+
+  return true;
 }
 
 function selectSubnet(subnetId, checked) {
@@ -59,14 +106,140 @@ function selectSubnet(subnetId, checked) {
   }
 
   draft.value.subnetId = checked ? subnetId : '';
+
+  if (editingIndex.value === null) {
+    syncDraftToCurrentNode();
+  }
 }
 
-// function selectVirtualNodePoolSubnet(subnetId, checked) {
-//   if (!props.isNewOrUnprovisioned) {
-//     return;
-//   }
-//   checked ? patch({ subnetIds: [subnetId] }) : patch({ subnetIds: [] });
-// }
+function updateDisplayName(val) {
+  draft.value.displayName = val;
+
+  if (editingIndex.value === null) {
+    syncDraftToCurrentNode();
+  }
+}
+
+function addVirtualNode() {
+  if (!props.isNewOrUnprovisioned || editingIndex.value !== null) {
+    return;
+  }
+
+  const node = {
+    displayName: draft.value.displayName || '',
+    subnetId:    draft.value.subnetId || '',
+    tags:        Array.isArray(draft.value.tags) ? draft.value.tags : [],
+  };
+
+  if (!validateNode(node)) {
+    return;
+  }
+
+  const next = cloneDeep(getVirtualNodes());
+
+  if (!next[currentIndex.value]) {
+    next[currentIndex.value] = createEmptyVirtualNode();
+  }
+
+  next[currentIndex.value] = {
+    ...(next[currentIndex.value] || {}),
+    ...node,
+  };
+
+  next.push(createEmptyVirtualNode());
+  setVirtualNodes(next);
+
+  currentIndex.value = next.length - 1;
+  errors.value = [];
+  loadDraftByIndex(currentIndex.value);
+}
+
+function openEditModal(realIndex) {
+  const list = getVirtualNodes();
+  const cur = list[realIndex];
+
+  if (!cur || !props.isNewOrUnprovisioned) {
+    return;
+  }
+  editingIndex.value = realIndex;
+  errors.value = [];
+  loadDraftByIndex(realIndex);
+
+  const currentSubnet = find(props.subnetOptions || [], (r) => r.value === cur.subnetId);
+
+  if (currentSubnet?.Zone) {
+    zone.value = currentSubnet.Zone;
+  }
+  showEditModal.value = true;
+}
+
+function saveEdit() {
+  if (!props.isNewOrUnprovisioned || editingIndex.value === null) {
+    return;
+  }
+
+  const node = {
+    displayName: draft.value.displayName || '',
+    subnetId:    draft.value.subnetId || '',
+    tags:        Array.isArray(draft.value.tags) ? draft.value.tags : [],
+  };
+
+  if (!validateNode(node)) {
+    return;
+  }
+
+  const next = cloneDeep(getVirtualNodes());
+
+  if (isValidIndex(editingIndex.value, next)) {
+    next[editingIndex.value] = {
+      ...(next[editingIndex.value] || {}),
+      ...node,
+    };
+  }
+
+  setVirtualNodes(next);
+  errors.value = [];
+  showEditModal.value = false;
+  editingIndex.value = null;
+  loadDraftByIndex(currentIndex.value);
+}
+
+function cancelEdit() {
+  errors.value = [];
+  showEditModal.value = false;
+  editingIndex.value = null;
+  loadDraftByIndex(currentIndex.value);
+}
+
+function removeVirtualNode(realIndex) {
+  if (!props.isNewOrUnprovisioned) {
+    return;
+  }
+  if (realIndex === currentIndex.value) {
+    return;
+  }
+
+  const next = cloneDeep(getVirtualNodes());
+
+  next.splice(realIndex, 1);
+  if (realIndex < currentIndex.value) {
+    currentIndex.value -= 1;
+  }
+  if (next.length === 0) {
+    next.push(createEmptyVirtualNode());
+    currentIndex.value = 0;
+  }
+  setVirtualNodes(next);
+  if (editingIndex.value !== null) {
+    if (editingIndex.value === realIndex) {
+      showEditModal.value = false;
+      editingIndex.value = null;
+      loadDraftByIndex(currentIndex.value);
+    } else if (editingIndex.value > realIndex) {
+      editingIndex.value -= 1;
+    }
+  }
+}
 
 function subnetRowById(id) {
   return find(props.subnetOptions || [], (r) => r.value === id);
@@ -75,137 +248,72 @@ function subnetRowById(id) {
 function displaySubnetLabel(id) {
   const row = subnetRowById(id);
 
-  return row?.label || id || '-';
+  return row?.label || id || '';
 }
 
 function displayAvailableZone(subnetId) {
   const row = find(filteredSubnetOptions.value || [], (r) => r.value === subnetId);
 
-  return row?.zoneLabel || '-';
+  return row?.zoneLabel || '';
 }
 
-function saveDraftToList() {
+function updateZone() {
+  draft.value.subnetId = '';
   errors.value = [];
-  if (!props.isNewOrUnprovisioned) {
-    return;
-  }
-  const node = {
-    displayName: draft.value.displayName || '',
-    subnetId:    draft.value.subnetId || '',
-    tags:        [],
-  };
 
-  if (!node.subnetId) {
-    errors.value.push(t('tkeCn.superNodePool.errors.subnetRequired'));
+  const list = getVirtualNodes();
 
+  if (!Array.isArray(list) || list.length === 0) {
     return;
   }
 
-  const next = cloneDeep(virtualNodes());
+  const next = cloneDeep(list).map((item) => {
+    return {
+      ...item,
+      subnetId: '',
+    };
+  });
 
-  if (editingIndex.value !== null && editingIndex.value >= 0 && editingIndex.value < next.length) {
-    next[editingIndex.value] = { ...(next[editingIndex.value] || {}), ...node };
-    setVirtualNodes(next);
-    resetDraft();
-
-    return;
-  }
-
-  next.push(node);
   setVirtualNodes(next);
-  resetDraft();
-}
-
-function removeVirtualNode(i) {
-  if (!props.isNewOrUnprovisioned) {
-    return;
-  }
-
-  const next = cloneDeep(virtualNodes());
-
-  next.splice(i, 1);
-  setVirtualNodes(next);
-  if (editingIndex.value === i) {
-    resetDraft();
-  } else if (editingIndex.value !== null && editingIndex.value > i) {
-    editingIndex.value -= 1;
-  }
-}
-
-function editVirtualNode(i) {
-  const list = virtualNodes();
-  const cur = list[i];
-
-  if (!cur) {
-    return;
-  }
-
-  editingIndex.value = i;
-  draft.value = {
-    displayName: cur.displayName || '',
-    subnetId:    cur.subnetId || '',
-  };
-}
-
-function cancelEdit() {
-  resetDraft();
 }
 
 const SUBNET_COLUMNS = computed(() => [
   {
-    name: 'selected', label: '', width: 40
+    name:  'selected',
+    label: '',
+    width: 40
   },
   {
-    name: 'label', label: t('tkeCn.superNodePool.subnetTable.name'), value: 'label'
+    name:  'label',
+    label: t('tkeCn.superNodePool.subnetTable.name'),
+    value: 'label'
   },
   {
-    name: 'value', label: t('tkeCn.superNodePool.subnetTable.id'), value: 'value'
+    name:  'value',
+    label: t('tkeCn.superNodePool.subnetTable.id'),
+    value: 'value'
   },
   {
-    name: 'cidr', label: t('tkeCn.superNodePool.subnetTable.cidr'), value: 'CidrBlock'
+    name:  'cidr',
+    label: t('tkeCn.superNodePool.subnetTable.cidr'),
+    value: 'CidrBlock'
   },
   {
-    name: 'zone', label: t('tkeCn.superNodePool.subnetTable.zone'), value: 'zoneLabel'
+    name:  'zone',
+    label: t('tkeCn.superNodePool.subnetTable.zone'),
+    value: 'zoneLabel'
   },
   {
-    name: 'ip', label: t('tkeCn.superNodePool.subnetTable.availableIp'), value: 'AvailableIpAddressCount'
+    name:  'ip',
+    label: t('tkeCn.superNodePool.subnetTable.availableIp'),
+    value: 'AvailableIpAddressCount'
   },
 ]);
 
-watch(
-  [() => props.zoneOptions, () => props.subnetOptions],
-  ([zoneOptions, subnetOptions]) => {
-    if (!Array.isArray(zoneOptions) || zoneOptions.length === 0) {
-      zone.value = '';
+const displayedVirtualNodes = computed(() => {
+  return getVirtualNodes().map((vn, index) => ({ ...vn, _index: index }));
+});
 
-      return;
-    }
-
-    const exists = zoneOptions.some((item) => item.value === zone.value);
-    const firstVirtualNodeSubnetId = props.value?.virtualNodes?.[0]?.subnetId || '';
-
-    if (!props.isNewOrUnprovisioned || firstVirtualNodeSubnetId) {
-      const currentSubnet = find(subnetOptions || [], (r) => r.value === firstVirtualNodeSubnetId);
-
-      if (currentSubnet?.Zone) {
-        zone.value = currentSubnet.Zone;
-      }
-
-      return;
-    }
-
-    if (!zone.value || !exists) {
-      zone.value = zoneOptions[0].value;
-    }
-  },
-  {
-    immediate: true,
-    deep:      true,
-  }
-);
-
-const isEditing = computed(() => editingIndex.value !== null);
-const actionText = computed(() => (isEditing.value ? t('tkeCn.superNodePool.actions.save') : t('tkeCn.superNodePool.actions.add')));
 const filteredSubnetOptions = computed(() => {
   if (!props.vpcId || !zone.value) {
     return [];
@@ -222,6 +330,107 @@ const filteredSubnetOptions = computed(() => {
       };
     });
 });
+
+watch(
+  [() => props.zoneOptions, () => props.subnetOptions, () => props.isNewOrUnprovisioned],
+  ([zoneOptions, subnetOptions, isNew]) => {
+    if (!Array.isArray(zoneOptions) || zoneOptions.length === 0) {
+      zone.value = '';
+
+      return;
+    }
+
+    const exists = zoneOptions.some((item) => item.value === zone.value);
+
+    if (editingIndex.value !== null) {
+      const currentSubnet = find(subnetOptions || [], (r) => r.value === draft.value.subnetId);
+
+      if (currentSubnet?.Zone) {
+        zone.value = currentSubnet.Zone;
+      }
+
+      return;
+    }
+    const currentSubnetId = draft.value.subnetId || getVirtualNodes()?.[currentIndex.value]?.subnetId || '';
+
+    if (!isNew && currentSubnetId) {
+      const currentSubnet = find(subnetOptions || [], (r) => r.value === currentSubnetId);
+
+      if (currentSubnet?.Zone) {
+        zone.value = currentSubnet.Zone;
+      }
+
+      return;
+    }
+
+    if (isNew && !exists) {
+      zone.value = zoneOptions[0].value;
+    }
+  },
+  {
+    immediate: true,
+    deep:      true,
+  }
+);
+
+watch(
+  () => props.virtualNodes,
+  (list) => {
+    const nodes = Array.isArray(list) ? list : [];
+
+    currentIndex.value = Math.max(0, nodes.length - 1);
+
+    if (editingIndex.value !== null && !isValidIndex(editingIndex.value, nodes)) {
+      editingIndex.value = null;
+      showEditModal.value = false;
+    }
+
+    if (editingIndex.value === null) {
+      loadDraftByIndex(currentIndex.value);
+    }
+  },
+  {
+    immediate: true,
+    deep:      true,
+  }
+);
+
+watch(
+  [filteredSubnetOptions, () => props.isNewOrUnprovisioned],
+  ([options, isNew]) => {
+    if (!isNew || !Array.isArray(options) || options.length === 0) {
+      return;
+    }
+    const list = getVirtualNodes();
+
+    if (!Array.isArray(list) || list.length === 0) {
+      return;
+    }
+
+    const firstNode = list[0];
+
+    if (firstNode?.subnetId) {
+      return;
+    }
+
+    const next = cloneDeep(list);
+
+    next[0] = {
+      ...(next[0] || createEmptyVirtualNode()),
+      subnetId: options[0].value || '',
+    };
+
+    setVirtualNodes(next);
+
+    if (editingIndex.value === null) {
+      loadDraftByIndex(currentIndex.value);
+    }
+  },
+  {
+    immediate: true,
+    deep:      true,
+  }
+);
 </script>
 
 <template>
@@ -251,41 +460,13 @@ const filteredSubnetOptions = computed(() => {
           option-key="value"
           label-key="tkeCn.zone.label"
           :disabled="!isNewOrUnprovisioned"
+          @update:value="updateZone"
         />
       </div>
     </div>
     <div class="hint">
       {{ intl('tkeCn.superNodePool.basic.hint') }}
     </div>
-    <!-- <div class="mt-10">
-      <SortableTable
-        v-if="true"
-        :loading="false"
-        :rows="filteredSubnetOptions"
-        :headers="SUBNET_COLUMNS"
-        :table-actions="false"
-        :row-actions="false"
-        :rows-per-page="10"
-        :paging="true"
-        :search="false"
-        key-field="value"
-        class="mb-10"
-      >
-        <template #cell:selected="{ row }">
-          <Checkbox
-            :value="value?.subnetIds?.[0] === row.value"
-            :disabled="!isNewOrUnprovisioned"
-            @update:value="selectVirtualNodePoolSubnet(row.value, $event)"
-          />
-        </template>
-      </SortableTable>
-      <div
-        v-if="!subnetOptions || subnetOptions.length === 0"
-        class="hint"
-      >
-        {{ intl('tkeCn.superNodePool.subnetEmpty') }}
-      </div>
-    </div> -->
   </div>
   <div class="mt-20 card-container">
     <h3 class="title">
@@ -293,7 +474,7 @@ const filteredSubnetOptions = computed(() => {
       <span class="required-mark">*</span>
     </h3>
     <div class="hint">
-      {{ intl('tkeCn.superNodePool.config.hint', { action: actionText }) }}
+      {{ intl('tkeCn.superNodePool.config.hint') }}
     </div>
     <div class="row mt-10">
       <div class="col span-6">
@@ -303,32 +484,16 @@ const filteredSubnetOptions = computed(() => {
           :label="intl('tkeCn.superNodePool.fields.nodeName')"
           :disabled="!isNewOrUnprovisioned"
           :placeholder="intl('tkeCn.superNodePool.fields.nodeNamePlaceholder')"
-          @update:value="draft.displayName = $event"
+          @update:value="updateDisplayName"
         />
       </div>
-      <div class="col span-6 actions-right">
-        <button
-          class="btn btn-primary"
-          type="button"
-          :disabled="!isNewOrUnprovisioned"
-          @click="saveDraftToList"
-        >
-          {{ actionText }}
-        </button>
-        <button
-          v-if="isEditing"
-          class="btn-ghost"
-          type="button"
-          :disabled="!isNewOrUnprovisioned"
-          @click="cancelEdit"
-        >
-          {{ intl('tkeCn.superNodePool.actions.cancel') }}
-        </button>
-      </div>
     </div>
+    <h3 class="title mt-10">
+      {{ intl('tkeCn.fields.subnetId') }}
+      <span class="required-mark">*</span>
+    </h3>
     <div class="mt-10">
       <SortableTable
-        v-if="true"
         :loading="false"
         :rows="filteredSubnetOptions"
         :headers="SUBNET_COLUMNS"
@@ -357,6 +522,7 @@ const filteredSubnetOptions = computed(() => {
     </div>
     <Banner
       v-for="(err, i) in errors"
+      v-show="!showEditModal"
       :key="i"
       color="error"
       :label="stringify(err)"
@@ -365,39 +531,37 @@ const filteredSubnetOptions = computed(() => {
       {{ intl('tkeCn.superNodePool.added.title') }}
     </div>
     <div
-      v-if="virtualNodes().length === 0"
+      v-if="displayedVirtualNodes.length === 0"
       class="hint"
     >
       {{ intl('tkeCn.superNodePool.added.empty') }}
     </div>
     <div class="vn-grid mt-10">
       <div
-        v-for="(vn, i) in virtualNodes()"
-        :key="`vn-${i}`"
+        v-for="vn in displayedVirtualNodes"
+        :key="`vn-${vn._index}`"
         class="vn-card"
-        :class="{ active: editingIndex === i }"
       >
         <div class="vn-head">
           <div class="vn-title">
-            {{ vn.displayName || intl('tkeCn.superNodePool.added.defaultNodeName', { index: i + 1 }) }}
+            {{ vn.displayName || intl('tkeCn.superNodePool.added.defaultNodeName', { index: vn._index + 1 }) }}
           </div>
-
           <div class="vn-actions">
             <button
               v-show="isNewOrUnprovisioned"
               class="btn-link"
               type="button"
               :disabled="!isNewOrUnprovisioned"
-              @click="editVirtualNode(i)"
+              @click="openEditModal(vn._index)"
             >
               {{ intl('tkeCn.superNodePool.actions.edit') }}
             </button>
             <button
-              v-show="isNewOrUnprovisioned"
+              v-show="isNewOrUnprovisioned && vn._index !== currentIndex"
               class="btn-danger"
               type="button"
               :disabled="!isNewOrUnprovisioned"
-              @click="removeVirtualNode(i)"
+              @click="removeVirtualNode(vn._index)"
             >
               {{ intl('tkeCn.superNodePool.actions.delete') }}
             </button>
@@ -410,13 +574,120 @@ const filteredSubnetOptions = computed(() => {
           </div>
           <div class="kv">
             <span class="k">{{ intl('tkeCn.superNodePool.card.availabilityZone') }}</span>
-            <span class="k">{{ displayAvailableZone(vn.subnetId) }}</span>
+            <span class="v">
+              <template v-if="displayAvailableZone(vn.subnetId)">
+                {{ displayAvailableZone(vn.subnetId) }}
+              </template>
+              <span
+                v-else
+                class="required-mark"
+              >
+                *
+              </span>
+            </span>
           </div>
           <div class="kv">
             <span class="k">{{ intl('tkeCn.superNodePool.card.nodeNetwork') }}</span>
-            <span class="v">{{ displaySubnetLabel(vn.subnetId) }}</span>
+            <span class="v">
+              <template v-if="displaySubnetLabel(vn.subnetId) && displaySubnetLabel(vn.subnetId) !== '-'">
+                {{ displaySubnetLabel(vn.subnetId) }}
+              </template>
+              <span
+                v-else
+                class="required-mark"
+              >
+                *
+              </span>
+            </span>
           </div>
         </div>
+      </div>
+    </div>
+    <div class="super-node-add mt-10">
+      <button
+        class="super-node-add__btn"
+        type="button"
+        :disabled="!isNewOrUnprovisioned"
+        @click="addVirtualNode"
+      >
+        <span class="super-node-add__icon">+</span>
+        <span>{{ intl('tkeCn.superNodePool.actions.add') }}</span>
+      </button>
+    </div>
+  </div>
+  <div
+    v-if="showEditModal"
+    class="edit-modal-backdrop"
+    @click.self="cancelEdit"
+  >
+    <div class="edit-modal">
+      <div class="edit-modal__header">
+        <h3 class="edit-modal__title">
+          {{ intl('tkeCn.superNodePool.added.defaultNodeName', { index: editingIndex + 1 }) }}
+        </h3>
+        <button
+          type="button"
+          class="edit-modal__close"
+          @click="cancelEdit"
+        >
+          ×
+        </button>
+      </div>
+      <div class="edit-modal__body">
+        <div class="row mb-20">
+          <div class="col span-12">
+            <LabeledInput
+              :value="draft.displayName"
+              :mode="mode"
+              :label="intl('tkeCn.superNodePool.fields.nodeName')"
+              :disabled="!isNewOrUnprovisioned"
+              :placeholder="intl('tkeCn.superNodePool.fields.nodeNamePlaceholder')"
+              @update:value="updateDisplayName"
+            />
+          </div>
+        </div>
+        <SortableTable
+          :loading="false"
+          :rows="filteredSubnetOptions"
+          :headers="SUBNET_COLUMNS"
+          :table-actions="false"
+          :row-actions="false"
+          :rows-per-page="10"
+          :paging="true"
+          :search="false"
+          key-field="value"
+          class="mb-10"
+        >
+          <template #cell:selected="{ row }">
+            <Checkbox
+              :value="draft.subnetId === row.value"
+              :disabled="!isNewOrUnprovisioned"
+              @update:value="selectSubnet(row.value, $event)"
+            />
+          </template>
+        </SortableTable>
+        <Banner
+          v-for="(err, i) in errors"
+          :key="`edit-err-${i}`"
+          color="error"
+          :label="stringify(err)"
+        />
+      </div>
+      <div class="edit-modal__footer">
+        <button
+          class="btn-ghost"
+          type="button"
+          @click="cancelEdit"
+        >
+          {{ intl('tkeCn.superNodePool.actions.cancel') }}
+        </button>
+        <button
+          class="btn btn-primary"
+          type="button"
+          @click="saveEdit"
+        >
+          {{ intl('tkeCn.superNodePool.actions.save') }}
+        </button>
       </div>
     </div>
   </div>
@@ -427,23 +698,23 @@ const filteredSubnetOptions = computed(() => {
   color: var(--error);
 }
 .card-container {
-  border-radius: var(--border-radius);
   padding: 10px;
-  box-shadow: 0 0 20px var(--shadow);
+  border-radius: var(--border-radius);
   background: var(--body-bg);
+  box-shadow: 0 0 20px var(--shadow);
 }
 .title {
   margin: 0 0 10px;
+  color: #1f2937;
   font-size: 16px;
   font-weight: 700;
-  color: #1f2937;
 }
 .section-title {
-  display:flex;
-  align-items:center;
-  gap:10px;
-  font-weight:700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-top: 6px;
+  font-weight: 700;
 }
 .hint {
   margin-top: 6px;
@@ -452,39 +723,39 @@ const filteredSubnetOptions = computed(() => {
 }
 .actions-right {
   display: flex;
-  justify-content: flex-end;
   align-items: flex-end;
+  justify-content: flex-end;
   gap: 10px;
 }
 .btn-primary {
-  background: var(--primary);
-  border: 1px solid var(--primary);
-  color: var(--primary-text, #fff);
-  border-radius: var(--border-radius);
   padding: 6px 12px;
+  border: 1px solid var(--primary);
+  border-radius: var(--border-radius);
+  background: var(--primary);
+  color: var(--primary-text, #fff);
   cursor: pointer;
 }
 .btn-ghost {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: var(--border-radius);
   padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  background: transparent;
+  color: var(--text);
   cursor: pointer;
 }
 .btn-link {
-  background:transparent;
-  border:none;
-  color:var(--link);
-  cursor:pointer;
-  padding:0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--link);
+  cursor: pointer;
 }
 .btn-danger {
-  background:transparent;
-  border:none;
-  color:var(--error);
-  cursor:pointer;
-  padding:0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--error);
+  cursor: pointer;
 }
 .vn-grid {
   display: grid;
@@ -492,19 +763,15 @@ const filteredSubnetOptions = computed(() => {
   gap: 12px;
 }
 .vn-card {
+  padding: 12px;
   border: 1px solid var(--border);
   border-radius: var(--border-radius);
-  padding: 12px;
   background: #fff;
 }
-.vn-card.active {
-  border-color: var(--primary);
-  background: rgba(0,0,0,0.02);
-}
 .vn-head {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 10px;
 }
 .vn-title {
@@ -512,8 +779,8 @@ const filteredSubnetOptions = computed(() => {
 }
 .vn-actions {
   display: flex;
-  gap: 12px;
   align-items: center;
+  gap: 12px;
 }
 .vn-body {
   margin-top: 10px;
@@ -531,9 +798,95 @@ const filteredSubnetOptions = computed(() => {
 .v {
   color: #111827;
 }
+.edit-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(17 24 39 / 45%);
+}
+.edit-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(960px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--body-bg);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 20%);
+}
+.edit-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.edit-modal__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+.edit-modal__close {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.edit-modal__body {
+  padding: 20px;
+  overflow: auto;
+}
+.edit-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--body-bg);
+}
 @media (max-width: 1100px) {
   .vn-grid {
     grid-template-columns: 1fr;
   }
+}
+.super-node-add {
+  display: flex;
+  justify-content: center;
+  padding: 10px 10px 0 0;
+  border-top: 1px dashed var(--border);
+}
+.super-node-add__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #f5f7fa;
+  color: #3d4148;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.super-node-add__btn:hover:not(:disabled) {
+  background: #eef2f6;
+  border-color: #c9d1db;
+}
+.super-node-add__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.super-node-add__icon {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
 }
 </style>

@@ -11,6 +11,7 @@ const props = defineProps({
   mode:                 { type: String, required: true },
   isNewOrUnprovisioned: { type: Boolean, default: false },
   rules:                { type: Object, default: () => ({}) },
+  isImported:           { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['update:value']);
@@ -47,7 +48,7 @@ const osOptions = computed(() => [
           :options="osOptions"
           option-label="label"
           option-key="value"
-          :disabled="!isNewOrUnprovisioned"
+          :disabled="!isNewOrUnprovisioned || isImported"
           @update:value="patch({ os: $event })"
         />
       </div>
@@ -57,6 +58,7 @@ const osOptions = computed(() => [
         <Checkbox
           :value="value.deletionProtection"
           :mode="mode"
+          :disabled="isImported"
           :label="intl('tkeCn.superNodePool.advanced.deletionProtection')"
           @update:value="patch({ deletionProtection: $event })"
         />
@@ -67,7 +69,8 @@ const osOptions = computed(() => [
       :taints="value.taints"
       :virtualNodes="value.virtualNodes"
       :mode="mode"
-      :disabled="!isNewOrUnprovisioned"
+      :disabled="!isNewOrUnprovisioned || isImported"
+      :isImported="isImported"
       @update:labels="patch({ labels: $event })"
       @update:taints="patch({ taints: $event })"
       @update:virtualNodes="patch({ virtualNodes: $event })"

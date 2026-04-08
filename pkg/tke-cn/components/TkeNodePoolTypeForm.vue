@@ -170,6 +170,10 @@ function selectType(v) {
   selectedType.value = v;
 }
 
+function updateVirtualNodePool(v) {
+  emit('update:virtualNodePool', v);
+}
+
 const superMoreLink = computed(() => 'https://cloud.tencent.com/document/product/457/74014');
 const nativeMoreLink = computed(() => 'https://cloud.tencent.com/document/product/457/43719');
 </script>
@@ -267,7 +271,8 @@ const nativeMoreLink = computed(() => 'https://cloud.tencent.com/document/produc
         :superNodeSubnetId="superNodeSubnetId"
         :superNodeSecurityGroup="superNodeSecurityGroup"
         :rules="rules"
-        @update:value="emit('update:virtualNodePool', $event)"
+        :isImported="tkeConfig.imported"
+        @update:value="updateVirtualNodePool"
         @update:nodePoolName="emit('update:name', $event)"
       />
       <NativeNodePoolForm
