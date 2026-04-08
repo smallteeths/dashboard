@@ -26,10 +26,14 @@ import { base64Decode } from '@shell/utils/crypto';
 import TkeCsiCardSelect from './TkeCsiCardSelect';
 import TkeNodePoolTypeForm from './TkeNodePoolTypeForm';
 // import TkeClusterLevelSelect from './TkeClusterLevelSelect';
+import FloatingHelpPanel from './FloatingHelpPanel.vue';
 import ImportTke from './ImportTke';
 import MasterNode from './MasterNode';
-import { find, pullAt } from 'lodash';
+import {
+  find, pullAt, uniq, compact, flatten
+} from 'lodash';
 import CONFIG_ENV from '../util/config';
+import { DoCidrOverlap } from '../util/util';
 
 const props = defineProps({
   mode: {
@@ -99,6 +103,8 @@ const state = ref({
   subnetLoading:                false,
   securityGroupLoading:         false,
   showPrivateRegistryInput:     false,
+  clusterCidrValidating:        false,
+  clusterCidrConflictError:     '',
   userData:                     '',
   instanceTypeSet:              {},
   allSubnets:                   [],
@@ -228,10 +234,34 @@ const fvFormIsValid = computed(() => {
         break;
       }
     }
-    if (!isValid) break;
+    if (!isValid) {
+      break;
+    }
+  }
+  if (state.value.clusterCidrConflictError) {
+    isValid = false;
   }
 
   return isValid;
+});
+const validationMessages = computed(() => {
+  const rules = ruleSets.value || {};
+
+  const messages = Object.keys(rules).map((key) => {
+    const validators = rules[key] || [];
+
+    return validators.map((validate) => {
+      const result = validate();
+
+      return typeof result === 'string' ? result.trim() : result;
+    });
+  });
+
+  if (state.value.clusterCidrConflictError) {
+    messages.push([state.value.clusterCidrConflictError.trim()]);
+  }
+
+  return uniq(compact(flatten(messages)));
 });
 const kubernetesSupport = computed(() => {
   const version = tkeConfig.value.clusterVersion;
@@ -370,13 +400,25 @@ function resetConfig(resetZone = true) {
     tkeConfig.value.zoneId = '';
   }
   nodePools.value = nodePools.value.map((pool) => {
+    const virtualNodes = (pool.virtualNodePool?.virtualNodes || []).map((node) => {
+      return {
+        ...node,
+        subnetId: '',
+      };
+    });
+
     return {
       ...pool,
-      subnetId:      '',
-      securityGroup: '',
-      keyPair:       '',
-      instanceType:  '',
-      osName:        '',
+      subnetId:        '',
+      securityGroup:   '',
+      keyPair:         '',
+      instanceType:    '',
+      osName:          '',
+      virtualNodePool: {
+        ...pool.virtualNodePool,
+        virtualNodes,
+        securityGroupIds: [],
+      },
     };
   });
 }
@@ -617,8 +659,12 @@ function registerWatch() {
     }
   });
 
-  watch(() => tkeConfig.value.vpcId, () => {
+  watch(() => tkeConfig.value.vpcId, (vpcId) => {
+    if (!isNewOrUnprovisioned.value) {
+      return;
+    }
     tkeConfig.value.subnetId = '';
+    tkeConfig.value.clusterCidr = getAvailableClusterCidr(vpcId);
   });
 
   watch(
@@ -661,6 +707,32 @@ function registerWatch() {
     immediate: true,
     deep:      true
   });
+
+  let clusterCidrValidateTimer = null;
+
+  watch(
+    [
+      () => tkeConfig.value.clusterCidr,
+      () => tkeConfig.value.region,
+      () => tkeConfig.value.vpcId
+    ],
+    () => {
+      if (isImport && !isNewOrUnprovisioned.value) {
+        return;
+      }
+      const credential = tkeConfig.value.tkeCredentialSecret;
+
+      if (!credential) {
+        return;
+      }
+      state.value.clusterCidrConflictError = '';
+      // 确保了在 clusterCidr 变化时不那么频繁的去交验
+      clearTimeout(clusterCidrValidateTimer);
+      clusterCidrValidateTimer = setTimeout(() => {
+        validateClusterCidrConflict(credential);
+      }, 400);
+    }
+  );
 }
 
 async function fetchRegion(cloudCredentialId) {
@@ -720,6 +792,37 @@ async function fetchClusterLevelAttribute(cloudCredentialId) {
     state.value.errors.push(err);
   }
   state.value.clusterLevelAttributeLoading = false;
+}
+
+async function validateClusterCidrConflict(cloudCredentialId) {
+  const cidr = tkeConfig.value.clusterCidr;
+  const regionId = tkeConfig.value.region;
+  const vpcId = tkeConfig.value.vpcId;
+  const cidrIPV4RegExp = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/\d{1,2}$/;
+
+  state.value.clusterCidrConflictError = '';
+  if (!cidr || !regionId || !vpcId || !cidrIPV4RegExp.test(cidr)) {
+    return;
+  }
+  state.value.clusterCidrValidating = true;
+  try {
+    const res = await queryFromTencent({
+      resource:       'checkClusterCIDR',
+      cloudCredentialId,
+      store,
+      externalParams: {
+        regionId,
+        vpcId,
+        clusterCIDR: cidr,
+      },
+    });
+    const isConflict = res?.IsConflict === true;
+
+    state.value.clusterCidrConflictError = isConflict ? `${ intl.value('tkeCn.clusterCidr.label') }: ${ res?.ConflictMsg }` || intl.value('tkeCn.clusterCidr.conflictError') : '';
+  } catch (err) {
+    state.value.clusterCidrConflictError = err.error ? `${ intl.value('tkeCn.clusterCidr.label') }: ${ err.error }` : intl.value('tkeCn.clusterCidr.formatError');
+  }
+  state.value.clusterCidrValidating = false;
 }
 
 function updatePrivateRegistryInput(val) {
@@ -881,6 +984,7 @@ async function fetchVpc(cloudCredentialId) {
       return {
         label: vpc.VpcName,
         value: vpc.VpcId,
+        raw:   vpc,
       };
     });
 
@@ -1082,6 +1186,27 @@ function poolIsValid(pool) {
   const valid = pool.nodePoolType === 'super' ? isSuperPoolValid() : isNativePoolValid();
 
   return valid && hasUniqueNames();
+}
+
+function getVpcUsedCidrs(vpcId) {
+  const currentVpc = (options.value.vpcOptions || []).find((item) => item.value === vpcId)?.raw;
+
+  if (!currentVpc) {
+    return [];
+  }
+
+  return [
+    currentVpc.CidrBlock,
+    ...((currentVpc.AssistantCidrSet || []).map((item) => item?.CidrBlock).filter(Boolean))
+  ].filter(Boolean);
+}
+
+function getAvailableClusterCidr(vpcId) {
+  const usedCidrs = getVpcUsedCidrs(vpcId);
+
+  return CONFIG_ENV.CLUSTER_CIDR_CANDIDATES.find((candidate) => {
+    return !usedCidrs.some((usedCidr) => DoCidrOverlap(candidate, usedCidr));
+  }) || '';
 }
 
 </script>
@@ -1330,16 +1455,47 @@ function poolIsValid(pool) {
               />
             </div>
             <div class="col span-4">
-              <LabeledInput
-                v-model:value="tkeConfig.clusterCidr"
-                data-testid="crutke-resource-cluster-cidr"
-                required
-                :mode="mode"
-                label-key="tkeCn.clusterCidr.label"
-                :disabled="!isNewOrUnprovisioned"
-                :rules="ruleSets.clusterCidr"
-                :placeholder="intl('tkeCn.clusterCidr.placeholder')"
-              />
+              <div class="cluster-cidr-field">
+                <LabeledInput
+                  v-model:value="tkeConfig.clusterCidr"
+                  data-testid="crutke-resource-cluster-cidr"
+                  required
+                  :mode="mode"
+                  label-key="tkeCn.clusterCidr.label"
+                  :disabled="!isNewOrUnprovisioned"
+                  :rules="ruleSets.clusterCidr"
+                  :placeholder="intl('tkeCn.clusterCidr.placeholder')"
+                />
+                <div
+                  v-if="state.clusterCidrConflictError || state.clusterCidrValidating"
+                  class="cluster-cidr-field__status"
+                >
+                  <v-dropdown
+                    v-if="!state.clusterCidrValidating"
+                    theme="info-tooltip"
+                    placement="top"
+                    :triggers="['hover', 'click']"
+                    :auto-hide="true"
+                    :distance="8"
+                  >
+                    <span>
+                      <i
+                        class="icon icon-warning group-icon cluster-cidr-field__icon"
+                      />
+                    </span>
+                    <template #popper>
+                      <div class="cluster-cidr-field__tooltip">
+                        {{ state.clusterCidrConflictError }}
+                      </div>
+                    </template>
+                  </v-dropdown>
+                  <span v-else>
+                    <i
+                      class="icon icon-spinner icon-spin icon-lg"
+                    />
+                  </span>
+                </div>
+              </div>
             </div>
             <div class="col span-4">
               <LabeledInput
@@ -1486,6 +1642,11 @@ function poolIsValid(pool) {
             />
           </Tab>
         </Tabbed>
+        <FloatingHelpPanel
+          :title="intl('tkeCn.fields.help')"
+          :items="validationMessages"
+          :close-label="intl('generic.close')"
+        />
       </div>
       <div>
         <Accordion
@@ -1594,5 +1755,33 @@ function poolIsValid(pool) {
   color: var(--input-label);
   font-size: 13px;
   line-height: 1.6;
+}
+.cluster-cidr-field {
+  position: relative;
+}
+.cluster-cidr-field__status {
+  position: absolute;
+  top: 30px;
+  right: 12px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  min-height: 20px;
+}
+.cluster-cidr-field__icon {
+  color: var(--error);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.cluster-cidr-field__tooltip {
+  max-width: 260px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: var(--error);
+  font-size: 12px;
+  line-height: 1.5;
 }
 </style>

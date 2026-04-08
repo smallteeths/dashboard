@@ -89,6 +89,7 @@ tkeCn:
     placeholder: '例如: 172.16.0.0/16'
     required: 请输入容器网络的CIDR
     formatError: 容器网络 CIDR 格式错误
+    conflictError: 容器网络 CIDR 冲突错误
   securityGroup:
     label: 安全组
     required: 请选择安全组
@@ -225,8 +226,8 @@ tkeCn:
       title: 节点池基础配置
       hint: 必须为节点池选择一个子网。
     config:
-      title: 添加超级节点
-      hint: 为保证集群正常运行，请添加超级节点。通过下方表格选择子网并填写节点名称，点击“{action}”后会生成一张配置卡片。点击卡片“编辑”可回填配置。
+      title: 超级节点
+      hint: 为了保证集群正常运行，请至少添加一个超级节点。请先从下方表格中选择一个子网，并输入节点名称，以创建配置卡片。后续如需修改，可随时点击卡片上的 Edit，将配置重新加载回来进行编辑。
     fields:
       nodeName: 节点名称
       nodeNamePlaceholder: 自动生成
@@ -312,9 +313,12 @@ tkeCn:
     title: 网络基础配置
     description: 配置腾讯云  TKE 集群的网络参数，包括可用区、VPC、子网、安全组、容器网络 CIDR，以及集群访问方式。根据业务需求和网络规划，合理配置这些参数，确保集群网络的正常运行。
   fields:
-    securityGroupIds: 安全组 ID
-    virtualNodes: 虚拟节点
+    help: 请填写以下必填配置项。
+    securityGroupIds: 超级节点安全组 ID
+    virtualNodes: 超级节点
+    subnetId:  超级节点子网 ID
   userData:
+    label: 自定义脚本
     preview: 无用户数据配置
     description: 提供自定义的 cloud-init 或 shell 脚本，在节点初始化时运行。
   image:

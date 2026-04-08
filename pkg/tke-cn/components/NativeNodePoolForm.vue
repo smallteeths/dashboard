@@ -194,7 +194,7 @@ function getDefaultInstanceType(options = []) {
         memory: parsed.memory,
       };
     })
-    .filter((item) => item && item.cpu <= 4 && item.memory <= 8)
+    .filter((item) => item && item.cpu <= 2 && item.memory <= 8)
     .sort((a, b) => {
       if (b.memory !== a.memory) {
         return b.memory - a.memory;
@@ -577,7 +577,7 @@ watch(() => props.systemDiskType, (systemDiskType) => {
       </div>
       <TkeUserData
         :modelValue="userScript"
-        label="User Data"
+        :label="intl('tkeCn.userData.label')"
         :disabled="!isNewOrUnprovisioned"
         data-testid="tke-cn-user-data"
         @update:modelValue="emit('update:userScript', $event)"

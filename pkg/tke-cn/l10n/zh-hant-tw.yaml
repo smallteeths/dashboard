@@ -90,6 +90,7 @@ tkeCn:
     placeholder: '例如: 172.16.0.0/16'
     required: 請輸入容器網路的CIDR
     formatError: 容器網路 CIDR 格式錯誤
+    conflictError: 容器網路 CIDR 冲突錯誤
   securityGroup:
     label: 安全組
     required: 請選擇安全組
@@ -226,8 +227,8 @@ tkeCn:
       title: 節點池基礎配置
       hint: 必須為節點池選擇一個子網。
     config:
-      title: 添加超級節點
-      hint: 透過下方表格選擇子網並填寫節點名稱，點擊「{action}」後會生成一張配置卡片。點擊卡片上的「編輯」可回填配置。
+      title: 超級節點
+      hint: 為確保叢集正常運行，請至少添加一個超級節點。請先從下方表格中選擇一個子網，並輸入節點名稱，以創建配置卡片。後續如需修改，可隨時點擊卡片上的編輯，將配置重新加載回來進行編輯。
     fields:
       nodeName: 節點名稱
       nodeNamePlaceholder: 自動生成
@@ -313,9 +314,12 @@ tkeCn:
     title: 網路基礎配置
     description: 配置叢集網路相關參數，包括可用區、VPC、子網、安全組、容器網路 CIDR，以及叢集存取方式。請根據現有網路規劃與業務存取需求進行設定。
   fields:
-    securityGroupIds: 安全組 ID
-    virtualNodes: 虛擬節點
+    help: 請填寫以下必填配置項。
+    securityGroupIds: 超級節點安全組 ID
+    virtualNodes: 超級節點
+    subnetId: 超級節點子網 ID
   userData:
+    label: 自定義腳本
     preview: 無用戶數據配置
     description: 提供自定義的 cloud-init 或 shell 腳本，在節點初始化時運行。
   image:

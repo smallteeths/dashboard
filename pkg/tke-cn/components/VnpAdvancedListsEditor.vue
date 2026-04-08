@@ -6,12 +6,12 @@ import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
 import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
 
 const props = defineProps({
-  mode:     { type: String, required: true },
-  disabled: { type: Boolean, default: false },
-
+  mode:         { type: String, required: true },
+  disabled:     { type: Boolean, default: false },
   labels:       { type: Array, default: () => ([]) },
   taints:       { type: Array, default: () => ([]) },
   virtualNodes: { type: Array, default: () => ([]) },
+  isImported:   { type: Boolean, default: false },
 });
 
 const emit = defineEmits([
@@ -113,6 +113,7 @@ function setTag(ni, ti, key, val) {
         <button
           class="btn-link"
           type="button"
+          :disabled="isImported"
           @click="addLabel"
         >
           {{ intl('tkeCn.superNodePool.advanced.actions.add') }}
@@ -134,6 +135,7 @@ function setTag(ni, ti, key, val) {
             :value="r.name"
             :mode="mode"
             :label="intl('tkeCn.superNodePool.advanced.fields.key')"
+            :disabled="isImported"
             @update:value="setLabel(i, 'name', $event)"
           />
         </div>
@@ -142,6 +144,7 @@ function setTag(ni, ti, key, val) {
             :value="r.value"
             :mode="mode"
             :label="intl('tkeCn.superNodePool.advanced.fields.value')"
+            :disabled="isImported"
             @update:value="setLabel(i, 'value', $event)"
           />
         </div>
@@ -149,6 +152,7 @@ function setTag(ni, ti, key, val) {
           <button
             class="btn-danger"
             type="button"
+            :disabled="isImported"
             @click="removeLabel(i)"
           >
             {{ intl('tkeCn.superNodePool.advanced.actions.delete') }}
@@ -162,6 +166,7 @@ function setTag(ni, ti, key, val) {
         <button
           class="btn-link"
           type="button"
+          :disabled="isImported"
           @click="addTaint"
         >
           {{ intl('tkeCn.superNodePool.advanced.actions.add') }}
@@ -182,6 +187,7 @@ function setTag(ni, ti, key, val) {
           <LabeledInput
             :value="t.key"
             :mode="mode"
+            :disabled="isImported"
             :label="intl('tkeCn.superNodePool.advanced.fields.key')"
             @update:value="setTaint(i, 'key', $event)"
           />
@@ -190,6 +196,7 @@ function setTag(ni, ti, key, val) {
           <LabeledInput
             :value="t.value"
             :mode="mode"
+            :disabled="isImported"
             :label="intl('tkeCn.superNodePool.advanced.fields.value')"
             @update:value="setTaint(i, 'value', $event)"
           />
@@ -198,6 +205,7 @@ function setTag(ni, ti, key, val) {
           <LabeledSelect
             :value="t.effect"
             :mode="mode"
+            :disabled="isImported"
             :options="effectOptions"
             option-label="label"
             option-key="value"
@@ -209,7 +217,7 @@ function setTag(ni, ti, key, val) {
           <button
             class="btn-danger"
             type="button"
-            :disabled="disabled"
+            :disabled="isImported"
             @click="removeTaint(i)"
           >
             {{ intl('tkeCn.superNodePool.advanced.actions.delete') }}
@@ -325,12 +333,24 @@ function setTag(ni, ti, key, val) {
   cursor:pointer;
   padding:0;
 }
+.btn-link:disabled,
+.btn-link.disabled {
+  color: var(--disabled-text, #9ca3af);
+  cursor: not-allowed;
+  opacity: 1;
+}
 .btn-danger {
   background:transparent;
   border:none;
   color:var(--error);
   cursor:pointer;
   padding:0;
+}
+.btn-danger:disabled,
+.btn-danger.disabled {
+  color: var(--disabled-text, #9ca3af);
+  cursor: not-allowed;
+  opacity: 1;
 }
 .actions {
   display:flex;

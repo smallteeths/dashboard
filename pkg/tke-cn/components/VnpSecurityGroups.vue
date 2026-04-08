@@ -125,14 +125,12 @@ watch(
         {{ intl('tkeCn.superNodePool.securityGroup.actions.add') }}
       </button>
     </div>
-
     <div
       v-if="rows.length === 0"
       class="hint"
     >
       {{ intl('tkeCn.superNodePool.securityGroup.empty') }}
     </div>
-
     <div
       v-for="(sg, i) in rows"
       :key="`sg-${i}`"
@@ -150,7 +148,6 @@ watch(
           @update:value="set(i, $event)"
         />
       </div>
-
       <div class="col span-2 actions">
         <button
           class="btn-danger"
@@ -184,12 +181,24 @@ watch(
   cursor: pointer;
   padding: 0;
 }
+.btn-link:disabled,
+.btn-link.disabled {
+  color: var(--disabled-text, #9ca3af);
+  cursor: not-allowed;
+  opacity: 1;
+}
 .btn-danger {
   background: transparent;
   border: none;
   color: var(--error);
   cursor: pointer;
   padding: 0;
+}
+.btn-danger:disabled,
+.btn-danger.disabled {
+  color: var(--disabled-text, #9ca3af);
+  cursor: not-allowed;
+  opacity: 1;
 }
 .actions {
   display: flex;

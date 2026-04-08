@@ -70,6 +70,28 @@ export function useCreateEditView(props, context) {
       if (node.nodePoolType === 'super') {
         const virtualNode = {
           ...node.virtualNodePool,
+          securityGroupIds: (node?.virtualNodePool?.securityGroupIds || []).filter((item) => {
+            return typeof item === 'string' ? item.trim() : !!item;
+          }),
+          labels: (node?.virtualNodePool?.labels || []).filter((item) => {
+            return item?.name?.trim() && item?.value?.trim();
+          }),
+          taints: (node?.virtualNodePool?.taints || []).filter((item) => {
+            const key = typeof item?.key === 'string' ? item.key.trim() : '';
+            const value = typeof item?.value === 'string' ? item.value.trim() : '';
+
+            return key && value;
+          }),
+          virtualNodes: (node?.virtualNodePool?.virtualNodes || []).map((item) => ({
+            ...item,
+            tags: (item?.tags || [])
+              .map((tag) => ({
+                ...tag,
+                key:   typeof tag?.key === 'string' ? tag.key.trim() : '',
+                value: typeof tag?.value === 'string' ? tag.value.trim() : '',
+              }))
+              .filter((tag) => tag.key && tag.value),
+          })),
           name: node.nodePoolName,
         };
 
@@ -134,7 +156,7 @@ export function useCreateEditView(props, context) {
     };
     const clusterBasicSettings = {
       clusterDescription: '',
-      clusterName:        config.name ? config.name : normanCluster.value.name,
+      clusterName:        normanCluster.value.name,
       clusterOs:          config.osName,
       clusterType:        config.clusterType,
       clusterVersion:     config.clusterVersion,
