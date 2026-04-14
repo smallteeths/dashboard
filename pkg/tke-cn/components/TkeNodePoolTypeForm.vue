@@ -127,6 +127,10 @@ const props = defineProps({
     type:    String,
     default: '',
   },
+  deletionProtection: {
+    type:    Boolean,
+    default: false,
+  },
   // super node fields
   superNodeSubnetId: {
     type:    String,
@@ -155,6 +159,7 @@ const emit = defineEmits([
   'update:userScript',
   // super node emits
   'update:virtualNodePool',
+  'update:deletionProtection',
 ]);
 const store = useStore();
 const intl = computed(() => store.getters['i18n/t']);
@@ -299,6 +304,7 @@ const nativeMoreLink = computed(() => 'https://cloud.tencent.com/document/produc
         :keyPairLoading="keyPairLoading"
         :isNewOrUnprovisioned="isNewOrUnprovisioned"
         :tkeConfig="tkeConfig"
+        :deletionProtection="deletionProtection"
         :rules="rules"
         :mode="mode"
         @update:name="emit('update:name', $event)"
@@ -314,6 +320,7 @@ const nativeMoreLink = computed(() => 'https://cloud.tencent.com/document/produc
         @update:subnetId="emit('update:subnetId', $event)"
         @update:keyPair="emit('update:keyPair', $event)"
         @update:userScript="emit('update:userScript', $event)"
+        @update:deletionProtection="emit('update:deletionProtection', $event)"
       />
     </div>
   </div>

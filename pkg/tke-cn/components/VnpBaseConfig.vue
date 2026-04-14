@@ -28,6 +28,7 @@ const zone = ref('');
 const editingIndex = ref(null);
 const currentIndex = ref(0);
 const showEditModal = ref(false);
+const editingZone = ref('');
 const draft = ref(createEmptyVirtualNode());
 
 function t(key, args) {
@@ -168,7 +169,7 @@ function openEditModal(realIndex) {
   const currentSubnet = find(props.subnetOptions || [], (r) => r.value === cur.subnetId);
 
   if (currentSubnet?.Zone) {
-    zone.value = currentSubnet.Zone;
+    editingZone.value = currentSubnet.Zone;
   }
   showEditModal.value = true;
 }
@@ -200,6 +201,7 @@ function saveEdit() {
   setVirtualNodes(next);
   errors.value = [];
   showEditModal.value = false;
+  editingZone.value = '';
   editingIndex.value = null;
   loadDraftByIndex(currentIndex.value);
 }
@@ -207,6 +209,7 @@ function saveEdit() {
 function cancelEdit() {
   errors.value = [];
   showEditModal.value = false;
+  editingZone.value = '';
   editingIndex.value = null;
   loadDraftByIndex(currentIndex.value);
 }
@@ -252,29 +255,10 @@ function displaySubnetLabel(id) {
 }
 
 function displayAvailableZone(subnetId) {
-  const row = find(filteredSubnetOptions.value || [], (r) => r.value === subnetId);
+  const row = find(props.subnetOptions || [], (r) => r.value === subnetId);
+  const zone = props.zoneOptions.find((z) => z.value === row?.Zone);
 
-  return row?.zoneLabel || '';
-}
-
-function updateZone() {
-  draft.value.subnetId = '';
-  errors.value = [];
-
-  const list = getVirtualNodes();
-
-  if (!Array.isArray(list) || list.length === 0) {
-    return;
-  }
-
-  const next = cloneDeep(list).map((item) => {
-    return {
-      ...item,
-      subnetId: '',
-    };
-  });
-
-  setVirtualNodes(next);
+  return zone?.label || zone?.value || row?.Zone || '';
 }
 
 const SUBNET_COLUMNS = computed(() => [
@@ -315,12 +299,14 @@ const displayedVirtualNodes = computed(() => {
 });
 
 const filteredSubnetOptions = computed(() => {
-  if (!props.vpcId || !zone.value) {
+  const selectedZone = editingIndex.value !== null ? (editingZone.value || zone.value) : zone.value;
+
+  if (!props.vpcId || !selectedZone) {
     return [];
   }
 
   return props.subnetOptions
-    .filter((item) => item.Zone === zone.value && item.VpcId === props.vpcId)
+    .filter((item) => item.Zone === selectedZone && item.VpcId === props.vpcId)
     .map((item) => {
       const matchedZone = props.zoneOptions.find((z) => z.value === item.Zone);
 
@@ -438,7 +424,10 @@ watch(
     <h3 class="title">
       {{ intl('tkeCn.superNodePool.basic.title') }}
     </h3>
-    <div class="row mb-10">
+    <div class="hint">
+      {{ intl('tkeCn.superNodePool.basic.titleHelp') }}
+    </div>
+    <div class="row mt-10">
       <div class="col span-6">
         <LabeledInput
           :value="nodePoolName"
@@ -450,22 +439,6 @@ watch(
           @update:value="emit('update:nodePoolName', $event)"
         />
       </div>
-      <div class="col span-6">
-        <LabeledSelect
-          v-model:value="zone"
-          data-testid="crutke-node-pool-resource-zone"
-          :mode="mode"
-          :options="zoneOptions"
-          option-label="label"
-          option-key="value"
-          label-key="tkeCn.zone.label"
-          :disabled="!isNewOrUnprovisioned"
-          @update:value="updateZone"
-        />
-      </div>
-    </div>
-    <div class="hint">
-      {{ intl('tkeCn.superNodePool.basic.hint') }}
     </div>
   </div>
   <div class="mt-20 card-container">
@@ -487,11 +460,26 @@ watch(
           @update:value="updateDisplayName"
         />
       </div>
+      <div class="col span-6">
+        <LabeledSelect
+          v-model:value="zone"
+          data-testid="crutke-node-pool-resource-zone"
+          :mode="mode"
+          :options="zoneOptions"
+          option-label="label"
+          option-key="value"
+          label-key="tkeCn.zone.label"
+          :disabled="!isNewOrUnprovisioned"
+        />
+      </div>
     </div>
     <h3 class="title mt-10">
       {{ intl('tkeCn.fields.subnetId') }}
       <span class="required-mark">*</span>
     </h3>
+    <div class="hint">
+      {{ intl('tkeCn.superNodePool.basic.hint') }}
+    </div>
     <div class="mt-10">
       <SortableTable
         :loading="false"
@@ -540,7 +528,7 @@ watch(
       <div
         v-for="vn in displayedVirtualNodes"
         :key="`vn-${vn._index}`"
-        class="vn-card"
+        :class="['vn-card', { 'vn-card--current': vn._index === currentIndex }]"
       >
         <div class="vn-head">
           <div class="vn-title">
@@ -635,7 +623,7 @@ watch(
       </div>
       <div class="edit-modal__body">
         <div class="row mb-20">
-          <div class="col span-12">
+          <div class="col span-6">
             <LabeledInput
               :value="draft.displayName"
               :mode="mode"
@@ -643,6 +631,18 @@ watch(
               :disabled="!isNewOrUnprovisioned"
               :placeholder="intl('tkeCn.superNodePool.fields.nodeNamePlaceholder')"
               @update:value="updateDisplayName"
+            />
+          </div>
+          <div class="col span-6">
+            <LabeledSelect
+              v-model:value="editingZone"
+              data-testid="crutke-node-pool-resource-zone"
+              :mode="mode"
+              :options="zoneOptions"
+              option-label="label"
+              option-key="value"
+              label-key="tkeCn.zone.label"
+              :disabled="!isNewOrUnprovisioned"
             />
           </div>
         </div>
@@ -767,6 +767,11 @@ watch(
   border: 1px solid var(--border);
   border-radius: var(--border-radius);
   background: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+.vn-card--current {
+  border-color: var(--primary);
+  background: #f5faff;
 }
 .vn-head {
   display: flex;
@@ -801,7 +806,7 @@ watch(
 .edit-modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 2000;
+  z-index: 20;
   display: flex;
   align-items: center;
   justify-content: center;

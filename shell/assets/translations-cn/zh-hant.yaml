@@ -1197,6 +1197,11 @@ cluster:
       note: '<b>重要</b>：在附加配置標籤中配置 vSphere 雲提供商和存儲提供商選項。'
     harvester:
       label: Harvester
+    tke:
+      deletionProtection:
+        cluster: "此集群，{name} 已启用删除保护，无法删除。禁用删除保护并重试。"
+        nodePool: "此集群节点池，{name} 已启用删除保护，无法删除。禁用删除保护并重试。"
+        virtualNodePool: "此集群超节点池，{name} 已启用删除保护，无法删除。禁用删除保护并重试。"
   copyConfig: 將 KubeConfig 複製到剪切板
   copiedConfig: 已將 KubeConfig 複製到剪切板
   custom:

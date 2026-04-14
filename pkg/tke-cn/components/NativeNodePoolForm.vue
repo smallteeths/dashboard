@@ -5,6 +5,7 @@ import TkeUserData from './TkeUserData.vue';
 import TkeDataDisk from './TkeDataDisk.vue';
 import OsNameSelect from './OsNameSelect.vue';
 import InstanceTypeComponent from './InstanceType.vue';
+import Checkbox from '@components/Form/Checkbox/Checkbox.vue';
 import { queryFromTencent } from '../util/request';
 import { computed, watch, ref } from 'vue';
 import { stringify } from '@shell/utils/error';
@@ -63,6 +64,10 @@ const props = defineProps({
   userScript: {
     type:    String,
     default: ''
+  },
+  deletionProtection: {
+    type:    Boolean,
+    default: false,
   },
   instanceTypeOptions: {
     type:    Array,
@@ -142,7 +147,8 @@ const emit = defineEmits([
   'update:securityGroup',
   'update:subnetId',
   'update:keyPair',
-  'update:userScript'
+  'update:userScript',
+  'update:deletionProtection',
 ]);
 
 function blurInitialNodeCount(num) {
@@ -582,6 +588,17 @@ watch(() => props.systemDiskType, (systemDiskType) => {
         data-testid="tke-cn-user-data"
         @update:modelValue="emit('update:userScript', $event)"
       />
+      <div class="row mt-10">
+        <div class="col span-6">
+          <Checkbox
+            :value="deletionProtection"
+            :mode="mode"
+            :disabled="tkeConfig.imported"
+            :label="intl('tkeCn.superNodePool.advanced.deletionProtection')"
+            @update:value="emit('update:deletionProtection', $event)"
+          />
+        </div>
+      </div>
     </div>
   </div>
 </template>

@@ -12,13 +12,14 @@ import { CATALOG as CATALOG_ANNOTATIONS } from '@shell/config/labels-annotations
 import { CATALOG } from '@shell/config/types';
 import { pullAllBy } from 'lodash';
 import { LabeledInput } from '@components/Form/LabeledInput';
+import Banner from '@components/Banner/Banner.vue';
 import AppModal from '@shell/components/AppModal.vue';
 
 export default {
   name: 'PromptRemove',
 
   components: {
-    Card, Checkbox, AsyncButton, LabeledInput, AppModal
+    Card, Checkbox, AsyncButton, LabeledInput, AppModal, Banner
   },
   props: {
     /**
@@ -429,8 +430,14 @@ export default {
             type="text"
             :aria-label="t('promptRemove.confirmName', { nameToMatch: escapeHtml(nameToMatch) })"
           />
-          <div class="text-warning mb-10 mt-10">
-            {{ warning }}
+          <div class="text-warning">
+            <Banner
+              v-if="warning"
+              color="error"
+              icon="icon-warning"
+            >
+              {{ warning }}
+            </Banner>
           </div>
           <div class="text-error mb-10 mt-10">
             {{ error }}

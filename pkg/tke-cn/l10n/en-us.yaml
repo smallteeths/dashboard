@@ -25,12 +25,24 @@ tkeCn:
     eu-moscow: Moscow
     ap-jakarta: Jakarta
     sa-saopaulo: Saopaulo
+  tkeCluster:
+    name:
+      label: TKE Cluster Name
+      placeholder: "Defaults to the Rancher cluster name"
+    description:
+      label: TKE Cluster Description
+      placeholder: "Defaults to the Rancher cluster description"
   container:
     label: Runtime Components
   clusterType:
     label: Cluster Type
     independent: Independent Cluster
     managed: Managed Cluster
+  deletionProtection:
+    label: Deletion Protection
+    help: "Enable deletion protection to prevent accidental deletion of the cluster."
+    title: Deletion Protection Enabled
+    tooltip: "Deletion protection is enabled for node pool {name}, so it cannot be deleted. Disable deletion protection, save the cluster, and then try again."
   clusterLevel:
     label: Cluster Level
     help: "{level} (At most {node} nodes, {pod} pods, {configMap} ConfigMaps, {crd} CRDs can be managed)"
@@ -224,6 +236,7 @@ tkeCn:
   superNodePool:
     basic:
       title: NodePool Configuration
+      titleHelp: Configure the current super node pool name.
       hint: A subnet must be selected for the node pool.
     config:
       title: Super Node
@@ -232,7 +245,7 @@ tkeCn:
       nodeName: Node Name
       nodeNamePlaceholder: Auto-generated
     actions:
-      add: Add Super Node
+      add: Save Current Super Node and Add Super Node
       save: Save
       cancel: Cancel
       edit: Edit
