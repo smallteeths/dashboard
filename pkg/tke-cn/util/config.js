@@ -17,6 +17,8 @@ const CLUSTER_TYPES = [
 const DEFAULTTKECONFIG = {
   clusterCidr:    '172.16.0.0/16',
   clusterVersion: null,
+  description:    null,
+  name:           null,
   region:         'ap-guangzhou',
   vpcId:          null,
   zoneId:         null,
@@ -40,7 +42,8 @@ const DEFAULTTKECONFIG = {
     addonName:  'CBS',
     addonParam: '{"kind":"App","spec":{"chart":{"chartName":"cbs","chartVersion":"1.0.9"},"values":{"values":[],"rawValues":"e30=","rawValuesType":"json"}}}'
   }]),
-  clusterEndpoint: true,
+  clusterEndpoint:    true,
+  deletionProtection: true
 };
 
 const DEFAULT_NODE_GROUP_CONFIG = {
@@ -56,15 +59,17 @@ const DEFAULT_NODE_GROUP_CONFIG = {
       diskSize: 0,
     }
   ],
-  osName:          '',
-  subnetId:        '',
-  keyPair:         '',
-  instanceType:    '',
-  securityGroup:   '',
-  type:            'nodePool',
-  nodePoolType:    'super',
-  userScript:      '',
-  virtualNodePool: {
+  osName:             '',
+  subnetId:           '',
+  keyPair:            '',
+  instanceType:       '',
+  securityGroup:      '',
+  type:               'nodePool',
+  nodePoolType:       'super',
+  userScript:         '',
+  deletionProtection: true,
+  isNew:              true,
+  virtualNodePool:    {
     securityGroupIds: [],
     subnetIds:        [],
     labels:           [],

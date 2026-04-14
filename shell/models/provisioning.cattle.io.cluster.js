@@ -988,6 +988,57 @@ export default class ProvCluster extends SteveModel {
     return this.customProvisionerHelper?.parentCluster?.(this) || this.t('resourceTable.groupLabel.notInACluster');
   }
 
+  get preventDeletionMessage() {
+    // TKE
+    try {
+      if (this.isTkeCluster()) {
+        return this.getTkePreventDeletionMessage();
+      }
+
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  isTkeCluster() {
+    const tkeConfig = this.mgmt?.spec?.tkeConfig;
+    const provisioner = (this.provisioner || '').toUpperCase();
+
+    return !!tkeConfig && provisioner === 'TKE';
+  }
+
+  getTkePreventDeletionMessage() {
+    const mgmtCluster = this.mgmt;
+    const tkeConfig = mgmtCluster?.spec?.tkeConfig;
+
+    if (!mgmtCluster || !tkeConfig) {
+      return null;
+    }
+
+    if (tkeConfig?.imported === true) {
+      return null;
+    }
+
+    if (tkeConfig?.clusterAdvancedSettings?.deletionProtection === true) {
+      return this.t('cluster.cloudProvider.tke.deletionProtection.cluster', { name: mgmtCluster.nameDisplay || mgmtCluster.metadata.name });
+    }
+
+    const protectedNodePool = (tkeConfig?.nodePoolList || []).find((item) => item?.deletionProtection === true);
+
+    if (protectedNodePool) {
+      return this.t('cluster.cloudProvider.tke.deletionProtection.nodePool', { name: protectedNodePool.name });
+    }
+
+    const protectedVirtualNodePool = (tkeConfig?.virtualNodePoolList || []).find((item) => item?.deletionProtection === true);
+
+    if (protectedVirtualNodePool) {
+      return this.t('cluster.cloudProvider.tke.deletionProtection.virtualNodePool', { name: protectedVirtualNodePool.name });
+    }
+
+    return null;
+  }
+
   editConnectMode() {
     this.$dispatch('promptModal', {
       resources: [this],

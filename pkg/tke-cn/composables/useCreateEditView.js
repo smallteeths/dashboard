@@ -141,7 +141,7 @@ export function useCreateEditView(props, context) {
         nodePoolOs:         node.osName,
         osCustomizeType:    'GENERAL',
         tags:               [],
-        deletionProtection: false,
+        deletionProtection: node.deletionProtection,
         userScript:         base64Encode(node.userScript),
       };
 
@@ -155,8 +155,8 @@ export function useCreateEditView(props, context) {
       domain:        config.domain,
     };
     const clusterBasicSettings = {
-      clusterDescription: '',
-      clusterName:        normanCluster.value.name,
+      clusterDescription: config.description ? config.description : normanCluster.value.description,
+      clusterName:        config.name ? config.name : normanCluster.value.name,
       clusterOs:          config.osName,
       clusterType:        config.clusterType,
       clusterVersion:     config.clusterVersion,
@@ -204,8 +204,9 @@ export function useCreateEditView(props, context) {
     };
 
     const clusterAdvancedSettings = {
-      containerRuntime: config.container,
-      ipvs:             config.ipvs,
+      containerRuntime:   config.container,
+      ipvs:               config.ipvs,
+      deletionProtection: config.deletionProtection,
     };
 
     if (config.clusterType !== 'INDEPENDENT_CLUSTER') {

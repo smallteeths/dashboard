@@ -30,7 +30,7 @@ import FloatingHelpPanel from './FloatingHelpPanel.vue';
 import ImportTke from './ImportTke';
 import MasterNode from './MasterNode';
 import {
-  find, pullAt, uniq, compact, flatten
+  find, pullAt, uniq, compact, flatten, cloneDeep
 } from 'lodash';
 import CONFIG_ENV from '../util/config';
 import { DoCidrOverlap } from '../util/util';
@@ -53,6 +53,7 @@ const tkeConfig = ref({});
 const normanCluster = ref({});
 const cruresource = ref(null);
 const nodePools = ref([]);
+const recordNodePools = ref([]);
 const route = useRoute();
 const isImport = route?.query?.mode === _IMPORT;
 const options = ref({
@@ -82,6 +83,10 @@ const options = ref({
       label: 'CFS',
       value: 'CFS',
     },
+  ],
+  deletionProtectionOptions: [
+    intl.value('generic.enabled'),
+    intl.value('generic.disabled'),
   ],
   ipvsOptions: [
     intl.value('generic.enabled'),
@@ -522,18 +527,19 @@ function fixConfig(config) {
         userScript = base64Decode(item.userScript);
       }
       const obj = {
-        nodePoolType:   'native',
-        clusterId:      item.clusterId,
-        nodePoolId:     item.nodePoolId,
-        nodePoolName:   item.name,
-        osName:         item.nodePoolOs,
+        nodePoolType:       'native',
+        clusterId:          item.clusterId,
+        nodePoolId:         item.nodePoolId,
+        nodePoolName:       item.name,
+        osName:             item.nodePoolOs,
+        deletionProtection: item.deletionProtection,
         userScript,
-        instanceNum:    autoScalingGroupPara.desiredCapacity,
-        subnetId:       autoScalingGroupPara.subnetIds?.[0] || '',
-        instanceType:   launchConfigurePara.instanceType,
-        systemDiskSize: launchConfigurePara.systemDisk.diskSize,
-        systemDiskType: launchConfigurePara.systemDisk.diskType,
-        dataDisks:      launchConfigurePara.dataDisks?.map((disk) => ({
+        instanceNum:        autoScalingGroupPara.desiredCapacity,
+        subnetId:           autoScalingGroupPara.subnetIds?.[0] || '',
+        instanceType:       launchConfigurePara.instanceType,
+        systemDiskSize:     launchConfigurePara.systemDisk.diskSize,
+        systemDiskType:     launchConfigurePara.systemDisk.diskType,
+        dataDisks:          launchConfigurePara.dataDisks?.map((disk) => ({
           size: disk.diskSize,
           type: disk.diskType,
         })),
@@ -560,6 +566,7 @@ function fixConfig(config) {
     osName:              clusterBasicSettings.clusterOs,
     clusterType:         clusterBasicSettings.clusterType,
     name:                clusterBasicSettings.clusterName,
+    description:         clusterBasicSettings.clusterDescription,
     clusterVersion:      clusterBasicSettings.clusterVersion,
     vpcId:               clusterBasicSettings.vpcId,
     clusterLevel:        clusterBasicSettings.clusterLevel,
@@ -576,6 +583,7 @@ function fixConfig(config) {
     dataDiskSize:        runInstancesForNode.dataDisk?.diskSize,
     container:           clusterAdvancedSettings.containerRuntime,
     ipvs:                clusterAdvancedSettings.ipvs,
+    deletionProtection:  clusterAdvancedSettings.deletionProtection,
     component:           JSON.stringify(extensionAddon)
   };
 
@@ -584,6 +592,7 @@ function fixConfig(config) {
     state.value.csi = extensionAddon?.map((item) => item.addonName);
   }
   nodePools.value = nodePool;
+  recordNodePools.value = cloneDeep(nodePool);
   tkeConfig.value = out;
 }
 
@@ -1153,6 +1162,29 @@ function removePool(index) {
   ) {
     return;
   }
+  const pool = nodePools.value[index];
+  const recordedPools = Array.isArray(recordNodePools.value) ? recordNodePools.value : [];
+  const recordedPool = recordedPools.find((item) => item?.nodePoolId === pool?.nodePoolId);
+
+  if (
+    recordedPool &&
+    !pool?.isNew &&
+    (
+      recordedPool?.deletionProtection === true ||
+      recordedPool?.virtualNodePool?.deletionProtection === true
+    )
+  ) {
+    store.dispatch(
+      'growl/warning',
+      {
+        title:   intl.value('tkeCn.deletionProtection.title'),
+        message: intl.value('tkeCn.deletionProtection.tooltip', { name: pool.nodePoolName }),
+      },
+      { root: true }
+    );
+
+    return;
+  }
 
   pullAt(nodePools.value, index);
 }
@@ -1282,6 +1314,26 @@ function getAvailableClusterCidr(vpcId) {
           color="error"
           :label="stringify(err)"
         />
+        <div class="row mb-10">
+          <div class="col span-6">
+            <LabeledInput
+              :value="normanCluster.name"
+              :mode="mode"
+              label-key="generic.name"
+              required
+              :rules="ruleSets.name"
+              @update:value="setClusterName"
+            />
+          </div>
+          <div class="col span-6">
+            <LabeledInput
+              v-model:value="normanCluster.description"
+              :mode="mode"
+              label-key="nameNsDescription.description.label"
+              :placeholder="intl('nameNsDescription.description.placeholder')"
+            />
+          </div>
+        </div>
         <div class="cluster-basic-card">
           <div class="cluster-basic-card__header">
             <h3 class="cluster-basic-card__title">
@@ -1291,27 +1343,25 @@ function getAvailableClusterCidr(vpcId) {
               {{ intl('tkeCn.basicConfig.description') }}
             </div>
           </div>
-          <div class="row mb-10">
+          <div class="row mt-10">
             <div class="col span-6">
               <LabeledInput
-                :value="normanCluster.name"
+                v-model:value="tkeConfig.name"
                 :mode="mode"
-                label-key="generic.name"
-                required
-                :rules="ruleSets.name"
-                @update:value="setClusterName"
+                label-key="tkeCn.tkeCluster.name.label"
+                :placeholder="intl('tkeCn.tkeCluster.name.placeholder')"
               />
             </div>
             <div class="col span-6">
               <LabeledInput
-                v-model:value="normanCluster.description"
+                v-model:value="tkeConfig.description"
                 :mode="mode"
-                label-key="nameNsDescription.description.label"
-                :placeholder="intl('nameNsDescription.description.placeholder')"
+                label-key="tkeCn.tkeCluster.description.label"
+                :placeholder="intl('tkeCn.tkeCluster.description.placeholder')"
               />
             </div>
           </div>
-          <div class="row mb-20">
+          <div class="row mt-10">
             <div
               class="col span-6"
             >
@@ -1347,7 +1397,7 @@ function getAvailableClusterCidr(vpcId) {
               />
             </div>
           </div>
-          <div class="row mb-20">
+          <div class="row mt-10">
             <div
               class="col span-6"
             >
@@ -1363,6 +1413,23 @@ function getAvailableClusterCidr(vpcId) {
                 label-key="tkeCn.clusterLevel.label"
                 :disabled="tkeConfig.imported"
                 :rules="ruleSets.clusterLevel"
+              />
+            </div>
+          </div>
+          <div class="network-option-card mt-10">
+            <div class="network-option-card__title">
+              {{ intl('tkeCn.deletionProtection.label') }}
+            </div>
+            <div class="network-option-card__desc">
+              {{ intl('tkeCn.deletionProtection.help') }}
+            </div>
+            <div class="mt-10">
+              <RadioGroup
+                v-model:value="tkeConfig.deletionProtection"
+                name="deletionProtection"
+                :options="[true, false]"
+                :labels="options.deletionProtectionOptions"
+                :mode="mode"
               />
             </div>
           </div>
@@ -1508,7 +1575,7 @@ function getAvailableClusterCidr(vpcId) {
               />
             </div>
           </div>
-          <div class="network-option-card mt-15">
+          <div class="network-option-card mt-10">
             <div class="network-option-card__title">
               {{ intl('tkeCn.ipvs.label') }}
             </div>
@@ -1526,7 +1593,7 @@ function getAvailableClusterCidr(vpcId) {
               />
             </div>
           </div>
-          <div class="network-option-card mt-15">
+          <div class="network-option-card mt-10">
             <div class="network-option-card__title">
               {{ intl('tkeCn.proxy.label') }}
             </div>
@@ -1617,6 +1684,7 @@ function getAvailableClusterCidr(vpcId) {
               v-model:userScript="pool.userScript"
               v-model:securityGroup="pool.securityGroup"
               v-model:virtualNodePool="pool.virtualNodePool"
+              v-model:deletionProtection="pool.deletionProtection"
               :keyPairLoading="keyPairLoading"
               :subnetOptions="subnetOptions"
               :zoneOptions="options.zoneOptions"

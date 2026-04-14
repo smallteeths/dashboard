@@ -25,12 +25,24 @@ tkeCn:
     eu-moscow: 莫斯科
     ap-jakarta: 雅加達
     sa-saopaulo: 聖保羅
+  tkeCluster:
+    name:
+      label: TKE 集群名称
+      placeholder: "默认使用 Rancher 集群名称"
+    description:
+      label: TKE 集群描述
+      placeholder: "默认使用 Rancher 集群描述"
   container:
     label: 運行時組件
   clusterType:
     label: 集群類型
     independent: 獨立集群
     managed: 託管集群
+  deletionProtection:
+    label: 集群刪除保護
+    help: "啟用集群刪除保護，防止意外刪除集群。"
+    title: 刪除保護已啟用
+    tooltip: "節點池 {name} 已啟用刪除保護，不能刪除。請禁用節點池刪除保護並保存集群後，再重試。"
   clusterLevel:
     label: 集群規格
     help: '{level} (最多管理{node}個節點，{pod}個 Pod，{configMap}個 ConfigMap，{crd}個 CRD)'
@@ -225,6 +237,7 @@ tkeCn:
   superNodePool:
     basic:
       title: 節點池基礎配置
+      titleHelp: 配置當前超級節點池名稱。
       hint: 必須為節點池選擇一個子網。
     config:
       title: 超級節點
@@ -233,7 +246,7 @@ tkeCn:
       nodeName: 節點名稱
       nodeNamePlaceholder: 自動生成
     actions:
-      add: 添加超級節點
+      add: 保存當前超級節點並添加超級節點
       save: 保存
       cancel: 取消
       edit: 編輯
