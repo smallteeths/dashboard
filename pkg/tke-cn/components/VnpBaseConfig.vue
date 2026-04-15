@@ -382,9 +382,9 @@ watch(
 );
 
 watch(
-  [filteredSubnetOptions, () => props.isNewOrUnprovisioned],
-  ([options, isNew]) => {
-    if (!isNew || !Array.isArray(options) || options.length === 0) {
+  [filteredSubnetOptions, () => props.vpcId, () => props.isNewOrUnprovisioned],
+  ([options, vpcId, isNew]) => {
+    if (!isNew || !Array.isArray(options) || options.length === 0 || !vpcId) {
       return;
     }
     const list = getVirtualNodes();
