@@ -672,8 +672,31 @@ function registerWatch() {
     if (!isNewOrUnprovisioned.value) {
       return;
     }
-    tkeConfig.value.subnetId = '';
-    tkeConfig.value.clusterCidr = getAvailableClusterCidr(vpcId);
+    // isNewOrUnprovisioned 有时无法及时反映真实的创建状态，
+    // 因此补充 isCreate 参与判断，使初始化条件更准确。
+    // 同时，为避免覆盖用户已手动设置的默认值，仅在创建阶段初始化 subnetId。
+    if (isCreate.value) {
+      tkeConfig.value.subnetId = '';
+      tkeConfig.value.clusterCidr = getAvailableClusterCidr(vpcId);
+      // 同时 vpc 变化需要重置 nodepool 对应的 subnet id
+      nodePools.value = nodePools.value.map((pool) => {
+        const virtualNodes = (pool.virtualNodePool?.virtualNodes || []).map((node) => {
+          return {
+            ...node,
+            subnetId: '',
+          };
+        });
+
+        return {
+          ...pool,
+          subnetId:        '',
+          virtualNodePool: {
+            ...pool.virtualNodePool,
+            virtualNodes,
+          },
+        };
+      });
+    }
   });
 
   watch(
