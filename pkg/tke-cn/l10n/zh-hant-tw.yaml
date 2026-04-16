@@ -208,6 +208,7 @@ tkeCn:
   nodePool:
     basic:
       title: 節點池配置
+      hint: 配置節點池的基本設定。
     network:
       title: 網絡配置
     other:
@@ -234,6 +235,9 @@ tkeCn:
           "0": 適配騰訊雲 CVM 數十種機型實例
           "1": 基於騰訊雲彈性伸縮服務提供自動擴縮容功能
           "2": Serverful 模式管理，使用者對資源與運維具有更強的管控能力
+    deletionProtection:
+      label: 节點池刪除保護
+      description: 防止節點池被刪除
   superNodePool:
     basic:
       title: 節點池基礎配置

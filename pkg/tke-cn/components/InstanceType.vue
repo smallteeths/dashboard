@@ -216,12 +216,12 @@ watch(
 </script>
 
 <template>
-  <h4
+  <h3
     v-if="!disabled"
-    class="mb-10"
+    class="title"
   >
     {{ t('tkeCn.instanceType.table.title') }}
-  </h4>
+  </h3>
   <p
     v-if="!disabled"
     class="mb-10"
@@ -346,6 +346,12 @@ watch(
 </template>
 
 <style lang="scss" scoped>
+.title {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2937;
+}
 .error {
   color: var(--error);
 }

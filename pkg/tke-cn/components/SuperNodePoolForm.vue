@@ -85,6 +85,7 @@ watch(
     <VnpBaseConfig
       :virtualNodes="localValue?.virtualNodes"
       :nodePoolName="nodePoolName"
+      :deletionProtection="localValue?.deletionProtection"
       :mode="mode"
       :isNewOrUnprovisioned="isNewOrUnprovisioned"
       :subnetOptions="subnetOptions"
@@ -94,6 +95,7 @@ watch(
       :rules="rules"
       @update:value="updateVirtualNodes"
       @update:nodePoolName="emit('update:nodePoolName', $event)"
+      @update:deletionProtection="updateAdvancedConfig({ deletionProtection: $event })"
     />
     <VnpNetworkConfig
       :securityGroupIds="localValue?.securityGroupIds"

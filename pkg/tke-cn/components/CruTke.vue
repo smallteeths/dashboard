@@ -1398,7 +1398,7 @@ function getAvailableClusterCidr(vpcId) {
                 option-key="value"
                 :loading="state.regionLoading"
                 label-key="tkeCn.region.label"
-                :disabled="!isNewOrUnprovisioned"
+                :disabled="!isNewOrUnprovisioned || tkeConfig.imported"
                 :rules="ruleSets.region"
               />
             </div>
@@ -1451,6 +1451,7 @@ function getAvailableClusterCidr(vpcId) {
                 v-model:value="tkeConfig.deletionProtection"
                 name="deletionProtection"
                 :options="[true, false]"
+                :disabled="tkeConfig.imported"
                 :labels="options.deletionProtectionOptions"
                 :mode="mode"
               />
@@ -1492,7 +1493,7 @@ function getAvailableClusterCidr(vpcId) {
                 option-label="label"
                 option-key="value"
                 label-key="tkeCn.zone.label"
-                :disabled="!isNewOrUnprovisioned"
+                :disabled="!isNewOrUnprovisioned || tkeConfig.imported"
                 :rules="ruleSets.zoneId"
                 @update:value="handleZoneChange"
               />
@@ -1508,7 +1509,7 @@ function getAvailableClusterCidr(vpcId) {
                 option-label="label"
                 option-key="value"
                 label-key="tkeCn.vpc.label"
-                :disabled="!isNewOrUnprovisioned"
+                :disabled="!isNewOrUnprovisioned || tkeConfig.imported"
                 :rules="ruleSets.vpc"
               />
             </div>
@@ -1523,7 +1524,7 @@ function getAvailableClusterCidr(vpcId) {
                 option-label="label"
                 option-key="value"
                 label-key="tkeCn.subnet.label"
-                :disabled="!isNewOrUnprovisioned"
+                :disabled="!isNewOrUnprovisioned || tkeConfig.imported"
                 :rules="ruleSets.subnet"
               />
             </div>
@@ -1540,7 +1541,7 @@ function getAvailableClusterCidr(vpcId) {
                 option-label="label"
                 option-key="value"
                 label-key="tkeCn.securityGroup.label"
-                :disabled="!isNewOrUnprovisioned"
+                :disabled="!isNewOrUnprovisioned || tkeConfig.imported"
                 :rules="ruleSets.securityGroup"
               />
             </div>
@@ -1552,7 +1553,7 @@ function getAvailableClusterCidr(vpcId) {
                   required
                   :mode="mode"
                   label-key="tkeCn.clusterCidr.label"
-                  :disabled="!isNewOrUnprovisioned"
+                  :disabled="!isNewOrUnprovisioned || tkeConfig.imported"
                   :rules="ruleSets.clusterCidr"
                   :placeholder="intl('tkeCn.clusterCidr.placeholder')"
                 />
@@ -1593,7 +1594,7 @@ function getAvailableClusterCidr(vpcId) {
                 data-testid="crutke-resource-domain"
                 :mode="mode"
                 label-key="tkeCn.domain.label"
-                :disabled="!isNewOrUnprovisioned"
+                :disabled="!isNewOrUnprovisioned || tkeConfig.imported"
                 :placeholder="intl('tkeCn.domain.placeholder')"
               />
             </div>
@@ -1608,7 +1609,7 @@ function getAvailableClusterCidr(vpcId) {
             <div class="mt-10">
               <RadioGroup
                 v-model:value="tkeConfig.ipvs"
-                :disabled="!isNewOrUnprovisioned"
+                :disabled="!isNewOrUnprovisioned || tkeConfig.imported"
                 name="ipvs"
                 :options="[true, false]"
                 :labels="options.ipvsOptions"
@@ -1626,7 +1627,7 @@ function getAvailableClusterCidr(vpcId) {
             <div class="mt-10">
               <RadioGroup
                 v-model:value="tkeConfig.clusterEndpoint"
-                :disabled="!isNewOrUnprovisioned"
+                :disabled="!isNewOrUnprovisioned || tkeConfig.imported"
                 name="clusterEndpoint"
                 :options="[true, false]"
                 :labels="options.clusterEndpointOptions"
@@ -1639,7 +1640,7 @@ function getAvailableClusterCidr(vpcId) {
           <TkeCsiCardSelect
             v-model:value="state.csi"
             :mode="mode"
-            :disabled="!isNewOrUnprovisioned"
+            :disabled="!isNewOrUnprovisioned || tkeConfig.imported"
             @update:value="handleCsiChange"
           />
         </div>
