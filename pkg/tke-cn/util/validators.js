@@ -65,7 +65,7 @@ const clusterCidrRequired = (tkeConfig, intl) => {
   };
 };
 
-const clusterValidate = (tkeConfig, intl) => {
+const clusterCidrValidate = (tkeConfig, intl) => {
   return () => {
     const cidrIPV4RegExp = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/\d{1,2}$/;
     let isValidate = false;
@@ -75,6 +75,25 @@ const clusterValidate = (tkeConfig, intl) => {
     }
 
     return !isValidate ? intl.value('validation.required', { key: intl.value('tkeCn.clusterCidr.formatError') }) : null;
+  };
+};
+
+const serviceCidrRequired = (tkeConfig, intl) => {
+  return () => {
+    return !tkeConfig?.serviceCidr ? intl.value('validation.required', { key: intl.value('tkeCn.serviceCidr.label') }) : null;
+  };
+};
+
+const serviceCidrValidate = (tkeConfig, intl) => {
+  return () => {
+    const cidrIPV4RegExp = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/\d{1,2}$/;
+    let isValidate = false;
+
+    if (cidrIPV4RegExp.test(tkeConfig.serviceCidr)) {
+      isValidate = true;
+    }
+
+    return !isValidate ? intl.value('validation.required', { key: intl.value('tkeCn.serviceCidr.formatError') }) : null;
   };
 };
 
@@ -233,6 +252,12 @@ const virtualNodePoolRequired = (nodePools, intl) => {
   };
 };
 
+const eniSubnetIdsRequired = (tkeConfig, intl) => {
+  return () => {
+    return Array.isArray(tkeConfig?.eniSubnetIds) && tkeConfig.eniSubnetIds.length > 0 ? null : intl.value('validation.required', { key: intl.value('tkeCn.eniSubnetIds.label') });
+  };
+};
+
 export default {
   clusterIDRequired,
   regionIdRequired,
@@ -246,7 +271,9 @@ export default {
   subnetIdRequired,
   osNameRequired,
   clusterCidrRequired,
-  clusterValidate,
+  clusterCidrValidate,
+  serviceCidrValidate,
+  serviceCidrRequired,
   securityGroupRequired,
   nodePoolNameRequired,
   nodePoolNamesUnique,
@@ -257,4 +284,5 @@ export default {
   nodePoolSecurityGroupRequired,
   masterInstanceTypeRequired,
   virtualNodePoolRequired,
+  eniSubnetIdsRequired,
 };
