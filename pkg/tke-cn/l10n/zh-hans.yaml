@@ -207,6 +207,7 @@ tkeCn:
   nodePool:
     basic:
       title: 节点池配置
+      hint: 配置节点池的基本设置。
     network:
       title: 网络配置
     other:
@@ -233,6 +234,9 @@ tkeCn:
           "0": 适配腾讯云 CVM 数十种机型实例
           "1": 基于腾讯云弹性伸缩服务提供自动扩缩容功能
           "2": Serverful 模式管理，用户对资源和运维的管控能力强
+    deletionProtection:
+      label: 节点池删除保护
+      description: 防止节点池被删除。
   superNodePool:
     basic:
       title: 节点池基础配置

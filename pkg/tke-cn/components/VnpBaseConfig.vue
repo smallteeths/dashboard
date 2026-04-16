@@ -8,6 +8,7 @@ import Banner from '@components/Banner/Banner.vue';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
 import SortableTable from '@shell/components/SortableTable';
 import Checkbox from '@components/Form/Checkbox/Checkbox.vue';
+import DeletionProtectionSwitch from './DeletionProtectionSwitch.vue';
 
 const props = defineProps({
   virtualNodes:         { type: Array, default: () => ([]) },
@@ -18,9 +19,10 @@ const props = defineProps({
   zoneOptions:          { type: Array, default: () => ([]) },
   rules:                { type: Object, default: () => ({}) },
   vpcId:                { type: String, default: '' },
+  deletionProtection:   { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['update:value', 'update:nodePoolName']);
+const emit = defineEmits(['update:value', 'update:nodePoolName', 'update:deletionProtection']);
 const errors = ref([]);
 const store = useStore();
 const intl = computed(() => store.getters['i18n/t']);
@@ -420,15 +422,15 @@ watch(
 </script>
 
 <template>
-  <div class="m-0 mb-10 card-container">
-    <h3 class="title">
-      {{ intl('tkeCn.superNodePool.basic.title') }}
-    </h3>
-    <div class="hint">
-      {{ intl('tkeCn.superNodePool.basic.titleHelp') }}
-    </div>
-    <div class="row mt-10">
-      <div class="col span-6">
+  <div class="basic-layout-row">
+    <div class="config-card config-card--basic">
+      <h3 class="title">
+        {{ intl('tkeCn.superNodePool.basic.title') }}
+      </h3>
+      <div class="hint">
+        {{ intl('tkeCn.superNodePool.basic.titleHelp') }}
+      </div>
+      <div class="config-card__content">
         <LabeledInput
           :value="nodePoolName"
           :mode="mode"
@@ -437,6 +439,21 @@ watch(
           :disabled="!isNewOrUnprovisioned"
           :rules="rules.name"
           @update:value="emit('update:nodePoolName', $event)"
+        />
+      </div>
+    </div>
+    <div class="config-card config-card--protection">
+      <h3 class="title">
+        {{ intl('tkeCn.nodePool.deletionProtection.label') }}
+      </h3>
+      <div class="hint">
+        {{ intl('tkeCn.nodePool.deletionProtection.description') }}
+      </div>
+      <div class="config-card__content config-card__content--protection">
+        <DeletionProtectionSwitch
+          :checked="deletionProtection"
+          :t="intl"
+          @toggle-change="emit('update:deletionProtection', $event)"
         />
       </div>
     </div>
@@ -694,6 +711,25 @@ watch(
 </template>
 
 <style scoped lang="scss">
+.basic-layout-row {
+  display: grid;
+  grid-template-columns: minmax(0,1.3fr) minmax(220px,0.7fr);
+  gap: 10px;
+  align-items: stretch;
+}
+.config-card {
+  padding: 10px;
+  border-radius: var(--border-radius);
+  background: var(--body-bg);
+  box-shadow: 0 0 20px var(--shadow);
+}
+.config-card__content {
+  margin-top: 10px;
+}
+.config-card__content--protection {
+  display: flex;
+  align-items: center;
+}
 .required-mark {
   color: var(--error);
 }

@@ -207,6 +207,7 @@ tkeCn:
   nodePool:
     basic:
       title: NodePool Configuration
+      hint: Configure the basic node pool settings.
     network:
       title: Network Configuration
     other:
@@ -233,6 +234,9 @@ tkeCn:
           "0": Supports dozens of Tencent Cloud CVM instance types
           "1": Provides auto scaling based on Tencent Cloud Auto Scaling Service
           "2": Serverful management model with stronger user control over resources and operations
+    deletionProtection:
+      label: Node Pool Deletion Protection
+      description: Prevent accidental deletion of this node pool.
   superNodePool:
     basic:
       title: NodePool Configuration

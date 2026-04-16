@@ -2,7 +2,6 @@
 import { computed } from 'vue';
 import { useStore } from 'vuex';
 import Accordion from '@components/Accordion/Accordion.vue';
-import Checkbox from '@components/Form/Checkbox/Checkbox.vue';
 import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
 import VnpAdvancedListsEditor from './VnpAdvancedListsEditor.vue';
 
@@ -50,17 +49,6 @@ const osOptions = computed(() => [
           option-key="value"
           :disabled="!isNewOrUnprovisioned || isImported"
           @update:value="patch({ os: $event })"
-        />
-      </div>
-    </div>
-    <div class="row mb-10">
-      <div class="col span-6">
-        <Checkbox
-          :value="value.deletionProtection"
-          :mode="mode"
-          :disabled="isImported"
-          :label="intl('tkeCn.superNodePool.advanced.deletionProtection')"
-          @update:value="patch({ deletionProtection: $event })"
         />
       </div>
     </div>

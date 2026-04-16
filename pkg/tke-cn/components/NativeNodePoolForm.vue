@@ -5,11 +5,11 @@ import TkeUserData from './TkeUserData.vue';
 import TkeDataDisk from './TkeDataDisk.vue';
 import OsNameSelect from './OsNameSelect.vue';
 import InstanceTypeComponent from './InstanceType.vue';
-import Checkbox from '@components/Form/Checkbox/Checkbox.vue';
 import { queryFromTencent } from '../util/request';
 import { computed, watch, ref } from 'vue';
 import { stringify } from '@shell/utils/error';
 import Banner from '@components/Banner/Banner.vue';
+import DeletionProtectionSwitch from './DeletionProtectionSwitch.vue';
 import { useStore } from 'vuex';
 
 const props = defineProps({
@@ -379,36 +379,57 @@ watch(() => props.systemDiskType, (systemDiskType) => {
 </script>
 <template>
   <div>
+    <div class="basic-layout-row">
+      <div class="card-container mb-10">
+        <div class="title">
+          {{ intl('tkeCn.nodePool.basic.title') }}
+        </div>
+        <div class="hint">
+          {{ intl('tkeCn.nodePool.basic.hint') }}
+        </div>
+        <div class="row mt-10">
+          <div class="col span-6">
+            <LabeledInput
+              :value="name"
+              label-key="tkeCn.nodePoolName.label"
+              :mode="mode"
+              :rules="rules.name"
+              :disabled="tkeConfig.imported"
+              data-testid="tke-node-pool-name"
+              required
+              :placeholder="intl('tkeCn.nodePoolName.placeholder')"
+              @update:value="emit('update:name', $event)"
+            />
+          </div>
+          <div class="col span-6">
+            <LabeledInput
+              :value="instanceNum"
+              :label="intl('tkeCn.numOfNodes.label')"
+              :mode="mode"
+              :disabled="tkeConfig.imported"
+              :placeholder="intl('tkeCn.numOfNodes.placeholder')"
+              @blur="blurInitialNodeCount(instanceNum)"
+              @update:value="$emit('update:instanceNum', $event)"
+            />
+          </div>
+        </div>
+      </div>
+      <div class="card-container mb-10">
+        <h3 class="title">
+          {{ intl('tkeCn.nodePool.deletionProtection.label') }}
+        </h3>
+        <div class="hint">
+          {{ intl('tkeCn.nodePool.deletionProtection.description') }}
+        </div>
+        <DeletionProtectionSwitch
+          class="mt-10"
+          :checked="deletionProtection"
+          :t="intl"
+          @toggle-change="emit('update:deletionProtection', $event)"
+        />
+      </div>
+    </div>
     <div class="card-container mb-10">
-      <div class="title">
-        {{ intl('tkeCn.nodePool.basic.title') }}
-      </div>
-      <div class="row mb-10">
-        <div class="col span-6">
-          <LabeledInput
-            :value="name"
-            label-key="tkeCn.nodePoolName.label"
-            :mode="mode"
-            :rules="rules.name"
-            :disabled="tkeConfig.imported"
-            data-testid="tke-node-pool-name"
-            required
-            :placeholder="intl('tkeCn.nodePoolName.placeholder')"
-            @update:value="emit('update:name', $event)"
-          />
-        </div>
-        <div class="col span-6">
-          <LabeledInput
-            :value="instanceNum"
-            :label="intl('tkeCn.numOfNodes.label')"
-            :mode="mode"
-            :disabled="tkeConfig.imported"
-            :placeholder="intl('tkeCn.numOfNodes.placeholder')"
-            @blur="blurInitialNodeCount(instanceNum)"
-            @update:value="$emit('update:instanceNum', $event)"
-          />
-        </div>
-      </div>
       <InstanceTypeComponent
         :value="instanceType"
         :current-instance="currentInstance"
@@ -588,21 +609,16 @@ watch(() => props.systemDiskType, (systemDiskType) => {
         data-testid="tke-cn-user-data"
         @update:modelValue="emit('update:userScript', $event)"
       />
-      <div class="row mt-10">
-        <div class="col span-6">
-          <Checkbox
-            :value="deletionProtection"
-            :mode="mode"
-            :disabled="tkeConfig.imported"
-            :label="intl('tkeCn.superNodePool.advanced.deletionProtection')"
-            @update:value="emit('update:deletionProtection', $event)"
-          />
-        </div>
-      </div>
     </div>
   </div>
 </template>
 <style scoped lang="scss">
+.basic-layout-row {
+  display: grid;
+  grid-template-columns: minmax(0,1.3fr) minmax(220px,0.7fr);
+  gap: 10px;
+  align-items: stretch;
+}
 .card-container {
   border-radius: var(--border-radius);
   padding: 10px;

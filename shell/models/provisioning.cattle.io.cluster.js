@@ -198,6 +198,24 @@ export default class ProvCluster extends SteveModel {
 
     const all = actions.concat(out);
 
+    // Pandaria: Add clear deletion protection action if preventDeletionMessage is set
+    let preventDeletionMessage = null;
+
+    try {
+      preventDeletionMessage = this.preventDeletionMessage;
+    } catch (e) {
+      preventDeletionMessage = null;
+    }
+
+    if (preventDeletionMessage) {
+      all.unshift({
+        action:  'clearTkeDeletionProtection',
+        label:   this.t('cluster.cloudProvider.tke.deletionProtection.removeAction'),
+        icon:    'icon icon-unlock',
+        enabled: this.canUpdate && !!this.mgmt,
+      });
+    }
+
     // If the cluster is a KEV1 cluster or Harvester cluster then prevent edit
     if (this.isKev1 || this.isHarvester) {
       const edit = all.find((action) => action.action === 'goToEdit');
@@ -254,6 +272,13 @@ export default class ProvCluster extends SteveModel {
     }
 
     return await this.$dispatch('rancher/find', { type: NORMAN.CLUSTER, id: name }, { root: true });
+  }
+
+  clearTkeDeletionProtection() {
+    this.$dispatch('promptModal', {
+      resources: [this],
+      component: 'ClearTkeDeletionProtectionDialog'
+    });
   }
 
   explore() {

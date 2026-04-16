@@ -1597,6 +1597,11 @@ cluster:
         cluster: "This cluster {name} has deletion protection enabled and cannot be deleted. Disable deletion protection and try again."
         nodePool: "This cluster node pool {name} has deletion protection enabled and cannot be deleted. Disable deletion protection and try again."
         virtualNodePool: "This cluster super node pool {name} has deletion protection enabled and cannot be deleted. Disable deletion protection and try again."
+        removeAction: Remove TKE Deletion Protection
+        targetCluster: "Target Cluster: {name}"
+        removeConfirm: Are you sure you want to remove deletion protection for this cluster and its node pools?
+        removeSuccess: Deletion protection has been removed.
+        removeFailed: Failed to remove deletion protection.
   copyConfig: Copy KubeConfig to Clipboard
   copiedConfig: Copied KubeConfig to Clipboard
   custom:
