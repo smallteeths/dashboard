@@ -340,4 +340,30 @@ tkeCn:
     description: Provide a custom cloud-init or shell script that will run during node initialization.
   image:
     label: Image
+  networkType:
+    label: Network Plugin
+    globalRouter: Global Router
+    vpcCni: VPC-CNI
+  serviceCidr:
+    label: Service CIDR
+    placeholder: Please input Service CIDR
+    required: Service CIDR is required
+    formatError: Service CIDR format error
+    conflictError: Service CIDR conflict error
+  eniSubnetIds:
+    label: ENI Subnets
+    help: Configure subnets used by VPC-CNI ENI allocation.
+    empty: No ENI subnet selected.
+    table:
+      subnet: Subnet
+      zone: Zone
+      cidr: CIDR
+  internetMaxBandwidthOut:
+    label: Bandwidth cap
+    placeholder: Please enter egress bandwidth in Mbps
+  maxNodePodNum:
+    label: Maximum Node Pod Number
+  maxClusterServiceNum:
+    label: Maximum Cluster Service Number
+    
     

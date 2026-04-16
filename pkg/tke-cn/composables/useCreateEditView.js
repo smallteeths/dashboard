@@ -49,6 +49,8 @@ export function useCreateEditView(props, context) {
         normanCluster.value.tkeConfig = importConfig;
       }
 
+      // Allow change tkeCredentialSecret
+      normanCluster.value.tkeConfig.tkeCredentialSecret = tkeConfig.value.tkeCredentialSecret;
       await normanCluster.value.save();
 
       return await normanCluster.value.waitForCondition('InitialRolesPopulated');
@@ -62,6 +64,7 @@ export function useCreateEditView(props, context) {
 
   function formatConfig() {
     const config = tkeConfig.value;
+    const networkType = config.networkType || 'GR';
     const nodePoolList = [];
     const virtualNodePoolList = [];
 
@@ -126,7 +129,7 @@ export function useCreateEditView(props, context) {
         dataDisks:               dataDisks?.length ? dataDisks : [],
         keyIds:                  node.keyPair ? [node.keyPair] : [],
         securityGroupIds:        [node.securityGroup],
-        instanceChargeType:      'POSTPAID_BY_HOUR', // todo POSTPAID_BY_HOUR | SPOTPAID | PREPAID
+        instanceChargeType:      'POSTPAID_BY_HOUR',
       };
 
       const out = {
@@ -148,12 +151,20 @@ export function useCreateEditView(props, context) {
       nodePoolList.push(out);
     });
 
-    const clusterEndpoint = {
-      enable:        config.clusterEndpoint,
-      subnetId:      config.subnetId,
-      securityGroup: config.securityGroup,
-      domain:        config.domain,
-    };
+    const clusterEndpoint = { enable: config.clusterEndpoint, domain: config.domain };
+
+    if (config.clusterEndpoint) {
+      clusterEndpoint.securityGroup = config.securityGroup;
+      clusterEndpoint.extensiveParameters = JSON.stringify({
+        InternetAccessible: {
+          InternetChargeType:      'TRAFFIC_POSTPAID_BY_HOUR',
+          InternetMaxBandwidthOut: Number(config.internetMaxBandwidthOut ?? 10),
+        },
+      });
+    } else {
+      clusterEndpoint.subnetId = config.subnetId;
+    }
+
     const clusterBasicSettings = {
       clusterDescription: config.description ? config.description : normanCluster.value.description,
       clusterName:        config.name ? config.name : normanCluster.value.name,
@@ -164,14 +175,17 @@ export function useCreateEditView(props, context) {
       clusterLevel:       config.clusterLevel,
       isAutoUpgrade:      true,
     };
-    const clusterCIDRSettings = {
-      clusterCIDR:               config.clusterCidr,
-      ignoreClusterCIDRConflict: true,
-      maxClusterServiceNum:      1024,
-      maxNodePodNum:             64,
-      needWorkSecurityGroup:     true,
-      osCustomizeType:           'GENERAL',
-    };
+    const clusterCIDRSettings = {};
+
+    if (networkType === 'VPC-CNI') {
+      clusterCIDRSettings.serviceCIDR = config.serviceCidr;
+      clusterCIDRSettings.eniSubnetIds = config.eniSubnetIds || [];
+      clusterCIDRSettings.maxNodePodNum = config.maxNodePodNum;
+    } else {
+      clusterCIDRSettings.clusterCIDR = config.clusterCidr;
+      clusterCIDRSettings.maxClusterServiceNum = config.maxClusterServiceNum;
+      clusterCIDRSettings.maxNodePodNum = config.maxNodePodNum;
+    }
 
     const dataDisks = [{
       diskSize: config.dataDiskSize,
@@ -207,6 +221,7 @@ export function useCreateEditView(props, context) {
       containerRuntime:   config.container,
       ipvs:               config.ipvs,
       deletionProtection: config.deletionProtection,
+      networkType,
     };
 
     if (config.clusterType !== 'INDEPENDENT_CLUSTER') {

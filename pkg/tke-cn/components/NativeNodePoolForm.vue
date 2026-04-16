@@ -424,6 +424,7 @@ watch(() => props.systemDiskType, (systemDiskType) => {
         <DeletionProtectionSwitch
           class="mt-10"
           :checked="deletionProtection"
+          :disabled="tkeConfig.imported"
           :t="intl"
           @toggle-change="emit('update:deletionProtection', $event)"
         />

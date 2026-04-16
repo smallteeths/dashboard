@@ -208,7 +208,7 @@ export default class ProvCluster extends SteveModel {
     }
 
     if (preventDeletionMessage) {
-      all.unshift({
+      all.push({
         action:  'clearTkeDeletionProtection',
         label:   this.t('cluster.cloudProvider.tke.deletionProtection.removeAction'),
         icon:    'icon icon-unlock',
