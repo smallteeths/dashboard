@@ -15,6 +15,7 @@ const props = defineProps({
   nodePoolName:         { type: String, default: '' },
   mode:                 { type: String, required: true },
   isNewOrUnprovisioned: { type: Boolean, default: false },
+  isImported:           { type: Boolean, default: false },
   subnetOptions:        { type: Array, default: () => ([]) },
   zoneOptions:          { type: Array, default: () => ([]) },
   rules:                { type: Object, default: () => ({}) },
@@ -22,6 +23,7 @@ const props = defineProps({
   deletionProtection:   { type: Boolean, default: false },
 });
 
+console.log(props.isImported);
 const emit = defineEmits(['update:value', 'update:nodePoolName', 'update:deletionProtection']);
 const errors = ref([]);
 const store = useStore();
@@ -436,7 +438,7 @@ watch(
           :mode="mode"
           :label="intl('tkeCn.nodePoolName.label')"
           required
-          :disabled="!isNewOrUnprovisioned"
+          :disabled="!isNewOrUnprovisioned || isImported"
           :rules="rules.name"
           @update:value="emit('update:nodePoolName', $event)"
         />
@@ -453,6 +455,7 @@ watch(
         <DeletionProtectionSwitch
           :checked="deletionProtection"
           :t="intl"
+          :disabled="isImported"
           @toggle-change="emit('update:deletionProtection', $event)"
         />
       </div>
@@ -472,7 +475,7 @@ watch(
           :value="draft.displayName"
           :mode="mode"
           :label="intl('tkeCn.superNodePool.fields.nodeName')"
-          :disabled="!isNewOrUnprovisioned"
+          :disabled="!isNewOrUnprovisioned || isImported"
           :placeholder="intl('tkeCn.superNodePool.fields.nodeNamePlaceholder')"
           @update:value="updateDisplayName"
         />
@@ -486,7 +489,7 @@ watch(
           option-label="label"
           option-key="value"
           label-key="tkeCn.zone.label"
-          :disabled="!isNewOrUnprovisioned"
+          :disabled="!isNewOrUnprovisioned || isImported"
         />
       </div>
     </div>
@@ -513,7 +516,7 @@ watch(
         <template #cell:selected="{ row }">
           <Checkbox
             :value="draft.subnetId === row.value"
-            :disabled="!isNewOrUnprovisioned"
+            :disabled="!isNewOrUnprovisioned || isImported"
             @update:value="selectSubnet(row.value, $event)"
           />
         </template>
@@ -556,7 +559,7 @@ watch(
               v-show="isNewOrUnprovisioned"
               class="btn-link"
               type="button"
-              :disabled="!isNewOrUnprovisioned"
+              :disabled="!isNewOrUnprovisioned || isImported"
               @click="openEditModal(vn._index)"
             >
               {{ intl('tkeCn.superNodePool.actions.edit') }}
@@ -565,7 +568,7 @@ watch(
               v-show="isNewOrUnprovisioned && vn._index !== currentIndex"
               class="btn-danger"
               type="button"
-              :disabled="!isNewOrUnprovisioned"
+              :disabled="!isNewOrUnprovisioned || isImported"
               @click="removeVirtualNode(vn._index)"
             >
               {{ intl('tkeCn.superNodePool.actions.delete') }}
@@ -612,7 +615,7 @@ watch(
       <button
         class="super-node-add__btn"
         type="button"
-        :disabled="!isNewOrUnprovisioned"
+        :disabled="!isNewOrUnprovisioned || isImported"
         @click="addVirtualNode"
       >
         <span class="super-node-add__icon">+</span>

@@ -341,3 +341,28 @@ tkeCn:
     description: 提供自定義的 cloud-init 或 shell 腳本，在節點初始化時運行。
   image:
     label: 镜像
+  networkType:
+    label: 網路插件
+    globalRouter: 全局路由
+    vpcCni: VPC-CNI
+  serviceCidr:
+    label: Service CIDR
+    placeholder: 請輸入 Service CIDR
+    required: Service CIDR 是必填項
+    formatError: Service CIDR 格式錯誤
+    conflictError: Service CIDR 冲突錯誤
+  eniSubnetIds:
+    label: ENI 子網
+    help: 配置 VPC-CNI ENI 分配使用的子網。
+    empty: 未選擇 ENI 子網。
+    table:
+      subnet: 子網
+      zone: 可用區
+      cidr: CIDR
+  internetMaxBandwidthOut:
+    label: 带寬上限
+    placeholder: 請輸入带寬上限
+  maxNodePodNum:
+    label: 单节点 Pod 数量上限
+  maxClusterServiceNum:
+    label: 集群内 Service 数量上限

@@ -25,7 +25,7 @@ import { isBase64 } from '@shell/utils/string';
 import { base64Decode } from '@shell/utils/crypto';
 import TkeCsiCardSelect from './TkeCsiCardSelect';
 import TkeNodePoolTypeForm from './TkeNodePoolTypeForm';
-// import TkeClusterLevelSelect from './TkeClusterLevelSelect';
+import TkeNetworkConfigForm from './TkeNetworkConfigForm';
 import FloatingHelpPanel from './FloatingHelpPanel.vue';
 import ImportTke from './ImportTke';
 import MasterNode from './MasterNode';
@@ -96,6 +96,16 @@ const options = ref({
     intl.value('tkeCn.proxy.outer'),
     intl.value('tkeCn.proxy.inner'),
   ],
+  networkTypeOptions: [
+    {
+      label: intl.value('tkeCn.networkType.globalRouter'),
+      value: 'GR',
+    },
+    {
+      label: intl.value('tkeCn.networkType.vpcCni'),
+      value: 'VPC-CNI',
+    },
+  ],
 });
 const state = ref({
   loading:                      false,
@@ -110,6 +120,8 @@ const state = ref({
   showPrivateRegistryInput:     false,
   clusterCidrValidating:        false,
   clusterCidrConflictError:     '',
+  serviceCidrValidating:        false,
+  serviceCidrConflictError:     '',
   userData:                     '',
   instanceTypeSet:              {},
   allSubnets:                   [],
@@ -138,6 +150,10 @@ const ruleSets = computed(() => {
   const clusterCidr = tkeConfig.value.clusterCidr;
   const securityGroup = tkeConfig.value.securityGroup;
   const instanceType = tkeConfig.value.instanceType;
+  const networkType = tkeConfig.value.networkType || 'GR';
+  const serviceCidr = tkeConfig.value.serviceCidr;
+  const clusterEndpoint = tkeConfig.value.clusterEndpoint;
+  const eniSubnetIds = tkeConfig.value.eniSubnetIds || [];
   const copyNodePools = nodePools.value.map((pool) => {
     return {
       nodePoolName:    pool.nodePoolName,
@@ -171,21 +187,28 @@ const ruleSets = computed(() => {
     clusterVersion: !importCluster ? [
       TKEValidators.clusterVersionRequired({ clusterVersion }, intl),
     ] : [],
-    zoneId: !importCluster && !isManagedCluster.value ? [
+    zoneId: !importCluster && !isManagedCluster.value && !clusterEndpoint ? [
       TKEValidators.zoneIdRequired({ zoneId }, intl),
     ] : [],
     vpc: !importCluster ? [
       TKEValidators.vpcIdRequired({ vpcId }, intl),
     ] : [],
-    subnet: !importCluster ? [
+    subnet: !importCluster && !clusterEndpoint ? [
       TKEValidators.subnetIdRequired({ subnetId }, intl),
     ] : [],
-    clusterCidr: !importCluster ? [
+    clusterCidr: !importCluster && networkType === 'GR' ? [
       TKEValidators.clusterCidrRequired({ clusterCidr }, intl),
-      TKEValidators.clusterValidate({ clusterCidr }, intl),
+      TKEValidators.clusterCidrValidate({ clusterCidr }, intl),
     ] : [],
-    securityGroup: !importCluster ? [
+    securityGroup: !importCluster && clusterEndpoint ? [
       TKEValidators.securityGroupRequired({ securityGroup }, intl),
+    ] : [],
+    serviceCidr: !importCluster && networkType === 'VPC-CNI' ? [
+      TKEValidators.serviceCidrRequired({ serviceCidr }, intl),
+      TKEValidators.serviceCidrValidate({ serviceCidr }, intl),
+    ] : [],
+    eniSubnetIds: !importCluster && networkType === 'VPC-CNI' ? [
+      TKEValidators.eniSubnetIdsRequired({ eniSubnetIds }, intl),
     ] : [],
     nodePoolName: !importCluster ? [
       TKEValidators.nodePoolNameRequired(copyNodePools, intl),
@@ -243,7 +266,10 @@ const fvFormIsValid = computed(() => {
       break;
     }
   }
-  if (state.value.clusterCidrConflictError) {
+  if ((tkeConfig.value.networkType || 'GR') === 'GR' && state.value.clusterCidrConflictError) {
+    isValid = false;
+  }
+  if ((tkeConfig.value.networkType || 'GR') === 'VPC-CNI' && state.value.serviceCidrConflictError) {
     isValid = false;
   }
 
@@ -262,8 +288,11 @@ const validationMessages = computed(() => {
     });
   });
 
-  if (state.value.clusterCidrConflictError) {
+  if ((tkeConfig.value.networkType || 'GR') === 'GR' && state.value.clusterCidrConflictError) {
     messages.push([state.value.clusterCidrConflictError.trim()]);
+  }
+  if ((tkeConfig.value.networkType || 'GR') === 'VPC-CNI' && state.value.serviceCidrConflictError) {
+    messages.push([state.value.serviceCidrConflictError.trim()]);
   }
 
   return uniq(compact(flatten(messages)));
@@ -553,38 +582,52 @@ function fixConfig(config) {
       nodePool.push(obj);
     });
   }
+  let extensiveParameters = {};
 
+  try {
+    extensiveParameters = clusterEndpoint.extensiveParameters ? JSON.parse(clusterEndpoint.extensiveParameters) : {};
+  } catch (e) {
+    extensiveParameters = {};
+  }
+
+  const internetAccessible = extensiveParameters.InternetAccessible || {};
   const out = {
-    clusterEndpoint:     clusterEndpoint.enable === undefined ? true : !!clusterEndpoint.enable,
-    imported:            config.imported,
-    region:              config.region,
-    clusterId:           config.clusterId,
-    subnetId:            clusterEndpoint.subnetId,
-    domain:              clusterEndpoint.domain,
-    tkeCredentialSecret: config.tkeCredentialSecret,
-    securityGroup:       clusterEndpoint.securityGroup,
-    osName:              clusterBasicSettings.clusterOs,
-    clusterType:         clusterBasicSettings.clusterType,
-    name:                clusterBasicSettings.clusterName,
-    description:         clusterBasicSettings.clusterDescription,
-    clusterVersion:      clusterBasicSettings.clusterVersion,
-    vpcId:               clusterBasicSettings.vpcId,
-    clusterLevel:        clusterBasicSettings.clusterLevel,
-    clusterCidr:         clusterCIDRSettings.clusterCIDR,
-    ecsCount:            runInstancesForNode.instanceCount,
-    instanceType:        runInstancesForNode.instanceType,
-    bandwidthType:       runInstancesForNode.internetChargeType,
-    bandwidth:           runInstancesForNode.internetMaxBandwidthOut,
-    keyPair:             (runInstancesForNode.keyIds || [])[0],
-    zoneId:              runInstancesForNode.zone,
-    systemDiskType:      runInstancesForNode.systemDisk?.diskType,
-    systemDiskSize:      runInstancesForNode.systemDisk?.diskSize,
-    dataDiskType:        runInstancesForNode.dataDisk?.diskType,
-    dataDiskSize:        runInstancesForNode.dataDisk?.diskSize,
-    container:           clusterAdvancedSettings.containerRuntime,
-    ipvs:                clusterAdvancedSettings.ipvs,
-    deletionProtection:  clusterAdvancedSettings.deletionProtection,
-    component:           JSON.stringify(extensionAddon)
+    clusterEndpoint:         clusterEndpoint.enable === undefined ? true : !!clusterEndpoint.enable,
+    imported:                config.imported,
+    region:                  config.region,
+    clusterId:               config.clusterId,
+    subnetId:                clusterEndpoint.subnetId,
+    domain:                  clusterEndpoint.domain,
+    internetMaxBandwidthOut: internetAccessible.InternetMaxBandwidthOut,
+    tkeCredentialSecret:     config.tkeCredentialSecret,
+    securityGroup:           clusterEndpoint.securityGroup,
+    osName:                  clusterBasicSettings.clusterOs,
+    clusterType:             clusterBasicSettings.clusterType,
+    name:                    clusterBasicSettings.clusterName,
+    description:             clusterBasicSettings.clusterDescription,
+    clusterVersion:          clusterBasicSettings.clusterVersion,
+    vpcId:                   clusterBasicSettings.vpcId,
+    clusterLevel:            clusterBasicSettings.clusterLevel,
+    clusterCidr:             clusterCIDRSettings.clusterCIDR,
+    serviceCidr:             clusterCIDRSettings.serviceCIDR || '',
+    eniSubnetIds:            clusterCIDRSettings.eniSubnetIds || [],
+    maxNodePodNum:           clusterCIDRSettings.maxNodePodNum,
+    maxClusterServiceNum:    clusterCIDRSettings.maxClusterServiceNum,
+    networkType:             clusterAdvancedSettings.networkType || 'GR',
+    ecsCount:                runInstancesForNode.instanceCount,
+    instanceType:            runInstancesForNode.instanceType,
+    bandwidthType:           runInstancesForNode.internetChargeType,
+    bandwidth:               runInstancesForNode.internetMaxBandwidthOut,
+    keyPair:                 (runInstancesForNode.keyIds || [])[0],
+    zoneId:                  runInstancesForNode.zone,
+    systemDiskType:          runInstancesForNode.systemDisk?.diskType,
+    systemDiskSize:          runInstancesForNode.systemDisk?.diskSize,
+    dataDiskType:            runInstancesForNode.dataDisk?.diskType,
+    dataDiskSize:            runInstancesForNode.dataDisk?.diskSize,
+    container:               clusterAdvancedSettings.containerRuntime,
+    ipvs:                    clusterAdvancedSettings.ipvs,
+    deletionProtection:      clusterAdvancedSettings.deletionProtection,
+    component:               JSON.stringify(extensionAddon)
   };
 
   // init csi addon
@@ -668,17 +711,25 @@ function registerWatch() {
     }
   });
 
-  watch(() => tkeConfig.value.vpcId, (vpcId) => {
-    if (!isNewOrUnprovisioned.value) {
-      return;
-    }
-    // isNewOrUnprovisioned 有时无法及时反映真实的创建状态，
-    // 因此补充 isCreate 参与判断，使初始化条件更准确。
-    // 同时，为避免覆盖用户已手动设置的默认值，仅在创建阶段初始化 subnetId。
-    if (isCreate.value) {
+  watch(
+    [() => tkeConfig.value.vpcId, () => tkeConfig.value.networkType],
+    ([vpcId, networkType], [oldVpcId]) => {
+      if (!isNewOrUnprovisioned.value) {
+        return;
+      }
+      if (!isCreate.value) {
+        return;
+      }
       tkeConfig.value.subnetId = '';
-      tkeConfig.value.clusterCidr = getAvailableClusterCidr(vpcId);
-      // 同时 vpc 变化需要重置 nodepool 对应的 subnet id
+      if ((networkType || 'GR') === 'GR') {
+        tkeConfig.value.clusterCidr = getAvailableClusterCidr(vpcId);
+      } else {
+        tkeConfig.value.serviceCidr = getAvailableServiceCidr(vpcId);
+      }
+      // nodepool only for vpcid change
+      if (vpcId === oldVpcId) {
+        return;
+      }
       nodePools.value = nodePools.value.map((pool) => {
         const virtualNodes = (pool.virtualNodePool?.virtualNodes || []).map((node) => {
           return {
@@ -697,7 +748,7 @@ function registerWatch() {
         };
       });
     }
-  });
+  );
 
   watch(
     () => [tkeConfig.value.subnetId, subnetOptions.value],
@@ -741,28 +792,53 @@ function registerWatch() {
   });
 
   let clusterCidrValidateTimer = null;
+  let serviceCidrValidateTimer = null;
 
   watch(
     [
       () => tkeConfig.value.clusterCidr,
+      () => tkeConfig.value.serviceCidr,
       () => tkeConfig.value.region,
-      () => tkeConfig.value.vpcId
+      () => tkeConfig.value.vpcId,
+      () => tkeConfig.value.networkType
     ],
     () => {
       if (isImport && !isNewOrUnprovisioned.value) {
         return;
       }
+
       const credential = tkeConfig.value.tkeCredentialSecret;
 
       if (!credential) {
         return;
       }
-      state.value.clusterCidrConflictError = '';
-      // 确保了在 clusterCidr 变化时不那么频繁的去交验
+
+      const networkType = tkeConfig.value.networkType || 'GR';
+
       clearTimeout(clusterCidrValidateTimer);
-      clusterCidrValidateTimer = setTimeout(() => {
-        validateClusterCidrConflict(credential);
-      }, 400);
+      clearTimeout(serviceCidrValidateTimer);
+
+      if (networkType === 'GR') {
+        state.value.serviceCidrConflictError = '';
+        state.value.serviceCidrValidating = false;
+        state.value.clusterCidrConflictError = '';
+
+        clusterCidrValidateTimer = setTimeout(() => {
+          validateClusterCidrConflict(credential);
+        }, 400);
+
+        return;
+      }
+
+      if (networkType === 'VPC-CNI') {
+        state.value.clusterCidrConflictError = '';
+        state.value.clusterCidrValidating = false;
+        state.value.serviceCidrConflictError = '';
+
+        serviceCidrValidateTimer = setTimeout(() => {
+          validateServiceCidrConflict(credential);
+        }, 400);
+      }
     }
   );
 }
@@ -855,6 +931,41 @@ async function validateClusterCidrConflict(cloudCredentialId) {
     state.value.clusterCidrConflictError = err.error ? `${ intl.value('tkeCn.clusterCidr.label') }: ${ err.error }` : intl.value('tkeCn.clusterCidr.formatError');
   }
   state.value.clusterCidrValidating = false;
+}
+
+async function validateServiceCidrConflict(cloudCredentialId) {
+  const cidr = tkeConfig.value.serviceCidr;
+  const regionId = tkeConfig.value.region;
+  const vpcId = tkeConfig.value.vpcId;
+  const cidrIPV4RegExp = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/\d{1,2}$/;
+
+  state.value.serviceCidrConflictError = '';
+
+  if (!cidr || !regionId || !vpcId || !cidrIPV4RegExp.test(cidr)) {
+    return;
+  }
+
+  state.value.serviceCidrValidating = true;
+
+  try {
+    const res = await queryFromTencent({
+      resource:       'checkClusterCIDR',
+      cloudCredentialId,
+      store,
+      externalParams: {
+        regionId,
+        vpcId,
+        clusterCIDR: cidr,
+      },
+    });
+    const isConflict = res?.IsConflict === true;
+
+    state.value.serviceCidrConflictError = isConflict ? `${ intl.value('tkeCn.serviceCidr.label') }: ${ res?.ConflictMsg }` || intl.value('tkeCn.serviceCidr.conflictError') : '';
+  } catch (err) {
+    state.value.serviceCidrConflictError = err.error ? `${ intl.value('tkeCn.serviceCidr.label') }: ${ err.error }` : intl.value('tkeCn.serviceCidr.formatError');
+  }
+
+  state.value.serviceCidrValidating = false;
 }
 
 function updatePrivateRegistryInput(val) {
@@ -968,39 +1079,6 @@ async function fetchZone(cloudCredentialId) {
     state.value.errors.push(err);
   }
   state.value.zoneIdLoading = false;
-}
-
-async function handleZoneChange(value) {
-  tkeConfig.value.zoneId = value;
-
-  const credential = tkeConfig.value.tkeCredentialSecret;
-
-  state.value.errors = [];
-
-  if (!credential) {
-    return;
-  }
-
-  const promises = [];
-
-  if (!isImport) {
-    resetConfig(false);
-    promises.push(
-      fetchVpc(credential),
-      fetchSubnets(credential),
-      fetchSecurityGroup(credential),
-      fetchInstanceTypes(credential),
-      fetchKeyPair(credential),
-    );
-  }
-
-  try {
-    await Promise.all(promises);
-  } catch (err) {
-    if (state.value.errors.length === 0) {
-      state.value.errors.push(err);
-    }
-  }
 }
 
 async function fetchVpc(cloudCredentialId) {
@@ -1264,6 +1342,13 @@ function getAvailableClusterCidr(vpcId) {
   }) || '';
 }
 
+function getAvailableServiceCidr(vpcId) {
+  const usedCidrs = getVpcUsedCidrs(vpcId);
+
+  return CONFIG_ENV.SERVICE_CIDR_CANDIDATES.find((candidate) => {
+    return !usedCidrs.some((usedCidr) => DoCidrOverlap(candidate, usedCidr));
+  }) || '10.96.0.0/24';
+}
 </script>
 
 <template>
@@ -1371,6 +1456,7 @@ function getAvailableClusterCidr(vpcId) {
               <LabeledInput
                 v-model:value="tkeConfig.name"
                 :mode="mode"
+                :disabled="tkeConfig.imported"
                 label-key="tkeCn.tkeCluster.name.label"
                 :placeholder="intl('tkeCn.tkeCluster.name.placeholder')"
               />
@@ -1379,6 +1465,7 @@ function getAvailableClusterCidr(vpcId) {
               <LabeledInput
                 v-model:value="tkeConfig.description"
                 :mode="mode"
+                :disabled="tkeConfig.imported"
                 label-key="tkeCn.tkeCluster.description.label"
                 :placeholder="intl('tkeCn.tkeCluster.description.placeholder')"
               />
@@ -1470,172 +1557,20 @@ function getAvailableClusterCidr(vpcId) {
             label-key="tkeCn.version.warning"
           />
         </div>
-        <div class="cluster-basic-card mb-10">
-          <div class="cluster-basic-card__header">
-            <h3 class="cluster-basic-card__title">
-              {{ intl('tkeCn.networkConfig.title') }}
-            </h3>
-            <div class="cluster-basic-card__desc">
-              {{ intl('tkeCn.networkConfig.description') }}
-            </div>
-          </div>
-          <div class="row mb-10">
-            <div
-              class="col span-4"
-            >
-              <LabeledSelect
-                :value="tkeConfig.zoneId"
-                data-testid="crutke-resource-zone"
-                :loading="state.zoneIdLoading"
-                required
-                :mode="mode"
-                :options="options.zoneOptions"
-                option-label="label"
-                option-key="value"
-                label-key="tkeCn.zone.label"
-                :disabled="!isNewOrUnprovisioned || tkeConfig.imported"
-                :rules="ruleSets.zoneId"
-                @update:value="handleZoneChange"
-              />
-            </div>
-            <div class="col span-4">
-              <LabeledSelect
-                v-model:value="tkeConfig.vpcId"
-                data-testid="crutke-resource-vpc"
-                :loading="state.vpcIdLoading"
-                required
-                :mode="mode"
-                :options="options.vpcOptions"
-                option-label="label"
-                option-key="value"
-                label-key="tkeCn.vpc.label"
-                :disabled="!isNewOrUnprovisioned || tkeConfig.imported"
-                :rules="ruleSets.vpc"
-              />
-            </div>
-            <div class="col span-4">
-              <LabeledSelect
-                v-model:value="tkeConfig.subnetId"
-                data-testid="crutke-resource-subnet"
-                :loading="state.subnetLoading"
-                required
-                :mode="mode"
-                :options="subnetOptions"
-                option-label="label"
-                option-key="value"
-                label-key="tkeCn.subnet.label"
-                :disabled="!isNewOrUnprovisioned || tkeConfig.imported"
-                :rules="ruleSets.subnet"
-              />
-            </div>
-          </div>
-          <div class="row mb-10">
-            <div class="col span-4">
-              <LabeledSelect
-                v-model:value="tkeConfig.securityGroup"
-                data-testid="crutke-resource-security-group"
-                :loading="state.securityGroupLoading"
-                required
-                :mode="mode"
-                :options="options.securityGroupOptions"
-                option-label="label"
-                option-key="value"
-                label-key="tkeCn.securityGroup.label"
-                :disabled="!isNewOrUnprovisioned || tkeConfig.imported"
-                :rules="ruleSets.securityGroup"
-              />
-            </div>
-            <div class="col span-4">
-              <div class="cluster-cidr-field">
-                <LabeledInput
-                  v-model:value="tkeConfig.clusterCidr"
-                  data-testid="crutke-resource-cluster-cidr"
-                  required
-                  :mode="mode"
-                  label-key="tkeCn.clusterCidr.label"
-                  :disabled="!isNewOrUnprovisioned || tkeConfig.imported"
-                  :rules="ruleSets.clusterCidr"
-                  :placeholder="intl('tkeCn.clusterCidr.placeholder')"
-                />
-                <div
-                  v-if="state.clusterCidrConflictError || state.clusterCidrValidating"
-                  class="cluster-cidr-field__status"
-                >
-                  <v-dropdown
-                    v-if="!state.clusterCidrValidating"
-                    theme="info-tooltip"
-                    placement="top"
-                    :triggers="['hover', 'click']"
-                    :auto-hide="true"
-                    :distance="8"
-                  >
-                    <span>
-                      <i
-                        class="icon icon-warning group-icon cluster-cidr-field__icon"
-                      />
-                    </span>
-                    <template #popper>
-                      <div class="cluster-cidr-field__tooltip">
-                        {{ state.clusterCidrConflictError }}
-                      </div>
-                    </template>
-                  </v-dropdown>
-                  <span v-else>
-                    <i
-                      class="icon icon-spinner icon-spin icon-lg"
-                    />
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div class="col span-4">
-              <LabeledInput
-                v-model:value="tkeConfig.domain"
-                data-testid="crutke-resource-domain"
-                :mode="mode"
-                label-key="tkeCn.domain.label"
-                :disabled="!isNewOrUnprovisioned || tkeConfig.imported"
-                :placeholder="intl('tkeCn.domain.placeholder')"
-              />
-            </div>
-          </div>
-          <div class="network-option-card mt-10">
-            <div class="network-option-card__title">
-              {{ intl('tkeCn.ipvs.label') }}
-            </div>
-            <div class="network-option-card__desc">
-              {{ intl('tkeCn.ipvs.help') }}
-            </div>
-            <div class="mt-10">
-              <RadioGroup
-                v-model:value="tkeConfig.ipvs"
-                :disabled="!isNewOrUnprovisioned || tkeConfig.imported"
-                name="ipvs"
-                :options="[true, false]"
-                :labels="options.ipvsOptions"
-                :mode="mode"
-              />
-            </div>
-          </div>
-          <div class="network-option-card mt-10">
-            <div class="network-option-card__title">
-              {{ intl('tkeCn.proxy.label') }}
-            </div>
-            <div class="network-option-card__desc">
-              {{ intl('tkeCn.proxy.info') }}
-            </div>
-            <div class="mt-10">
-              <RadioGroup
-                v-model:value="tkeConfig.clusterEndpoint"
-                :disabled="!isNewOrUnprovisioned || tkeConfig.imported"
-                name="clusterEndpoint"
-                :options="[true, false]"
-                :labels="options.clusterEndpointOptions"
-                :mode="mode"
-              />
-            </div>
-          </div>
-        </div>
+        <TkeNetworkConfigForm
+          v-model:value="tkeConfig"
+          :mode="mode"
+          :intl="intl"
+          :options="options"
+          :state="state"
+          :rule-sets="ruleSets"
+          :subnet-options="subnetOptions"
+          :is-new-or-unprovisioned="isNewOrUnprovisioned"
+          :cluster-cidr-conflict-error="state.clusterCidrConflictError"
+          :cluster-cidr-validating="state.clusterCidrValidating"
+          :service-cidr-conflict-error="state.serviceCidrConflictError"
+          :service-cidr-validating="state.serviceCidrValidating"
+        />
         <div class="cluster-basic-card mb-10">
           <TkeCsiCardSelect
             v-model:value="state.csi"
