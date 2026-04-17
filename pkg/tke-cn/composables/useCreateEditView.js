@@ -114,7 +114,7 @@ export function useCreateEditView(props, context) {
         maxSize:              node.instanceNum,
         minSize:              0,
         vpcId:                config.vpcId,
-        subnetIds:            [node.subnetId],
+        subnetIds:            node.subnetId,
       };
       const launchConfigurePara = {
         launchConfigurationName: '',

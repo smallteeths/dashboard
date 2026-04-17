@@ -205,6 +205,7 @@ tkeCn:
   domain:
     label: 叢集域名
     placeholder: e.g. example.com
+    help: 請自行配置公网 DNS 服务来进行域名解析。
   nodePool:
     basic:
       title: 節點池配置

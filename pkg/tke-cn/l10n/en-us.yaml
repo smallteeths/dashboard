@@ -204,6 +204,7 @@ tkeCn:
   domain:
     label: Domain
     placeholder: e.g. example.com
+    help: Please configure the public DNS service to resolve domain names.
   nodePool:
     basic:
       title: NodePool Configuration
