@@ -10,6 +10,7 @@ import { computed, watch, ref } from 'vue';
 import { stringify } from '@shell/utils/error';
 import Banner from '@components/Banner/Banner.vue';
 import DeletionProtectionSwitch from './DeletionProtectionSwitch.vue';
+import LabeledMultiSelect from './LabeledMultiSelect.vue';
 import { useStore } from 'vuex';
 
 const props = defineProps({
@@ -38,8 +39,8 @@ const props = defineProps({
     default: ''
   },
   subnetId: {
-    type:    String,
-    default: ''
+    type:    Array,
+    default: () => ([]),
   },
   keyPair: {
     type:    String,
@@ -70,7 +71,7 @@ const props = defineProps({
     default: false,
   },
   instanceTypeOptions: {
-    type:    Array,
+    type:    [Array, Object],
     default: () => ([]),
   },
   systemDiskTypeOptions: {
@@ -94,6 +95,10 @@ const props = defineProps({
     default: () => ([]),
   },
   securityGroupOptions: {
+    type:    Array,
+    default: () => ([]),
+  },
+  zoneOptions: {
     type:    Array,
     default: () => ([]),
   },
@@ -132,7 +137,7 @@ const state = ref({
   errors:                 [],
 });
 const options = ref({ DiskConfigQuota: [] });
-const currentInstance = ref({});
+const shouldSyncSubnetAfterInstanceChange = ref(false);
 const intl = computed(() => store.getters['i18n/t']);
 const emit = defineEmits([
   'update:name',
@@ -150,6 +155,33 @@ const emit = defineEmits([
   'update:userScript',
   'update:deletionProtection',
 ]);
+// 全部的实例类型
+const flatInstanceTypeOptions = computed(() => {
+  const allInstances = props.instanceTypeOptions;
+
+  if (!allInstances) {
+    return [];
+  }
+
+  if (Array.isArray(allInstances)) {
+    return allInstances;
+  }
+
+  return Object.values(allInstances).reduce((res, list) => {
+    return res.concat(Array.isArray(list) ? list : []);
+  }, []);
+});
+
+// 选中的 row 非常重要
+const selectedInstanceRow = computed(() => {
+  return flatInstanceTypeOptions.value.find((item) => {
+    return item.value === props.instanceType;
+  }) || null;
+});
+
+const currentInstanceZoneId = computed(() => {
+  return selectedInstanceRow.value?.raw?.Zone || selectedInstanceRow.value?.zone || '';
+});
 
 function blurInitialNodeCount(num) {
   if (num === '') {
@@ -212,6 +244,11 @@ function getDefaultInstanceType(options = []) {
   return candidates[0] || null;
 }
 
+function handleInstanceTypeChange(instanceType) {
+  emit('update:instanceType', instanceType);
+  shouldSyncSubnetAfterInstanceChange.value = true;
+}
+
 async function fetchDiskConfigQuota(cloudCredentialId, zoneId, instanceType) {
   state.value.DiskConfigQuotaLoading = true;
   try {
@@ -220,7 +257,9 @@ async function fetchDiskConfigQuota(cloudCredentialId, zoneId, instanceType) {
       cloudCredentialId,
       store,
       externalParams: {
-        regionId: props?.tkeConfig?.region || '', zoneId: zoneId || '', instanceType: instanceType || ''
+        regionId:     props?.tkeConfig?.region || '',
+        zoneId:       zoneId || '',
+        instanceType: instanceType || ''
       },
     });
 
@@ -263,11 +302,75 @@ const getDiskOptions = computed(() => {
 });
 
 const arch = computed(() => {
-  if (currentInstance.value?.instanceFamily === 'SR1' || currentInstance.value?.instanceFamily === 'SK1' ) {
+  const family = selectedInstanceRow.value?.instanceFamily ||
+    selectedInstanceRow.value?.group ||
+    selectedInstanceRow.value?.raw?.InstanceFamily || '';
+
+  if (family === 'SR1' || family === 'SK1') {
     return 'arm';
   }
 
   return 'amd64';
+});
+
+function getItemZone(item) {
+  return item?.raw?.Zone || item?.zone || '';
+}
+
+// filteredSubnetOptions 逻辑比较复杂
+// filteredSubnetOptions 根据的是当前选择的实例类型在哪个区域里有
+// availableZones 就是获得当前选择的实例类型在哪个区域里可用
+// subnetOptions 根据所有当前可用的区域来过滤子网
+const filteredSubnetOptions = computed(() => {
+  const options = Array.isArray(props.subnetOptions) ? props.subnetOptions : [];
+
+  if (!props.instanceType) {
+    return options.map((item) => {
+      const subnetZone = item.Zone || item.zone || '';
+      const matchedZone = (props.zoneOptions || []).find((z) => z.value === subnetZone);
+      const zoneLabel = matchedZone?.label || subnetZone;
+
+      return {
+        ...item,
+        label: `${ item.label || item.value } (${ zoneLabel })`,
+      };
+    });
+  }
+
+  const matches = flatInstanceTypeOptions.value.filter((item) => {
+    return item.value === props.instanceType;
+  });
+
+  if (!matches.length) {
+    return options;
+  }
+
+  const availableZones = new Set(
+    matches
+      .map((item) => getItemZone(item))
+      .filter(Boolean)
+  );
+
+  if (!availableZones.size) {
+    return options;
+  }
+
+  return options
+    .filter((item) => {
+      const subnetZone = item.Zone || item.zone || '';
+
+      return availableZones.has(subnetZone);
+    })
+    .map((item) => {
+      const subnetZone = item.Zone || item.zone || '';
+      const matchedZone = (props.zoneOptions || []).find((z) => z.value === subnetZone);
+      const zoneLabel = matchedZone?.label || subnetZone;
+
+      return {
+        ...item,
+        label: `${ item.label || item.value } (${ zoneLabel })`,
+      };
+    });
 });
 
 function getDefaultSystemDiskSize(diskTypeOption) {
@@ -278,23 +381,51 @@ function getDefaultSystemDiskSize(diskTypeOption) {
   return Math.max(diskTypeOption.minDiskSize || 20, 20);
 }
 
-watch(() => props.instanceTypeOptions, () => {
-  if (props.instanceType || !props.instanceTypeOptions?.length) {
+watch(() => flatInstanceTypeOptions.value, (instanceOptions = []) => {
+  if (!instanceOptions.length) {
     return;
   }
 
-  const defaultInstanceType = getDefaultInstanceType(props.instanceTypeOptions);
+  if (props.instanceType) {
+    return;
+  }
 
-  if (defaultInstanceType && defaultInstanceType.value && props.isNewOrUnprovisioned && !props.instanceType) {
+  const defaultInstanceType = getDefaultInstanceType(instanceOptions);
+
+  if (defaultInstanceType && defaultInstanceType.value && props.isNewOrUnprovisioned) {
     emit('update:instanceType', defaultInstanceType.value);
   }
-}, { immediate: true });
+}, { immediate: true, deep: true });
 
-watch(() => props.subnetOptions, () => {
-  if (!props.subnetId && props.subnetOptions?.length > 0 && props.isNewOrUnprovisioned) {
-    emit('update:subnetId', props.subnetOptions[0].value);
+watch(() => filteredSubnetOptions.value, (options = []) => {
+  if (!props.isNewOrUnprovisioned) {
+    return;
   }
-}, { immediate: true });
+
+  const currentSubnetIds = Array.isArray(props.subnetId) ? props.subnetId : [];
+
+  // 已有 subnetId，而且不是用户刚刚手动切换 instanceType，就不自动覆盖
+  // 这个非常重要因为 isNewOrUnprovisioned 有时候后端返回慢并不能完全杜绝编辑覆盖
+  if (currentSubnetIds.length > 0 && !shouldSyncSubnetAfterInstanceChange.value) {
+    return;
+  }
+
+  if (!options.length) {
+    emit('update:subnetId', []);
+    shouldSyncSubnetAfterInstanceChange.value = false;
+
+    return;
+  }
+
+  const allOptionValues = options.map((item) => item.value);
+  const hasAnyNotExists = currentSubnetIds.some((id) => !allOptionValues.includes(id));
+
+  if (!currentSubnetIds.length || hasAnyNotExists) {
+    emit('update:subnetId', options[0]?.value ? [options[0].value] : []);
+  }
+
+  shouldSyncSubnetAfterInstanceChange.value = false;
+}, { immediate: true, deep: true });
 
 watch(() => props.securityGroupOptions, () => {
   if (!props.securityGroup && props.securityGroupOptions?.length > 0 && props.isNewOrUnprovisioned) {
@@ -303,8 +434,9 @@ watch(() => props.securityGroupOptions, () => {
 }, { immediate: true });
 
 watch(
-  () => [props?.tkeConfig?.zoneId, props?.instanceType],
+  () => [currentInstanceZoneId.value, props.instanceType],
   async([zoneId, instanceType]) => {
+    state.value.errors = [];
     const credential = props?.tkeConfig?.tkeCredentialSecret;
 
     if (!credential || !zoneId || !instanceType) {
@@ -312,9 +444,7 @@ watch(
     }
 
     try {
-      await Promise.all([
-        fetchDiskConfigQuota(credential, zoneId, instanceType),
-      ]);
+      await fetchDiskConfigQuota(credential, zoneId, instanceType);
     } catch (err) {
       state.value.errors = [];
       state.value.errors.push(err);
@@ -353,7 +483,6 @@ watch(() => getDiskOptions.value.systemDiskTypes, (systemDiskTypes = []) => {
   }
 }, { immediate: true });
 
-// 切换系统盘类型时，更新系统盘大小
 watch(() => props.systemDiskType, (systemDiskType) => {
   const matched = getDiskOptions.value.systemDiskTypes.find((item) => item.value === systemDiskType);
 
@@ -375,7 +504,6 @@ watch(() => props.systemDiskType, (systemDiskType) => {
     emit('update:systemDiskSize', defaultSystemDiskSize);
   }
 }, { immediate: true });
-
 </script>
 <template>
   <div>
@@ -409,7 +537,7 @@ watch(() => props.systemDiskType, (systemDiskType) => {
               :disabled="tkeConfig.imported"
               :placeholder="intl('tkeCn.numOfNodes.placeholder')"
               @blur="blurInitialNodeCount(instanceNum)"
-              @update:value="$emit('update:instanceNum', $event)"
+              @update:value="emit('update:instanceNum', $event)"
             />
           </div>
         </div>
@@ -433,24 +561,23 @@ watch(() => props.systemDiskType, (systemDiskType) => {
     <div class="card-container mb-10">
       <InstanceTypeComponent
         :value="instanceType"
-        :current-instance="currentInstance"
         :mode="mode"
-        :options="instanceTypeOptions"
+        :options="flatInstanceTypeOptions"
+        :zone-options="zoneOptions"
         :loading="instanceTypeLoading"
         :disabled="!isNewOrUnprovisioned || tkeConfig.imported"
         :rules="rules.instanceType"
-        @update:value="$emit('update:instanceType', $event)"
-        @update:current-instance="currentInstance = $event"
+        @update:value="handleInstanceTypeChange"
       />
       <OsNameSelect
         :value="osName"
         :mode="mode"
         :rules="rules.osName"
         :cloud-credential-id="tkeConfig.tkeCredentialSecret"
-        :zone-id="tkeConfig.zoneId"
+        :zone-id="currentInstanceZoneId"
         :arch="arch"
         :disabled="!isNewOrUnprovisioned || tkeConfig.imported"
-        @update:value="$emit('update:osName', $event)"
+        @update:value="emit('update:osName', $event)"
       />
     </div>
     <div class="card-container mb-10">
@@ -484,7 +611,7 @@ watch(() => props.systemDiskType, (systemDiskType) => {
             :placeholder="intl('tkeCn.systemDiskSize.placeholder')"
             required
             @blur="blurSystemDiskSize(systemDiskSize)"
-            @update:value="$emit('update:systemDiskSize', $event)"
+            @update:value="emit('update:systemDiskSize', $event)"
           >
             <template #suffix>
               <div class="addon">
@@ -537,7 +664,7 @@ watch(() => props.systemDiskType, (systemDiskType) => {
             :mode="mode"
             :disabled="!isNewOrUnprovisioned"
             @blur="blurBandwidth(bandwidth)"
-            @update:value="$emit('update:bandwidth', $event)"
+            @update:value="emit('update:bandwidth', $event)"
           >
             <template #suffix>
               <div class="addon">
@@ -549,11 +676,11 @@ watch(() => props.systemDiskType, (systemDiskType) => {
       </div>
       <div class="row mb-10">
         <div class="col span-6">
-          <LabeledSelect
+          <LabeledMultiSelect
             :value="subnetId"
             data-testid="cru-tke-subnet-id"
             :mode="mode"
-            :options="subnetOptions"
+            :options="filteredSubnetOptions"
             :disabled="!isNewOrUnprovisioned"
             option-label="label"
             option-key="value"

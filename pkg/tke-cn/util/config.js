@@ -15,7 +15,8 @@ const CLUSTER_TYPES = [
 ];
 
 const DEFAULTTKECONFIG = {
-  clusterCidr:             '172.16.0.0/16',
+  clusterCidr:             '',
+  serviceCidr:             '',
   clusterVersion:          null,
   networkType:             'GR',
   internetMaxBandwidthOut: 10,
@@ -64,7 +65,7 @@ const DEFAULT_NODE_GROUP_CONFIG = {
     }
   ],
   osName:             '',
-  subnetId:           '',
+  subnetId:           [],
   keyPair:            '',
   instanceType:       '',
   securityGroup:      '',

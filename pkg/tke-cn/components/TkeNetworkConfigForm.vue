@@ -292,14 +292,33 @@
             />
           </div>
           <div class="col span-4">
-            <LabeledInput
-              v-model:value="localValue.domain"
-              data-testid="crutke-resource-domain"
-              :mode="mode"
-              label-key="tkeCn.domain.label"
-              :disabled="!isNewOrUnprovisioned || localValue.imported"
-              :placeholder="intl('tkeCn.domain.placeholder')"
-            />
+            <div class="domain-field">
+              <LabeledInput
+                v-model:value="localValue.domain"
+                data-testid="crutke-resource-domain"
+                :mode="mode"
+                label-key="tkeCn.domain.label"
+                :disabled="!isNewOrUnprovisioned || localValue.imported"
+                :placeholder="intl('tkeCn.domain.placeholder')"
+              />
+              <v-dropdown
+                class="domain-field__tooltip"
+                theme="info-tooltip"
+                placement="top"
+                :triggers="['hover', 'click']"
+                :auto-hide="true"
+                :distance="8"
+              >
+                <span class="domain-field__tooltip-trigger">
+                  <i class="icon icon-info" />
+                </span>
+                <template #popper>
+                  <div class="domain-field__tooltip-content">
+                    {{ intl('tkeCn.domain.help') }}
+                  </div>
+                </template>
+              </v-dropdown>
+            </div>
           </div>
         </div>
         <div
@@ -333,14 +352,33 @@
             />
           </div>
           <div class="col span-4">
-            <LabeledInput
-              v-model:value="localValue.domain"
-              data-testid="crutke-resource-domain"
-              :mode="mode"
-              label-key="tkeCn.domain.label"
-              :disabled="!isNewOrUnprovisioned || localValue.imported"
-              :placeholder="intl('tkeCn.domain.placeholder')"
-            />
+            <div class="domain-field">
+              <LabeledInput
+                v-model:value="localValue.domain"
+                data-testid="crutke-resource-domain"
+                :mode="mode"
+                label-key="tkeCn.domain.label"
+                :disabled="!isNewOrUnprovisioned || localValue.imported"
+                :placeholder="intl('tkeCn.domain.placeholder')"
+              />
+              <v-dropdown
+                class="domain-field__tooltip"
+                theme="info-tooltip"
+                placement="top"
+                :triggers="['hover', 'click']"
+                :auto-hide="true"
+                :distance="8"
+              >
+                <span class="domain-field__tooltip-trigger">
+                  <i class="icon icon-info" />
+                </span>
+                <template #popper>
+                  <div class="domain-field__tooltip-content">
+                    {{ intl('tkeCn.domain.help') }}
+                  </div>
+                </template>
+              </v-dropdown>
+            </div>
           </div>
         </div>
       </div>
@@ -409,7 +447,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['update:value']);
+const emit = defineEmits(['vpc-change', 'update:value', 'network-type-change', 'zone-change']);
 const grMaxNodePodNumOptions = [16, 32, 64, 128, 256, 512].map((value) => {
   return {
     label: `${ value }`,
@@ -561,6 +599,8 @@ function handleVpcChange(value) {
     subnetId:     defaultSubnetId,
     eniSubnetIds: localValue.value.networkType === 'VPC-CNI' && defaultEniSubnetId ? [defaultEniSubnetId] : [],
   });
+
+  emit('vpc-change');
 }
 
 function handleNetworkTypeChange(value) {
@@ -573,6 +613,7 @@ function handleNetworkTypeChange(value) {
       networkType:  value,
       eniSubnetIds: [],
     });
+    emit('network-type-change', value);
 
     return;
   }
@@ -584,10 +625,12 @@ function handleNetworkTypeChange(value) {
     networkType:  value,
     eniSubnetIds: currentEniSubnetIds.length > 0 ? currentEniSubnetIds : (defaultEniSubnetId ? [defaultEniSubnetId] : []),
   });
+  emit('network-type-change', value);
 }
 
 function handleZoneChange(value) {
   updateValue({ zoneId: value });
+  emit('zone-change', value);
 }
 
 function toggleEniSubnet(subnetId, checked) {
@@ -698,5 +741,34 @@ function toggleAllEniSubnets(checked) {
   color: var(--error);
   font-size: 12px;
   line-height: 1.5;
+}
+.domain-field {
+  position: relative;
+}
+.domain-field__tooltip {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 2;
+}
+.domain-field__tooltip-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--input-label);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+.domain-field__tooltip-trigger:hover {
+  color: var(--body-text);
+}
+.domain-field__tooltip-content {
+  max-width: 240px;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--body-text);
+  white-space: normal;
 }
 </style>

@@ -323,6 +323,17 @@ const subnetOptions = computed(() => {
 
   return subnetsOptions || [];
 });
+const subnetOptionsForNodePool = computed(() => {
+  if (!state.value.allSubnets) {
+    return [];
+  }
+  const vpcId = tkeConfig.value.vpcId;
+  const subnetsOptions = state.value.allSubnets?.filter((subnet) => {
+    return subnet.vpcId === vpcId;
+  });
+
+  return subnetsOptions || [];
+});
 const imageOptions = computed(() => {
   const out = [];
 
@@ -337,14 +348,12 @@ const imageOptions = computed(() => {
 });
 const instanceTypeOptions = computed(() => {
   const allInstances = state.value.instanceTypeSet || {};
-  const zoneId = tkeConfig.value.zoneId;
-  const instances = allInstances[zoneId];
 
-  if (!allInstances || !zoneId) {
-    return [];
+  if (!allInstances) {
+    return {};
   }
 
-  return instances;
+  return allInstances;
 });
 const clusterActive = computed(() => {
   if (!isNewOrUnprovisioned.value) {
@@ -370,9 +379,6 @@ const hasCredential = computed(() => {
 });
 const isNewOrUnprovisioned = computed(() => {
   return props.mode === _CREATE || !normanCluster.value?.tkeStatus?.upstreamSpec;
-});
-const isCreate = computed(() => {
-  return props.mode === _CREATE;
 });
 
 function cancelCredential() {
@@ -423,16 +429,14 @@ function handleCsiChange(value) {
   tkeConfig.value.component = JSON.stringify(components);
 }
 
-function resetConfig(resetZone = true) {
+function resetConfig() {
   if (!isNewOrUnprovisioned.value) {
     return;
   }
   tkeConfig.value.subnetId = '';
   tkeConfig.value.securityGroup = '';
   tkeConfig.value.vpcId = '';
-  if (resetZone) {
-    tkeConfig.value.zoneId = '';
-  }
+  tkeConfig.value.zoneId = '';
   nodePools.value = nodePools.value.map((pool) => {
     const virtualNodes = (pool.virtualNodePool?.virtualNodes || []).map((node) => {
       return {
@@ -443,7 +447,7 @@ function resetConfig(resetZone = true) {
 
     return {
       ...pool,
-      subnetId:        '',
+      subnetId:        [],
       securityGroup:   '',
       keyPair:         '',
       instanceType:    '',
@@ -564,7 +568,7 @@ function fixConfig(config) {
         deletionProtection: item.deletionProtection,
         userScript,
         instanceNum:        autoScalingGroupPara.desiredCapacity,
-        subnetId:           autoScalingGroupPara.subnetIds?.[0] || '',
+        subnetId:           autoScalingGroupPara.subnetIds,
         instanceType:       launchConfigurePara.instanceType,
         systemDiskSize:     launchConfigurePara.systemDisk.diskSize,
         systemDiskType:     launchConfigurePara.systemDisk.diskType,
@@ -680,116 +684,42 @@ function registerWatch() {
     }
   }, { immediate: true });
 
-  watch(() => tkeConfig.value.region, async() => {
-    const credential = tkeConfig.value.tkeCredentialSecret;
-
-    state.value.errors = [];
-    if (!credential) {
-      return;
-    }
-    const promises = [];
-
-    if (!isImport) {
-      resetConfig();
-      promises.push(
-        fetchClusterLevelAttribute(credential),
-        fetchClusterVersion(credential),
-        fetchZone(credential),
-        fetchVpc(credential),
-        fetchSubnets(credential),
-        fetchSecurityGroup(credential),
-        fetchInstanceTypes(credential),
-        fetchKeyPair(credential),
-      );
-    }
-    try {
-      await Promise.all(promises);
-    } catch (err) {
-      if (state.value.errors.length === 0) {
-        state.value.errors.push(err);
-      }
-    }
-  });
-
   watch(
-    [() => tkeConfig.value.vpcId, () => tkeConfig.value.networkType],
-    ([vpcId, networkType], [oldVpcId]) => {
-      if (!isNewOrUnprovisioned.value) {
-        return;
-      }
-      if (!isCreate.value) {
-        return;
-      }
-      tkeConfig.value.subnetId = '';
-      if ((networkType || 'GR') === 'GR') {
-        tkeConfig.value.clusterCidr = getAvailableClusterCidr(vpcId);
-      } else {
-        tkeConfig.value.serviceCidr = getAvailableServiceCidr(vpcId);
-      }
-      // nodepool only for vpcid change
-      if (vpcId === oldVpcId) {
-        return;
-      }
-      nodePools.value = nodePools.value.map((pool) => {
-        const virtualNodes = (pool.virtualNodePool?.virtualNodes || []).map((node) => {
-          return {
-            ...node,
-            subnetId: '',
-          };
-        });
-
-        return {
-          ...pool,
-          subnetId:        '',
-          virtualNodePool: {
-            ...pool.virtualNodePool,
-            virtualNodes,
-          },
-        };
-      });
-    }
-  );
-
-  watch(
-    () => [tkeConfig.value.subnetId, subnetOptions.value],
-    ([subnetId, options]) => {
-      if (tkeConfig.value.zoneId || !subnetId || !options?.length) {
+    () => [tkeConfig.value.subnetId, state.value.allSubnets],
+    ([subnetId, subnets]) => {
+      if (!subnetId || !subnets?.length) {
         return;
       }
 
-      const matchedSubnet = find(options, { SubnetId: subnetId });
+      const matchedSubnet = find(subnets, { SubnetId: subnetId });
 
       // 因为编辑的时候后端不会返回 zone 但是创建的时候需要 zone 去获得对应的参数
-      // 比如 instancetype 以及其他参数
-      // 所以从对应的 subnet 去取，如果后端设置了 zone 则这段就不需要了
-      if (matchedSubnet?.Zone && !isNewOrUnprovisioned.value) {
+      // 并且 zoneId 必须是当前 subnet 的 zoneId（无论是编辑还是创建）
+      if (matchedSubnet?.Zone && tkeConfig.value.zoneId !== matchedSubnet.Zone) {
         tkeConfig.value.zoneId = matchedSubnet.Zone;
       }
     },
     { immediate: true }
   );
 
-  watch(() => subnetOptions, (options) => {
-    if (!Array.isArray(options.value) || options.value.length === 0) {
-      if (isCreate.value) {
-        tkeConfig.value.subnetId = '';
+  watch(
+    [subnetOptions, () => tkeConfig.value.zoneId],
+    ([options, zoneId]) => {
+      if (!zoneId || !Array.isArray(options) || options.length === 0 || !isNewOrUnprovisioned.value) {
+        return;
       }
 
-      return;
-    }
+      const currentSubnetId = tkeConfig.value.subnetId || '';
 
-    // 只有在创建的时候才会初始化
-    // 没有用 isNewOrUnprovisioned.value 是因为当创建了之后但是没有完全成功时，isNewOrUnprovisioned.value 是 true
-    // 会导致覆盖默认值
-    // subnetId 初始化比较特殊它没有监听 zoneId 的变化去做 = '' 的 reset 操作
-    // 所以联动时需要判断是否是创建模式，只有在创建模式才可以初始化 subnetId
-    if (isCreate.value && options.value.length > 0) {
-      tkeConfig.value.subnetId = options.value[0].value;
+      if (!currentSubnetId) {
+        tkeConfig.value.subnetId = options[0].value || '';
+      }
+    },
+    {
+      immediate: true,
+      deep:      true
     }
-  }, {
-    immediate: true,
-    deep:      true
-  });
+  );
 
   let clusterCidrValidateTimer = null;
   let serviceCidrValidateTimer = null;
@@ -998,6 +928,39 @@ function cmpSemver(a, b) {
   return 0;
 }
 
+async function handleRegionChange(value) {
+  if (tkeConfig.value.region === value) {
+    return;
+  }
+  tkeConfig.value.region = value;
+  state.value.errors = [];
+  const credential = tkeConfig.value.tkeCredentialSecret;
+
+  if (!credential) {
+    return;
+  }
+  if (isImport) {
+    return;
+  }
+  resetConfig();
+  try {
+    await Promise.all([
+      fetchClusterLevelAttribute(credential),
+      fetchClusterVersion(credential),
+      fetchZone(credential),
+      fetchVpc(credential),
+      fetchSubnets(credential),
+      fetchSecurityGroup(credential),
+      fetchInstanceTypes(credential),
+      fetchKeyPair(credential),
+    ]);
+  } catch (err) {
+    if (state.value.errors.length === 0) {
+      state.value.errors.push(err);
+    }
+  }
+}
+
 async function fetchClusterVersion(cloudCredentialId) {
   state.value.clusterVersionLoading = true;
   try {
@@ -1069,7 +1032,6 @@ async function fetchZone(cloudCredentialId) {
     });
 
     options.value.zoneOptions = zoneOptions || [];
-
     if (isNewOrUnprovisioned.value && options.value.zoneOptions.length > 0 && !tkeConfig.value.zoneId) {
       tkeConfig.value.zoneId = options.value.zoneOptions[0].value;
     }
@@ -1101,6 +1063,7 @@ async function fetchVpc(cloudCredentialId) {
     options.value.vpcOptions = vpcOptions || [];
     if (isNewOrUnprovisioned.value && options.value.vpcOptions.length > 0 && !tkeConfig.value.vpcId) {
       tkeConfig.value.vpcId = options.value.vpcOptions[0].value;
+      handleNetworkTypeChange(tkeConfig.value.networkType);
     }
   } catch (err) {
     state.value.errors = [];
@@ -1310,7 +1273,7 @@ function poolIsValid(pool) {
       !!pool.instanceType &&
       !!pool.osName &&
       !!pool.systemDiskType &&
-      !!pool.subnetId &&
+      !!pool.subnetId?.length &&
       !!pool.securityGroup &&
       !isNaN(pool.instanceNum) &&
       pool.instanceNum >= 0;
@@ -1348,6 +1311,54 @@ function getAvailableServiceCidr(vpcId) {
   return CONFIG_ENV.SERVICE_CIDR_CANDIDATES.find((candidate) => {
     return !usedCidrs.some((usedCidr) => DoCidrOverlap(candidate, usedCidr));
   }) || '10.96.0.0/24';
+}
+
+// 以下几个 change 事件只有用户手动触发时才会变更
+function handleVpcChanged() {
+  if (!isNewOrUnprovisioned.value) {
+    return;
+  }
+  // 这里只需要把 subnetId 变为空的原因是
+  // 当 vpcid change 发生时对应的 supnetoptions 也会 change
+  // subnetId 为空时 subnetoptions 的 watch 会根据当前的 zoneID 来初始化 subnetId
+  tkeConfig.value.subnetId = '';
+  nodePools.value = nodePools.value.map((pool) => {
+    const virtualNodes = (pool.virtualNodePool?.virtualNodes || []).map((node) => {
+      return {
+        ...node,
+        subnetId: '',
+      };
+    });
+
+    return {
+      ...pool,
+      subnetId:        '',
+      virtualNodePool: {
+        ...pool.virtualNodePool,
+        virtualNodes,
+      },
+    };
+  });
+}
+
+function handleNetworkTypeChange(value) {
+  if (!isNewOrUnprovisioned.value) {
+    return;
+  }
+  if ((value || 'GR') === 'GR' && !tkeConfig.value.clusterCidr) {
+    tkeConfig.value.clusterCidr = getAvailableClusterCidr(tkeConfig.value.vpcId);
+  } else if (!tkeConfig.value.serviceCidr) {
+    tkeConfig.value.serviceCidr = getAvailableServiceCidr(tkeConfig.value.vpcId);
+  }
+}
+
+function handleZoneChange() {
+  if (!isNewOrUnprovisioned.value) {
+    return;
+  }
+  const options = Array.isArray(subnetOptions.value) ? subnetOptions.value : [];
+
+  tkeConfig.value.subnetId = options[0]?.value || '';
 }
 </script>
 
@@ -1476,7 +1487,7 @@ function getAvailableServiceCidr(vpcId) {
               class="col span-6"
             >
               <LabeledSelect
-                v-model:value="tkeConfig.region"
+                :value="tkeConfig.region"
                 data-testid="crutke-resource-region"
                 required
                 :mode="mode"
@@ -1487,6 +1498,7 @@ function getAvailableServiceCidr(vpcId) {
                 label-key="tkeCn.region.label"
                 :disabled="!isNewOrUnprovisioned || tkeConfig.imported"
                 :rules="ruleSets.region"
+                @update:value="handleRegionChange"
               />
             </div>
             <div
@@ -1570,6 +1582,9 @@ function getAvailableServiceCidr(vpcId) {
           :cluster-cidr-validating="state.clusterCidrValidating"
           :service-cidr-conflict-error="state.serviceCidrConflictError"
           :service-cidr-validating="state.serviceCidrValidating"
+          @vpc-change="handleVpcChanged"
+          @network-type-change="handleNetworkTypeChange"
+          @zone-change="handleZoneChange"
         />
         <div class="cluster-basic-card mb-10">
           <TkeCsiCardSelect
@@ -1601,7 +1616,6 @@ function getAvailableServiceCidr(vpcId) {
             :subnetOptions="subnetOptions"
             :keyPairOptions="options.keyPairOptions"
             :imageOptions="imageOptions"
-            :instanceTypeOptions="instanceTypeOptions"
             :instanceTypeLoading="state.instanceTypeLoading"
             :bandwidthTypeOptions="CONFIG_ENV.BAND_WIDTH"
             :isNewOrUnprovisioned="isNewOrUnprovisioned"
@@ -1645,7 +1659,7 @@ function getAvailableServiceCidr(vpcId) {
               v-model:virtualNodePool="pool.virtualNodePool"
               v-model:deletionProtection="pool.deletionProtection"
               :keyPairLoading="keyPairLoading"
-              :subnetOptions="subnetOptions"
+              :subnetOptions="subnetOptionsForNodePool"
               :zoneOptions="options.zoneOptions"
               :allSubnets="state.allSubnets"
               :securityGroupOptions="options.securityGroupOptions"

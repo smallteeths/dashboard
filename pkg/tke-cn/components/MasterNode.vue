@@ -51,8 +51,8 @@ const props = defineProps({
     required: true
   },
   instanceTypeOptions: {
-    type:    Array,
-    default: () => ([]),
+    type:    Object,
+    default: () => ({}),
   },
   systemDiskTypeOptions: {
     type:    Array,

@@ -181,11 +181,11 @@ const systemDiskTypeRequired = (nodePools, intl) => {
 
 const nodePoolSubnetIdRequired = (nodePools, intl) => {
   return (subnetId) => {
-    if (subnetId !== undefined) {
-      return subnetId === '' ? intl.value('validation.required', { key: intl.value('tkeCn.subnet.label') }) : null;
+    if (subnetId !== undefined && subnetId.length === 0) {
+      return subnetId.length === 0 ? intl.value('validation.required', { key: `${ intl.value('tkeCn.nodePool.type.native.title') } ${ intl.value('tkeCn.subnet.label') }` }) : null;
     }
 
-    return !!nodePools?.find((pool) => pool.nodePoolType !== 'super' && !pool.subnetId) ? intl.value('validation.required', { key: intl.value('tkeCn.subnet.label') }) : null;
+    return !!nodePools?.find((pool) => pool.nodePoolType !== 'super' && !pool.subnetId?.length) ? intl.value('validation.required', { key: `${ intl.value('tkeCn.nodePool.type.native.title') } ${ intl.value('tkeCn.subnet.label') }` }) : null;
   };
 };
 

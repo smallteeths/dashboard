@@ -52,8 +52,8 @@ const props = defineProps({
     default: 0,
   },
   subnetId: {
-    type:    String,
-    default: '',
+    type:    Array,
+    default: () => ([]),
   },
   keyPair: {
     type:    String,
@@ -66,8 +66,8 @@ const props = defineProps({
 
   // options
   instanceTypeOptions: {
-    type:    Array,
-    default: () => ([]),
+    type:    Object,
+    default: () => ({}),
   },
   bandwidthTypeOptions: {
     type:    Array,
@@ -298,6 +298,7 @@ const nativeMoreLink = computed(() => 'https://cloud.tencent.com/document/produc
         :instanceTypeOptions="instanceTypeOptions"
         :bandwidthTypeOptions="bandwidthTypeOptions"
         :subnetOptions="subnetOptions"
+        :zoneOptions="zoneOptions"
         :keyPairOptions="keyPairOptions"
         :securityGroupOptions="securityGroupOptions"
         :instanceTypeLoading="instanceTypeLoading"
