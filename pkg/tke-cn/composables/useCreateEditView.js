@@ -128,16 +128,20 @@ export function useCreateEditView(props, context) {
 
             return key && value;
           }),
-          virtualNodes: (node?.virtualNodePool?.virtualNodes || []).map((item) => ({
-            ...item,
-            tags: (item?.tags || [])
+          virtualNodes: (node?.virtualNodePool?.virtualNodes || []).map((item) => {
+            const tags = (item?.tags || [])
               .map((tag) => ({
                 ...tag,
                 key:   typeof tag?.key === 'string' ? tag.key.trim() : '',
                 value: typeof tag?.value === 'string' ? tag.value.trim() : '',
               }))
-              .filter((tag) => tag.key && tag.value),
-          })),
+              .filter((tag) => tag.key && tag.value);
+
+            return {
+              ...item,
+              ...(tags.length ? { tags } : {}),
+            };
+          }),
           name: node.nodePoolName,
         };
 
