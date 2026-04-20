@@ -116,7 +116,7 @@ tkeCn:
     outer: Outer Net
     info: It is necessary to ensure that the cluster to be imported has the cluster access agent enabled and the security group used has opened port 443.
   nodePoolName:
-    label: Nood Pool Name
+    label: Node Pool Name
     placeholder: e.g. nodepool
     required: Worker Node Name is required
     same: Node pool name is not unique

@@ -36,19 +36,30 @@
           >
             {{ props.placeholder }}
           </span>
-          <span
+          <v-dropdown
             v-for="item in selectedItems"
             :key="item.value"
-            class="selected-item"
+            theme="selected-item-tooltip-cn"
+            placement="top"
+            :triggers="['hover', 'focus']"
+            :delay="{ show: 150, hide: 0 }"
           >
-            <span class="item">
-              {{ item.label }}
+            <span class="selected-item">
+              <span class="item">
+                {{ item.label }}
+              </span>
+              <span
+                v-if="!disabled"
+                class="remove-item"
+                @click.stop="removeItem(item)"
+              >×</span>
             </span>
-            <span
-              class="remove-item"
-              @click.stop="removeItem(item)"
-            >×</span>
-          </span>
+            <template #popper>
+              <div class="selected-item-tooltip">
+                {{ item.label }}
+              </div>
+            </template>
+          </v-dropdown>
         </div>
         <div class="multiple-input-actions">
           <span
@@ -357,16 +368,16 @@ onUnmounted(() => {
     align-items: center;
     justify-content: center;
     gap: 2px;
-    width: 100px;
+    max-width: 150px;
     text-overflow: ellipsis;
     white-space: nowrap;
     margin-left: 4px;
     margin-top: 4px;
     height: 25px;
-
+    cursor: pointer;
     .item {
       display: block;
-      width: 80px;
+      max-width: 130px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -418,5 +429,31 @@ onUnmounted(() => {
     background: var(--dropdown-active-bg) !important;
     color: #fff;
   }
+}
+:deep(.v-popper--theme-selected-item-tooltip-cn .v-popper__inner) {
+  position: relative;
+  background: var(--body-bg);
+  color: var(--body-text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  overflow: visible;
+}
+:deep(.v-popper--theme-selected-item-tooltip-cn .v-popper__arrow-container) {
+  content: '';
+  display: block;
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 10px;
+  height: 10px;
+  background: var(--body-bg);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  transform: translateX(-50%) rotate(45deg);
+  box-sizing: border-box;
+  pointer-events: none;
+  z-index: 1;
 }
 </style>

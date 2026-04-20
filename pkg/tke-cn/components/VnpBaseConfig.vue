@@ -437,7 +437,7 @@ watch(
           :mode="mode"
           :label="intl('tkeCn.nodePoolName.label')"
           required
-          :disabled="!isNewOrUnprovisioned || isImported"
+          :disabled="isImported"
           :rules="rules.name"
           @update:value="emit('update:nodePoolName', $event)"
         />

@@ -62,8 +62,51 @@ export function useCreateEditView(props, context) {
     return await normanCluster.value.waitForCondition('InitialRolesPopulated');
   }
 
+  function mergeTkeConfig(oldConfig = {}, nextConfig = {}) {
+    const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
+
+    return {
+      ...oldConfig,
+      ...nextConfig,
+
+      clusterEndpoint: {
+        ...(oldConfig.clusterEndpoint || {}),
+        ...(nextConfig.clusterEndpoint || {}),
+      },
+
+      clusterBasicSettings: {
+        ...(oldConfig.clusterBasicSettings || {}),
+        ...(nextConfig.clusterBasicSettings || {}),
+      },
+
+      clusterCIDRSettings: {
+        ...(oldConfig.clusterCIDRSettings || {}),
+        ...(nextConfig.clusterCIDRSettings || {}),
+      },
+
+      clusterAdvancedSettings: {
+        ...(oldConfig.clusterAdvancedSettings || {}),
+        ...(nextConfig.clusterAdvancedSettings || {}),
+      },
+
+      runInstancesForNode: hasOwn(nextConfig, 'runInstancesForNode') ? (
+        nextConfig.runInstancesForNode ? {
+          ...(oldConfig.runInstancesForNode || {}),
+          ...nextConfig.runInstancesForNode,
+        } : nextConfig.runInstancesForNode
+      ) : oldConfig.runInstancesForNode,
+
+      nodePoolList: hasOwn(nextConfig, 'nodePoolList') ? nextConfig.nodePoolList : oldConfig.nodePoolList,
+
+      virtualNodePoolList: hasOwn(nextConfig, 'virtualNodePoolList') ? nextConfig.virtualNodePoolList : oldConfig.virtualNodePoolList,
+
+      extensionAddon: hasOwn(nextConfig, 'extensionAddon') ? nextConfig.extensionAddon : oldConfig.extensionAddon,
+    };
+  }
+
   function formatConfig() {
     const config = tkeConfig.value;
+    const oldTkeConfig = normanCluster.value?.tkeConfig || {};
     const networkType = config.networkType || 'GR';
     const nodePoolList = [];
     const virtualNodePoolList = [];
@@ -133,6 +176,7 @@ export function useCreateEditView(props, context) {
       };
 
       const out = {
+        ...node,
         clusterId:          node.clusterId,
         nodePoolId:         node.nodePoolId,
         autoScalingGroupPara,
@@ -151,16 +195,27 @@ export function useCreateEditView(props, context) {
       nodePoolList.push(out);
     });
 
-    const clusterEndpoint = { enable: config.clusterEndpoint, domain: config.domain };
+    const clusterEndpoint = {
+      enable:              config.clusterEndpoint,
+      domain:              config.domain,
+      securityGroup:       undefined,
+      extensiveParameters: undefined,
+      subnetId:            undefined,
+    };
 
     if (config.clusterEndpoint) {
       clusterEndpoint.securityGroup = config.securityGroup;
-      clusterEndpoint.extensiveParameters = JSON.stringify({
-        InternetAccessible: {
-          InternetChargeType:      'TRAFFIC_POSTPAID_BY_HOUR',
-          InternetMaxBandwidthOut: Number(config.internetMaxBandwidthOut ?? 10),
-        },
-      });
+      let extensiveParameters = {};
+
+      if (Number(config.internetMaxBandwidthOut)) {
+        extensiveParameters = {
+          InternetAccessible: {
+            InternetChargeType:      'TRAFFIC_POSTPAID_BY_HOUR',
+            InternetMaxBandwidthOut: Number(config.internetMaxBandwidthOut ?? 10),
+          }
+        };
+        clusterEndpoint.extensiveParameters = JSON.stringify(extensiveParameters);
+      }
     } else {
       clusterEndpoint.subnetId = config.subnetId;
     }
@@ -175,16 +230,21 @@ export function useCreateEditView(props, context) {
       clusterLevel:       config.clusterLevel,
       isAutoUpgrade:      true,
     };
-    const clusterCIDRSettings = {};
+
+    const clusterCIDRSettings = {
+      clusterCIDR:          undefined,
+      maxClusterServiceNum: undefined,
+      serviceCIDR:          undefined,
+      eniSubnetIds:         undefined,
+      maxNodePodNum:        config.maxNodePodNum,
+    };
 
     if (networkType === 'VPC-CNI') {
       clusterCIDRSettings.serviceCIDR = config.serviceCidr;
       clusterCIDRSettings.eniSubnetIds = config.eniSubnetIds || [];
-      clusterCIDRSettings.maxNodePodNum = config.maxNodePodNum;
     } else {
       clusterCIDRSettings.clusterCIDR = config.clusterCidr;
       clusterCIDRSettings.maxClusterServiceNum = config.maxClusterServiceNum;
-      clusterCIDRSettings.maxNodePodNum = config.maxNodePodNum;
     }
 
     const dataDisks = [{
@@ -230,7 +290,7 @@ export function useCreateEditView(props, context) {
 
     const extensionAddon = JSON.parse(config.component || []);
 
-    return {
+    const nextTkeConfig = {
       tkeCredentialSecret: config.tkeCredentialSecret,
       region:              config.region,
       imported:            false,
@@ -243,6 +303,8 @@ export function useCreateEditView(props, context) {
       extensionAddon,
       virtualNodePoolList,
     };
+
+    return mergeTkeConfig(oldTkeConfig, nextTkeConfig);
   }
 
   return {
