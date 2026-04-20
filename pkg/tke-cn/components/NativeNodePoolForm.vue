@@ -323,18 +323,33 @@ function getItemZone(item) {
 // subnetOptions 根据所有当前可用的区域来过滤子网
 const filteredSubnetOptions = computed(() => {
   const options = Array.isArray(props.subnetOptions) ? props.subnetOptions : [];
+  const eniSubnetIds = Array.isArray(props.tkeConfig?.eniSubnetIds) ? props.tkeConfig.eniSubnetIds : [];
+  const isVpcCni = props.tkeConfig?.networkType === 'VPC-CNI';
+  const formatOption = (item) => {
+    const subnetZone = item.Zone || item.zone || '';
+    const matchedZone = (props.zoneOptions || []).find((z) => z.value === subnetZone);
+    const zoneLabel = matchedZone?.label || subnetZone;
+
+    return {
+      ...item,
+      label: `${ item.label || item.value } (${ zoneLabel })`,
+    };
+  };
+
+  let filtered = options;
+
+  if (isVpcCni && eniSubnetIds.length > 0) {
+    const eniSubnetIdSet = new Set(eniSubnetIds);
+
+    filtered = filtered.filter((item) => {
+      const subnetId = item.SubnetId || item.subnetId || item.value || '';
+
+      return eniSubnetIdSet.has(subnetId);
+    });
+  }
 
   if (!props.instanceType) {
-    return options.map((item) => {
-      const subnetZone = item.Zone || item.zone || '';
-      const matchedZone = (props.zoneOptions || []).find((z) => z.value === subnetZone);
-      const zoneLabel = matchedZone?.label || subnetZone;
-
-      return {
-        ...item,
-        label: `${ item.label || item.value } (${ zoneLabel })`,
-      };
-    });
+    return filtered.map(formatOption);
   }
 
   const matches = flatInstanceTypeOptions.value.filter((item) => {
@@ -342,7 +357,7 @@ const filteredSubnetOptions = computed(() => {
   });
 
   if (!matches.length) {
-    return options;
+    return filtered.map(formatOption);
   }
 
   const availableZones = new Set(
@@ -352,25 +367,16 @@ const filteredSubnetOptions = computed(() => {
   );
 
   if (!availableZones.size) {
-    return options;
+    return filtered.map(formatOption);
   }
 
-  return options
+  return filtered
     .filter((item) => {
       const subnetZone = item.Zone || item.zone || '';
 
       return availableZones.has(subnetZone);
     })
-    .map((item) => {
-      const subnetZone = item.Zone || item.zone || '';
-      const matchedZone = (props.zoneOptions || []).find((z) => z.value === subnetZone);
-      const zoneLabel = matchedZone?.label || subnetZone;
-
-      return {
-        ...item,
-        label: `${ item.label || item.value } (${ zoneLabel })`,
-      };
-    });
+    .map(formatOption);
 });
 
 function getDefaultSystemDiskSize(diskTypeOption) {

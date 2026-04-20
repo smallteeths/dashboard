@@ -560,6 +560,7 @@ function fixConfig(config) {
         userScript = base64Decode(item.userScript);
       }
       const obj = {
+        ...item,
         nodePoolType:       'native',
         clusterId:          item.clusterId,
         nodePoolId:         item.nodePoolId,
