@@ -141,7 +141,7 @@ describe('Extensions page', { tags: ['@extensions', '@adminUser'] }, () => {
     extensionsPo.goTo();
     extensionsPo.waitForTitle();
 
-    // if rancher prime, title should be Rancher Prime - Extensions, otherwise Rancher - Extensions
+    // if rancher prime, title should be Rancher Prime - Extensions, otherewise Rancher - Extensions
     cy.getRancherVersion().then((version) => {
       const expectedTitle = version.RancherPrime === 'true' ? 'Rancher Prime - Extensions' : 'Rancher - Extensions';
 
@@ -206,7 +206,7 @@ describe('Extensions page', { tags: ['@extensions', '@adminUser'] }, () => {
     // go to repos list page
     const appRepoList = new RepositoriesPagePo(cluster, 'apps');
 
-    appRepoList.goTo();
+    appRepoList.goTo(cluster, 'apps');
     appRepoList.waitForPage();
     appRepoList.sortableTable().rowElementWithName(UI_PLUGINS_PARTNERS_REPO_URL).should('exist');
   });
@@ -231,7 +231,7 @@ describe('Extensions page', { tags: ['@extensions', '@adminUser'] }, () => {
     const appRepoList = new RepositoriesPagePo(cluster, 'apps');
 
     // Ensure that the banner should be shown (by confirming that a required repo isn't there)
-    appRepoList.goTo();
+    appRepoList.goTo(cluster, 'apps');
     appRepoList.waitForPage();
     appRepoList.sortableTable().checkLoadingIndicatorNotVisible();
     appRepoList.sortableTable().noRowsShouldNotExist();

@@ -41,7 +41,7 @@ export default {
     },
 
     type: {
-      type:     String,
+      type:     String, // AGENT_CONFIGURATION_TYPES
       required: true,
     },
     schedulingCustomizationFeatureEnabled: {
@@ -326,6 +326,7 @@ export default {
       <SchedulingCustomization
         :value="value.schedulingCustomization"
         :mode="mode"
+        :type="type"
         :feature="schedulingCustomizationFeatureEnabled"
         :default-p-c="defaultPC"
         :default-p-d-b="defaultPDB"

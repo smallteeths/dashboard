@@ -3,6 +3,8 @@ import CreateEditView from '@shell/mixins/create-edit-view';
 import FormValidation from '@shell/mixins/form-validation';
 import WorkLoadMixin from '@shell/edit/workload/mixins/workload';
 import { mapGetters } from 'vuex';
+import { FORM_TYPES } from '@shell/components/form/Security';
+import { NODE } from '@shell/config/types';
 
 export default {
   name:   'Workload',
@@ -20,10 +22,26 @@ export default {
     },
   },
   data() {
-    return { selectedName: null, errors: [] };
+    const inStore = this.$store.getters['currentStore'](NODE);
+    const canNode = this.$store.getters[`${ inStore }/canList`](NODE);
+
+    return {
+      selectedName: null,
+      errors:       [],
+      canNode,
+      FORM_TYPES
+    };
   },
-  computed: { ...mapGetters({ t: 'i18n/t' }) },
-  methods:  {
+  computed: {
+    ...mapGetters({ t: 'i18n/t' }),
+
+    isFormValid() {
+      const hasContainerErrors = this.allContainers.some(this.hasContainerError);
+
+      return this.fvFormIsValid && !hasContainerErrors;
+    }
+  },
+  methods: {
     changed(tab) {
       const key = this.idKey;
 
@@ -33,6 +51,10 @@ export default {
       if ( container ) {
         this.selectContainer(container);
       }
+    },
+
+    hasContainerError(tab) {
+      return Object.values(tab.error || {}).some((error) => !!error);
     },
 
     /**
@@ -98,7 +120,7 @@ export default {
     class="filled-height"
   >
     <CruResource
-      :validation-passed="fvFormIsValid"
+      :validation-passed="isFormValid"
       :selected-subtype="type"
       :resource="value"
       :mode="mode"
@@ -169,7 +191,7 @@ export default {
         ref="containersTabbed"
         class="deployment-tabs"
         :show-tabs-add-remove="true"
-        :default-tab="defaultTab"
+        :default-tab="defaultTab || defaultWorkloadTab"
         :flat="true"
         :use-hash="useTabbedHash"
         :showExtensionTabs="false"
@@ -182,9 +204,10 @@ export default {
           :label="tab.name"
           :name="tab[idKey]"
           :weight="tab.weight"
-          :error="!!tab.error"
+          :error="hasContainerError(tab)"
         >
           <Tabbed
+            name="containerTabs"
             :side-tabs="true"
             :weight="99"
             :data-testid="`workload-container-tabs-${i}`"
@@ -194,7 +217,7 @@ export default {
               :label="t('workload.container.titles.general')"
               name="general"
               :weight="tabWeightMap['general']"
-              :error="tabErrors.general"
+              :error="!!tab.error.general"
             >
               <template
                 #tab-header-right
@@ -379,10 +402,14 @@ export default {
               :label="t('workload.container.titles.securityContext')"
               name="securityContext"
               :weight="tabWeightMap['securityContext']"
+              :error="!!tab.error.localhostProfile"
             >
               <Security
+                ref="security"
                 v-model:value="allContainers[i].securityContext"
                 :mode="mode"
+                :seccomp-profile-types="seccompProfileTypes"
+                :form-type="FORM_TYPES.CONTAINER"
               />
             </Tab>
             <Tab
@@ -452,8 +479,10 @@ export default {
           :label="t('workload.tabs.labels.pod')"
           :name="'pod'"
           :weight="98"
+          :error="tabErrors.podSecurityContext"
         >
           <Tabbed
+            name="podTabs"
             data-testid="workload-pod-tabs"
             :side-tabs="true"
             :use-hash="useTabbedHash"
@@ -480,7 +509,7 @@ export default {
             </Tab>
             <Tab
               :label="t('workload.container.titles.resources')"
-              name="resources"
+              name="resources-pod"
               :weight="tabWeightMap['resources']"
             >
               <div>
@@ -522,31 +551,30 @@ export default {
             </Tab>
             <Tab
               :label="t('workload.container.titles.podScheduling')"
-              name="podScheduling"
+              name="podScheduling-pod"
               :weight="tabWeightMap['podScheduling']"
             >
               <PodAffinity
                 :mode="mode"
                 :value="podTemplateSpec"
-                :nodes="allNodeObjects"
                 :loading="isLoadingSecondaryResources"
               />
             </Tab>
             <Tab
+              v-if="canNode"
               :label="t('workload.container.titles.nodeScheduling')"
-              name="nodeScheduling"
+              name="nodeScheduling-pod"
               :weight="tabWeightMap['nodeScheduling']"
             >
               <NodeScheduling
                 :mode="mode"
                 :value="podTemplateSpec"
-                :nodes="workerNodes"
                 :loading="isLoadingSecondaryResources"
               />
             </Tab>
             <Tab
               :label="t('workload.container.titles.upgrading')"
-              name="upgrading"
+              name="upgrading-pod"
               :weight="tabWeightMap['upgrading']"
             >
               <Job
@@ -566,26 +594,21 @@ export default {
             </Tab>
             <Tab
               :label="t('workload.container.titles.securityContext')"
-              name="securityContext"
+              name="securityContext-pod"
               :weight="tabWeightMap['securityContext']"
+              :error="tabErrors.podSecurityContext"
             >
-              <div>
-                <h3>{{ t('workload.container.security.podFsGroup') }}</h3>
-                <div class="row">
-                  <div class="col span-6">
-                    <LabeledInput
-                      v-model:value.number="podFsGroup"
-                      type="number"
-                      :mode="mode"
-                      :label="t('workload.container.security.fsGroup')"
-                    />
-                  </div>
-                </div>
-              </div>
+              <Security
+                ref="security"
+                v-model:value="podTemplateSpec.securityContext"
+                :mode="mode"
+                :seccomp-profile-types="seccompProfileTypes"
+                :form-type="FORM_TYPES.POD"
+              />
             </Tab>
             <Tab
               :label="t('workload.container.titles.networking')"
-              name="networking"
+              name="networking-pod"
               :weight="tabWeightMap['networking']"
             >
               <Networking
@@ -597,7 +620,7 @@ export default {
             <Tab
               v-if="isStatefulSet"
               :label="t('workload.container.titles.volumeClaimTemplates')"
-              name="volumeClaimTemplates"
+              name="volumeClaimTemplates-pod"
               :weight="tabWeightMap['volumeClaimTemplates']"
             >
               <VolumeClaimTemplate
@@ -606,7 +629,7 @@ export default {
               />
             </Tab>
             <Tab
-              name="labels"
+              name="labels-pod"
               label-key="generic.labelsAndAnnotations"
               :weight="tabWeightMap['labels']"
             >

@@ -11,8 +11,7 @@ import ContainerMountPathPo from '@/cypress/e2e/po/components/workloads/containe
 import { WorkloadType } from '@shell/types/fleet';
 import ProductNavPo from '@/cypress/e2e/po/side-bars/product-side-nav.po';
 import { MEDIUM_TIMEOUT_OPT } from '@/cypress/support/utils/timeouts';
-import CardPo from '@/cypress/e2e/po/components/Resource/Detail/Card/statusCard.po';
-
+import CardPo from '~/cypress/e2e/po/components/Resource/Detail/Card/statusCard.po';
 export class WorkloadDetailsPageBasePo extends BaseDetailPagePo {
   static url: string;
 
@@ -60,10 +59,6 @@ export class WorkloadDetailsPageBasePo extends BaseDetailPagePo {
 
   title(): Cypress.Chainable {
     return cy.get(`${ this.selector } h1`);
-  }
-
-  mastheadTitle(): Cypress.Chainable {
-    return cy.get('.resource-name.masthead-resource-title');
   }
 
   deleteWithKubectl(name: string, namespace = 'default') {

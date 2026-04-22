@@ -8,7 +8,6 @@ import ModalManager from '@shell/components/ModalManager';
 import SlideInPanelManager from '@shell/components/SlideInPanelManager';
 import { mapPref, THEME_SHORTCUT } from '@shell/store/prefs';
 import AwsComplianceBanner from '@shell/components/AwsComplianceBanner';
-import AzureWarning from '@shell/components/auth/AzureWarning';
 import BrowserTabVisibility from '@shell/mixins/browser-tab-visibility';
 import Inactivity from '@shell/components/Inactivity';
 import { mapState, mapGetters } from 'vuex';
@@ -24,7 +23,6 @@ export default {
     GrowlManager,
     ModalManager,
     SlideInPanelManager,
-    AzureWarning,
     AwsComplianceBanner,
     Inactivity,
     FixedTips,
@@ -67,7 +65,6 @@ export default {
     <FixedTips />
     <Inactivity />
     <AwsComplianceBanner />
-    <AzureWarning />
     <PromptModal />
     <ModalManager />
     <div

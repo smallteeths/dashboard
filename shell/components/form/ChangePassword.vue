@@ -4,7 +4,7 @@ import { Banner } from '@components/Banner';
 import { Checkbox } from '@components/Form/Checkbox';
 import Password from '@shell/components/form/Password';
 import PasswordStrength from '@shell/components/PasswordStrength';
-import { NORMAN } from '@shell/config/types';
+import { NORMAN, EXT } from '@shell/config/types';
 import { _CREATE, _EDIT } from '@shell/config/query-params';
 import { encryptPassword } from '@shell/utils/auth';
 
@@ -23,27 +23,22 @@ export default {
       type:    String,
       default: null
     },
+    user: {
+      type:     Object,
+      default:  null,
+      required: true
+    },
     mustChangePassword: {
       type:    Boolean,
       default: false
     }
   },
   async fetch() {
-    if (this.isChange) {
-      // Fetch the username for hidden input fields. The value itself is not needed if create or changing another user's password
-      const users = await this.$store.dispatch('rancher/findAll', {
-        type: NORMAN.USER,
-        opt:  { url: '/v3/users', filter: { me: true } }
-      });
-      const user = users?.[0];
-
-      this.username = user?.username;
-    }
-    this.userChangeOnLogin = this.mustChangePassword;
+    this.passwordChangeRequest = await this.$store.dispatch('management/create', { type: EXT.PASSWORD_CHANGE_REQUESTS });
   },
-  data(ctx) {
+  data() {
     return {
-      username:                   '',
+      passwordChangeRequest:      undefined,
       errorMessages:              [],
       pCanShowMismatchedPassword: false,
       pIsRandomGenerated:         false,
@@ -60,6 +55,18 @@ export default {
   },
   computed: {
     ...mapGetters({ t: 'i18n/t' }),
+
+    userId() {
+      return this.user?.id;
+    },
+
+    username() {
+      return this.user?.username;
+    },
+
+    canChangePassword() {
+      return !!this.passwordChangeRequest?.canChangePassword;
+    },
 
     isRandomGenerated: {
       get() {
@@ -230,41 +237,40 @@ export default {
       });
     },
 
-    async save(user) {
+    async save() {
       if (this.passwordStrength < 2) {
         this.errorMessages = [this.t('changePassword.errors.strengthError')];
         throw new Error(this.t('changePassword.errors.strengthError'));
       }
       if (this.isChange) {
-        await this.changePassword();
+        await this.changePassword('change');
         if (this.form.deleteKeys) {
           await this.deleteKeys();
         }
       } else if (this.isEdit) {
-        return this.setPassword(user);
+        return this.changePassword('set');
       }
     },
 
-    async setPassword(user) {
-      // Error handling is catered for by caller
-      await this.$store.dispatch('rancher/resourceAction', {
-        type:       NORMAN.USER,
-        actionName: 'setpassword',
-        resource:   user,
-        body:       { newPassword: this.isRandomGenerated ? this.encryptPassword(this.form.genP) : this.encryptPassword(this.form.newP) },
-      });
-    },
+    async changePassword(mode) {
+      if (!this.canChangePassword) {
+        this.errorMessages = [this.t('changePassword.errors.cannotChange')];
+        throw new Error(this.t('changePassword.errors.cannotChange'));
+      }
 
-    async changePassword() {
+      const spec = {
+        newPassword: this.isRandomGenerated ? this.encryptPassword(this.form.genP) : this.encryptPassword(this.form.newP),
+        userID:      this.userId
+      };
+
+      if (mode === 'change') {
+        spec.currentPassword = this.encryptPassword(this.form.currentP);
+      }
+
       try {
-        await this.$store.dispatch('rancher/collectionAction', {
-          type:       NORMAN.USER,
-          actionName: 'changepassword',
-          body:       {
-            currentPassword: this.encryptPassword(this.form.currentP),
-            newPassword:     this.isRandomGenerated ? this.encryptPassword(this.form.genP) : this.encryptPassword(this.form.newP)
-          },
-        });
+        this.passwordChangeRequest.spec = spec;
+
+        await this.passwordChangeRequest.save();
       } catch (err) {
         this.errorMessages = [err.message || this.t('changePassword.errors.failedToChange')];
         throw err;

@@ -236,7 +236,7 @@ describe('Home Page', () => {
       cy.url().should('include', '/support');
     });
 
-    it('can click on SUSE Application Collection link', { tags: ['@jenkins', '@prime'] }, () => {
+    it('can click on SUSE Application Collection link', { tags: ['@jenkins', '@prime', '@scc'] }, () => {
       catchTargetPageException(RANCHER_PAGE_EXCEPTIONS);
 
       // click SUSE Application Collection link
@@ -332,6 +332,11 @@ describe('Home Page', () => {
       // Show the banner graphic
       homePage.toggleBanner();
       homePage.bannerGraphic().graphicBanner().should('exist');
+    });
+
+    it('Can navigate to Home page', { tags: ['@generic', '@adminUser', '@standardUser'] }, () => {
+      HomePagePo.navTo();
+      homePage.waitForPage();
     });
 
     it('Can use the Manage, Import Existing, and Create buttons', { tags: ['@generic', '@adminUser', '@standardUser'] }, () => {

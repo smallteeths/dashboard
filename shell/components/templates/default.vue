@@ -19,7 +19,6 @@ import Brand from '@shell/mixins/brand';
 import FixedBanner from '@shell/components/FixedBanner';
 import FixedTips from '@shell/components/FixedTips';
 import AwsComplianceBanner from '@shell/components/AwsComplianceBanner';
-import AzureWarning from '@shell/components/auth/AzureWarning';
 import { MANAGEMENT } from '@shell/config/types';
 import { markSeenReleaseNotes } from '@shell/utils/version';
 import PageHeaderActions from '@shell/mixins/page-actions';
@@ -44,7 +43,6 @@ export default {
     WindowManager,
     FixedBanner,
     AwsComplianceBanner,
-    AzureWarning,
     Inactivity,
     SideNav,
     FixedTips
@@ -166,7 +164,6 @@ export default {
     <FixedBanner :header="true" />
     <FixedTips />
     <AwsComplianceBanner v-if="managementReady" />
-    <AzureWarning v-if="managementReady" />
     <div
       v-if="managementReady"
       class="dashboard-content"

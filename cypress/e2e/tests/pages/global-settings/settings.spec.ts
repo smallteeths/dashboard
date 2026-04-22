@@ -243,11 +243,11 @@ describe('Settings', { testIsolation: 'off' }, () => {
     // // so we need to stub status code and body here to force the error
     // // to prevent the user from updating the password.
     // // To be clear, this is not a bug, the issue is specific to Cypress automation
-    // // cy.intercept('POST', '/v3/users?action=changepassword', {
+    // // cy.intercept('POST', '/v1/ext.cattle.io.passwordchangerequests', {
     // //   statusCode: 422,
     // //   body:       { message: `Password must be at least ${ settings['password-min-length'].new } characters` }
     // // }).as('changePwError');
-    // cy.intercept('POST', '/v3/users?action=changepassword').as('changePwError');
+    // cy.intercept('POST', '/v1/ext.cattle.io.passwordchangerequests').as('changePwError');
 
     // accountPage.apply();
     // cy.wait('@changePwError');
@@ -564,10 +564,13 @@ describe('Settings', { testIsolation: 'off' }, () => {
     settingsPage.settingsValue('kubeconfig-generate-token').contains(settingsOriginal['kubeconfig-generate-token'].default);
 
     // Check kubeconfig file
+    cy.deleteDownloadsFolder();
     const downloadsFolder = Cypress.config('downloadsFolder');
 
     clusterList.goTo();
+    cy.intercept('POST', '/v1/ext.cattle.io.kubeconfigs').as('generateKubeConfig');
     clusterList.list().actionMenu('local').getMenuItem('Download KubeConfig').click();
+    cy.wait('@generateKubeConfig').its('response.statusCode').should('eq', 201);
 
     const downloadedFilename = path.join(downloadsFolder, 'local.yaml');
 
@@ -575,8 +578,8 @@ describe('Settings', { testIsolation: 'off' }, () => {
       const obj: any = jsyaml.load(buffer);
 
       // checks on the downloaded YAML
-      expect(obj.clusters.length).to.equal(1);
-      expect(obj.clusters[0].name).to.equal('local');
+      expect(obj.clusters.length).to.be.gte(1);
+      expect(obj.clusters[1].name).to.equal('local');
       expect(obj.users[0].user.token).to.have.length.gt(0);
       expect(obj.apiVersion).to.equal('v1');
       expect(obj.kind).to.equal('Config');

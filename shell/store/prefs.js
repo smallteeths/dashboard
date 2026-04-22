@@ -122,6 +122,9 @@ export const READ_SUPPORT_NOTICE = create('read-support-notice', '', { parseJSON
 export const READ_UPCOMING_SUPPORT_NOTICE = create('read-upcoming-support-notice', '', { parseJSON });
 export const READ_ANNOUNCEMENTS = create('read-announcements', '', { parseJSON });
 
+// Hidden banners
+export const HIDE_SUSE_APP_COLLECTION_REPO_BANNER = create('hide-suse-app-collection-repo-banner', false);
+
 // --------------------
 export const ENABLE_TWO_FACTOR_AUTH = create('enable-two-factor-authenticator', false, { options: [true, false], parseJSON });
 
@@ -234,13 +237,13 @@ export const getters = {
       }
       const clusterPref = getters['get'](CLUSTER);
 
-      return { name: 'c-cluster-explorer', params: { product: 'explorer', cluster: clusterPref } };
+      return { name: 'c-cluster-explorer', params: { cluster: clusterPref } };
     }
     case (!!afterLoginRoutePref.match(/.+-dashboard$/)):
     {
       const clusterId = afterLoginRoutePref.split('-dashboard')[0];
 
-      return { name: 'c-cluster-explorer', params: { product: 'explorer', cluster: clusterId } };
+      return { name: 'c-cluster-explorer', params: { cluster: clusterId } };
     }
     default:
       return { name: afterLoginRoutePref };

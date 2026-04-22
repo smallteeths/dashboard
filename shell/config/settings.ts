@@ -5,6 +5,11 @@ import { Store } from 'vuex';
 import { GC_DEFAULTS, GC_PREFERENCES } from '@shell/utils/gc/gc-types';
 import { PaginationSettings } from '@shell/types/resources/settings';
 
+export const AGENT_CONFIGURATION_TYPES = {
+  CLUSTER: 'cluster',
+  FLEET:   'fleet'
+} as const;
+
 interface GlobalSettingRuleset {
   name: string,
   key?: string | number,
@@ -20,6 +25,7 @@ interface GlobalSetting {
     kind?: string,
     options?: string[]
     readOnly?: boolean,
+    agent?: typeof AGENT_CONFIGURATION_TYPES.CLUSTER | typeof AGENT_CONFIGURATION_TYPES.FLEET,
     /**
      * Function used from the form validation
      */
@@ -129,6 +135,8 @@ export const SETTING = {
   IMPORTED_CLUSTER_VERSION_MANAGEMENT:           'imported-cluster-version-management',
   CLUSTER_AGENT_DEFAULT_PRIORITY_CLASS:          'cluster-agent-default-priority-class',
   CLUSTER_AGENT_DEFAULT_POD_DISTRIBUTION_BUDGET: 'cluster-agent-default-pod-disruption-budget',
+  FLEET_AGENT_DEFAULT_PRIORITY_CLASS:            'fleet-agent-default-priority-class',
+  FLEET_AGENT_DEFAULT_POD_DISTRIBUTION_BUDGET:   'fleet-agent-default-pod-disruption-budget',
   KEV2_OPERATORS:                                'kev2-operators',
   TWO_FACTOR_AUTH_CONFIG:                        'two-factor-authenticator-config',
   AUTH_USER_OPT_SESSION_TTL_MINUTES:             'auth-user-otp-session-ttl-minutes',
@@ -217,8 +225,11 @@ export const ALLOWED_SETTINGS: GlobalSetting = {
   },
   [SETTING.AUTH_USER_OPT_SESSION_TTL_MINUTES]:             {},
   [SETTING.IMPORTED_CLUSTER_VERSION_MANAGEMENT]:           { kind: 'boolean' },
-  [SETTING.CLUSTER_AGENT_DEFAULT_PRIORITY_CLASS]:          { kind: 'json' },
-  [SETTING.CLUSTER_AGENT_DEFAULT_POD_DISTRIBUTION_BUDGET]: { kind: 'json' }
+  // Configuration setup for agent configuration. Setting this up will activate the specific banner configuration.
+  [SETTING.CLUSTER_AGENT_DEFAULT_PRIORITY_CLASS]:          { kind: 'json', agent: AGENT_CONFIGURATION_TYPES.CLUSTER },
+  [SETTING.CLUSTER_AGENT_DEFAULT_POD_DISTRIBUTION_BUDGET]: { kind: 'json', agent: AGENT_CONFIGURATION_TYPES.CLUSTER },
+  [SETTING.FLEET_AGENT_DEFAULT_PRIORITY_CLASS]:            { kind: 'json', agent: AGENT_CONFIGURATION_TYPES.FLEET },
+  [SETTING.FLEET_AGENT_DEFAULT_POD_DISTRIBUTION_BUDGET]:   { kind: 'json', agent: AGENT_CONFIGURATION_TYPES.FLEET }
 
 };
 
@@ -234,6 +245,8 @@ export const PROVISIONING_SETTINGS = [
   SETTING.IMPORTED_CLUSTER_VERSION_MANAGEMENT,
   SETTING.CLUSTER_AGENT_DEFAULT_PRIORITY_CLASS,
   SETTING.CLUSTER_AGENT_DEFAULT_POD_DISTRIBUTION_BUDGET,
+  SETTING.FLEET_AGENT_DEFAULT_PRIORITY_CLASS,
+  SETTING.FLEET_AGENT_DEFAULT_POD_DISTRIBUTION_BUDGET,
 ];
 
 /**

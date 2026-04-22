@@ -34,6 +34,9 @@ module.exports = {
     '<rootDir>/node_modules/',
     '<rootDir>(/.*)*/__tests__/utils/',
   ],
+  transformIgnorePatterns: [
+    '/node_modules/(?!(color|color-string|color-convert|color-name)/)',
+  ],
 
   // Babel
   transform: {
@@ -57,6 +60,15 @@ module.exports = {
   ],
   coveragePathIgnorePatterns: [
     '\\.d\\.ts'
+  ],
+
+  reporters: [
+    'default',
+    ['jest-junit', {
+      outputDirectory: 'unit-test-reports',
+      outputName:      'unit-tests.xml'
+    }
+    ]
   ],
 
   // Globals

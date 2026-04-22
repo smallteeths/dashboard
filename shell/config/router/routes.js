@@ -1,5 +1,4 @@
 import { NAME as APPS } from '@shell/config/product/apps';
-import { NAME as EXPLORER } from '@shell/config/product/explorer';
 import { NAME as MANAGER } from '@shell/config/product/manager';
 import {
   CAPI, MANAGEMENT, BACKUP_RESTORE, COMPLIANCE, VIRTUAL_TYPES
@@ -81,9 +80,13 @@ export default [
       {
         path:      '/c/:cluster/uiplugins',
         name:      'c-cluster-uiplugins',
-        component: () => interopDefault(import('@shell/pages/c/_cluster/uiplugins/index.vue')),
+        component: () => interopDefault(import('@shell/pages/c/_cluster/uiplugins/index.vue'))
       },
-
+      {
+        path:      '/c/:cluster/uiplugins/catalogs',
+        component: () => interopDefault(import('@shell/pages/c/_cluster/uiplugins/catalogs.vue')),
+        name:      'c-cluster-uiplugins-catalogs'
+      },
       {
         path:      '/diagnostic',
         component: () => interopDefault(import('@shell/pages/diagnostic.vue')),
@@ -198,10 +201,7 @@ export default [
         redirect(to) {
           return {
             name:   'c-cluster-explorer',
-            params: {
-              ...(to?.params || {}),
-              product: EXPLORER,
-            }
+            params: { ...(to?.params || {}) }
           };
         }
       },
@@ -552,7 +552,10 @@ export default [
         name:      'c-cluster-product-resource-id',
         meta:      { asyncSetup: true }
       }, {
-        path:      `/c/:cluster/:product/${ VIRTUAL_TYPES.PROJECT_SECRETS }/:namespace/:id`,
+        // Used this regex syntax in order to strict match the 'projectsecret' path segment
+        // while simultaneously capturing it as the 'resource' parameter.
+        // This is required because the Side Navigation relies on route.params.resource to determine which menu item to highlight.
+        path:      `/c/:cluster/:product/:resource(${ VIRTUAL_TYPES.PROJECT_SECRETS })/:namespace/:id`,
         component: () => interopDefault(import(`@shell/pages/c/_cluster/explorer/${ VIRTUAL_TYPES.PROJECT_SECRETS }.vue`)),
         name:      `c-cluster-product-${ VIRTUAL_TYPES.PROJECT_SECRETS }-namespace-id`,
       }, {

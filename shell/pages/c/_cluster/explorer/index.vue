@@ -511,7 +511,6 @@ export default {
     hasNodes() {
       return this.nodes?.length > 0;
     },
-
     kubernetesVersion() {
       const base = this.currentCluster?.kubernetesVersionBase || '';
       const extension = this.currentCluster?.kubernetesVersionExtension || '';

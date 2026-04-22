@@ -100,12 +100,16 @@ export default class ProvCluster extends SteveModel {
   }
 
   get canEdit() {
-    // If the cluster is a KEV1 cluster or Harvester cluster then prevent edit
-    if (this.isKev1 || this.isHarvester) {
+    // If the cluster is a KEV1 cluster, Harvester cluster, or v2 provisioning cluster that uses upstream capi infrastructure providers, then prevent edit
+    if (this.isKev1 || this.isHarvester || this.isCapiHybrid) {
       return false;
     }
 
     return super.canEdit;
+  }
+
+  get canCustomEdit() {
+    return !this.isCapiHybrid && super.canCustomEdit;
   }
 
   get _availableActions() {
@@ -122,9 +126,9 @@ export default class ProvCluster extends SteveModel {
     }
     const ready = this.mgmt?.isReady;
 
-    const canEditRKE2cluster = this.isRke2 && ready && this.canUpdate;
+    const canEditRKE2cluster = this.isRke2 && ready && this.canUpdate && !this.isCapiHybrid;
 
-    const canSnapshot = ready && this.isRke2 && this.canUpdate;
+    const canSnapshot = ready && this.isRke2 && this.canUpdate && !this.isCapiHybrid;
 
     const actions = [
       // Note: Actions are not supported in the Steve API, so we check
@@ -158,12 +162,12 @@ export default class ProvCluster extends SteveModel {
         label:      this.$rootGetters['i18n/t']('nav.kubeconfig.download'),
         icon:       'icon icon-download',
         bulkable:   true,
-        enabled:    this.mgmt?.hasAction('generateKubeconfig'),
+        enabled:    this.mgmt?.canCreateKubeconfig,
       }, {
         action:   'copyKubeConfig',
         label:    this.t('cluster.copyConfig'),
         bulkable: false,
-        enabled:  this.mgmt?.hasAction('generateKubeconfig'),
+        enabled:  this.mgmt?.canCreateKubeconfig,
         icon:     'icon icon-copy',
       }, {
         action:     'snapshotAction',
@@ -319,7 +323,7 @@ export default class ProvCluster extends SteveModel {
       dispatch:   this.$dispatch,
       getters:    this.$getters,
       axios:      this.$axios,
-      $extension: this.$plugin,
+      $extension: this.$extension,
       t:          (...args) => this.t.apply(this, args),
     };
 
@@ -374,8 +378,16 @@ export default class ProvCluster extends SteveModel {
 
     // imported rke2 and k3s have status.driver === rke2 and k3s respectively
     // Provisioned rke2 and k3s have status.driver === imported
-    if (this.mgmt?.status?.provider === 'k3s' || this.mgmt?.status?.provider === 'rke2') {
-      return this.mgmt?.status?.driver === this.mgmt?.status?.provider;
+    const provider = this.mgmt?.status?.provider;
+    const driver = this.mgmt?.status?.driver;
+
+    // The main case
+    if (provider === 'k3s' || provider === 'rke2') {
+      return driver === provider;
+    }
+    // The 'waiting' case
+    if (!provider && (driver === 'k3s' || driver === 'rke2')) {
+      return true;
     }
 
     // imported KEv2
@@ -426,6 +438,19 @@ export default class ProvCluster extends SteveModel {
 
   get isHarvester() {
     return !!this.mgmt?.isHarvester;
+  }
+
+  // identify v2 provisioning clusters created using upstream capi infrastructure providers instead of rancher/machine
+  get isCapiHybrid() {
+    if (!this.isRke2) {
+      return false;
+    }
+
+    const machineReferences = (this.spec?.rkeConfig?.machinePools || []).map((pool) => pool.machineConfigRef);
+
+    const capiMachines = machineReferences.find((r) => r?.apiVersion?.includes('cluster.x-k8s.io'));
+
+    return !!capiMachines;
   }
 
   get mgmtClusterId() {
@@ -576,7 +601,7 @@ export default class ProvCluster extends SteveModel {
 
     if (this.isHarvester) {
       return HARVESTER;
-    } else if ( this.isImported ) {
+    } else if ( this.isImported || this.isCapiHybrid ) {
       return null;
     } else if ( this.isRke2 ) {
       const kind = this.spec?.rkeConfig?.machinePools?.[0]?.machineConfigRef?.kind?.toLowerCase();
@@ -920,7 +945,11 @@ export default class ProvCluster extends SteveModel {
 
     const cni = this.spec?.rkeConfig?.machineGlobalConfig?.cni;
 
-    if ( cni && cni !== 'calico' ) {
+    if ( cni === 'flannel' && compare(this.kubernetesVersion, 'v1.29.2') < 0 ) {
+      return false;
+    }
+
+    if ( cni && cni !== 'calico' && cni !== 'flannel' ) {
       return false;
     }
 
@@ -1189,7 +1218,7 @@ export default class ProvCluster extends SteveModel {
   }
 
   get disableResourceDetailDrawerConfigTab() {
-    return !!this.isHarvester;
+    return !!this.isHarvester || this.isCapiHybrid;
   }
 
   get fullDetailPageOverride() {

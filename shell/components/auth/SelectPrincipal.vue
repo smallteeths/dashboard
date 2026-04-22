@@ -62,11 +62,13 @@ export default {
     const newValue = this.initValue ?? '';
 
     return {
-      principals:     null,
-      searchStr:      '',
-      options:        [],
+      principals:        null,
+      searchStr:         '',
+      options:           [],
       newValue,
-      tooltipContent: null,
+      tooltipContent:    null,
+      hasSearchTooShort: false,
+      minSearchLength:   2,
     };
   },
 
@@ -139,9 +141,20 @@ export default {
       this.searchStr = str;
 
       if ( str ) {
+        // Backend requires minimum 2 characters for search
+        if (str.length < this.minSearchLength) {
+          this.hasSearchTooShort = true;
+          this.options = [];
+          loading(false);
+
+          return;
+        }
+
+        this.hasSearchTooShort = false;
         loading(true);
         this.debouncedSearch(str, loading);
       } else {
+        this.hasSearchTooShort = false;
         this.search(null, loading);
       }
     },
@@ -168,6 +181,10 @@ export default {
         if ( this.searchStr === str ) {
           // If not, they've already typed something else
           this.options = res.map((x) => x.id);
+          // display the search results if the dropdown has been closed
+          if (this.options.length) {
+            this.$refs['labeled-select'].isOpen = true;
+          }
         }
       } catch (e) {
         this.options = [];
@@ -202,7 +219,12 @@ export default {
     @on-close="setTooltipContent()"
   >
     <template v-slot:no-options="{ searching }">
-      <template v-if="searching">
+      <template v-if="hasSearchTooShort">
+        <span class="search-slot">
+          {{ t('cluster.memberRoles.addClusterMember.minCharacters', { count: minSearchLength }) }}
+        </span>
+      </template>
+      <template v-else-if="searching">
         <span class="search-slot">
           {{ t('cluster.memberRoles.addClusterMember.noResults') }}
         </span>

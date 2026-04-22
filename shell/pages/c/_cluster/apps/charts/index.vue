@@ -12,12 +12,13 @@ import { lcFirst } from '@shell/utils/string';
 import { sortBy } from '@shell/utils/sort';
 import debounce from 'lodash/debounce';
 import { mapGetters } from 'vuex';
-import { SHOW_PRE_RELEASE, ROWS_PER_PAGE } from '@shell/store/prefs';
+import { SHOW_PRE_RELEASE, HIDE_SUSE_APP_COLLECTION_REPO_BANNER } from '@shell/store/prefs';
 import { CATALOG } from '@shell/config/labels-annotations';
+import { CATALOG as CATALOG_TYPES, CATALOG_SORT_OPTIONS, CLUSTER_REPO_TYPES } from '@shell/config/types';
+
 import { isUIPlugin } from '@shell/config/uiplugins';
 import { RcItemCard } from '@components/RcItemCard';
 import { get } from '@shell/utils/object';
-import { CATALOG as CATALOG_TYPES, CATALOG_SORT_OPTIONS } from '@shell/config/types';
 import FilterPanel from '@shell/components/FilterPanel';
 import AppChartCardSubHeader from '@shell/pages/c/_cluster/apps/charts/AppChartCardSubHeader';
 import AppChartCardFooter from '@shell/pages/c/_cluster/apps/charts/AppChartCardFooter';
@@ -26,7 +27,7 @@ import StatusLabel from '@shell/pages/c/_cluster/apps/charts/StatusLabel';
 import RichTranslation from '@shell/components/RichTranslation.vue';
 import { getLatestCompatibleVersion } from '@shell/utils/chart';
 import Select from '@shell/components/form/Select';
-import Pagination from '@shell/components/Pagination.vue';
+import { getVersionData } from '@shell/config/version';
 
 const createInitialFilters = () => ({
   repos:      [],
@@ -47,7 +48,6 @@ export default {
     AppChartCardFooter,
     Select,
     RichTranslation,
-    Pagination
   },
 
   async fetch() {
@@ -65,6 +65,25 @@ export default {
     this.filters.tags = normalizeFilterQuery(query[TAG]) || [];
 
     this.installedApps = await this.$store.dispatch('cluster/findAll', { type: CATALOG_TYPES.APP });
+
+    // Check if user has permission to create repositories
+    // This is used to show the banner to create repo if you don't have SUSE App Collection
+    const clusterCreateClusterRepo = await this.$store.dispatch('cluster/create', { type: CATALOG_TYPES.CLUSTER_REPO });
+
+    this.canCreateRepos = clusterCreateClusterRepo.canCreate;
+  },
+
+  updated() {
+    if (!this.observerInitialized && this.filteredCharts.length > 0) {
+      this.initIntersectionObserver();
+    }
+    this.ensureOverflow();
+  },
+
+  beforeUnmount() {
+    if (this.observer) {
+      this.observer.disconnect();
+    }
   },
 
   data() {
@@ -109,7 +128,6 @@ export default {
           }
         }
       ],
-      appCardsCache:      {},
       selectedSortOption: CATALOG_SORT_OPTIONS.RECOMMENDED,
       sortOptions:        [
         { kind: 'group', label: this.t('catalog.charts.sort.prefix') },
@@ -118,8 +136,15 @@ export default {
         { value: CATALOG_SORT_OPTIONS.ALPHABETICAL_ASC, label: this.t('catalog.charts.sort.alphaAscending') },
         { value: CATALOG_SORT_OPTIONS.ALPHABETICAL_DESC, label: this.t('catalog.charts.sort.alphaDescending') },
       ],
-
-      page: 1
+      initialVisibleChartsCount: 30,
+      visibleChartsCount:        20,
+      hasOverflow:               false,
+      getVersionData,
+      CLUSTER_REPO_TYPES,
+      CATALOG_TYPES,
+      canCreateRepos:            false,
+      showAppCollectionBanner:   true,
+      isPrime:                   getVersionData().RancherPrime === 'true',
     };
   },
 
@@ -127,9 +152,22 @@ export default {
     ...mapGetters(['currentCluster']),
     ...mapGetters({ allCharts: 'catalog/charts', loadingErrors: 'catalog/errors' }),
 
-    perPage() {
-      return parseInt(this.$store.getters['prefs/get'](ROWS_PER_PAGE), 10) || 100;
+    hideBannerPref() {
+      return this.$store.getters['prefs/get'](HIDE_SUSE_APP_COLLECTION_REPO_BANNER);
     },
+
+    showAppCollectionBannerLogic() {
+      return !this.hasSuseAppCollectionRepo && this.canCreateRepos && this.showAppCollectionBanner && !this.hideBannerPref & this.isPrime;
+    },
+
+    hasSuseAppCollectionRepo() {
+      return this.suseAppCollectionRepo.length > 0;
+    },
+
+    showErrorBanner() {
+      return this.loadingErrors && this.loadingErrors.length > 0;
+    },
+
     repoOptions() {
       let out = this.$store.getters['catalog/repos'].map((r) => {
         return {
@@ -148,6 +186,13 @@ export default {
         component:      markRaw(AddRepoLink),
         componentProps: { clusterId: this.clusterId }
       });
+
+      return out;
+    },
+
+    suseAppCollectionRepo() {
+      const suseRepos = this.$store.getters['catalog/repos'].filter((r) => r.isSuseAppCollection);
+      const out = suseRepos.map((r) => r.metadata.name);
 
       return out;
     },
@@ -269,26 +314,21 @@ export default {
     },
 
     appChartCards() {
-      return this.filteredCharts.map((chart) => {
-        if (!this.appCardsCache[chart.id]) {
-          // Cache the converted value. We're caching chart.cardContent anyway, so no need to worry about showing updates to state
-          this.appCardsCache[chart.id] = {
-            id:     chart.id,
-            pill:   chart.featured ? { label: { key: 'generic.shortFeatured' }, tooltip: { key: 'generic.featured' } } : undefined,
-            header: {
-              title:    { text: chart.chartNameDisplay },
-              statuses: chart.cardContent.statuses
-            },
-            subHeaderItems: chart.cardContent.subHeaderItems,
-            image:          { src: chart.latestCompatibleVersion.icon, alt: { text: this.t('catalog.charts.iconAlt', { app: get(chart, 'chartNameDisplay') }) } },
-            content:        { text: chart.chartDescription },
-            footerItems:    chart.cardContent.footerItems,
-            rawChart:       chart
-          };
-        }
+      const charts = this.filteredCharts.slice(0, this.visibleChartsCount);
 
-        return this.appCardsCache[chart.id];
-      });
+      return charts.map((chart) => ({
+        id:     chart.id,
+        pill:   chart.featured ? { label: { key: 'generic.shortFeatured' }, tooltip: { key: 'generic.featured' } } : undefined,
+        header: {
+          title:    { text: chart.chartNameDisplay },
+          statuses: chart.cardContent.statuses
+        },
+        subHeaderItems: chart.cardContent.subHeaderItems,
+        image:          { src: chart.latestCompatibleVersion.icon, alt: { text: this.t('catalog.charts.iconAlt', { app: get(chart, 'chartNameDisplay') }) } },
+        content:        { text: chart.chartDescription },
+        footerItems:    chart.cardContent.footerItems,
+        rawChart:       chart
+      }));
     },
 
     pagedAppChartCards() {
@@ -308,7 +348,7 @@ export default {
     },
 
     totalMessage() {
-      const count = !this.isFilterUpdating ? this.appChartCards.length : '. . .';
+      const count = !this.isFilterUpdating ? this.filteredCharts.length : '. . .';
 
       if (this.noFiltersApplied) {
         return this.t('catalog.charts.totalChartsMessage', { count });
@@ -319,6 +359,10 @@ export default {
   },
 
   watch: {
+    debouncedSearchQuery() {
+      this.resetLazyLoadState();
+    },
+
     searchQuery: {
       handler: debounce(function(q) {
         this.debouncedSearchQuery = q;
@@ -330,6 +374,8 @@ export default {
     filters: {
       deep: true,
       handler(newFilters) {
+        this.resetLazyLoadState();
+
         const query = {
           [REPO]:     normalizeFilterQuery(newFilters.repos),
           [CATEGORY]: normalizeFilterQuery(newFilters.categories),
@@ -444,11 +490,85 @@ export default {
       });
     },
 
+    resetLazyLoadState() {
+      this.visibleChartsCount = this.initialVisibleChartsCount;
+      this.observerInitialized = false;
+      this.hasOverflow = false;
+    },
+
+    // The lazy loading implementation has two parts
+    // 1. Initial Load (ensureOverflow): Having a simple calculation of how many items to load
+    //    can fail in edge cases like browser zoom, where element sizing and viewport
+    //    height can lead to miscalculations. If not enough content is loaded, the page
+    //    won't be scrollable, breaking the IntersectionObserver. This method, called
+    //    iteratively by the `updated` lifecycle hook, adds batches of charts and
+    //    re-measures until the content height factually overflows the container,
+    //    guaranteeing a scrollbar. It then sets `hasOverflow = true` to stop itself.
+    // 2. Scroll-based Load (IntersectionObserver): Once the page is scrollable, a standard
+    //    IntersectionObserver (`initIntersectionObserver` and `loadMore`) takes care of
+    //    loading new batches of charts as the user scrolls to the bottom.
+    ensureOverflow() {
+      this.$nextTick(() => {
+        if (this.hasOverflow || !this.$refs.chartsContainer) {
+          return;
+        }
+
+        const mainLayout = document.querySelector('.main-layout');
+
+        if (!mainLayout) {
+          return;
+        }
+
+        const contentHeight = this.$refs.chartsContainer.offsetHeight;
+        const containerHeight = mainLayout.offsetHeight;
+
+        if (contentHeight > containerHeight) {
+          this.hasOverflow = true;
+        } else if (this.visibleChartsCount < this.filteredCharts.length) {
+          // Load another batch
+          this.visibleChartsCount += this.initialVisibleChartsCount;
+        } else {
+          // All charts are visible
+          this.hasOverflow = true;
+        }
+      });
+    },
+
     resetAllFilters() {
       this.internalFilters = createInitialFilters();
       this.filters = createInitialFilters();
       this.searchQuery = '';
     },
+
+    loadMore() {
+      if (this.visibleChartsCount >= this.filteredCharts.length) {
+        return;
+      }
+      this.visibleChartsCount += this.initialVisibleChartsCount;
+    },
+
+    initIntersectionObserver() {
+      if (this.observer) {
+        this.observer.disconnect();
+      }
+      const mainLayout = document.querySelector('.main-layout');
+      const sentinel = this.$refs.sentinel;
+
+      if (sentinel && mainLayout) {
+        this.observer = new IntersectionObserver((entries) => {
+          if (entries[0].isIntersecting) {
+            this.loadMore();
+          }
+        }, { mainLayout });
+        this.observer.observe(sentinel);
+        this.observerInitialized = true;
+      }
+    },
+
+    async closeSuseAppCollectionBanner() {
+      this.showAppCollectionBanner = false;
+      await this.$store.dispatch('prefs/set', { key: HIDE_SUSE_APP_COLLECTION_REPO_BANNER, value: true });
+    }
   },
 };
 </script>
@@ -503,6 +623,35 @@ export default {
       :key="i"
       color="error"
       :label="err"
+      class="banner-mb-15px"
+    />
+    <Banner
+      v-if="showAppCollectionBannerLogic"
+      :key="i"
+      color="info"
+      closable
+      class="banner-mb-15px"
+      @close="closeSuseAppCollectionBanner"
+    >
+      <RichTranslation
+        k="catalog.charts.appCollectionRepoMissing"
+        tag="div"
+        :raw="true"
+      >
+        <template #repoCreate="{ content }">
+          <router-link
+            :to="{ name: 'c-cluster-product-resource-create', params: { resource: CATALOG_TYPES.CLUSTER_REPO, cluster: $route.params.cluster, product: $store.getters['productId'] }, query: { target: CLUSTER_REPO_TYPES.SUSE_APP_COLLECTION } }"
+            class="secondary-text-link"
+            tabindex="0"
+          >
+            {{ content }}
+          </router-link>
+        </template>
+      </RichTranslation>
+    </Banner>
+    <div
+      v-if="showAppCollectionBannerLogic || showErrorBanner"
+      class="banner-spacer"
     />
 
     <div class="wrapper">
@@ -571,7 +720,10 @@ export default {
       >
         <div class="total-and-sort">
           <div class="total">
-            <p class="total-message">
+            <p
+              class="total-message"
+              data-testid="charts-total-message"
+            >
               {{ totalMessage }}
             </p>
             <a
@@ -613,6 +765,7 @@ export default {
           </Select>
         </div>
         <div
+          ref="chartsContainer"
           class="app-chart-cards"
           data-testid="app-chart-cards-container"
         >
@@ -627,7 +780,7 @@ export default {
             :value="card.rawChart"
             variant="medium"
             role="link"
-            :class="{ 'single-card': pagedAppChartCards.length === 1 }"
+            :class="{ 'single-card': appChartCards.length === 1 }"
             :clickable="true"
             @card-click="selectChart"
           >
@@ -649,13 +802,11 @@ export default {
             </template>
           </rc-item-card>
         </div>
-        <div>
-          <Pagination
-            v-model:page="page"
-            :total="appChartCards.length"
-            :rows-per-page="perPage"
-          />
-        </div>
+        <div
+          ref="sentinel"
+          class="sentinel-charts"
+          data-testid="charts-lazy-load-sentinel"
+        />
       </div>
     </div>
   </div>
@@ -700,6 +851,10 @@ export default {
   flex-direction: column;
   gap: var(--gap-md);
   flex: 1;
+
+  .sentinel-charts {
+    height: 1px;
+  }
 }
 
 .total-and-sort {
@@ -773,6 +928,14 @@ export default {
   .single-card {
     max-width: 500px;
   }
+}
+
+.banner-mb-15px {
+  margin: 0 0 15px 0;
+}
+
+.banner-spacer {
+  height: 9px;
 }
 
 </style>

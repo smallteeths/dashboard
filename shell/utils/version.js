@@ -75,21 +75,6 @@ export function isPrerelease(version = '') {
   return !!semver.prerelease(version);
 }
 
-export function isUpgradeFromPreToStable(currentVersion, targetVersion) {
-  if (!isPrerelease(currentVersion) || isPrerelease(targetVersion)) {
-    return false;
-  }
-
-  const cVersion = semver.clean(currentVersion, { loose: true });
-  const tVersion = semver.clean(targetVersion, { loose: true });
-
-  if (cVersion && tVersion && semver.valid(cVersion) && semver.valid(tVersion)) {
-    return semver.lt(cVersion, tVersion);
-  }
-
-  return false;
-}
-
 export function isDevBuild(version) {
   if ( ['dev', 'master', 'head'].includes(version) || version.endsWith('-head') || version.match(/-rc\d+$/) || version.match(/-alpha\d+$/) ) {
     return true;
@@ -143,4 +128,42 @@ export async function markReadReleaseNotes(store) {
   if (!readReleaseNotes(store)) {
     await store.dispatch('prefs/set', { key: READ_WHATS_NEW, value: getVersionInfo(store).fullVersion });
   }
+}
+
+const DEFAULT_RELEASE_NOTES_URLS = {
+  COMMUNITY: {
+    DEV:     'https://github.com/rancher/rancher/releases/latest',
+    RELEASE: 'https://github.com/rancher/rancher/releases/tag/v$VERSION',
+  },
+  PRIME: {
+    DEV:     'https://documentation.suse.com/cloudnative/rancher-manager/latest/en/release-notes.html',
+    RELEASE: 'https://documentation.suse.com/cloudnative/rancher-manager/v$MAJOR_MINOR/en/release-notes/v$VERSION.html',
+  }
+};
+
+/**
+ * Get the release notes URL for a given version
+ *
+ * @param {Get} version s
+ */
+export function getReleaseNotesURL(isPrime, version) {
+  // If version is not specified, return latest community release notes URL
+  if (!version) {
+    return DEFAULT_RELEASE_NOTES_URLS.COMMUNITY.DEV;
+  }
+
+  const vers = version.startsWith('v') ? version.slice(1) : version;
+  const vParts = vers.split('.');
+  let majorMinor = version;
+
+  if (vParts.length > 2) {
+    majorMinor = `${ vParts[0] }.${ vParts[1] }`;
+  }
+
+  const urls = isPrime ? DEFAULT_RELEASE_NOTES_URLS.PRIME : DEFAULT_RELEASE_NOTES_URLS.COMMUNITY;
+  const urlTemplate = isDevBuild(version) ? urls.DEV : urls.RELEASE;
+
+  return urlTemplate
+    .replace('$VERSION', vers)
+    .replace('$MAJOR_MINOR', majorMinor);
 }

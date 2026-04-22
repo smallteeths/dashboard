@@ -330,8 +330,9 @@ export default {
     <Tabbed
       ref="tabbed"
       :side-tabs="true"
-      default-tab="overview"
+      :default-tab="defaultTab || 'overview'"
       :use-hash="useTabbedHash"
+
       @changed="tabChanged"
     >
       <Tab

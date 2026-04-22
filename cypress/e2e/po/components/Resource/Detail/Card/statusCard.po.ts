@@ -2,12 +2,12 @@ import ComponentPo from '@/cypress/e2e/po/components/component.po';
 import ScalerPo from '@/cypress/e2e/po/components/Resource/Detail/Card/scaler.po';
 
 export default class CardPo extends ComponentPo {
-  constructor(selector = '.gauges__pods') {
+  constructor(selector = '[data-testid="resource-detail-status-card"]') {
     super(selector);
   }
 
   private scaler() {
-    return new ScalerPo('.plus-minus');
+    return new ScalerPo(`${ this.selector } [data-testid="scaler"]`);
   }
 
   scaleUp(): Cypress.Chainable {
@@ -19,7 +19,7 @@ export default class CardPo extends ComponentPo {
   }
 
   podsRunningTotal(): Cypress.Chainable {
-    return this.self().find('.count-gauge .data h1');
+    return cy.get(`${ this.selector } [data-testid="rc-counter-badge"]`);
   }
 
   replicaCount(): Cypress.Chainable {
@@ -27,10 +27,10 @@ export default class CardPo extends ComponentPo {
   }
 
   podsStatus(): Cypress.Chainable {
-    return this.self().find('.count-gauge .data label');
+    return cy.get(`${ this.selector } .status-row .label`);
   }
 
   podsStatusCount(): Cypress.Chainable {
-    return this.self().find('.count-gauge .data h1');
+    return cy.get(`${ this.selector } [data-testid="rc-counter-badge"]`);
   }
 }

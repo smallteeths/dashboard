@@ -277,7 +277,9 @@ export default class Namespace extends SteveModel {
   }
 
   get hideDetailLocation() {
-    return !!this.$rootGetters['currentProduct'].hideNamespaceLocation;
+    const currentProduct = this.$rootGetters['currentProduct'];
+
+    return currentProduct ? !!currentProduct.hideNamespaceLocation : true;
   }
 
   get glance() {

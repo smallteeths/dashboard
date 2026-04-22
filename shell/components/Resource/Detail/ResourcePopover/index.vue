@@ -31,6 +31,10 @@ const fetch = useFetch(async() => {
   return r;
 });
 
+const stateBackground = computed(() => {
+  return fetch.value.data?.stateSimpleColor || 'unknown';
+});
+
 const resourceTypeLabel = computed(() => {
   if (!fetch.value.data) {
     return '';
@@ -54,6 +58,7 @@ const actionInvoked = () => {
 
 <template>
   <PopoverCard
+    v-if="!fetch.error"
     class="resource-popover"
     :card-title="nameDisplay"
     fallback-focus="[data-testid='resource-popover-action-menu']"
@@ -67,7 +72,7 @@ const actionInvoked = () => {
       >
         <RcStatusIndicator
           shape="disc"
-          :status="fetch.data?.stateBackground || 'unknown'"
+          :status="stateBackground"
         />
         <router-link
           :to="props.detailLocation || fetch.data.detailLocation || '#'"
@@ -100,6 +105,7 @@ const actionInvoked = () => {
       />
     </template>
   </PopoverCard>
+  <span v-else>{{ props.id }}</span>
 </template>
 
 <style lang="scss" scoped>

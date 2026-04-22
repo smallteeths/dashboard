@@ -31,6 +31,7 @@ import Import from './Import.vue';
 
 import EKSValidators from '../util/validators';
 import { CREATOR_PRINCIPAL_ID } from '@shell/config/labels-annotations';
+import { formatAWSError } from '@shell/utils/error';
 
 const DEFAULT_CLUSTER = {
   dockerRootDir:                       '/var/lib/docker',
@@ -94,6 +95,7 @@ export const DEFAULT_EKS_CONFIG = {
   tags:                {},
   subnets:             [],
   loggingTypes:        [],
+  ipFamily:            'ipv4',
 };
 
 export default defineComponent({
@@ -581,9 +583,10 @@ export default defineComponent({
       }
       this.loadingIam = true;
       const store = this.$store as Store<any>;
-      const iamClient = await store.dispatch('aws/iam', { region, cloudCredentialId: amazonCredentialSecret });
 
       try {
+        const iamClient = await store.dispatch('aws/iam', { region, cloudCredentialId: amazonCredentialSecret });
+
         const res = await store.dispatch('aws/depaginateList', { client: iamClient, cmd: 'listRoles' });
 
         this.iamInfo = res;
@@ -614,7 +617,7 @@ export default defineComponent({
       } catch (err: any) {
         const errors = this.errors as any[];
 
-        errors.push(err);
+        errors.push(formatAWSError(err));
       }
       this.loadingSshKeyPairs = false;
     },
@@ -795,10 +798,12 @@ export default defineComponent({
             v-model:public-access-sources="config.publicAccessSources"
             v-model:subnets="config.subnets"
             v-model:security-groups="config.securityGroups"
+            v-model:ip-family="config.ipFamily"
             :mode="mode"
             :region="config.region"
             :amazon-credential-secret="config.amazonCredentialSecret"
             :status-subnets="statusSubnets"
+            :is-new-or-unprovisioned="isNewOrUnprovisioned"
             :rules="{subnets:fvGetAndReportPathRules('subnets')}"
           />
         </Accordion>

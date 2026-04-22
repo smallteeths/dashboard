@@ -122,9 +122,9 @@ export default {
 
         // Load plugins
         await loadPlugins({
-          app:     this.$store.app,
-          store:   this.$store,
-          $plugin: this.$store.$plugin
+          app:        this.$store.app,
+          store:      this.$store,
+          $extension: this.$store.$extension,
         });
 
         this.$router.replace(backTo);

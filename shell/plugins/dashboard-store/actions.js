@@ -472,7 +472,7 @@ export default {
       return findAllGetter(getters, type, opt);
     }
 
-    console.log(`Find Page: [${ ctx.state.config.namespace }] ${ type }. Page: ${ opt.pagination.page }. Size: ${ opt.pagination.pageSize }. Sort: ${ opt.pagination.sort.map((s) => s.field).join(', ') }`); // eslint-disable-line no-console
+    console.log(`Find Page: [${ ctx.state.config.namespace }] ${ type }. Page: ${ opt.pagination.page }. Revision: ${ opt.revision || 'none' }. Size: ${ opt.pagination.pageSize }. Sort: ${ opt.pagination.sort?.map((s) => s.field).join(', ') }`); // eslint-disable-line no-console
     opt = opt || {};
     opt.url = getters.urlFor(type, null, opt);
 
@@ -492,7 +492,7 @@ export default {
       return Promise.reject(e);
     }
 
-    // Of type @StorePagination
+    // Of type @StorePaginationResult
     const pagination = opt.pagination ? {
       request: {
         namespace:  opt.namespaced,
@@ -501,7 +501,8 @@ export default {
       result: {
         count:     out.count,
         pages:     out.pages || Math.ceil(out.count / (opt.pagination.pageSize || Number.MAX_SAFE_INTEGER)),
-        timestamp: new Date().getTime()
+        timestamp: new Date().getTime(),
+        revision:  out.revision
       }
     } : undefined;
 
@@ -512,6 +513,13 @@ export default {
         data:     out.data,
         pagination,
         revision: out.revision,
+      });
+    }
+
+    if (opt.saveCountAs) {
+      commit('setSavedCount', {
+        name:  opt.saveCountAs,
+        count: out.count,
       });
     }
 
@@ -547,7 +555,6 @@ export default {
    */
   async findLabelSelector(ctx, {
     type,
-    context,
     matching: {
       namespace,
       labelSelector
@@ -555,14 +562,10 @@ export default {
     opt
   }) {
     const { getters, dispatch } = ctx;
-    const args = {
-      id: type,
-      context,
-    };
 
     opt = opt || {};
 
-    if (getters[`paginationEnabled`]?.(args)) {
+    if (getters[`paginationEnabled`]?.()) {
       if (isLabelSelectorEmpty(labelSelector)) {
         throw new Error(`labelSelector must not be empty when using findLabelSelector (avoid fetching all resources)`);
       }
@@ -574,7 +577,7 @@ export default {
           ...opt,
           namespaced: namespace,
           pagination: new FilterArgs({ labelSelector }),
-          transient:  opt?.transient !== undefined ? opt.transient : false // Call this out explicitly here, as by default findX methods ar eusually be cached AND watched
+          transient:  opt?.transient !== undefined ? opt.transient : false // Call this out explicitly here, as by default findX methods are usually cached AND watched
         }
       });
     }
@@ -699,19 +702,19 @@ export default {
 
     const res = await dispatch('request', { opt, type });
 
-    await dispatch('load', { data: res, invalidatePageCache: opt.invalidatePageCache });
+    if (!opt.transient) {
+      await dispatch('load', { data: res, invalidatePageCache: opt.invalidatePageCache });
+    }
 
-    if ( opt.watch !== false ) {
+    if (!opt.transient && opt.watch !== false ) {
       dispatch('watch', createFindWatchArg({
         type, id, opt, res
       }));
     }
 
-    out = getters.byId(type, id);
-
     garbageCollect.gcUpdateLastAccessed(ctx, type);
 
-    return out;
+    return opt.transient ? await dispatch('create', res) : getters.byId(type, id);
   },
 
   /**

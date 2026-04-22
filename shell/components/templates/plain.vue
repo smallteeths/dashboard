@@ -11,7 +11,6 @@ import GrowlManager from '@shell/components/GrowlManager';
 import ModalManager from '@shell/components/ModalManager';
 import SlideInPanelManager from '@shell/components/SlideInPanelManager';
 import AwsComplianceBanner from '@shell/components/AwsComplianceBanner';
-import AzureWarning from '@shell/components/auth/AzureWarning';
 import BrowserTabVisibility from '@shell/mixins/browser-tab-visibility';
 import Inactivity from '@shell/components/Inactivity';
 import { mapGetters } from 'vuex';
@@ -32,7 +31,6 @@ export default {
     ModalManager,
     SlideInPanelManager,
     AwsComplianceBanner,
-    AzureWarning,
     Inactivity,
     FixedTips,
     WindowManager
@@ -70,7 +68,6 @@ export default {
     <FixedBanner :header="true" />
     <FixedTips />
     <AwsComplianceBanner />
-    <AzureWarning />
 
     <div
       class="dashboard-content"

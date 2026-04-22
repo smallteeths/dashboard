@@ -101,6 +101,7 @@ describe('Projects/Namespaces', { tags: ['@explorer2', '@adminUser'] }, () => {
         .set('test-1234');
       createProjectPage.tabResourceQuotas().click();
       createProjectPage.btnAddResource().click();
+      createProjectPage.selectResourceType(1);
       createProjectPage.inputProjectLimit().set('50');
       createProjectPage.resourceDetail().createEditView()
         .create();
@@ -117,6 +118,7 @@ describe('Projects/Namespaces', { tags: ['@explorer2', '@adminUser'] }, () => {
         .set('test-1234');
       createProjectPage.tabResourceQuotas().click();
       createProjectPage.btnAddResource().click();
+      createProjectPage.selectResourceType(1);
       createProjectPage.inputProjectLimit().set('50');
       createProjectPage.resourceDetail().createEditView()
         .create();
@@ -142,6 +144,7 @@ describe('Projects/Namespaces', { tags: ['@explorer2', '@adminUser'] }, () => {
         .set('test-1234');
       createProjectPage.tabResourceQuotas().click();
       createProjectPage.btnAddResource().click();
+      createProjectPage.selectResourceType(1);
       createProjectPage.inputProjectLimit().set('50');
       createProjectPage.resourceDetail().createEditView()
         .create();
@@ -184,8 +187,8 @@ describe('Projects/Namespaces', { tags: ['@explorer2', '@adminUser'] }, () => {
       cy.login();
 
       // Get current user and cluster info
-      cy.getRancherResource('v3', 'users?me=true').then((resp: Cypress.Response<any>) => {
-        const userId = resp.body.data[0].id.trim();
+      cy.getRancherResource('v1', 'ext.cattle.io.selfuser').then((resp: Cypress.Response<any>) => {
+        const userId = resp.body.status.userID;
         const clusterId = 'local';
 
         // Create 3 projects with the same name using the API

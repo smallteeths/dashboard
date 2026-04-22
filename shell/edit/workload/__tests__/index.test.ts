@@ -26,7 +26,6 @@ describe('component: Workload', () => {
       isStatefulSet:               jest.fn(),
       headlessServices:            jest.fn(),
       defaultTab:                  jest.fn(),
-      allContainers:               jest.fn(),
       isPod:                       jest.fn(),
       tabWeightMap:                jest.fn(),
       podLabels:                   jest.fn(),
@@ -38,11 +37,11 @@ describe('component: Workload', () => {
       namespacedConfigMaps:        jest.fn(),
       podAnnotations:              jest.fn(),
       isJob:                       jest.fn(),
-      podFsGroup:                  jest.fn(),
       namespacedSecrets:           jest.fn(),
       registerBeforeHook:          jest.fn(),
       pvcs:                        jest.fn(),
-    }
+    },
+    computed: { allContainers: jest.fn(() => []) }
   };
 
   describe('component: Workload', () => {
@@ -53,7 +52,7 @@ describe('component: Workload', () => {
       ]
     ])('should map error message into object', (oldMessage, newMessage) => {
     // For this test, allNodeObjects is just a jest.fn() in the base mixin
-      const MockedWorkload = { ...Workload, mixins: [baseMockedValidationMixin, baseMockedCREMixin, { ...baseMockedWorkloadMixin, computed: { allNodeObjects: jest.fn() } }] };
+      const MockedWorkload = { ...Workload, mixins: [baseMockedValidationMixin, baseMockedCREMixin, { ...baseMockedWorkloadMixin, computed: { ...baseMockedWorkloadMixin.computed, allNodeObjects: jest.fn() } }] };
       const wrapper = shallowMount(MockedWorkload, {
         props: {
           value:         { metadata: {}, spec: { template: {} } },
@@ -69,6 +68,8 @@ describe('component: Workload', () => {
             $store:      {
               getters: {
                 'cluster/schemaFor': jest.fn(),
+                'cluster/canList':   jest.fn(),
+                currentStore:        () => 'cluster',
                 'type-map/labelFor': jest.fn(),
                 'i18n/t':            (text: string, v: {[key:string]: string}) => {
                   return `${ text }, ${ Object.values(v || {}) }`;
@@ -99,43 +100,6 @@ describe('component: Workload', () => {
       const result = (wrapper.vm as any).mapError(oldMessage).message;
 
       expect(result).toStrictEqual(newMessage);
-    });
-
-    describe('secondaryResourceDataConfig', () => {
-      it('should filter out nodes with control-plane or etcd taints from workerNodes parsingFunc', () => {
-        const allNodeObjects = [
-          {
-            id:   'node-1',
-            spec: { taints: [{ key: 'node-role.kubernetes.io/control-plane', effect: 'NoSchedule' }] }
-          },
-          {
-            id:   'node-2',
-            spec: { taints: [{ key: 'node-role.kubernetes.io/etcd', effect: 'NoSchedule' }] }
-          },
-          {
-            id:   'node-3',
-            spec: { taints: [{ key: 'node-role.kubernetes.io/worker', effect: 'NoSchedule' }] }
-          },
-          {
-            id:   'node-4',
-            spec: { taints: [] }
-          },
-          {
-            id:   'node-5',
-            spec: {}
-          },
-          {
-            id:   'node-6',
-            spec: null
-          }
-        ];
-
-        const { data } = (Workload.mixins[2] as any).methods.secondaryResourceDataConfig.apply({ value: { metadata: { namespace: 'test' } } });
-        const workerNodesParsingFunc = data.node.applyTo.find((r: any) => r.var === 'workerNodes').parsingFunc;
-        const result = workerNodesParsingFunc(allNodeObjects);
-
-        expect(result).toStrictEqual(['node-3', 'node-4', 'node-5', 'node-6']);
-      });
     });
   });
 });

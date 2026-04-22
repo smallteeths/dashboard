@@ -35,6 +35,7 @@
 //   ifHave,                  -- Show this product only if the given capability is available
 //   ifHaveGroup,             -- Show this product only if the given group exists in the store [inStore]
 //   ifHaveType,              -- Show this product only if the given type exists in the store [inStore], This can also be specified as an object { type: TYPE, store: 'management' } if the type isn't in the current [inStore]
+//   ifNotHaveType,           -- Hide this product if the given type exists in the store [inStore] (opposite of ifHaveType)
 //   ifHaveVerb,              -- In combination with ifHaveTYpe, show it only if the type also has this collectionMethod
 //   inStore,                 -- Which store to look at for if* above and the left-nav, defaults to "cluster"
 //   rootProduct,             -- Optional root (parent) product - if set, used to optimize navigation when product changes stays within root product
@@ -152,6 +153,7 @@ import { haveV2Monitoring } from '@shell/utils/monitoring';
 import { NEU_VECTOR_NAMESPACE } from '@shell/config/product/neuvector';
 import { createHeaders, rowValueGetter } from '@shell/store/type-map.utils';
 import { defineAsyncComponent } from 'vue';
+import { filterLocationValidParams } from '@shell/utils/router';
 
 export const MACVLAN_PRODUCT_NAME = 'macvlan.cluster.cattle.io.macvlansubnet';
 
@@ -189,7 +191,7 @@ export const TYPE_MODES = {
    */
   FAVORITE: 'favorite',
   /**
-   * Represents no virtual or spoofed types that have a count.
+   * Represents types that have a count and are not virtual or spoofed.
    *
    * For example the `More Resource` in the cluster explorer
    *
@@ -240,7 +242,7 @@ export function DSL(store, product, module = 'type-map') {
       };
 
       // Convert strings to regex's - we do this once here for efficiency
-      for ( const k of ['ifHaveGroup', 'ifHaveType'] ) {
+      for ( const k of ['ifHaveGroup', 'ifHaveType', 'ifNotHaveType'] ) {
         if ( opt[k] ) {
           if (Array.isArray(opt[k])) {
             opt[k] = opt[k].map((r) => regexToString(ensureRegex(r)));
@@ -367,7 +369,7 @@ export function DSL(store, product, module = 'type-map') {
 
 let called = false;
 
-export async function applyProducts(store, $plugin) {
+export async function applyProducts(store, $extension) {
   if (called) {
     return;
   }
@@ -381,7 +383,7 @@ export async function applyProducts(store, $plugin) {
     }
   }
   // Load the products from all plugins
-  $plugin.loadProducts();
+  $extension.loadProducts();
 }
 
 export function productsLoaded() {
@@ -696,7 +698,7 @@ export const getters = {
             }
           };
 
-          typeObj.route = route;
+          typeObj.route = filterLocationValidParams(rootState.$router, route);
         }
 
         // Cluster ID and Product should always be set
@@ -713,7 +715,7 @@ export const getters = {
           exact:        typeObj.exact || false,
           'exact-path': typeObj['exact-path'] || false,
           namespaced,
-          route,
+          route:        filterLocationValidParams(rootState.$router, route),
           name:         typeObj.name,
           weight:       typeObj.weight || getters.typeWeightFor(typeObj.schema?.id || label, isBasic),
           overview:     !!typeObj.overview,
@@ -1426,6 +1428,14 @@ export const getters = {
         }
       }
 
+      if ( p.ifNotHaveType ) {
+        const haveIds = knownTypes[module].filter((t) => t.match(stringToRegex(p.ifNotHaveType)) );
+
+        if ( haveIds.length ) {
+          return false;
+        }
+      }
+
       if ( p.ifHaveGroup && !knownGroups[module].find((t) => t.match(stringToRegex(p.ifHaveGroup)) ) ) {
         return false;
       }
@@ -1582,6 +1592,17 @@ export const mutations = {
       schema.links = {
         collection: `/${ SPOOFED_PREFIX }/${ schema.id }`,
         ...(schema.links || {})
+      };
+
+      const verbs = schema.attributes?.verbs || [];
+
+      if ( !verbs.includes('list') ) {
+        verbs.push('list');
+      }
+
+      schema.attributes = {
+        ...schema?.attributes,
+        verbs
       };
     });
 
@@ -2036,7 +2057,7 @@ function hasCustom(state, rootState, kind, key, fallback) {
   }
 
   // Check to see if the custom kind is provided by a plugin (ignore booleans)
-  const pluginComponent = rootState.$plugin.getDynamic(kind, key);
+  const pluginComponent = rootState.$extension.getDynamic(kind, key);
 
   if (typeof pluginComponent !== 'boolean' && !!pluginComponent) {
     cache[key] = true;
@@ -2056,7 +2077,7 @@ function hasCustom(state, rootState, kind, key, fallback) {
 }
 
 function loadExtension(rootState, kind, key, fallback) {
-  const ext = rootState.$plugin.getDynamic(kind, key);
+  const ext = rootState.$extension.getDynamic(kind, key);
 
   if (ext) {
     if (typeof ext === 'function') {

@@ -6,9 +6,9 @@ import { UI_PLUGIN_BASE_URL } from '@shell/config/uiplugins';
 import { ExtensionPoint } from './types';
 import { addLinkInterceptor, removeLinkInterceptor } from '@shell/plugins/clean-html';
 
-let extensionManagerInstance;
+export const DEVELOPER_LOAD_NAME_SUFFIX = '-developer-load';
 
-const createExtensionManager = (context) => {
+export const createExtensionManager = (context) => {
   const {
     app, store, $axios, redirect
   } = context;
@@ -33,13 +33,13 @@ const createExtensionManager = (context) => {
   /**
    * When an extension adds a model extension, it provides the class - we will instantiate that class and store and use that
    */
-  function instantiateModelExtension($plugin, clz) {
+  function instantiateModelExtension($extension, clz) {
     const context = {
-      dispatch:   store.dispatch,
-      getters:    store.getters,
-      t:          store.getters['i18n/t'],
-      $extension: $plugin,
-      $axios
+      dispatch: store.dispatch,
+      getters:  store.getters,
+      t:        store.getters['i18n/t'],
+      $axios,
+      $extension,
     };
 
     return new clz(context);
@@ -63,9 +63,18 @@ const createExtensionManager = (context) => {
     // Load a plugin from a UI package
     loadPluginAsync(plugin) {
       const { name, version } = plugin;
-      const id = `${ name }-${ version }`;
+      let id = `${ name }-${ version }`;
       let url;
 
+      // for a developer load, we need to remove the suffix applied
+      // otherwise the extension won't load correctly
+      // but with this at least we won't hit developer loaded cards find charts
+      // when they aren't supposed to
+      if (id.includes(DEVELOPER_LOAD_NAME_SUFFIX)) {
+        id = id.replace(DEVELOPER_LOAD_NAME_SUFFIX, '');
+      }
+
+      // this is where a developer load hits (direct=true, developer=true)
       if (plugin?.metadata?.direct === 'true') {
         url = plugin.endpoint;
       } else {
@@ -503,22 +512,3 @@ const createExtensionManager = (context) => {
     },
   };
 };
-
-/**
- * Initializes a new extension manager if one does not exist.
- * @param {*} context The Rancher Dashboard context object
- * @returns The extension manager instance
- */
-export const initExtensionManager = (context) => {
-  if (!extensionManagerInstance) {
-    extensionManagerInstance = createExtensionManager(context);
-  }
-
-  return extensionManagerInstance;
-};
-
-/**
- * Gets the extension manager instance.
- * @returns The extension manager instance
- */
-export const getExtensionManager = () => extensionManagerInstance;

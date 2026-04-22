@@ -353,6 +353,7 @@ export default {
 
   methods: {
     stringify,
+
     setSubtype(subtype) {
       this.resourceSubtype = subtype;
     },

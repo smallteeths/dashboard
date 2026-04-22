@@ -137,8 +137,10 @@ describe('Namespace picker', { testIsolation: 'off' }, () => {
     namespacePicker.selectedValues().find('.ns-value').contains('Project: Default').should('be.visible');
     namespacePicker.namespaceDropdown().find('.ns-more').should('contains.text', '+3');
     namespacePicker.closeDropdown();
-    namespacePicker.selectedValues().should('have.class', 'v-popper--has-tooltip');
-    namespacePicker.moreOptionsSelected().should('have.class', 'v-popper--has-tooltip');
+    namespacePicker.selectedValues().realHover();
+    namespacePicker.selectedValues().should('have.class', 'has-clean-tooltip');
+    namespacePicker.moreOptionsSelected().realHover();
+    namespacePicker.moreOptionsSelected().should('have.class', 'has-clean-tooltip');
   });
 
   it('can deselect options', { tags: ['@explorer2', '@adminUser', '@standardUser'] }, () => {
@@ -203,8 +205,8 @@ describe('Namespace picker', { testIsolation: 'off' }, () => {
 
   it('newly created project/namespace appears in namespace picker', { tags: ['@explorer2', '@adminUser'] }, () => {
     // get user id
-    cy.getRancherResource('v3', 'users?me=true').then((resp: Cypress.Response<any>) => {
-      const userId = resp.body.data[0].id.trim();
+    cy.getRancherResource('v1', 'ext.cattle.io.selfuser').then((resp: Cypress.Response<any>) => {
+      const userId = resp.body.status.userID;
 
       // create project
       cy.createProject(projName, 'local', userId).then((resp: Cypress.Response<any>) => {
@@ -227,8 +229,8 @@ describe('Namespace picker', { testIsolation: 'off' }, () => {
     const nsNameToDelete = `namespace-to-delete${ +new Date() }`;
 
     // get user id
-    cy.getRancherResource('v3', 'users?me=true').then((resp: Cypress.Response<any>) => {
-      const userId = resp.body.data[0].id.trim();
+    cy.getRancherResource('v1', 'ext.cattle.io.selfuser').then((resp: Cypress.Response<any>) => {
+      const userId = resp.body.status.userID;
 
       // create project
       cy.createProject(projNameToDelete, 'local', userId).then((resp: Cypress.Response<any>) => {

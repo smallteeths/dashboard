@@ -3,19 +3,19 @@ import { CypressChainable } from '@/cypress/e2e/po/po.types';
 import { LONG_TIMEOUT_OPT } from '~/cypress/support/utils/timeouts';
 
 export default class ScalerPo extends ComponentPo {
-  constructor(selector = '.plus-minus') {
+  constructor(selector = '[data-testid="scaler"]') {
     super(selector);
   }
 
   getValue(): CypressChainable {
-    return this.self().find('.value', LONG_TIMEOUT_OPT);
+    return cy.get(`${ this.selector } [data-testid="scaler-value"]`, LONG_TIMEOUT_OPT);
   }
 
   decreaseButton(): CypressChainable {
-    return this.self().find('.icon-minus', LONG_TIMEOUT_OPT);
+    return cy.get(`${ this.selector } [data-testid="scaler-decrease"]`, LONG_TIMEOUT_OPT);
   }
 
   increaseButton(): CypressChainable {
-    return this.self().find('.icon-plus', LONG_TIMEOUT_OPT);
+    return cy.get(`${ this.selector } [data-testid="scaler-increase"]`, LONG_TIMEOUT_OPT);
   }
 }

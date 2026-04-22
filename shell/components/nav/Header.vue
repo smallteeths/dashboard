@@ -268,7 +268,7 @@ export default {
           this.extensionHeaderActions = getApplicableExtensionEnhancements(this, ExtensionPoint.ACTION, ActionLocation.HEADER, neu);
           this.updateExtensionActionsEnabled();
 
-          this.navHeaderRight = this.$plugin?.getDynamic('component', 'NavHeaderRight');
+          this.navHeaderRight = this.$extension?.getDynamic('component', 'NavHeaderRight');
         }
       },
       immediate: true,
@@ -703,8 +703,8 @@ export default {
           :aria-label="t('nav.userMenu.label')"
         >
           <rc-dropdown-trigger
-            ghost
-            small
+            variant="ghost"
+            size="small"
             data-testid="nav_header_showUserMenu"
             :aria-label="t('nav.userMenu.button.label')"
           >
@@ -963,7 +963,7 @@ export default {
         width: 40px;
       }
 
-      :deep() div .btn.role-tertiary {
+      :deep() div .btn.role-tertiary, :deep() div .rc-button.btn.variant-tertiary  {
         border: 1px solid var(--header-btn-bg);
         border: none;
         background: var(--tertiary-header, var(--header-btn-bg));

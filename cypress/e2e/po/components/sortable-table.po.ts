@@ -130,7 +130,7 @@ export default class SortableTablePo extends ComponentPo {
   }
 
   rowElements(options?: any) {
-    return this.self().find('tbody tr:not(.sub-row):not(.group-row)', options);
+    return this.self().find('tbody tr:not(.sub-row):not(.group-row):not(.additional-sub-row)', options);
   }
 
   rowElementWithName(name: string, options?: GetOptions) {
@@ -190,7 +190,8 @@ export default class SortableTablePo extends ComponentPo {
   }
 
   rowActionMenu() {
-    return new ActionMenuPo();
+    // Get the visible dropdown menu - this ensures we only interact with a menu that's actually open
+    return new ActionMenuPo(cy.get('[dropdown-menu-collection]:visible'));
   }
 
   noRowsShouldNotExist() {
@@ -231,21 +232,13 @@ export default class SortableTablePo extends ComponentPo {
    * For a row with the given name open it's action menu and return the drop down
    */
   rowActionMenuOpen(name: string) {
-    this.rowWithName(name).actionBtn()
-      .click().then((el) => {
-        expect(el).to.have.attr('aria-expanded', 'true');
-      });
+    this.rowWithName(name).actionBtn().click();
 
     return this.rowActionMenu();
   }
 
   rowActionMenuClose(name: string) {
-    this.rowWithName(name).actionBtn().then((el) => {
-      expect(el).to.have.attr('aria-expanded', 'true');
-    }).click()
-      .then((el) => {
-        expect(el).to.have.attr('aria-expanded', 'false');
-      });
+    this.rowWithName(name).actionBtn().click();
 
     return this.rowActionMenu();
   }

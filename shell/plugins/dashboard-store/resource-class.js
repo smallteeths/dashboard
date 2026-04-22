@@ -33,12 +33,14 @@ import forIn from 'lodash/forIn';
 import isEmpty from 'lodash/isEmpty';
 import isFunction from 'lodash/isFunction';
 import isString from 'lodash/isString';
-import { markRaw } from 'vue';
+import { defineAsyncComponent, markRaw } from 'vue';
 
 import { handleConflict } from '@shell/plugins/dashboard-store/normalize';
 import { ExtensionPoint, ActionLocation } from '@shell/core/types';
 import { getApplicableExtensionEnhancements } from '@shell/core/plugin-helpers';
 import { parse } from '@shell/utils/selector';
+import { EVENT } from '@shell/config/types';
+import { useResourceCardRow } from '@shell/components/Resource/Detail/Card/StateCard/composables';
 
 export const DNS_LIKE_TYPES = ['dnsLabel', 'dnsLabelRestricted', 'hostname'];
 
@@ -610,7 +612,11 @@ export default class Resource {
   }
 
   get '$plugin'() {
-    return this.$ctx.rootState?.$plugin;
+    return this.$ctx.rootState?.$extension;
+  }
+
+  get '$extension'() {
+    return this.$ctx.rootState?.$extension;
   }
 
   get customValidationRules() {
@@ -905,7 +911,7 @@ export default class Resource {
     return out;
   }
 
-  showConfiguration(returnFocusSelector) {
+  showConfiguration(returnFocusSelector, defaultTab) {
     const onClose = () => this.$ctx.commit('slideInPanel/close', undefined, { root: true });
 
     this.$ctx.commit('slideInPanel/open', {
@@ -920,7 +926,8 @@ export default class Resource {
         'z-index':          101, // We want this to be above the main side menu
         closeOnRouteChange: ['name', 'params', 'query'], // We want to ignore hash changes, tables in extensions can trigger the drawer to close while opening
         triggerFocusTrap:   true,
-        returnFocusSelector
+        returnFocusSelector,
+        defaultTab
       }
     }, { root: true });
   }
@@ -1289,9 +1296,15 @@ export default class Resource {
 
       // Steve sometimes returns Table responses instead of the resource you just saved.. ignore
       if ( res && res.kind !== 'Table') {
-        await this.$dispatch('load', {
-          data: res, existing: (forNew ? this : undefined ), invalidatePageCache
-        });
+        const keyField = this.$getters.keyFieldForType(this.type);
+        const id = res[keyField];
+
+        // only items with ID will be added to the store, this prevents "new" resources that return an empty body OR no ID from being added to the store with an ID of "undefined"
+        if (id) {
+          await this.$dispatch('load', {
+            data: res, existing: (forNew ? this : undefined ), invalidatePageCache
+          });
+        }
       }
     } catch (e) {
       if ( this.type && this.id && e?._status === 409) {
@@ -1370,6 +1383,7 @@ export default class Resource {
 
   get _detailLocation() {
     const schema = this.$getters['schemaFor'](this.type);
+    const isNamespaced = schema?.attributes?.namespaced;
 
     const id = this.id?.replace(/.*\//, '');
 
@@ -1379,7 +1393,7 @@ export default class Resource {
         product:   this.$rootGetters['productId'],
         cluster:   this.$rootGetters['clusterId'],
         resource:  this.type,
-        namespace: this.metadata?.namespace,
+        namespace: isNamespaced && this.metadata?.namespace ? this.metadata.namespace : undefined,
         id,
       }
     };
@@ -1387,6 +1401,49 @@ export default class Resource {
 
   get detailLocation() {
     return this._detailLocation;
+  }
+
+  /**
+   * Override this getter to provide additional action buttons or a custom component
+   * for the detail page title bar.
+   *
+   * @returns {undefined|object|Array} A Vue component definition, an array of RcButton props, or undefined
+   *
+   * @example
+   * // Using an array of button props with the new variant/size props
+   * get detailPageAdditionalActions() {
+   *   return [
+   *     { label: 'Action 1', variant: 'secondary', onClick: () => this.doAction1() },
+   *     { label: 'Action 2', variant: 'primary', size: 'large', onClick: () => this.doAction2() }
+   *   ];
+   * }
+   *
+   * @example
+   * // Using defineComponent with h() render function for custom rendering
+   * import { defineComponent, h } from 'vue';
+   * import RcButton from '@components/RcButton/RcButton.vue';
+   *
+   * get detailPageAdditionalActions() {
+   *   return defineComponent({
+   *     render() {
+   *       return h(RcButton, {
+   *         variant: 'primary',
+   *         onClick: () => console.log('clicked')
+   *       }, () => 'Click Me');
+   *     }
+   *   });
+   * }
+   *
+   * @example
+   * // Using dynamic import for a custom component
+   * import { defineAsyncComponent } from 'vue';
+   *
+   * get detailPageAdditionalActions() {
+   *   return defineAsyncComponent(() => import('@shell/components/MyCustomActions.vue'));
+   * }
+   */
+  get detailPageAdditionalActions() {
+    return undefined;
   }
 
   goToDetail() {
@@ -1788,7 +1845,7 @@ export default class Resource {
             CustomValidators[validatorName](pathValue, this.$rootGetters, errors, validatorArgs, displayKey, data);
           } else if (!isEmpty(validatorName) && !validatorExists) {
             // Check if validator is imported from plugin
-            const pluginValidator = this.$rootState.$plugin?.getValidator(validatorName);
+            const pluginValidator = this.$rootState.$extension?.getValidator(validatorName);
 
             if (pluginValidator) {
               pluginValidator(pathValue, this.$rootGetters, errors, validatorArgs, displayKey, data);
@@ -1911,12 +1968,12 @@ export default class Resource {
       {
         name:          'namespace',
         label:         this.t('component.resource.detail.glance.namespace'),
-        formatter:     'Link',
+        formatter:     this.$rootGetters['currentProduct']?.id && this.$rootGetters['currentCluster']?.id ? 'Link' : undefined,
         formatterOpts: {
           to: {
             name:     `c-cluster-product-resource-id`,
-            product:  this.$rootGetters['currentProduct'].id,
-            cluster:  this.$rootGetters['currentCluster'].id,
+            product:  this.$rootGetters['currentProduct']?.id,
+            cluster:  this.$rootGetters['currentCluster']?.id,
             resource: this.type
           },
           row:     {},
@@ -2096,5 +2153,57 @@ export default class Resource {
    */
   get yamlFolding() {
     return [];
+  }
+
+  get resourceConditions() {
+    return (this.status?.conditions || []).map((cond) => {
+      let message = cond.message || '';
+
+      if ( cond.reason ) {
+        message = `[${ cond.reason }] ${ message }`.trim();
+      }
+
+      return {
+        condition:        cond.type || 'Unknown',
+        status:           cond.status || 'Unknown',
+        stateSimpleColor: cond.error ? 'error' : 'disabled',
+        error:            cond.error,
+        time:             cond.lastProbeTime || cond.lastUpdateTime || cond.lastTransitionTime,
+        message,
+      };
+    });
+  }
+
+  get resourceEvents() {
+    return this.$rootGetters['cluster/all'](EVENT)
+      .filter((e) => e.involvedObject?.uid === this.metadata?.uid);
+  }
+
+  get insightCardProps() {
+    const rows = [
+      useResourceCardRow(this.t('component.resource.detail.card.insightsCard.rows.conditions'), this.resourceConditions, undefined, 'condition', '#conditions'),
+      useResourceCardRow(this.t('component.resource.detail.card.insightsCard.rows.events'), this.resourceEvents, 'insightsColor', 'eventType', '#events'),
+    ];
+
+    return {
+      title: this.t('component.resource.detail.card.insightsCard.title'),
+      rows
+    };
+  }
+
+  get insightCard() {
+    return {
+      component: markRaw(defineAsyncComponent(() => import('@shell/components/Resource/Detail/Card/StateCard/index.vue'))),
+      props:     this.insightCardProps
+    };
+  }
+
+  get _cards() {
+    // All cards are opt in, we're leaving the insights card as part of the base resource since it should proliferate to most resources
+    return [];
+  }
+
+  get cards() {
+    return this._cards;
   }
 }

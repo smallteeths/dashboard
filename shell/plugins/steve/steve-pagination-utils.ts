@@ -213,9 +213,9 @@ class StevePaginationUtils extends NamespaceProjectFilters {
    * Match
    * - a-z (case insensitive)
    * - 0-9
-   * - `-`, `_`, `.`
+   * - `_`, `.`
    */
-  static VALID_FIELD_VALUE_REGEX = /^[\w\-.]+$/;
+  static VALID_FIELD_VALUE_REGEX = /^[\w.]+$/;
 
   /**
    * Filtering with the vai cache supports specific fields
@@ -234,6 +234,8 @@ class StevePaginationUtils extends NamespaceProjectFilters {
     [NODE]: [
       { field: 'status.nodeInfo.kubeletVersion' },
       { field: 'status.nodeInfo.operatingSystem' },
+      { field: 'spec.taints.key' },
+      { field: 'status.addresses.type' },
     ],
     [POD]: [
       { field: 'spec.containers.image' },
@@ -764,7 +766,8 @@ export const PAGINATION_SETTINGS_STORE_DEFAULTS: PaginationSettingsStores = {
           { resource: CAPI.RANCHER_CLUSTER, context: ['side-bar'] },
           { resource: MANAGEMENT.CLUSTER, context: ['side-bar'] },
           { resource: CATALOG.APP, context: ['branding'] },
-          SECRET
+          SECRET,
+          CAPI.MACHINE_SET
         ],
         generic: false,
       }

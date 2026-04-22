@@ -27,6 +27,9 @@ export default {
   },
 
   data() {
+    const sideNavServiceInitialized = sideNavService.initialized;
+    const maxClustersToShow = MENU_MAX_CLUSTERS;
+
     sideNavService.init(this.$store);
 
     const { displayVersion, fullVersion } = getVersionInfo(this.$store);
@@ -44,26 +47,27 @@ export default {
     const provClusters = !canPagination && hasProvCluster ? this.$store.getters[`management/all`](CAPI.RANCHER_CLUSTER) : [];
     const mgmtClusters = !canPagination ? this.$store.getters[`management/all`](MANAGEMENT.CLUSTER) : [];
 
-    if (!canPagination) {
-      // Reduce the impact of the initial load, but only if we're not making a request
+    if (!canPagination || !sideNavServiceInitialized) {
+      // Reduce the impact of the initial load, or properly initialised
+      // Doing this here means we don't need an 'immediate' on the watches below
       const args = {
-        pinnedIds:   this.pinnedIds,
-        searchTerm:  this.search,
-        unPinnedMax: this.maxClustersToShow
+        pinnedIds:   this.$store.getters['prefs/get'](PINNED_CLUSTERS),
+        searchTerm:  '',
+        unPinnedMax: maxClustersToShow
       };
 
       helper.update(args);
     }
 
     return {
-      shown:             false,
+      shown:         false,
       displayVersion,
       fullVersion,
-      clusterFilter:     '',
+      clusterFilter: '',
       hasProvCluster,
-      maxClustersToShow: MENU_MAX_CLUSTERS,
-      emptyCluster:      BLANK_CLUSTER,
-      routeCombo:        false,
+      maxClustersToShow,
+      emptyCluster:  BLANK_CLUSTER,
+      routeCombo:    false,
 
       canPagination,
       helper,
@@ -273,6 +277,12 @@ export default {
       const value = hideLocalSetting.value || hideLocalSetting.default || 'false';
 
       return value === 'true';
+    },
+
+    clusterCountsFromCounts() {
+      const counts = this.$store.getters[`management/all`](COUNT)?.[0]?.counts || {};
+
+      return counts[CAPI.RANCHER_CLUSTER]?.summary.count;
     }
   },
 
@@ -291,7 +301,6 @@ export default {
     // 2. When SSP is disabled (legacy) reduce fn churn (this was a known performance customer issue)
 
     pinnedIds: {
-      immediate: true,
       handler(neu, old) {
         if (sameContents(neu, old)) {
           return;
@@ -309,25 +318,41 @@ export default {
 
     provClusters: {
       handler(neu, old) {
+        if (this.canPagination) {
+          // Shouldn't be doing this at all if pagination is on (updates handled by  TopLevelMenu pagination wrapper)
+          return;
+        }
+
         // Potentially incredibly high throughput. Changes should be at least limited (slow if state change, quick if added/removed). Shouldn't get here if SSP
         this.updateClusters(this.pinnedIds, neu?.length === old?.length ? 'slow' : 'quick');
       },
-      deep:      true,
-      immediate: true,
+      deep: true,
     },
 
     mgmtClusters: {
       handler(neu, old) {
+        if (this.canPagination) {
+          // Shouldn't be doing this at all if pagination is on (updates handled by  TopLevelMenu pagination wrapper)
+          return;
+        }
+
         // Potentially incredibly high throughput. Changes should be at least limited (slow if state change, quick if added/removed). Shouldn't get here if SSP
         this.updateClusters(this.pinnedIds, neu?.length === old?.length ? 'slow' : 'quick');
       },
-      deep:      true,
-      immediate: true,
+      deep: true,
     },
 
     hideLocalCluster() {
       this.updateClusters(this.pinnedIds, 'slow');
+    },
+
+    clusterCountsFromCounts: {
+      async handler(neu, old) {
+        await this.helper.updateCount(neu);
+      },
+      immediate: true,
     }
+
   },
 
   mounted() {
@@ -461,16 +486,25 @@ export default {
         unPinnedMax: this.maxClustersToShow
       };
 
-      switch (speed) {
-      case 'slow':
-        this.debouncedHelperUpdateSlow(args);
-        break;
-      case 'medium':
-        this.debouncedHelperUpdateMedium(args);
-        break;
-      case 'quick':
-        this.debouncedHelperUpdateQuick(args);
-        break;
+      try {
+        switch (speed) {
+        case 'slow':
+          this.debouncedHelperUpdateSlow(args);
+          break;
+        case 'medium':
+          this.debouncedHelperUpdateMedium(args);
+          break;
+        case 'quick':
+          this.debouncedHelperUpdateQuick(args);
+          break;
+        }
+      } catch (err) {
+        if (this.canPagination) {
+          // Double bubble up errors here, errors are tracked further down
+          // Note that this won't pick up async errors, further tweaks are required for that
+        } else {
+          throw err;
+        }
       }
     }
   }
