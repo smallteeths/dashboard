@@ -796,6 +796,10 @@ asyncButton:
     action: 添加
     success: 已添加
     waiting: 正在添加&hellip;
+  editVersion:
+    action: 保存更改
+    success: 已保存
+    waiting: 正在保存更改…
 backupRestoreOperator:
   backupFilename: 備份文件名
   deleteTimeout:
@@ -1002,7 +1006,7 @@ catalog:
       basics:
         label: 元數據
         subtext: 設置應用元數據
-        description: 該流程將幫助{action, select, install {建立} upgrade {升級} downgrade {降級} editVersion {更新}}此{existing, select, true {應用程式} false {Chart}}。請先設定一些基本資訊，{vendor} 將使用這些資訊來管理該應用程式。
+        description: 這個過程有助於 {action, select, install { 創建 } upgrade { 升級 } update { 更新 } editVersion { 更新 } downgrade { 降級 } } 這個 {existing, select, true { 應用 } false { Chart} }。首先設置 {vendor} 用來管理應用的基本信息。
         nsCreationDescription: "如果你要把應用安裝到新的命名空間，在命名空間字段中輸入其名稱，並選擇它。"
         createNamespace: "將創建命名空間 <code>{namespace}</code>。"
       clusterTplVersion:
@@ -1030,6 +1034,13 @@ catalog:
       current: '{ver}（當前）'
       linux: '{ver}（僅限 Linux）'
       windows: '{ver}（僅限 Windows）'
+    warning:
+      managed: |-
+        警告，{manager} 管理 {name} 應用的部署和升級。不支持升級此應用。<br>
+        {version, select,
+          null { }
+          other { 在大多數情況下，無需用戶干預即可確保 {version} 版本與你正在運行的 Rancher 版本兼容。}
+        }
   operation:
     tableHeaders:
       action: 操作
