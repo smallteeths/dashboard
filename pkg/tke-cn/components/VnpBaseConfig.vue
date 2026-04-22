@@ -116,14 +116,6 @@ function selectSubnet(subnetId, checked) {
   }
 }
 
-function updateDisplayName(val) {
-  draft.value.displayName = val;
-
-  if (editingIndex.value === null) {
-    syncDraftToCurrentNode();
-  }
-}
-
 function addVirtualNode() {
   if (!props.isNewOrUnprovisioned || editingIndex.value !== null) {
     return;
@@ -470,16 +462,6 @@ watch(
     </div>
     <div class="row mt-10">
       <div class="col span-6">
-        <LabeledInput
-          :value="draft.displayName"
-          :mode="mode"
-          :label="intl('tkeCn.superNodePool.fields.nodeName')"
-          :disabled="!isNewOrUnprovisioned || isImported"
-          :placeholder="intl('tkeCn.superNodePool.fields.nodeNamePlaceholder')"
-          @update:value="updateDisplayName"
-        />
-      </div>
-      <div class="col span-6">
         <LabeledSelect
           v-model:value="zone"
           data-testid="crutke-node-pool-resource-zone"
@@ -642,16 +624,6 @@ watch(
       </div>
       <div class="edit-modal__body">
         <div class="row mb-20">
-          <div class="col span-6">
-            <LabeledInput
-              :value="draft.displayName"
-              :mode="mode"
-              :label="intl('tkeCn.superNodePool.fields.nodeName')"
-              :disabled="!isNewOrUnprovisioned"
-              :placeholder="intl('tkeCn.superNodePool.fields.nodeNamePlaceholder')"
-              @update:value="updateDisplayName"
-            />
-          </div>
           <div class="col span-6">
             <LabeledSelect
               v-model:value="editingZone"
