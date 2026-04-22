@@ -24,7 +24,6 @@ const store = useStore();
 const intl = computed(() => store.getters['i18n/t']);
 const labelRows = computed(() => Array.isArray(props.labels) ? props.labels : []);
 const taintRows = computed(() => Array.isArray(props.taints) ? props.taints : []);
-const nodes = computed(() => Array.isArray(props.virtualNodes) ? props.virtualNodes : []);
 
 const effectOptions = computed(() => [
   { label: 'NoSchedule', value: 'NoSchedule' },
@@ -70,39 +69,6 @@ function setTaint(i, key, val) {
   emit('update:taints', next);
 }
 
-function patchVirtualNodes(next) {
-  emit('update:virtualNodes', next);
-}
-
-function addTag(ni) {
-  const next = cloneDeep(nodes.value);
-  const n = next[ni] || {};
-  const tags = Array.isArray(n.tags) ? n.tags : [];
-
-  tags.push({ key: '', value: '' });
-  next[ni] = { ...n, tags };
-  patchVirtualNodes(next);
-}
-
-function removeTag(ni, ti) {
-  const next = cloneDeep(nodes.value);
-  const n = next[ni] || {};
-  const tags = Array.isArray(n.tags) ? [...n.tags] : [];
-
-  tags.splice(ti, 1);
-  next[ni] = { ...n, tags };
-  patchVirtualNodes(next);
-}
-
-function setTag(ni, ti, key, val) {
-  const next = cloneDeep(nodes.value);
-  const n = next[ni] || {};
-  const tags = Array.isArray(n.tags) ? cloneDeep(n.tags) : [];
-
-  tags[ti] = { ...(tags[ti] || {}), [key]: val };
-  next[ni] = { ...n, tags };
-  patchVirtualNodes(next);
-}
 </script>
 
 <template>
@@ -222,78 +188,6 @@ function setTag(ni, ti, key, val) {
           >
             {{ intl('tkeCn.superNodePool.advanced.actions.delete') }}
           </button>
-        </div>
-      </div>
-    </div>
-    <div class="section mt-20">
-      <div class="section-title">
-        {{ intl('tkeCn.superNodePool.advanced.virtualNodeTags.title') }}
-      </div>
-      <div
-        v-if="nodes.length === 0"
-        class="hint"
-      >
-        {{ intl('tkeCn.superNodePool.advanced.virtualNodeTags.empty') }}
-      </div>
-      <div
-        v-for="(vn, ni) in nodes"
-        :key="`vntag-${ni}`"
-        class="vn-card mt-10"
-      >
-        <div class="vn-head">
-          <div class="vn-title">
-            {{ vn.displayName || intl('tkeCn.superNodePool.advanced.virtualNodeTags.defaultNodeName', { index: ni + 1 }) }}
-          </div>
-          <button
-            v-show="!disabled"
-            class="btn-link"
-            type="button"
-            :disabled="disabled"
-            @click="addTag(ni)"
-          >
-            {{ intl('tkeCn.superNodePool.advanced.virtualNodeTags.addTag') }}
-          </button>
-        </div>
-        <div
-          v-if="!(vn.tags && vn.tags.length)"
-          class="hint"
-        >
-          {{ intl('tkeCn.superNodePool.advanced.virtualNodeTags.unconfigured') }}
-        </div>
-        <div
-          v-for="(tag, ti) in (vn.tags || [])"
-          :key="`tag-${ni}-${ti}`"
-          class="row mt-10"
-        >
-          <div class="col span-5">
-            <LabeledInput
-              :value="tag.key"
-              :mode="mode"
-              :label="intl('tkeCn.superNodePool.advanced.fields.key')"
-              :disabled="disabled"
-              @update:value="setTag(ni, ti, 'key', $event)"
-            />
-          </div>
-          <div class="col span-5">
-            <LabeledInput
-              :value="tag.value"
-              :mode="mode"
-              :label="intl('tkeCn.superNodePool.advanced.fields.value')"
-              :disabled="disabled"
-              @update:value="setTag(ni, ti, 'value', $event)"
-            />
-          </div>
-          <div class="col span-2 actions">
-            <button
-              v-show="!disabled"
-              class="btn-danger"
-              type="button"
-              :disabled="disabled"
-              @click="removeTag(ni, ti)"
-            >
-              {{ intl('tkeCn.superNodePool.advanced.actions.delete') }}
-            </button>
-          </div>
         </div>
       </div>
     </div>
