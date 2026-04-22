@@ -16,6 +16,9 @@ jest.mock('@shell/store/type-map', () => {
 jest.mock('@shell/utils/clipboard', () => {
   return { copyTextToClipboard: jest.fn(() => Promise.resolve({})) };
 });
+jest.mock('@shell/utils/settings', () => {
+  return { setSetting: jest.fn(() => Promise.resolve({})) };
+});
 
 describe('page: auth/setup', () => {
   it('shold not encrypt password', () => {
@@ -39,10 +42,17 @@ describe('page: auth/setup', () => {
       mustChangePassword: true,
       passwordStrength:   3,
       isFirstLogin:       false,
-      $store:             { dispatch: jest.fn(), getters: { 'management/byId': jest.fn() } },
-      v3User:             {},
-      encryptPassword:    encryptPasswordMock,
-      done:               jest.fn(),
+      $store:             {
+        dispatch: jest.fn((p) => {
+          if (p === 'management/create') {
+            return { canChangePassword: true, save: jest.fn() };
+          }
+        }),
+        getters: { 'management/byId': jest.fn() }
+      },
+      user:            {},
+      encryptPassword: encryptPasswordMock,
+      done:            jest.fn(),
     };
 
     const btnCbMock = jest.fn();

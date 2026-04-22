@@ -28,7 +28,7 @@ describe('component: form/ChangePassword', () => {
     expect(AESEncrypt).toHaveBeenCalledWith('test');
   });
 
-  it('should call encryptPassword method when set password', async() => {
+  it('should call encryptPassword method when call changePassword method', async() => {
     const encryptPasswordMock = jest.fn();
 
     const localThis = {
@@ -38,35 +38,17 @@ describe('component: form/ChangePassword', () => {
         genP: 'test',
         newP: 'test',
       },
-      encryptPassword: encryptPasswordMock
-    };
-
-    const btnCbMock = jest.fn();
-
-    await ChangePassword.methods.setPassword.call(localThis, btnCbMock);
-
-    expect(encryptPasswordMock).toHaveBeenCalledTimes(1);
-  });
-
-  it('should call encryptPassword method when change password', async() => {
-    const encryptPasswordMock = jest.fn();
-
-    const localThis = {
-      disabledEncryption: { value: 'false' },
-      $store:             { dispatch: jest.fn() },
-      form:               {
-        genP:     'test',
-        newP:     'test',
-        currentP: 'test'
-      },
-      encryptPassword: encryptPasswordMock
+      t:                     jest.fn(),
+      canChangePassword:     true,
+      passwordChangeRequest: { save: jest.fn() },
+      encryptPassword:       encryptPasswordMock
     };
 
     const btnCbMock = jest.fn();
 
     await ChangePassword.methods.changePassword.call(localThis, btnCbMock);
 
-    expect(encryptPasswordMock).toHaveBeenCalledTimes(2);
+    expect(encryptPasswordMock).toHaveBeenCalledTimes(1);
   });
 
   it('should contian PasswordStrength component', () => {

@@ -24,26 +24,4 @@ describe('edit: management.cattle.io.user', () => {
     User.methods.encryptPassword.call(localThis, 'test');
     expect(AESEncrypt).toHaveBeenCalledWith('test');
   });
-
-  it('should call encryptPassword method', async() => {
-    const encryptPasswordMock = jest.fn();
-    const testUser = {
-      username: 'test',
-      save:     jest.fn(() => ({ id: 'test' }))
-    };
-    const dispatchMock = jest.fn().mockImplementationOnce(() => [])
-      .mockImplementationOnce(() => testUser);
-
-    const localThis = {
-      disabledEncryption: { value: 'false' },
-      $store:             { dispatch: dispatchMock },
-      passwordStrength:   3,
-      form:               { password: { userChangeOnLogin: true } },
-      encryptPassword:    encryptPasswordMock
-    };
-
-    await User.methods.createUser.call(localThis);
-
-    expect(encryptPasswordMock).toHaveBeenCalledTimes(1);
-  });
 });

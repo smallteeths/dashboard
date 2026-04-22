@@ -3,6 +3,7 @@ import rke2 from '@shell/edit/provisioning.cattle.io.cluster/rke2.vue';
 import CustomContainerdConfig from '@shell/edit/provisioning.cattle.io.cluster/CustomContainerdConfig.vue';
 import { _CREATE } from '@shell/config/query-params';
 
+jest.mock('@shell/edit/provisioning.cattle.io.cluster/shared', () => ({ HARVESTER: 'harvester' }));
 describe('component: rke2, computed: generateName', () => {
   it('should return default generate name when empty registry hostname', () => {
     const localThis = { registryHost: '' };
@@ -32,7 +33,7 @@ describe('component: rke2, computed: generateName', () => {
           mode:            _CREATE,
           value,
           selectedVersion: { agentArgs: mockAgentArgs },
-          provider:        'custom'
+          provider:        'custom',
         },
 
         global: {
@@ -92,10 +93,11 @@ describe('component: rke2, computed: generateName', () => {
                 'i18n/withFallback':               jest.fn(),
                 'plugins/cloudProviderForDriver':  jest.fn(),
                 'customization/getPreviewCluster': jest.fn()
-              }
-            },
-            $plugin: { getDynamic: jest.fn(() => undefined ) }
+              },
 
+            },
+            $plugin:    { getDynamic: jest.fn(() => undefined ) },
+            $extension: { getDynamic: jest.fn() },
           }
         }
 
