@@ -260,7 +260,7 @@
           v-if="!localValue.clusterEndpoint"
           class="row mt-10"
         >
-          <div class="col span-4">
+          <div class="col span-6">
             <LabeledSelect
               :value="localValue.zoneId"
               data-testid="crutke-resource-zone"
@@ -276,7 +276,7 @@
               @update:value="handleZoneChange"
             />
           </div>
-          <div class="col span-4">
+          <div class="col span-6">
             <LabeledSelect
               v-model:value="localValue.subnetId"
               data-testid="crutke-resource-subnet"
@@ -290,35 +290,6 @@
               :disabled="!isNewOrUnprovisioned || localValue.imported"
               :rules="ruleSets.subnet"
             />
-          </div>
-          <div class="col span-4">
-            <div class="domain-field">
-              <LabeledInput
-                v-model:value="localValue.domain"
-                data-testid="crutke-resource-domain"
-                :mode="mode"
-                label-key="tkeCn.domain.label"
-                :disabled="!isNewOrUnprovisioned || localValue.imported"
-                :placeholder="intl('tkeCn.domain.placeholder')"
-              />
-              <v-dropdown
-                class="domain-field__tooltip"
-                theme="info-tooltip"
-                placement="top"
-                :triggers="['hover', 'click']"
-                :auto-hide="true"
-                :distance="8"
-              >
-                <span class="domain-field__tooltip-trigger">
-                  <i class="icon icon-info" />
-                </span>
-                <template #popper>
-                  <div class="domain-field__tooltip-content">
-                    {{ intl('tkeCn.domain.help') }}
-                  </div>
-                </template>
-              </v-dropdown>
-            </div>
           </div>
         </div>
         <div
