@@ -190,7 +190,7 @@ export function useCreateEditView(props, context) {
 
     const clusterEndpoint = {
       enable:              config.clusterEndpoint,
-      domain:              config.domain,
+      domain:              config.clusterEndpoint ? config.domain : '',
       securityGroup:       undefined,
       extensiveParameters: undefined,
       subnetId:            undefined,
