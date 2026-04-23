@@ -360,8 +360,6 @@ $image-medium-box-width: 48px;
     border-color: var(--primary);
   }
 
-<<<<<<< HEAD
-=======
   &.disabled {
     cursor: not-allowed;
     background-color: var(--disabled-bg);
@@ -377,7 +375,6 @@ $image-medium-box-width: 48px;
     }
   }
 
->>>>>>> v2.14.0
   &:has(.item-card-header-left:focus-visible) {
     border-color: var(--primary);
     @include focus-outline;
