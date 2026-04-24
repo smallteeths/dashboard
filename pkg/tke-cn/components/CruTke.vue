@@ -504,6 +504,9 @@ async function initCustomConfig() {
     if (normanCluster.value.tkeConfig) {
       fixConfig(normanCluster.value.tkeConfig);
     }
+    if (!normanCluster.value?.importedConfig?.privateRegistryURL) {
+      normanCluster.value.importedConfig = { privateRegistryURL: null };
+    }
     if (normanCluster.value?.importedConfig?.privateRegistryURL) {
       state.value.showPrivateRegistryInput = true;
     }
@@ -901,6 +904,11 @@ async function validateServiceCidrConflict(cloudCredentialId) {
 
 function updatePrivateRegistryInput(val) {
   state.value.showPrivateRegistryInput = val;
+
+  if (!normanCluster.value.importedConfig) {
+    normanCluster.value.importedConfig = {};
+  }
+
   if (!val) {
     normanCluster.value.importedConfig.privateRegistryURL = null;
   }
@@ -1722,7 +1730,7 @@ function handleZoneChange() {
           @update:value="updatePrivateRegistryInput($event)"
         />
         <LabeledInput
-          v-if="state.showPrivateRegistryInput"
+          v-if="state.showPrivateRegistryInput && normanCluster.importedConfig"
           v-model:value="normanCluster.importedConfig.privateRegistryURL"
           :mode="mode"
           label-key="catalog.chart.registry.custom.inputLabel"
