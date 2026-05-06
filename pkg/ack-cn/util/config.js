@@ -67,7 +67,7 @@ const DISKS = [
 
 const DEFAULT_NODE_GROUP_CONFIG = {
   name:                 'default-nodepool',
-  platform:             'AliyunLinux3',
+  platform:             '',
   system_disk_category: '',
   system_disk_size:     120,
   data_disk:            [

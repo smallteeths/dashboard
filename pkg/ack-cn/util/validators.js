@@ -206,6 +206,158 @@ const instancesNumRequired = (nodePools, intl) => {
   };
 };
 
+const MIN_NODE_POOL_SIZE = 0;
+
+const isEmptyValue = (value) => {
+  return value === '' || value === null || value === undefined;
+};
+
+const validateNodePoolSizeValue = (value, intl, labelKey) => {
+  if (isEmptyValue(value)) {
+    return intl.value('validation.required', { key: intl.value(labelKey) });
+  }
+
+  const numberValue = Number(value);
+
+  if (!Number.isFinite(numberValue)) {
+    return intl.value('ackCn.nodePool.validation.number', { key: intl.value(labelKey) });
+  }
+
+  if (!Number.isInteger(numberValue)) {
+    return intl.value('ackCn.nodePool.validation.integer', { key: intl.value(labelKey) });
+  }
+
+  if (numberValue < MIN_NODE_POOL_SIZE) {
+    return intl.value('ackCn.nodePool.validation.min', {
+      key: intl.value(labelKey),
+      min: MIN_NODE_POOL_SIZE,
+    });
+  }
+
+  return null;
+};
+
+const validateNodePoolSizeRange = (minInstances, maxInstances, intl, currentField) => {
+  if (isEmptyValue(minInstances) || isEmptyValue(maxInstances)) {
+    return null;
+  }
+
+  const min = Number(minInstances);
+  const max = Number(maxInstances);
+
+  if (!Number.isFinite(min) || !Number.isFinite(max)) {
+    return null;
+  }
+
+  if (min <= max) {
+    return null;
+  }
+
+  if (currentField === 'min') {
+    return intl.value('ackCn.nodePool.validation.minLessThanOrEqualMax', {
+      key: intl.value('ackCn.nodePool.minInstances.label'),
+      max,
+    });
+  }
+
+  return intl.value('ackCn.nodePool.validation.maxGreaterThanOrEqualMin', {
+    key: intl.value('ackCn.nodePool.maxInstances.label'),
+    min,
+  });
+};
+
+const withPoolName = (message, pool) => {
+  if (!message) {
+    return null;
+  }
+
+  if (!pool?.name) {
+    return message;
+  }
+
+  return `${ pool.name }: ${ message }`;
+};
+
+const validateAllNodePools = (nodePools, callback) => {
+  const pools = Array.isArray(nodePools.value) ? nodePools.value : [];
+
+  for (const pool of pools) {
+    const message = callback(pool);
+
+    if (message) {
+      return withPoolName(message, pool);
+    }
+  }
+
+  return null;
+};
+
+const nodePoolInstancesNumRequired = (nodePools, intl) => {
+  return (...args) => {
+    if (args.length > 0) {
+      return validateNodePoolSizeValue(args[0], intl, 'ackCn.nodePool.desiredSize.label');
+    }
+
+    return validateAllNodePools(nodePools, (pool) => {
+      if (pool.auto_scaling_enabled) {
+        return null;
+      }
+
+      return validateNodePoolSizeValue(pool.instances_num, intl, 'ackCn.nodePool.desiredSize.label');
+    });
+  };
+};
+
+const minInstancesRequired = (nodePools, intl) => {
+  return (...args) => {
+    if (args.length > 0) {
+      const [minInstances, maxInstances] = args;
+
+      return validateNodePoolSizeValue(minInstances, intl, 'ackCn.nodePool.minInstances.label') || validateNodePoolSizeRange(minInstances, maxInstances, intl, 'min');
+    }
+
+    return validateAllNodePools(nodePools, (pool) => {
+      if (!pool.auto_scaling_enabled) {
+        return null;
+      }
+
+      return validateNodePoolSizeValue(pool.min_instances, intl, 'ackCn.nodePool.minInstances.label') || validateNodePoolSizeRange(pool.min_instances, pool.max_instances, intl, 'min');
+    });
+  };
+};
+
+const maxInstancesRequired = (nodePools, intl) => {
+  return (...args) => {
+    if (args.length > 0) {
+      const [maxInstances, minInstances] = args;
+
+      return validateNodePoolSizeValue(maxInstances, intl, 'ackCn.nodePool.maxInstances.label') || validateNodePoolSizeRange(minInstances, maxInstances, intl, 'max');
+    }
+
+    return validateAllNodePools(nodePools, (pool) => {
+      if (!pool.auto_scaling_enabled) {
+        return null;
+      }
+
+      return validateNodePoolSizeValue(pool.max_instances, intl, 'ackCn.nodePool.maxInstances.label') || validateNodePoolSizeRange(pool.min_instances, pool.max_instances, intl, 'max');
+    });
+  };
+};
+
+const nodePoolSizeValid = (pool, intl) => {
+  if (!pool) {
+    return false;
+  }
+
+  if (pool.auto_scaling_enabled) {
+    return !validateNodePoolSizeValue(pool.min_instances, intl, 'ackCn.nodePool.minInstances.label') &&
+      !validateNodePoolSizeValue(pool.max_instances, intl, 'ackCn.nodePool.maxInstances.label') &&
+      !validateNodePoolSizeRange(pool.min_instances, pool.max_instances, intl, 'min');
+  }
+
+  return !validateNodePoolSizeValue(pool.instances_num, intl, 'ackCn.nodePool.desiredSize.label');
+};
+
 const systemDiskCategoryRequired = (nodePools, intl) => {
   return (systemDiskCategory) => {
     if (systemDiskCategory !== undefined) {
@@ -336,6 +488,10 @@ export default {
   runtimeVersionRequired,
   instanceTypesRequired,
   instancesNumRequired,
+  nodePoolInstancesNumRequired,
+  minInstancesRequired,
+  maxInstancesRequired,
+  nodePoolSizeValid,
   systemDiskCategoryRequired,
   diskSizeRequired,
   dataDiskSizeRequired,

@@ -6,7 +6,6 @@ import { useStore } from 'vuex';
 import { NORMAN } from '@shell/config/types';
 import Loading from '@shell/components/Loading.vue';
 import { useCreateEditView } from '../composables/useCreateEditView.js';
-import { useFormValidation } from '../composables/useFormValidation.js';
 import LabeledMultiSelect from './LabeledMultiSelect';
 import NodePool from './NodePool';
 import ImportAck from './ImportAck';
@@ -29,8 +28,9 @@ import { stringify } from '@shell/utils/error';
 import { syncUpstreamConfig } from '@shell/utils/kontainer';
 import Accordion from '@components/Accordion/Accordion.vue';
 import ClusterPlanSelector from './ClusterPlanSelector.vue';
+import FloatingHelpPanel from './FloatingHelpPanel.vue';
 import {
-  filter, find, cloneDeep, pullAt, uniqBy, uniq
+  filter, find, cloneDeep, pullAt, uniqBy, uniq, compact, flatten,
 } from 'lodash';
 import { RadioGroup } from '@components/Form/Radio';
 
@@ -61,15 +61,19 @@ const options = ref({
       value: ''
     }
   ],
-  regionOptions:          [],
-  vpcOptions:             [],
-  vswitchOptions:         [],
-  keyPairOptions:         [],
-  zoneOptions:            [],
-  k8sVersionOptions:      [],
-  k8sAllImages:           {},
-  platformOptions:        [],
-  allInstanceTypeOptions: {},
+  regionOptions:             [],
+  vpcOptions:                [],
+  vswitchOptions:            [],
+  keyPairOptions:            [],
+  zoneOptions:               [],
+  k8sVersionOptions:         [],
+  k8sAllImages:              {},
+  platformOptions:           [],
+  allInstanceTypeOptions:    {},
+  deletionProtectionOptions: [
+    intl.value('generic.enabled'),
+    intl.value('generic.disabled'),
+  ],
 });
 const RUNTIME_VERSION_LE_132 = '1.6.39';
 const RUNTIME_VERSION_LT_132 = '2.1.5';
@@ -78,6 +82,7 @@ const state = ref({
   loading:                       false,
   regionAndResourceGroupLoading: false,
   vpcLoading:                    false,
+  zoneLoading:                   false,
   vswitchLoading:                false,
   instanceTypeLoading:           false,
   keyPairLoading:                false,
@@ -140,9 +145,6 @@ async function initCustomConfig() {
   }
   ackConfig.value = cloneDeep({ ...normanCluster.value.ackConfig });
   nodePools.value = cloneDeep(normanCluster.value.ackConfig['node_pool_list']);
-  if (!isNewOrUnprovisioned.value && !ackConfig.value.zoneIds) {
-    state.value.autoCreateVpc = 'custom';
-  }
   state.value.loading = false;
 }
 
@@ -193,12 +195,19 @@ function formatAckConfig(normanCluster) {
   if (ackConfig['node_pool_list'] && ackConfig['node_pool_list'].length > 0) {
     ackConfig.node_pool_list = (ackConfig.node_pool_list || []).map((node) => ({ ...node }));
   }
+  // 编辑时如果 zoneIds 没有返回，则它是选择 vpc 创建的 ack
+  if (!ackConfig.value.zoneIds) {
+    state.value.autoCreateVpc = 'custom';
+  }
 }
 
 function resetConfig() {
-  ackConfig.value.resourceGroupId = '';
-  ackConfig.value.regionId = 'cn-beijing';
-  nodePools.value = cloneDeep(normanCluster.value.ackConfig['node_pool_list']);
+  ackConfig.value.vpcId = '';
+  state.value.vswitchIds = [];
+  ackConfig.value.zoneIds = [];
+  state.value.autoCreateVpc = 'auto';
+
+  resetNodePool();
 }
 
 async function fetchALiyunResource() {
@@ -268,6 +277,7 @@ async function fetchImportALiyunResource() {
 }
 
 async function fetchZones(regionId) {
+  state.value.zoneLoading = true;
   try {
     const resourceGroupId = ackConfig.value.resourceGroupId;
     const externalParams = { regionId };
@@ -291,7 +301,7 @@ async function fetchZones(regionId) {
       };
     });
 
-    if (isNewOrUnprovisioned.value) {
+    if (isNewOrUnprovisioned.value && !ackConfig.value.zoneIds?.length) {
       ackConfig.value.zoneIds = (options.value.zoneOptions || [])
         .slice(0, 3)
         .map((zone) => zone.value);
@@ -303,9 +313,11 @@ async function fetchZones(regionId) {
     state.value.errors = [];
     state.value.errors.push(err);
   }
+  state.value.zoneLoading = false;
 }
 
 async function fetchVpc(regionId) {
+  state.value.vpcLoading = true;
   try {
     const resourceGroupId = ackConfig.value.resourceGroupId;
     const externalParams = { regionId };
@@ -474,19 +486,43 @@ function processK8sVersions({
   return { options: out, allImages: newAllImages };
 }
 
-async function fetchVSwitch(vpcId) {
+function initVSwitchIds() {
+  if (isAutoCreateVpc.value) {
+    return;
+  }
+
+  const currentVswitchIds = Array.isArray(state.value.vswitchIds) ? state.value.vswitchIds : [];
+  const optionValues = new Set(options.value.vswitchOptions.map((item) => item.value));
+  const hasInvalidValue = currentVswitchIds.some((id) => !optionValues.has(id));
+
+  if (currentVswitchIds.length > 0 && !hasInvalidValue) {
+    updateVswitchIds(currentVswitchIds);
+
+    return;
+  }
+
+  const defaultVswitch = options.value.vswitchOptions.find((item) => item.raw?.IsDefault) || options.value.vswitchOptions[0];
+  const nextVswitchIds = defaultVswitch?.value ? [defaultVswitch.value] : [];
+
+  state.value.vswitchIds = nextVswitchIds;
+  updateVswitchIds(nextVswitchIds);
+}
+
+async function fetchVSwitch(vpcId, { initDefault = false } = {}) {
   state.value.vswitchLoading = true;
+
   try {
     const resourceGroupId = ackConfig.value.resourceGroupId;
     const regionId = ackConfig.value.regionId;
     const externalParams = {
       regionId,
-      vpcId
+      vpcId,
     };
 
-    if (!!resourceGroupId && resourceGroupId !== '') {
+    if (resourceGroupId) {
       externalParams.resourceGroupId = resourceGroupId;
     }
+
     const vswitchOptions = await fetchResources({
       resource:          'VSwitch',
       plural:            'VSwitches',
@@ -504,15 +540,21 @@ async function fetchVSwitch(vpcId) {
 
       return {
         ...vswitch,
-        label
+        label,
       };
     });
+
+    if (initDefault && isNewOrUnprovisioned.value) {
+      initVSwitchIds();
+    }
   } catch (err) {
     options.value.vswitchOptions = [];
     state.value.errors = [];
+
     state.value.errors.push(err);
+  } finally {
+    state.value.vswitchLoading = false;
   }
-  state.value.vswitchLoading = false;
 }
 
 async function fetchInstanceType(regionId) {
@@ -557,6 +599,7 @@ async function fetchInstanceType(regionId) {
 }
 
 async function fetchKeyPairs(regionId) {
+  state.value.keyPairLoading = true;
   try {
     const resourceGroupId = ackConfig.value.resourceGroupId;
     const externalParams = { regionId };
@@ -638,12 +681,11 @@ function poolIsValid(pool) {
     !pool.runtime_version ||
     !pool.name ||
     !pool.instance_types?.length ||
-    isNaN(pool.instances_num) ||
-    !pool.platform
+    !pool.platform ||
+    !ACKValidators.nodePoolSizeValid(pool, intl)
   ) {
     return false;
   }
-
   const names = nodePools.value?.map((pool) => pool.name) || [];
 
   return uniqBy(names, (name) => name).length === names.length;
@@ -700,13 +742,40 @@ function changeContainerdVersion(version) {
   }
 }
 
-function updateAutoCreateVpc(value) {
+async function updateAutoCreateVpc(value) {
   state.value.autoCreateVpc = value;
   if (value === 'auto') {
     updateZones(ackConfig.value.zoneIds);
   } else {
-    updateVswitchIds(state.value.vswitchIds);
+    await initVpcFromOptions();
   }
+}
+
+async function initVpcFromOptions() {
+  if (isAutoCreateVpc.value) {
+    return;
+  }
+  const vpcOptions = Array.isArray(options.value.vpcOptions) ? options.value.vpcOptions : [];
+
+  if (vpcOptions.length === 0) {
+    ackConfig.value.vpcId = '';
+    options.value.vswitchOptions = [];
+    state.value.vswitchIds = [];
+    state.value.zones = new Set();
+
+    return;
+  }
+  const currentVpcId = ackConfig.value.vpcId;
+  const exists = vpcOptions.some((item) => item.value === currentVpcId);
+
+  if (currentVpcId && exists) {
+    await handleVpcChange(currentVpcId, { force: true });
+
+    return;
+  }
+  const defaultVpc = vpcOptions.find((item) => item.raw?.IsDefault) || vpcOptions[0];
+
+  await handleVpcChange(defaultVpc.value, { force: true });
 }
 
 function updateZones(value = []) {
@@ -848,6 +917,113 @@ function updatePrivateRegistryURL(value) {
   }
 }
 
+async function fetchRegionResources(regionId) {
+  await Promise.all([
+    fetchZones(regionId),
+    fetchKubernetesMetadata(regionId),
+    fetchVpc(regionId),
+    fetchInstanceType(regionId),
+    fetchKeyPairs(regionId),
+  ]);
+}
+
+async function handleRegionChange(value) {
+  if (ackConfig.value.regionId === value) {
+    return;
+  }
+
+  ackConfig.value.regionId = value;
+  state.value.errors = [];
+
+  const credential = ackConfig.value.aliyun_credential_secret;
+
+  if (!credential || isImport.value) {
+    return;
+  }
+
+  if (isNewOrUnprovisioned.value) {
+    resetConfig();
+  }
+
+  try {
+    await fetchRegionResources(value);
+  } catch (err) {
+    if (state.value.errors.length === 0) {
+      state.value.errors.push(err);
+    }
+  }
+}
+
+async function handleResourceGroupChange(value) {
+  if (ackConfig.value.resourceGroupId === value) {
+    return;
+  }
+
+  ackConfig.value.resourceGroupId = value;
+  state.value.errors = [];
+
+  const credential = ackConfig.value.aliyun_credential_secret;
+  const regionId = ackConfig.value.regionId;
+
+  if (!credential || isImport.value || !regionId) {
+    return;
+  }
+
+  if (isNewOrUnprovisioned.value) {
+    resetConfig();
+  }
+
+  try {
+    await fetchRegionResources(regionId);
+  } catch (err) {
+    if (state.value.errors.length === 0) {
+      state.value.errors.push(err);
+    }
+  }
+}
+
+function handleAckCNIChange(newAckCNI) {
+  const oldAckCNI = state.value.ackCNI;
+
+  state.value.ackCNI = newAckCNI;
+  state.value.isFlannel = newAckCNI === 'flannel';
+
+  if (oldAckCNI === newAckCNI) {
+    return;
+  }
+
+  if (state.value.isFlannel) {
+    ensureContainerCidrNotOverlapVpcOrService();
+  }
+
+  state.value.vswitchIds = [];
+
+  if (newAckCNI) {
+    ackConfig.value.addons = [{ name: newAckCNI, config: '' }];
+  }
+}
+
+async function handleVpcChange(vpcId, { force = false } = {}) {
+  // 防止 initVpcFromOptions vpcoptions 第一个值就是默认值事需要强制更新
+  if (!force && ackConfig.value.vpcId === vpcId) {
+    return;
+  }
+  ackConfig.value.vpcId = vpcId;
+  state.value.errors = [];
+  if (!isNewOrUnprovisioned.value) {
+    return;
+  }
+  state.value.zones = new Set();
+  ensureServiceCidrNotOverlapVpc();
+  ensureContainerCidrNotOverlapVpcOrService();
+  if (!vpcId || isAutoCreateVpc.value) {
+    options.value.vswitchOptions = [];
+
+    return;
+  }
+  await fetchVSwitch(vpcId, { initDefault: true });
+}
+
 const isImport = ref(route.query.mode === _IMPORT);
 const hasCredential = computed(() => {
   return !!ackConfig.value?.aliyun_credential_secret;
@@ -879,46 +1055,133 @@ const kubernetesSupport = computed(() => {
   };
 });
 
-const fvExtraRules = computed(() => {
-  let out = {};
+const allImagesForVersion = computed(() => {
+  const imagesForVersion = options.value.k8sAllImages?.[ackConfig.value?.kubernetesVersion] || [];
+  const result = {};
 
-  if (hasCredential.value) {
-    const commonRules = {
-      nameRequired:     ACKValidators.nameRequired(normanCluster, intl),
-      regionIdRequired: ACKValidators.regionIdRequired(ackConfig, intl),
+  imagesForVersion.forEach((image) => {
+    result[image.image_type] = {
+      imageType: image.image_type,
+      imageId:   image.image_id,
+      label:     image.image_name,
     };
+  });
 
-    const isImportMode = isImport.value || ackConfig.value.imported;
+  return result;
+});
 
-    const nonImportRules = !isImportMode ? {
-      vpcIdRequired:              !isAutoCreateVpc.value ? ACKValidators.vpcIdRequired(ackConfig, intl) : undefined,
-      vswitchIdsRequired:         !isAutoCreateVpc.value ? ACKValidators.vswitchIdsRequired(state, intl) : undefined,
-      serviceCidrRequired:        ACKValidators.serviceCidrRequired(ackConfig, intl),
-      podCidrRequired:            ACKValidators.podCidrRequired(ackConfig, intl, state),
-      validatePodCidr:            ACKValidators.validatePodCidr(ackConfig, intl, state),
-      validateServiceCidr:        ACKValidators.validateServiceCidr(ackConfig, intl),
-      nodePoolNameRequired:       ACKValidators.nodePoolNameRequired(nodePools, intl),
-      nodePoolNamesUnique:        ACKValidators.nodePoolNamesUnique(nodePools, intl),
-      runtimeVersionRequired:     ACKValidators.runtimeVersionRequired(nodePools, intl),
-      instanceTypesRequired:      ACKValidators.instanceTypesRequired(nodePools, intl),
-      instancesNumRequired:       ACKValidators.instancesNumRequired(nodePools, intl),
-      systemDiskCategoryRequired: ACKValidators.systemDiskCategoryRequired(nodePools, intl),
-      diskSizeRequired:           ACKValidators.diskSizeRequired(nodePools, intl),
-      dataDiskSizeRequired:       ACKValidators.dataDiskSizeRequired(nodePools, intl),
-      platformRequired:           ACKValidators.platformRequired(nodePools, intl),
-      // keyPairRequired:            ACKValidators.keyPairRequired(nodePools, intl),
-    } : {};
+const ruleSets = computed(() => {
+  if (!hasCredential.value) {
+    return {};
+  }
+  const isImportMode = isImport.value || ackConfig.value.imported;
+  const commonRules = {
+    name: [
+      ACKValidators.nameRequired(normanCluster, intl),
+    ],
+    regionId: [
+      ACKValidators.regionIdRequired(ackConfig, intl),
+    ],
+  };
+  const nonImportRules = !isImportMode ? {
+    vpcId: !isAutoCreateVpc.value ? [
+      ACKValidators.vpcIdRequired(ackConfig, intl),
+    ] : [],
+    vswitchIds: !isAutoCreateVpc.value ? [
+      ACKValidators.vswitchIdsRequired(state, intl),
+    ] : [],
+    serviceCidr: [
+      ACKValidators.serviceCidrRequired(ackConfig, intl),
+      ACKValidators.validateServiceCidr(ackConfig, intl),
+    ],
+    containerCidr: [
+      ACKValidators.podCidrRequired(ackConfig, intl, state),
+      ACKValidators.validatePodCidr(ackConfig, intl, state),
+    ],
+    nodePoolName: [
+      ACKValidators.nodePoolNameRequired(nodePools, intl),
+      ACKValidators.nodePoolNamesUnique(nodePools, intl),
+    ],
+    runtimeVersion: [
+      ACKValidators.runtimeVersionRequired(nodePools, intl),
+    ],
+    instanceTypes: [
+      ACKValidators.instanceTypesRequired(nodePools, intl),
+    ],
+    instancesNum: [
+      ACKValidators.instancesNumRequired(nodePools, intl),
+    ],
+    minInstances: [
+      ACKValidators.minInstancesRequired(nodePools, intl),
+    ],
+    maxInstances: [
+      ACKValidators.maxInstancesRequired(nodePools, intl),
+    ],
+    systemDiskCategory: [
+      ACKValidators.systemDiskCategoryRequired(nodePools, intl),
+    ],
+    diskSize: [
+      ACKValidators.diskSizeRequired(nodePools, intl),
+    ],
+    dataDiskSize: [
+      ACKValidators.dataDiskSizeRequired(nodePools, intl),
+    ],
+    platform: [
+      ACKValidators.platformRequired(nodePools, intl),
+    ],
+  } : {};
+  const importRules = isImportMode ? {
+    clusterId: [
+      ACKValidators.clusterIdRequired(ackConfig, intl),
+    ],
+  } : {};
 
-    const importRules = isImportMode ? { clusterIdRequired: ACKValidators.clusterIdRequired(ackConfig, intl) } : {};
+  return {
+    ...commonRules,
+    ...nonImportRules,
+    ...importRules,
+  };
+});
 
-    out = {
-      ...commonRules,
-      ...nonImportRules,
-      ...importRules,
-    };
+const fvFormIsValid = computed(() => {
+  const rules = ruleSets.value || {};
+  let isValid = true;
+
+  for (const key in rules) {
+    const validators = rules[key] || [];
+
+    if (!validators.length) {
+      continue;
+    }
+    for (const validate of validators) {
+      const result = validate();
+
+      if (result) {
+        isValid = false;
+        break;
+      }
+    }
+    if (!isValid) {
+      break;
+    }
   }
 
-  return out;
+  return isValid;
+});
+
+const validationMessages = computed(() => {
+  const rules = ruleSets.value || {};
+  const messages = Object.keys(rules).map((key) => {
+    const validators = rules[key] || [];
+
+    return validators.map((validate) => {
+      const result = validate();
+
+      return typeof result === 'string' ? result.trim() : result;
+    });
+  });
+
+  return uniq(compact(flatten(messages)));
 });
 
 const clusterActive = computed(() => {
@@ -937,93 +1200,40 @@ const changedHistoryK8sVersion = computed(() => {
   return false;
 });
 
-const {
-  fvFormRuleSets,
-  fvUnreportedValidationErrors,
-  fvFormIsValid,
-  fvGetAndReportPathRules,
-} = useFormValidation({ value: props.value }, store, fvExtraRules);
-
-fvFormRuleSets.value = [
-  {
-    path:  'name',
-    rules: ['nameRequired'],
-  },
-  {
-    path:  'regionId',
-    rules: ['regionIdRequired'],
-  },
-  {
-    path:  'clusterId',
-    rules: ['clusterIdRequired'],
-  },
-  {
-    path:  'vpcId',
-    rules: ['vpcIdRequired'],
-  },
-  {
-    path:  'vswitchIds',
-    rules: ['vswitchIdsRequired'],
-  },
-  {
-    path:  'containerCidr',
-    rules: ['podCidrRequired', 'validatePodCidr'],
-  },
-  {
-    path:  'serviceCidr',
-    rules: ['serviceCidrRequired', 'validateServiceCidr'],
-  },
-  {
-    path:  'nodePoolName',
-    rules: ['nodePoolNameRequired', 'nodePoolNamesUnique']
-  },
-  {
-    path:  'runtimeVersion',
-    rules: ['runtimeVersionRequired']
-  },
-  {
-    path:  'instanceTypes',
-    rules: ['instanceTypesRequired']
-  },
-  {
-    path:  'instancesNum',
-    rules: ['instancesNumRequired']
-  },
-  {
-    path:  'systemDiskCategory',
-    rules: ['systemDiskCategoryRequired']
-  },
-  {
-    path:  'diskSize',
-    rules: ['diskSizeRequired']
-  },
-  {
-    path:  'dataDiskSize',
-    rules: ['dataDiskSizeRequired']
-  },
-  {
-    path:  'platform',
-    rules: ['platformRequired']
-  },
-  // {
-  //   path:  'keyPair',
-  //   rules: ['keyPairRequired']
-  // },
-];
-
 // watch
 watch(() => ackConfig.value.aliyun_credential_secret, async(credential) => {
-  if (credential) {
-    if (isNewOrUnprovisioned.value) {
-      resetConfig();
-    }
-    if (!isImport.value) {
-      await fetchALiyunResource();
+  state.value.errors = [];
+
+  if (!credential) {
+    return;
+  }
+
+  try {
+    const tasks = [];
+
+    if (isImport.value) {
+      tasks.push(fetchImportALiyunResource());
     } else {
-      await fetchImportALiyunResource();
+      tasks.push(fetchALiyunResource());
+
+      if (ackConfig.value.regionId) {
+        tasks.push(
+          fetchZones(ackConfig.value.regionId),
+          fetchKubernetesMetadata(ackConfig.value.regionId),
+          fetchVpc(ackConfig.value.regionId),
+          fetchInstanceType(ackConfig.value.regionId),
+          fetchKeyPairs(ackConfig.value.regionId),
+        );
+      }
+    }
+
+    await Promise.all(tasks);
+  } catch (err) {
+    if (state.value.errors.length === 0) {
+      state.value.errors.push(err);
     }
   }
-});
+}, { immediate: true });
 
 watch(() => state.value.vswitchIds, async(vswitchIds) => {
   if (!state.value.isFlannel) {
@@ -1031,53 +1241,13 @@ watch(() => state.value.vswitchIds, async(vswitchIds) => {
   }
 });
 
-watch(() => [ackConfig.value.regionId, ackConfig.value.aliyun_credential_secret],
-  async([regionId, aliyunCredentialSecret], [prevRegionId, prevSecret]) => {
-    if (regionId === prevRegionId && aliyunCredentialSecret === prevSecret) {
-      return;
-    }
-    state.value.errors = [];
-    if (regionId && aliyunCredentialSecret && !isImport.value) {
-      if (isNewOrUnprovisioned.value) {
-        ackConfig.value.vpcId = '';
-        resetNodePool();
-      }
-      state.value.vpcLoading = true;
-      state.value.keyPairLoading = true;
-      await fetchZones(regionId);
-      await fetchKubernetesMetadata(regionId);
-      await fetchVpc(regionId);
-      await fetchInstanceType(regionId);
-      await fetchKeyPairs(regionId);
-    }
-  }
+watch(
+  () => state.value.ackCNI,
+  (newAckCNI) => {
+    state.value.isFlannel = newAckCNI === 'flannel';
+  },
+  { immediate: true }
 );
-
-watch(() => ackConfig.value.vpcId, async(vpcId) => {
-  if (isNewOrUnprovisioned.value) {
-    state.value.vswitchIds = [];
-  }
-  if (vpcId) {
-    await fetchVSwitch(vpcId);
-  }
-});
-
-watch(() => state.value.ackCNI, (newAckCNI) => {
-  state.value.isFlannel = newAckCNI === 'flannel';
-  if (isNewOrUnprovisioned.value) {
-    if (state.value.isFlannel) {
-      delete ackConfig.value.podVswitchIds;
-    } else {
-      delete ackConfig.value.containerCidr;
-    }
-    state.value.vswitchIds = [];
-    ensureServiceCidrNotOverlapVpc();
-    ensureContainerCidrNotOverlapVpcOrService();
-    if (newAckCNI && ackConfig.value?.addons?.length > 0) {
-      ackConfig.value.addons = [{ name: newAckCNI, config: '' }];
-    }
-  }
-}, { immediate: true });
 
 watch(() => normanCluster.value.name, (name) => {
   if (isNewOrUnprovisioned.value) {
@@ -1101,7 +1271,6 @@ watch(() => normanCluster.value.name, (name) => {
     :mode="mode"
     :can-yaml="false"
     :done-route="doneRoute"
-    :errors="fvUnreportedValidationErrors"
     :validation-passed="fvFormIsValid"
     @error="e=>errors=e"
     @finish="save"
@@ -1132,9 +1301,9 @@ watch(() => normanCluster.value.name, (name) => {
           :regionOptions="options.regionOptions"
           :ackConfig="ackConfig"
           :rules="{
-            name: fvGetAndReportPathRules('name'),
-            regionId: fvGetAndReportPathRules('regionId'),
-            clusterId: fvGetAndReportPathRules('clusterId'),
+            name: ruleSets.name,
+            regionId: ruleSets.regionId,
+            clusterId: ruleSets.clusterId,
           }"
           @errors="e =>state.errors=e"
         />
@@ -1166,7 +1335,7 @@ watch(() => normanCluster.value.name, (name) => {
               :mode="mode"
               label-key="generic.name"
               required
-              :rules="fvGetAndReportPathRules('name')"
+              :rules="ruleSets.name"
               @update:value="setClusterName"
             />
           </div>
@@ -1192,7 +1361,7 @@ watch(() => normanCluster.value.name, (name) => {
               class="col span-4"
             >
               <LabeledSelect
-                v-model:value="ackConfig.resourceGroupId"
+                :value="ackConfig.resourceGroupId"
                 data-testid="cruack-resourceGroup"
                 :mode="mode"
                 :options="options.resourceGroupOptions"
@@ -1201,13 +1370,14 @@ watch(() => normanCluster.value.name, (name) => {
                 :loading="state.regionAndResourceGroupLoading"
                 label-key="ackCn.resourceGroup.label"
                 :disabled="!isNewOrUnprovisioned"
+                @update:value="handleResourceGroupChange"
               />
             </div>
             <div
               class="col span-4"
             >
               <LabeledSelect
-                v-model:value="ackConfig.regionId"
+                :value="ackConfig.regionId"
                 data-testid="cruack-resourceGroup"
                 required
                 :mode="mode"
@@ -1217,7 +1387,8 @@ watch(() => normanCluster.value.name, (name) => {
                 :loading="state.regionAndResourceGroupLoading"
                 label-key="ackCn.region.label"
                 :disabled="!isNewOrUnprovisioned"
-                :rules="fvGetAndReportPathRules('regionId')"
+                :rules="ruleSets.regionId"
+                @update:value="handleRegionChange"
               />
             </div>
             <div
@@ -1272,7 +1443,7 @@ watch(() => normanCluster.value.name, (name) => {
               class="col span-6"
             >
               <LabeledSelect
-                v-model:value="state.ackCNI"
+                :value="state.ackCNI"
                 data-testid="cruack-ackcni"
                 :mode="mode"
                 :options="CONFIG_ENV.ACK_CNI_OPTIONS"
@@ -1280,24 +1451,27 @@ watch(() => normanCluster.value.name, (name) => {
                 option-key="value"
                 label-key="ackCn.cni.label"
                 :disabled="!isNewOrUnprovisioned"
+                @update:value="handleAckCNIChange"
               />
             </div>
             <div
               class="col span-6 desc-info"
             >
               <Icon class="icon-info" />
-              <span
-                v-if="!state.isFlannel"
-                class="type-description"
-              >
-                {{ intl('ackCn.cni.description.terway') }}
-              </span>
-              <span
-                v-else
-                class="type-description"
-              >
-                {{ intl('ackCn.cni.description.flannel') }}
-              </span>
+              <div>
+                <span
+                  v-if="!state.isFlannel"
+                  class="type-description"
+                >
+                  {{ intl('ackCn.cni.description.terway') }}
+                </span>
+                <span
+                  v-else
+                  class="type-description"
+                >
+                  {{ intl('ackCn.cni.description.flannel') }}
+                </span>
+              </div>
             </div>
           </div>
           <div class="row mt-10">
@@ -1332,29 +1506,49 @@ watch(() => normanCluster.value.name, (name) => {
           </div>
           <div class="row mt-10">
             <div class="col span-6">
-              <LabeledInput
-                v-model:value="ackConfig.serviceCidr"
-                :mode="mode"
-                tooltipKey="ackCn.serviceCidr.placeholder"
-                label-key="ackCn.serviceCidr.label"
-                :disabled="!isNewOrUnprovisioned"
-                required
-                :rules="fvGetAndReportPathRules('serviceCidr')"
-              />
+              <div
+                class="cluster-cidr-field"
+                :class="{ 'cluster-cidr-field--loading': state.vpcLoading }"
+              >
+                <LabeledInput
+                  v-model:value="ackConfig.serviceCidr"
+                  :mode="mode"
+                  tooltipKey="ackCn.serviceCidr.placeholder"
+                  label-key="ackCn.serviceCidr.label"
+                  :disabled="!isNewOrUnprovisioned"
+                  required
+                  :rules="ruleSets.serviceCidr"
+                />
+                <div
+                  v-if="state.vpcLoading"
+                  class="cluster-cidr-field__overlay"
+                >
+                  <i class="icon icon-spinner icon-spin icon-lg" />
+                </div>
+              </div>
             </div>
-            <div
-              class="col span-6"
-            >
-              <LabeledInput
+            <div class="col span-6">
+              <div
                 v-if="state.isFlannel"
-                v-model:value="ackConfig.containerCidr"
-                :mode="mode"
-                tooltipKey="ackCn.containerCidr.placeholder"
-                label-key="ackCn.containerCidr.label"
-                :disabled="!isNewOrUnprovisioned"
-                required
-                :rules="fvGetAndReportPathRules('containerCidr')"
-              />
+                class="cluster-cidr-field"
+                :class="{ 'cluster-cidr-field--loading': state.vpcLoading }"
+              >
+                <LabeledInput
+                  v-model:value="ackConfig.containerCidr"
+                  :mode="mode"
+                  tooltipKey="ackCn.containerCidr.placeholder"
+                  label-key="ackCn.containerCidr.label"
+                  :disabled="!isNewOrUnprovisioned"
+                  required
+                  :rules="ruleSets.containerCidr"
+                />
+                <div
+                  v-if="state.vpcLoading"
+                  class="cluster-cidr-field__overlay"
+                >
+                  <i class="icon icon-spinner icon-spin icon-lg" />
+                </div>
+              </div>
             </div>
           </div>
           <div class="row mt-10">
@@ -1401,7 +1595,7 @@ watch(() => normanCluster.value.name, (name) => {
                       :options="options.zoneOptions"
                       :disabled="!isNewOrUnprovisioned"
                       label-key="ackCn.zone.label"
-                      :loading="state.vswitchLoading"
+                      :loading="state.zoneLoading"
                       @update:value="updateZones"
                     />
                   </div>
@@ -1416,7 +1610,7 @@ watch(() => normanCluster.value.name, (name) => {
                         class="col span-8"
                       >
                         <LabeledSelect
-                          v-model:value="ackConfig.vpcId"
+                          :value="ackConfig.vpcId"
                           required
                           data-testid="cruack-vpc"
                           :mode="mode"
@@ -1426,8 +1620,9 @@ watch(() => normanCluster.value.name, (name) => {
                           label-key="ackCn.vpcId.label"
                           :loading="state.vpcLoading"
                           :disabled="!isNewOrUnprovisioned"
-                          :rules="fvGetAndReportPathRules('vpcId')"
+                          :rules="ruleSets.vpcId"
                           :placeholder="intl('ackCn.vpcId.prompt')"
+                          @update:value="handleVpcChange"
                         />
                       </div>
                     </div>
@@ -1439,7 +1634,7 @@ watch(() => normanCluster.value.name, (name) => {
                           :mode="mode"
                           :options="options.vswitchOptions"
                           :disabled="!isNewOrUnprovisioned"
-                          :rules="fvGetAndReportPathRules('vswitchIds')"
+                          :rules="ruleSets.vswitchIds"
                           label-key="ackCn.vswitchId.label"
                           :loading="state.vswitchLoading"
                           @update:value="updateVswitchIds"
@@ -1461,6 +1656,26 @@ watch(() => normanCluster.value.name, (name) => {
                 />
               </div>
             </div>
+          </div>
+        </div>
+        <div class="m-0 mb-10 card-container">
+          <div>
+            <h3 class="title">
+              {{ intl('ackCn.deletionProtection.label') }}
+            </h3>
+          </div>
+          <p class="type-description">
+            {{ intl('ackCn.deletionProtection.help') }}
+          </p>
+          <div class="mt-10">
+            <RadioGroup
+              v-model:value="ackConfig.deletionProtection"
+              name="deletionProtection"
+              :options="[true, false]"
+              :disabled="ackConfig.imported"
+              :labels="options.deletionProtectionOptions"
+              :mode="mode"
+            />
           </div>
         </div>
         <Tabbed
@@ -1499,25 +1714,33 @@ watch(() => normanCluster.value.name, (name) => {
               :disabledInstancesNum="changedHistoryK8sVersion"
               :allInstanceTypeOptions="options.allInstanceTypeOptions"
               :keyPairOptions="options.keyPairOptions"
-              :platformOptions="options.platformOptions"
+              :allImagesForVersion="allImagesForVersion"
               :instanceTypeLoading="state.instanceTypeLoading"
               :keyPairLoading="state.keyPairLoading"
               :zones="state.zones"
               :rules="{
-                name: fvGetAndReportPathRules('nodePoolName'),
-                runtimeVersion: fvGetAndReportPathRules('runtimeVersion'),
-                instanceTypes: fvGetAndReportPathRules('instanceTypes'),
-                instancesNum: fvGetAndReportPathRules('instancesNum'),
-                systemDiskCategory: fvGetAndReportPathRules('systemDiskCategory'),
-                diskSize: fvGetAndReportPathRules('diskSize'),
-                dataDiskSize: fvGetAndReportPathRules('dataDiskSize'),
-                platform: fvGetAndReportPathRules('platform'),
+                name: ruleSets.nodePoolName,
+                runtimeVersion: ruleSets.runtimeVersion,
+                instanceTypes: ruleSets.instanceTypes,
+                instancesNum: ruleSets.instancesNum,
+                count: ruleSets.instancesNum,
+                minInstances: ruleSets.minInstances,
+                maxInstances: ruleSets.maxInstances,
+                systemDiskCategory: ruleSets.systemDiskCategory,
+                diskSize: ruleSets.diskSize,
+                dataDiskSize: ruleSets.dataDiskSize,
+                platform: ruleSets.platform,
               }"
               :mode="mode"
               @errors="e=>state.errors=e"
             />
           </Tab>
         </Tabbed>
+        <FloatingHelpPanel
+          :title="intl('ackCn.fields.help')"
+          :items="validationMessages"
+          :close-label="intl('generic.close')"
+        />
       </div>
       <div>
         <Accordion
@@ -1592,6 +1815,11 @@ watch(() => normanCluster.value.name, (name) => {
     margin-bottom: 10px;
   }
   .desc-info {
+    DIV {
+      padding: 5px 0px;
+      max-height: 61px;
+      overflow: auto
+    }
     Icon{
       color: var(--on-tertiary, var(--link));
       margin: 0px 10px;
@@ -1601,5 +1829,29 @@ watch(() => normanCluster.value.name, (name) => {
     display: flex;
     background: linear-gradient(51deg, rgb(111 210 74 / 0.12), rgba(34, 239, 171, 0));
     border-radius: var(--border-radius);
+  }
+  .cluster-cidr-field {
+  position: relative;
+  }
+  .cluster-cidr-field__overlay {
+    position: absolute;
+    inset: 8px 0 0 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 60px;
+    border-radius: var(--border-radius);
+    background: rgba(255, 255, 255, 0.55);
+    cursor: wait;
+  }
+  .cluster-cidr-field--loading {
+    pointer-events: auto;
+  }
+  .cluster-cidr-field__icon {
+    color: var(--error);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
   }
 </style>

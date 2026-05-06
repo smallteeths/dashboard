@@ -78,6 +78,12 @@ export function useCreateEditView(props, context) {
     } else {
       ackConfig.value.zoneIds = [];
     }
+    // 不同网络插件传值不同
+    if (state.value.isFlannel) {
+      delete ackConfig.value.podVswitchIds;
+    } else {
+      delete ackConfig.value.containerCidr;
+    }
     ackConfig.value.node_pool_list = nodePools.value;
     normanCluster.value.ackConfig = formatNodePoolList(ackConfig);
     await normanCluster.value.save();
