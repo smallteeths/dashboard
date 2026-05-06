@@ -1,7 +1,3 @@
-const K8S_1_32_7 = '1.32.7-aliyun.1';
-const K8S_1_33_3 = '1.33.3-aliyun.1';
-const K8S_1_34_3 = '1.34.3-aliyun.1';
-const DEFAULT_KUBERNETES_VERSION = K8S_1_34_3;
 const MANAGED = 'ManagedKubernetes';
 const ACK_CLUSTER_SPEC_STANDARD = 'ack.standard';
 const ACK_CLUSTER_SPEC_PRO = 'ack.pro.small';
@@ -10,7 +6,7 @@ const DEFAULTACKCONFIG = {
   clusterType:          MANAGED,
   clusterSpec:          ACK_CLUSTER_SPEC_STANDARD,
   containerCidr:        '',
-  kubernetesVersion:    DEFAULT_KUBERNETES_VERSION,
+  kubernetesVersion:    '',
   proxyMode:            'ipvs',
   name:                 null,
   displayName:          null,
@@ -22,6 +18,7 @@ const DEFAULTACKCONFIG = {
   osType:               'Linux',
   resourceGroupId:      '',
   podVswitchIds:        [],
+  deletionProtection:   true,
   addons:               [
     {
       name:   'terway-eniip',
@@ -67,7 +64,7 @@ const DISKS = [
 
 const DEFAULT_NODE_GROUP_CONFIG = {
   name:                 'default-nodepool',
-  platform:             'AliyunLinux3',
+  platform:             '',
   system_disk_category: '',
   system_disk_size:     120,
   data_disk:            [
@@ -102,26 +99,6 @@ const CLUSTER_TYPES = [
 
 // Follows ACK supported Kubernetes versions:
 // https://help.aliyun.com/zh/ack/ack-managed-and-ack-dedicated/user-guide/support-for-kubernetes-versions
-const KUBERNETESVERSIONS = [
-  {
-    value:          K8S_1_34_3,
-    label:          K8S_1_34_3,
-    rancherEnabled: true,
-    aliyunEnabled:  true,
-  },
-  {
-    value:          K8S_1_33_3,
-    label:          K8S_1_33_3,
-    rancherEnabled: true,
-    aliyunEnabled:  true,
-  },
-  {
-    value:          K8S_1_32_7,
-    label:          K8S_1_32_7,
-    rancherEnabled: true,
-    aliyunEnabled:  true,
-  },
-];
 
 const ACK_CLUSTER_SPEC_OPTIONS = [
   {
@@ -286,8 +263,6 @@ export default {
   DEFAULTACKCONFIG,
   DEFAULT_NODE_GROUP_CONFIG,
   CLUSTER_TYPES,
-  KUBERNETESVERSIONS,
-  DEFAULT_KUBERNETES_VERSION,
   ACK_CLUSTER_SPEC_OPTIONS,
   ACK_CNI_OPTIONS,
   MODES,

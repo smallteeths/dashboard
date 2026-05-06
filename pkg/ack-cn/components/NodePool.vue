@@ -20,8 +20,8 @@ const props = defineProps({
     default: ''
   },
   instanceTypes: {
-    type:    String,
-    default: ''
+    type:    Array,
+    default: () => ([]),
   },
   systemDiskCategory: {
     type:    String,
@@ -91,12 +91,12 @@ const props = defineProps({
     type:    Array,
     default: () => ([]),
   },
-  platformOptions: {
-    type:    Array,
-    default: () => ([]),
+  allImagesForVersion: {
+    type:    Object,
+    default: () => ({}),
   },
   zones: {
-    type:    Array,
+    type:    Object,
     default: () => (new Set()),
   },
   isNew: {
@@ -107,12 +107,11 @@ const props = defineProps({
     type:    Boolean,
     default: false,
   },
-  mode: { type: String, default: 'edit' },
+  mode: {
+    type:    String,
+    default: 'edit'
+  },
 });
-const store = useStore();
-const options = ref({ categoryOptions: CONFIG_ENV.DISKS });
-const state = ref({ categoryOptionsloading: false });
-const isDefaultNodePool = ref(false);
 
 const emit = defineEmits([
   'update:name',
@@ -130,11 +129,115 @@ const emit = defineEmits([
   'errors',
 ]);
 
+const store = useStore();
+const options = ref({ categoryOptions: CONFIG_ENV.DISKS });
+const state = ref({
+  categoryOptionsloading: false,
+  forceInitCategoryOnce:  false,
+});
+const isDefaultNodePool = ref(false);
+
 onMounted(() => {
   isDefaultNodePool.value = props.name === 'default-nodepool';
 });
 
-const intl = computed(() => store.getters['i18n/t']);
+const t = computed(() => store.getters['i18n/t']);
+
+const zonesSet = computed(() => {
+  if (props.zones instanceof Set) {
+    return props.zones;
+  }
+
+  return new Set(Array.isArray(props.zones) ? props.zones : []);
+});
+
+const ARM_INSTANCE_FAMILIES = new Set([
+  'g8y',
+  'c8y',
+  'r8y',
+  'g6r',
+  'c6r',
+]);
+
+function getInstanceTypeValues(instanceTypes) {
+  if (Array.isArray(instanceTypes)) {
+    return instanceTypes.map((item) => {
+      if (typeof item === 'string') {
+        return item;
+      }
+
+      return item?.value || item?.InstanceTypeId || item?.instanceTypeId || item?.id || '';
+    }).filter(Boolean);
+  }
+  if (instanceTypes && typeof instanceTypes === 'object') {
+    return Object.values(instanceTypes).map((item) => {
+      if (typeof item === 'string') {
+        return item;
+      }
+
+      return item?.value || item?.InstanceTypeId || item?.instanceTypeId || item?.id || '';
+    }).filter(Boolean);
+  }
+
+  return [];
+}
+
+function getInstanceFamily(instanceType) {
+  const family = String(instanceType || '').replace(/^ecs\./, '').split('.')[0];
+
+  if (family.startsWith('u1-')) {
+    return 'u1';
+  }
+
+  return family;
+}
+
+function getArchByInstanceType(instanceType) {
+  const family = getInstanceFamily(instanceType);
+
+  return ARM_INSTANCE_FAMILIES.has(family) ? 'arm64' : 'amd64';
+}
+
+function getImageArch(image) {
+  const imageType = image?.imageType || '';
+  const imageId = image?.imageId || '';
+  const label = image?.label || '';
+  const text = `${ imageType } ${ imageId } ${ label }`.toLowerCase();
+
+  if (text.includes('arm64') || text.includes('arm edition')) {
+    return 'arm64';
+  }
+
+  return 'amd64';
+}
+
+const instanceArches = computed(() => {
+  const arches = getInstanceTypeValues(props.instanceTypes).map((instanceType) => {
+    return getArchByInstanceType(instanceType);
+  }).filter(Boolean);
+
+  return new Set(arches);
+});
+
+const imageOptions = computed(() => {
+  const arches = instanceArches.value;
+
+  return Object.values(props.allImagesForVersion || {}).filter((image) => {
+    const imageArch = getImageArch(image);
+
+    if (!arches.size) {
+      return true;
+    }
+
+    return arches.has(imageArch);
+  }).map((image) => {
+    return {
+      value: image.imageType,
+      label: image.label || '',
+    };
+  });
+});
+
 const fetchCategoryOptions = async() => {
   state.value.categoryOptionsloading = true;
   options.value.categoryOptions = [];
@@ -169,7 +272,7 @@ const fetchCategoryOptions = async() => {
       const availableZones = res?.AvailableZones?.AvailableZone || [];
 
       availableZones.forEach((zone) => {
-        const zoneAllowed = props.zones.size === 0 || (zone.ZoneId && props.zones.has(zone.ZoneId)) || !props.isNew;
+        const zoneAllowed = zonesSet.value.size === 0 || (zone.ZoneId && zonesSet.value.has(zone.ZoneId)) || !props.isNew;
 
         if (zoneAllowed && zone.Status === CONFIG_ENV.STATUS_AVAILABLE) {
           const availableResources = zone.AvailableResources?.AvailableResource || [];
@@ -208,10 +311,11 @@ const fetchCategoryOptions = async() => {
     const out = [];
 
     for (const type in types) {
-      // 返回的是所有 instance type 中都支持的磁盘类型 也就是 .counter === maxCount
       if (types[type].counter === maxCount) {
         out.push({
-          value: type, label: intl.value( `ackCn.nodePool.diskCategory.options.${ type }`), raw: types[type]
+          value: type,
+          label: t.value(`ackCn.nodePool.diskCategory.options.${ type }`),
+          raw:   types[type]
         });
       }
     }
@@ -225,7 +329,7 @@ const fetchCategoryOptions = async() => {
     });
     options.value.categoryOptions = out;
   } catch (err) {
-    const parsedError = err.error || '';
+    const parsedError = err?.error || err || '';
 
     emit('errors', [parsedError]);
   }
@@ -233,40 +337,106 @@ const fetchCategoryOptions = async() => {
 };
 
 watch(
-  () => props.instanceTypes,
-  async(instanceTypes) => {
-    await fetchCategoryOptions(instanceTypes);
-    // 只有新创建的或者未 provisioned 的 nodepool 才需要初始化 category
-    if (props.isNew || props.isNewOrUnprovisioned) {
-      initCategory();
+  imageOptions,
+  (list) => {
+    if (!(props.isNew || props.isNewOrUnprovisioned)) {
+      return;
+    }
+
+    const firstValue = list?.[0]?.value || '';
+    const exists = list.some((item) => item.value === props.platform);
+
+    if (!list.length) {
+      emit('update:platform', '');
+
+      return;
+    }
+
+    if (!exists) {
+      emit('update:platform', firstValue);
     }
   },
   { immediate: true }
 );
 
-function initCategory() {
-  if (options.value.categoryOptions?.length > 0 && props.instanceTypes?.length > 0) {
-    const first = options.value.categoryOptions?.[0];
+watch(
+  () => props.instanceTypes,
+  async() => {
+    await fetchCategoryOptions();
 
-    if (!first) {
+    if (!(props.isNew || props.isNewOrUnprovisioned)) {
+      state.value.forceInitCategoryOnce = false;
+
       return;
     }
-    const category = first.value;
-    const min = Number(first?.raw?.min ?? 0);
-    const size = Math.max(40, min);
 
+    if (state.value.forceInitCategoryOnce) {
+      state.value.forceInitCategoryOnce = false;
+      initCategory(true);
+
+      return;
+    }
+
+    initCategory(false);
+  },
+  { immediate: true, deep: true }
+);
+
+function initCategory(force = false) {
+  if (!options.value.categoryOptions?.length || !props.instanceTypes?.length) {
+    return;
+  }
+
+  const first = options.value.categoryOptions[0];
+
+  if (!first) {
+    return;
+  }
+  const category = first.value;
+  const min = Number(first?.raw?.min ?? 0);
+  const size = Math.max(40, min);
+
+  if (force || !props.systemDiskCategory) {
     emit('update:systemDiskCategory', category);
     emit('update:systemDiskSize', size);
-    const dataDisks = (props.dataDisks || []).map((disk) => ({
+  }
+  const currentDataDisks = Array.isArray(props.dataDisks) ? props.dataDisks : [];
+  const nextDataDisks = currentDataDisks.map((disk) => {
+    if (!force && disk?.category) {
+      return disk;
+    }
+
+    return {
       ...disk,
       category,
-      size: 0,
-    }));
+    };
+  });
 
-    emit('update:dataDisks', dataDisks);
+  const changed = force || nextDataDisks.some((disk, index) => {
+    return disk.category !== currentDataDisks[index]?.category;
+  });
+
+  if (changed) {
+    emit('update:dataDisks', nextDataDisks);
   }
 }
 
+function handleInstanceTypesChange(value) {
+  emit('update:instanceTypes', value);
+
+  if (!(props.isNew || props.isNewOrUnprovisioned)) {
+    return;
+  }
+  state.value.forceInitCategoryOnce = true;
+  emit('update:systemDiskCategory', '');
+
+  const nextDataDisks = (props.dataDisks || []).map((disk) => ({
+    ...disk,
+    category: '',
+  }));
+
+  emit('update:dataDisks', nextDataDisks);
+}
 </script>
 <template>
   <div>
@@ -301,21 +471,19 @@ function initCategory() {
         </div>
       </div>
       <div class="row mb-10">
-        <div
-          class="col span-6"
-        >
+        <div class="col span-6">
           <LabeledSelect
             :value="platform"
             data-testid="cruack-platform"
             :mode="mode"
-            :options="platformOptions"
+            :options="imageOptions"
             option-label="label"
             option-key="value"
             label-key="ackCn.platform.label"
             :disabled="disabled"
             :rules="rules.platform"
             required
-            @update:value="$emit('update:platform', $event)"
+            @update:value="emit('update:platform', $event)"
           />
         </div>
         <div class="col span-6">
@@ -329,8 +497,8 @@ function initCategory() {
             label-key="ackCn.keyPair.label"
             :loading="keyPairLoading"
             :disabled="disabled"
-            :placeholder="intl('ackCn.keyPair.placeholder')"
-            @update:value="$emit('update:keyPair', $event)"
+            :placeholder="t('ackCn.keyPair.placeholder')"
+            @update:value="emit('update:keyPair', $event)"
           />
         </div>
       </div>
@@ -346,10 +514,10 @@ function initCategory() {
         :max-instances="maxInstances"
         :is-inactive="disabledInstancesNum || ackConfig.imported"
         :validation-rules="rules"
-        @update:autoScalingEnabled="$emit('update:autoScalingEnabled', $event)"
-        @update:instancesNum="$emit('update:instancesNum', $event)"
-        @update:minInstances="$emit('update:minInstances', $event)"
-        @update:maxInstances="$emit('update:maxInstances', $event)"
+        @update:autoScalingEnabled="emit('update:autoScalingEnabled', $event)"
+        @update:instancesNum="emit('update:instancesNum', $event)"
+        @update:minInstances="emit('update:minInstances', $event)"
+        @update:maxInstances="emit('update:maxInstances', $event)"
       />
     </div>
     <div class="card-container mb-10">
@@ -363,7 +531,7 @@ function initCategory() {
         :loadingInstanceTypes="instanceTypeLoading"
         :disabled="disabled"
         :zones="zones"
-        @update:value="$emit('update:instanceTypes', $event)"
+        @update:value="handleInstanceTypesChange"
       />
       <p class="mb-10">
         {{ t('ackCn.nodePool.systemDisk.title') }}
@@ -377,8 +545,8 @@ function initCategory() {
         :options="options.categoryOptions"
         :loading="state.categoryOptionsloading"
         class="mb-10"
-        @update:category="$emit('update:systemDiskCategory', $event)"
-        @update:size="$emit('update:systemDiskSize', $event)"
+        @update:category="emit('update:systemDiskCategory', $event)"
+        @update:size="emit('update:systemDiskSize', $event)"
       />
       <p class="mb-10">
         {{ t('ackCn.nodePool.dataDisks.title') }}
@@ -389,41 +557,41 @@ function initCategory() {
         :disabled="disabled"
         :options="options.categoryOptions"
         :loading="state.categoryOptionsloading"
-        @update:value="$emit('update:dataDisks', $event)"
+        @update:value="emit('update:dataDisks', $event)"
       />
     </div>
   </div>
 </template>
+
 <style lang='scss' scoped>
- .card-container {
-    &.highlight-border {
-      border-left: 5px solid var(--primary);
-    }
-    border-radius: var(--border-radius);
-    flex-basis: 40%;
-    min-height: 100px;
-    padding: 10px;
-    box-shadow: 0 0 20px var(--shadow);
- }
- .type-description {
+.card-container {
+  &.highlight-border {
+    border-left: 5px solid var(--primary);
+  }
+  border-radius: var(--border-radius);
+  flex-basis: 40%;
+  min-height: 100px;
+  padding: 10px;
+  box-shadow: 0 0 20px var(--shadow);
+}
+.type-description {
   color: var(--input-label);
- }
- .title {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 700;
-    color: #1f2937;
-    margin-bottom: 10px;
+}
+.title {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2937;
+}
+.desc-info {
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  background: linear-gradient(51deg, rgb(111 210 74 / 0.12), rgba(34, 239, 171, 0));
+  border-radius: var(--border-radius);
+  Icon {
+    color: var(--on-tertiary, var(--link));
+    margin: 0 10px;
   }
-  .desc-info {
-    Icon{
-      color: var(--on-tertiary, var(--link));
-      margin: 0px 10px;
-    }
-    justify-content: center;
-    align-items: center;
-    display: flex;
-    background: linear-gradient(51deg, rgb(111 210 74 / 0.12), rgba(34, 239, 171, 0));
-    border-radius: var(--border-radius);
-  }
+}
 </style>

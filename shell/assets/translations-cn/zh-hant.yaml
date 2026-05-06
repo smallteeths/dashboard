@@ -1218,6 +1218,14 @@ cluster:
         removeConfirm: 确定要移除删除保护吗？
         removeSuccess: 删除保护已移除
         removeFailed: 移除删除保护失败
+    ack:
+      deletionProtection:
+        cluster: "此集群，{name} 已启用删除保护，无法删除。禁用删除保护并重试。"
+        removeAction: 移除 ACK 删除保护
+        targetCluster: "目标集群：{name}"
+        removeConfirm: 确定要移除删除保护吗？
+        removeSuccess: 删除保护已移除
+        removeFailed: 移除删除保护失败
   copyConfig: 將 KubeConfig 複製到剪切板
   copiedConfig: 已將 KubeConfig 複製到剪切板
   custom:

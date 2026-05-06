@@ -113,6 +113,12 @@ ackCn:
     unique: 节点池名称重复
   nodePool:
     name: 基本配置
+    validation:
+      number: "{key} 必须是数字。"
+      integer: "{key} 必须是整数。"
+      min: "{key} 必须大于或等于 {min}。"
+      minLessThanOrEqualMax: "{key} 必须小于或等于 {max}。"
+      maxGreaterThanOrEqualMin: "{key} 必须大于或等于 {min}。"
     scalingMode:
       label: 缩放模式
       manual: 手动
@@ -220,4 +226,9 @@ ackCn:
     placeholder: '请选择'
   clusterBasicInfo:
     title: 集群基础信息
+  fields:
+    help: 请填写以下必填配置项
+  deletionProtection:
+    label: 集群删除保护
+    help: "开启后，集群将被保护，防止被删除。"
     

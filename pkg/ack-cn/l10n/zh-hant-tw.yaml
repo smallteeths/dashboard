@@ -113,6 +113,12 @@ ackCn:
     unique: 节節點池名稱重复
   nodePool:
     name: 基本配置
+    validation:
+      number: "{key} 必須是數字。"
+      integer: "{key} 必須是整數。"
+      min: "{key} 必須大於或等於 {min}。"
+      minLessThanOrEqualMax: "{key} 必須小於或等於 {max}。"
+      maxGreaterThanOrEqualMin: "{key} 必須大於或等於 {min}。"
     scalingMode:
       label: 縮放模式
       manual: 手動
@@ -224,3 +230,8 @@ ackCn:
     placeholder: '請選擇'
   clusterBasicInfo:
     title: 叢集基本資訊
+  fields:
+    help: 請填寫以下必填配置項
+  deletionProtection:
+    label: 叢集刪除保護
+    help: "開啟後，�集將被保護，防止被刪除。"
