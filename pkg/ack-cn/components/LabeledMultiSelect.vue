@@ -4,6 +4,7 @@
     :class="{ 'labeled-multi-select-focused': isOpen, disabled: disabled }"
   >
     <div
+      class="select-main"
       :class="{ 'is-open': isOpen }"
       @click="toggleDropdown"
     >
@@ -36,19 +37,30 @@
           >
             {{ props.placeholder }}
           </span>
-          <span
+          <v-dropdown
             v-for="item in selectedItems"
             :key="item.value"
-            class="selected-item"
+            theme="selected-item-tooltip-cn"
+            placement="top"
+            :triggers="['hover', 'focus']"
+            :delay="{ show: 150, hide: 0 }"
           >
-            <span class="item">
-              {{ item.label }}
+            <span class="selected-item">
+              <span class="item">
+                {{ item.label }}
+              </span>
+              <span
+                v-if="!disabled && !loading"
+                class="remove-item"
+                @click.stop="removeItem(item)"
+              >×</span>
             </span>
-            <span
-              class="remove-item"
-              @click.stop="removeItem(item)"
-            >×</span>
-          </span>
+            <template #popper>
+              <div class="selected-item-tooltip">
+                {{ item.label }}
+              </div>
+            </template>
+          </v-dropdown>
         </div>
         <div class="multiple-input-actions">
           <span
@@ -66,10 +78,13 @@
         v-if="!!validationMessage"
         :value="validationMessage"
       />
-      <i
+      <div
         v-if="loading"
-        class="icon icon-spinner icon-spin icon-lg"
-      />
+        class="loading-mask"
+        @click.stop
+      >
+        <i class="icon icon-spinner icon-spin icon-lg" />
+      </div>
     </div>
     <div
       v-if="isOpen"
@@ -116,7 +131,6 @@ const props = defineProps({
   rules: {
     default:   () => [],
     type:      Array,
-    // we only want functions in the rules array
     validator: (rules) => rules.every((rule) => ['function'].includes(typeof rule))
   },
   value: {
@@ -156,16 +170,30 @@ const props = defineProps({
 const emit = defineEmits(['update:value']);
 const store = useStore();
 const intl = computed(() => store.getters['i18n/t']);
-
 const isOpen = ref(false);
-
 const state = ref({
   raised:  props.mode === _VIEW || !!`${ props.value }`,
   focused: false,
   blurred: null,
 });
+
 const selectedItems = computed(() => {
-  return props.options.filter((option) => props.value.includes(option.value));
+  const options = Array.isArray(props.options) ? props.options : [];
+  const values = Array.isArray(props.value) ? props.value : [];
+
+  return values.map((value) => {
+    const option = options.find((item) => item.value === value);
+
+    if (option) {
+      return option;
+    }
+
+    return {
+      value,
+      label:   value,
+      missing: true,
+    };
+  });
 });
 
 const hasLabel = computed(() => {
@@ -173,7 +201,6 @@ const hasLabel = computed(() => {
 });
 
 const requiredField = computed(() => {
-  // using "any" for a type on "rule" here is dirty but the use of the optional chaining operator makes it safe for what we're doing here.
   return (props.required || props.rules.some((rule) => rule?.name === 'required'));
 });
 
@@ -199,13 +226,13 @@ const validationMessage = computed(() => {
 
   if (ruleMessages.length > 0 && (state.value.blurred || state.value.focused)) {
     return ruleMessages.join(', ');
-  } else {
-    return undefined;
   }
+
+  return undefined;
 });
 
 const onFocusLabeled = () => {
-  if (props.disabled) {
+  if (props.disabled || props.loading) {
     return;
   }
   state.value.focused = true;
@@ -213,7 +240,7 @@ const onFocusLabeled = () => {
 };
 
 const onBlurLabeled = () => {
-  if (props.disabled) {
+  if (props.disabled || props.loading) {
     return;
   }
   state.value.focused = false;
@@ -221,7 +248,7 @@ const onBlurLabeled = () => {
 };
 
 const toggleDropdown = () => {
-  if (props.disabled) {
+  if (props.disabled || props.loading) {
     return;
   }
   isOpen.value = !isOpen.value;
@@ -232,12 +259,18 @@ const isSelected = (option) => {
 };
 
 const toggleOption = (option) => {
+  if (props.disabled || props.loading) {
+    return;
+  }
   const newValue = isSelected(option) ? _.without(props.value, option.value) : _.union(props.value, [option.value]);
 
   emit('update:value', newValue);
 };
 
 const removeItem = (item) => {
+  if (props.disabled || props.loading) {
+    return;
+  }
   const newValue = _.without(props.value, item.value);
 
   emit('update:value', newValue);
@@ -268,8 +301,6 @@ onUnmounted(() => {
 }
 .labeled-multi-select {
   position: relative;
-  padding-bottom: 1px;
-  position: relative;
   box-sizing: border-box;
   width: 100%;
   padding-bottom: 2px;
@@ -277,7 +308,6 @@ onUnmounted(() => {
   border-radius: var(--border-radius);
   border: solid var(--border-width) var(--input-border);
   color: var(--input-text);
-
   &.no-label.compact-input {
     :deep() .vs__actions:after {
       top: -2px;
@@ -286,7 +316,6 @@ onUnmounted(() => {
       padding: 5px 0 1px 10px;
     }
   }
-
   &.no-label:not(.compact-input) {
     height: $input-height;
     padding-top: 4px;
@@ -294,13 +323,23 @@ onUnmounted(() => {
       top: 0;
     }
   }
-
-  .icon-spinner {
-    position: absolute;
-    left: calc(50% - .5em);
-    top: calc(50% - .5em);
+  .select-main {
+    position: relative;
   }
-
+  .loading-mask {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.45);
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: not-allowed;
+    border-radius: inherit;
+  }
+  .icon-spinner {
+    font-size: 18px;
+  }
   .labeled-container {
     padding: $input-padding-sm 0 0 $input-padding-sm;
     label {
@@ -310,15 +349,12 @@ onUnmounted(() => {
       background-color: transparent;
     }
   }
-
   .required {
     color: var(--error);
   }
-
   .multiple-input {
     display: flex;
     background-color: transparent;
-    padding: 0px 0px 5px;
     .multiple-input-options {
       display: flex;
       flex-basis: 100%;
@@ -327,7 +363,7 @@ onUnmounted(() => {
       padding: 0;
       position: relative;
       overflow: auto;
-      max-height: 80px;
+      height: 30px;
       background-color: transparent;
     }
     .multiple-input-actions {
@@ -341,34 +377,31 @@ onUnmounted(() => {
       background-color: transparent;
     }
   }
-
   .hidden-input {
     width: 0;
     height: 0;
     opacity: 0;
     position: absolute;
-    pointer-events: none; /* Prevent direct interaction with the input */
+    pointer-events: none;
   }
-
   .selected-item {
-    background: rgb(66 150 35 / 80%);
-    color: #fff;
-    padding: 2px 6px;
+    background: var(--dropdown-hover-bg);
+    padding: 2px 4px;
     border-radius: 2px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 2px;
-    max-width: 200px;
+    max-width: 150px;
     text-overflow: ellipsis;
     white-space: nowrap;
     margin-left: 4px;
     margin-top: 4px;
     height: 25px;
-
+    cursor: pointer;
     .item {
       display: block;
-      max-width: 180px;
+      max-width: 130px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -380,7 +413,6 @@ onUnmounted(() => {
       line-height: 16px;
     }
   }
-
   .dropdown {
     position: absolute;
     top: 100%;
@@ -396,27 +428,50 @@ onUnmounted(() => {
     z-index: 1000;
     padding: 10px 0px 5px;
     width: calc(100% + 2px);
-
     .on-options {
       padding: 10px 10px;
     }
   }
-
   .option {
-    padding: 2px;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 4px;
     padding: 3px 5px;
   }
-
   .option:hover {
-    background: var(--dropdown-hover-bg);
+    background: var(--dropdown-hover-bg) !important;
+    color: var(--input-text);
   }
-
   .selected {
     background: var(--dropdown-active-bg) !important;
+    color: #fff;
   }
+}
+:deep(.v-popper--theme-selected-item-tooltip-cn .v-popper__inner) {
+  position: relative;
+  background: var(--body-bg);
+  color: var(--body-text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  overflow: visible;
+}
+:deep(.v-popper--theme-selected-item-tooltip-cn .v-popper__arrow-container) {
+  content: '';
+  display: block;
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 10px;
+  height: 10px;
+  background: var(--body-bg);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  transform: translateX(-50%) rotate(45deg);
+  box-sizing: border-box;
+  pointer-events: none;
+  z-index: 1;
 }
 </style>

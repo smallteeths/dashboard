@@ -113,6 +113,12 @@ ackCn:
     unique: Node pool names must be unique.
   nodePool:
     name: Basic Configuration
+    validation:
+      number: "{key} must be a number."
+      integer: "{key} must be an integer."
+      min: "{key} must be greater than or equal to {min}."
+      minLessThanOrEqualMax: "{key} must be less than or equal to {max}."
+      maxGreaterThanOrEqualMin: "{key} must be greater than or equal to {min}."
     scalingMode: 
       label: Scaling Mode
       manual: Manual
@@ -225,3 +231,8 @@ ackCn:
     remove: Remove
   clusterBasicInfo:
     title: Cluster Basic Information
+  fields:
+    help: Please complete the following required configuration fields.
+  deletionProtection:
+    label: Deletion Protection
+    help: "Enable deletion protection to prevent accidental deletion of the cluster."

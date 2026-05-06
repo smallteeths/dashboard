@@ -212,12 +212,22 @@ export default class ProvCluster extends SteveModel {
     }
 
     if (preventDeletionMessage) {
-      all.push({
-        action:  'clearTkeDeletionProtection',
-        label:   this.t('cluster.cloudProvider.tke.deletionProtection.removeAction'),
-        icon:    'icon icon-unlock',
-        enabled: this.canUpdate && !!this.mgmt,
-      });
+      if (this.isTkeCluster()) {
+        all.push({
+          action:  'clearTkeDeletionProtection',
+          label:   this.t('cluster.cloudProvider.tke.deletionProtection.removeAction'),
+          icon:    'icon icon-unlock',
+          enabled: this.canUpdate && !!this.mgmt,
+        });
+      }
+      if (this.isAckCluster()) {
+        all.push({
+          action:  'clearAckDeletionProtection',
+          label:   this.t('cluster.cloudProvider.ack.deletionProtection.removeAction'),
+          icon:    'icon icon-unlock',
+          enabled: this.canUpdate && !!this.mgmt,
+        });
+      }
     }
 
     // If the cluster is a KEV1 cluster or Harvester cluster then prevent edit
@@ -282,6 +292,13 @@ export default class ProvCluster extends SteveModel {
     this.$dispatch('promptModal', {
       resources: [this],
       component: 'ClearTkeDeletionProtectionDialog'
+    });
+  }
+
+  clearAckDeletionProtection() {
+    this.$dispatch('promptModal', {
+      resources: [this],
+      component: 'ClearAckDeletionProtectionDialog'
     });
   }
 
@@ -1043,10 +1060,14 @@ export default class ProvCluster extends SteveModel {
   }
 
   get preventDeletionMessage() {
-    // TKE
+    // TKE || ACK
     try {
       if (this.isTkeCluster()) {
         return this.getTkePreventDeletionMessage();
+      }
+
+      if (this.isAckCluster()) {
+        return this.getAckPreventDeletionMessage();
       }
 
       return null;
@@ -1060,6 +1081,13 @@ export default class ProvCluster extends SteveModel {
     const provisioner = (this.provisioner || '').toUpperCase();
 
     return !!tkeConfig && provisioner === 'TKE';
+  }
+
+  isAckCluster() {
+    const ackConfig = this.mgmt?.spec?.ackConfig;
+    const provisioner = (this.provisioner || '').toUpperCase();
+
+    return !!ackConfig && provisioner === 'ACK';
   }
 
   getTkePreventDeletionMessage() {
@@ -1088,6 +1116,25 @@ export default class ProvCluster extends SteveModel {
 
     if (protectedVirtualNodePool) {
       return this.t('cluster.cloudProvider.tke.deletionProtection.virtualNodePool', { name: protectedVirtualNodePool.name });
+    }
+
+    return null;
+  }
+
+  getAckPreventDeletionMessage() {
+    const mgmtCluster = this.mgmt;
+    const ackConfig = mgmtCluster?.spec?.ackConfig;
+
+    if (!mgmtCluster || !ackConfig) {
+      return null;
+    }
+
+    if (ackConfig?.imported === true) {
+      return null;
+    }
+
+    if (ackConfig?.deletionProtection === true) {
+      return this.t('cluster.cloudProvider.ack.deletionProtection.cluster', { name: mgmtCluster.nameDisplay || mgmtCluster.metadata.name });
     }
 
     return null;
