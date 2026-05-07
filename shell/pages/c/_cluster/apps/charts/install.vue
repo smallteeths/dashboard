@@ -383,7 +383,7 @@ export default {
     /* Look for annotation to say this app is a legacy migrated app (we look in either place for now) */
     this.migratedApp = (this.existing?.spec?.chart?.metadata?.annotations?.[CATALOG_ANNOTATIONS.MIGRATED] === 'true');
 
-    if (this.repo.isSuseAppCollection) {
+    if (this.repo?.isSuseAppCollection) {
       let defaultSelectedSecret = await this.$store.getters['cluster/byId'](SECRET, `cattle-system/${ this.repo.spec.clientSecret.name }`);
 
       if (!defaultSelectedSecret) {
@@ -827,7 +827,7 @@ export default {
         }
       }
 
-      if (this.repo.isSuseAppCollection) {
+      if (this.repo?.isSuseAppCollection) {
         await this.initializeDataForNamespaceChanges();
       }
     },
@@ -942,7 +942,7 @@ export default {
 
     async initializeDataForNamespaceChanges() {
       // Skip the flow if the data still not fetched, it will trigger after fetching manually
-      if (!this.appCoDataFetched) {
+      if (this.appCoDataFetched) {
         try {
           this.defaultImagePullSecret = await this.$store.dispatch('cluster/find', { type: SECRET, id: `${ this.targetNamespace }/${ this.repo.spec.clientSecret.name }-image-pull-secret` });
         } catch (e) {
@@ -1032,7 +1032,7 @@ export default {
     },
 
     async setImagePullSecretData() {
-      if (this.selectedSecret && this.repo.isSuseAppCollection && this.dontUseDefaultOption !== null) {
+      if (this.selectedSecret && this.repo?.isSuseAppCollection && this.dontUseDefaultOption !== null) {
         if (!this.dontUseDefaultOption && this.defaultImagePullSecret) {
           // If the default option is used and the default secret already exists, use it
           this.selectedImagePullSecret = this.defaultImagePullSecret.name;
@@ -1163,7 +1163,7 @@ export default {
 
         // Create namespace if it doesn't exist (before hooks run)
         // And only if it is SUSE APP Collection, overall should just do the same flow
-        if (!isUpgrade && this.isNamespaceNew && this.repo.isSuseAppCollection) {
+        if (!isUpgrade && this.isNamespaceNew && this.repo?.isSuseAppCollection) {
           await this.createNamespaceIfNeeded();
         }
 
@@ -1359,7 +1359,7 @@ export default {
           ...migratedAnnotations,
           [CATALOG_ANNOTATIONS.SOURCE_REPO_TYPE]: this.chart.repoType,
           [CATALOG_ANNOTATIONS.SOURCE_REPO_NAME]: this.chart.repoName,
-          ...(this.repo.isSuseAppCollection ? { [CATALOG_ANNOTATIONS.SUSE_APP_COLLECTION]: 'true' } : {}),
+          ...(this.repo?.isSuseAppCollection ? { [CATALOG_ANNOTATIONS.SUSE_APP_COLLECTION]: 'true' } : {}),
         },
         values,
       };
@@ -1502,7 +1502,7 @@ export default {
     },
 
     async createImagePullSecret() {
-      if (!this.repo.isSuseAppCollection) {
+      if (!this.repo?.isSuseAppCollection) {
         return;
       }
 
@@ -1660,7 +1660,6 @@ export default {
             </div>
           </div>
           <NameNsDescription
-            v-if="showNameEditor"
             v-model:value="value"
             :description-hidden="true"
             :mode="mode"
@@ -1691,7 +1690,7 @@ export default {
             </template>
           </NameNsDescription>
           <div
-            v-if="repo.isSuseAppCollection"
+            v-if="repo?.isSuseAppCollection"
             class="mb-20"
           >
             <Banner
