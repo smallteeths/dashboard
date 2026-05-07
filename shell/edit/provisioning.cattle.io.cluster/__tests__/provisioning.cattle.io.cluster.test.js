@@ -1,5 +1,5 @@
 import Index from '@shell/edit/provisioning.cattle.io.cluster/index.vue';
-jest.mock('@shell/edit/provisioning.cattle.io.cluster/shared', () => {});
+jest.mock('@shell/edit/provisioning.cattle.io.cluster/shared', () => ({ INGRESS_NONE: 'none' }));
 
 describe('computed: groupedSubTypes', () => {
   const testCases = [
