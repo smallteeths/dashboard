@@ -1215,7 +1215,7 @@ catalog:
       label: Add new
     appChartCard:
       footerItem:
-        ariaLabel: Apply filter
+        ariaLabel: Apply {filter} filter
       subHeaderItem:
         missingVersionDate: Last updated date is not available for this chart
     refreshButton:
@@ -2422,6 +2422,7 @@ cluster:
     cloudProviderUnsupportedAzure: On Kubernetes 1.30 or greater, the <b>Azure</b> Cloud Provider has been removed. See <a href="https://ranchermanager.docs.rancher.com/how-to-guides/new-user-guides/kubernetes-clusters-in-rancher-setup/set-up-cloud-providers/azure" target="_blank" rel="noopener noreferrer nofollow">the documentation</a> for more information.
     rke1DeprecationMessage: Rancher Kubernetes Engine (RKE / RKE1) has reached end of life and these clusters are no longer supported. We recommend replatforming RKE1 clusters to RKE2 to ensure continued support and security updates. Learn more about the transition <a href="https://www.suse.com/support/kb/doc/?id=000021518" target="_blank" rel="noopener noreferrer nofollow">here</a>.
     rke1DeprecationShortMessage: Rancher Kubernetes Engine (RKE / RKE1) will reach end of life on July 31, 2025. Rancher 2.12.0 and later will no longer support provisioning or managing downstream RKE1 clusters.
+    nginxDeprecated: The NGINX controller is deprecated and will be removed in upcoming versions
   rkeTemplateUpgrade: Template revision {name} available for upgrade
   detail:
     provisioner: Provisioner
@@ -2895,6 +2896,48 @@ cluster:
     expiring: Cloud Credential will expire on { expires }, please Renew Cloud Credentials
     renew: Renew Cloud Credentials
   rke1Unsupported: RKE1 Clusters are no longer supported
+  ingress:
+    banners:
+      disabled:
+        label: Without an Ingress controller, services in this cluster will not be reachable via external URLs or hostnames. You will need to manually configure an alternative routing solution to expose your workloads.
+      selected:
+        dual:
+          label: Please review our <docsUrl>migration documentation</docsUrl> to ensure your current workloads and annotations are compatible. Taking this step now helps prevent unexpected routing issues during the transition.
+        ingress-nginx:
+          label: Ingress-NGINX is now deprecated and will be removed in a future release. To avoid service interruptions, please begin migrating your Ingress resources to Traefik. Please review our <docsUrl>migration documentation</docsUrl>.
+        traefik:
+          label: Before switching to Traefik, please review our <docsUrl>migration documentation</docsUrl> to ensure your Ingress resources are updated to support Traefik’s configuration requirements.
+      transitioning:
+        label: Rancher is transitioning to Traefik as the default provider. While Ingress-NGINX remains available for migration purposes, we recommend moving workloads to Traefik to ensure long-term compatibility and support.
+    configurationOptions:
+      compatibilityMode: Enable Traefik Ingress NGINX compatibility mode for annotations
+      nginx:
+        http: Ingress-NGINX HTTP
+        https: Ingress-NGINX HTTPS
+      title: Configuration Options
+      traefik:
+        http: Traefik HTTP
+        https: Traefik HTTPS
+    dual:
+      content: Use this to safely test and migrate traffic from Ingress-NGINX to Traefik.
+      header: Dual Mode
+    enableIngress: Install Ingress controller to enable external routing
+    hideAdvanced: Hide advanced configuration
+    learnMore:
+      label: Learn more
+    legacy: Legacy
+    migration: Migration
+    nginx:
+      content: Choose this only if your workloads are not yet ready for Traefik.
+      header: Ingress-NGINX
+    recommended: Recommended
+    showAdvanced: Show advanced configuration
+    title: Ingress
+    traefik:
+      content: The new default provider for high-performance routing and modern feature support.
+      header: Traefik
+    validation:
+      portsMatch: Traefik and Ingress-NGINX ports cannot match
 clusterIndexPage:
   hardwareResourceGauge:
     consumption: "{useful} of {total} {units} {suffix}"
@@ -10192,6 +10235,8 @@ graph:
 itemCard:
   ariaLabel:
     clickable: Click on card for {cardTitle}
+  actionMenu:
+    label: '{cardTitle} actions'
 layouts:
   blank: blank layout
   default: default layout
