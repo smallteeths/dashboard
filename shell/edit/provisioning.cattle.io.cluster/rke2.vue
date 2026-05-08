@@ -67,8 +67,11 @@ import ClusterAppearance from '@shell/components/form/ClusterAppearance';
 import CustomContainerdConfig from './CustomContainerdConfig.vue';
 import AddOnAdditionalManifest from '@shell/edit/provisioning.cattle.io.cluster/tabs/AddOnAdditionalManifest';
 import VsphereUtils, { VMWARE_VSPHERE } from '@shell/utils/v-sphere';
+import {
+  HARVESTER, RKE2_INGRESS_NGINX, INGRESS_CONTROLLER, INGRESS_NGINX, TRAEFIK, INGRESS_NONE
+} from '@shell/edit/provisioning.cattle.io.cluster/shared';
 import { mapGetters } from 'vuex';
-const HARVESTER = 'harvester';
+
 const GOOGLE = 'google';
 const HARVESTER_CLOUD_PROVIDER = 'harvester-cloud-provider';
 const NETBIOS_TRUNCATION_LENGTH = 15;
@@ -171,9 +174,8 @@ export default {
     Object.entries(this.chartValues).forEach(([name, value]) => {
       const key = this.chartVersionKey(name);
 
-      this.userChartValues[key] = value;
+      this.set(this.userChartValues, key, value);
     });
-
     this.setAgentConfiguration();
   },
 
@@ -292,11 +294,16 @@ export default {
       addonConfigDiffs:                         {},
       originalKubeVersion:                      null,
       isEmpty,
+      basicsValid:                              true,
+      originalIngressController:                this.value.spec.rkeConfig.machineGlobalConfig?.[INGRESS_CONTROLLER] || INGRESS_NONE,
     };
   },
 
   computed: {
     ...mapGetters({ features: 'features/get' }),
+    isK3s() {
+      return this.value?.isK3s;
+    },
 
     isActiveTabRegistries() {
       return this.activeTab?.selectedName === REGISTRIES_TAB_NAME;
@@ -894,9 +901,16 @@ export default {
     overallFormValidationPassed() {
       return this.validationPassed &&
             this.fvFormIsValid &&
-            this.etcdConfigValid;
+            this.etcdConfigValid &&
+            this.basicsValid;
     },
+    nginxSupported() {
+      if (this.serverArgs?.disable?.options.includes(RKE2_INGRESS_NGINX)) {
+        return true;
+      }
 
+      return false;
+    },
   },
 
   watch: {
@@ -962,7 +976,6 @@ export default {
       }
 
       this.versionInfo = {}; // Invalidate cache such that version info relevant to selected kube version is updated
-
       // Allow time for addonNames to update... then fetch any missing addons
       this.$nextTick(() => this.initAddons());
       if (this.mode === _CREATE) {
@@ -993,7 +1006,6 @@ export default {
         this.agentConfig['cloud-provider-name'] = undefined;
       }
     },
-
     hasSomeIpv6Pools(neu) {
       if (this.isCreate && this.localValue.spec.rkeConfig.networking.stackPreference !== STACK_PREFS.IPV6) { // if stack pref is ipv6, the user has manually configured that and we shouldn't change it
         if (neu) {
@@ -1004,7 +1016,7 @@ export default {
 
         this.localValue.spec.rkeConfig.networking.stackPreference = STACK_PREFS.IPV4;
       }
-    },
+    }
   },
 
   created() {
@@ -1777,25 +1789,10 @@ export default {
       });
     },
 
-    /**
-     * Ensure all chart information required to show addons is available
-     *
-     * This basically means
-     * 1) That the full chart relating to the addon is fetched (which includes core chart, readme and values)
-     * 2) We're ready to cache any values the user provides for each addon
-     */
-    async initAddons() {
-      this.addonConfigValidation = {};
+    async getChartValue(chartName) {
+      const entry = this.chartVersions[chartName];
 
-      for (const chartName of this.addonNames) {
-        const entry = this.chartVersions[chartName];
-
-        // prevent fetching of addon config for 'none' CNI option
-        // https://github.com/rancher/dashboard/issues/10338
-        if (this.versionInfo[chartName] || chartName.includes('none')) {
-          continue;
-        }
-
+      if (entry) {
         try {
           const res = await this.$store.dispatch('catalog/getVersionInfo', {
             repoType:    'cluster',
@@ -1813,6 +1810,28 @@ export default {
         } catch (e) {
           console.error(`Failed to fetch or process chart info for ${ chartName }`); // eslint-disable-line no-console
         }
+      }
+    },
+
+    /**
+     * Ensure all chart information required to show addons is available
+     *
+     * This basically means
+     * 1) That the full chart relating to the addon is fetched (which includes core chart, readme and values)
+     * 2) We're ready to cache any values the user provides for each addon
+     */
+    async initAddons() {
+      this.addonConfigValidation = {};
+      const ingressCharts = !this.isK3s ? ['rke2-ingress-nginx', 'rke2-traefik'] : [];
+
+      for (const chartName of [...this.addonNames, ...ingressCharts]) {
+        // prevent fetching of addon config for 'none' CNI option
+        // https://github.com/rancher/dashboard/issues/10338
+        if (this.versionInfo[chartName] || chartName.includes('none')) {
+          continue;
+        }
+
+        await this.getChartValue(chartName);
       }
     },
 
@@ -1888,6 +1907,7 @@ export default {
       if (!this.serverConfig?.profile) {
         this.serverConfig.profile = null;
       }
+      this.updateNginxConfiguration(this.serverConfig?.disable || []);
     },
 
     chartVersionKey(name) {
@@ -2122,6 +2142,8 @@ export default {
     handleKubernetesChange(value, old) {
       if (value) {
         this.togglePsaDefault();
+        // Need to make sure we explicitly set ingress due to a default change
+        this.updateNginxConfiguration(this.serverConfig?.disable || []);
 
         // If Harvester driver, reset cloud provider if not compatible
         if (this.isHarvesterDriver && this.mode === _CREATE && this.isHarvesterIncompatible) {
@@ -2143,8 +2165,28 @@ export default {
         this.machinePoolValidation[id] = value;
       }
     },
+
+    updateNginxConfiguration(disabledServerConfig) {
+      // We only need to explicitly set INGRESS_CONTROLLER for RKE2, we continue to rely on disable list for K3s
+      if (!this.isK3s) {
+        // For new instances, we want Traefik to be default
+        if (this.isCreate) {
+          this.serverConfig[INGRESS_CONTROLLER] = TRAEFIK;
+        // Older existing instances might be relying on default setting, which is changing from nginx to traefik
+        // so we need to make sure to set it to nginx explicitly to avoid breaking existing clusters
+        } else if (!this.serverConfig[INGRESS_CONTROLLER]) {
+          if (!disabledServerConfig.includes(RKE2_INGRESS_NGINX) && this.nginxSupported) {
+            this.serverConfig[INGRESS_CONTROLLER] = INGRESS_NGINX;
+          } else {
+            this.serverConfig[INGRESS_CONTROLLER] = INGRESS_NONE;
+          }
+        }
+      }
+    },
+
     handleEnabledSystemServicesChanged(val) {
       this.serverConfig.disable = val;
+      this.updateNginxConfiguration(val);
     },
 
     handleCiliumValuesChanged(neu) {
@@ -2263,7 +2305,6 @@ export default {
     handleTabChange(data) {
       this.activeTab = data;
     },
-
   }
 };
 </script>
@@ -2458,10 +2499,10 @@ export default {
             <Basics
               ref="tab-Basics"
               v-model:value="localValue"
-              :live-value="liveValue"
               :mode="mode"
               :provider="provider"
               :user-chart-values="userChartValues"
+              :version-info="versionInfo"
               :credential="credential"
               :compliance-override="complianceOverride"
               :all-psas="allPSAs"
@@ -2479,6 +2520,7 @@ export default {
               :is-azure-provider-unsupported="isAzureProviderUnsupported"
               :can-azure-migrate-on-edit="canAzureMigrateOnEdit"
               :has-some-ipv6-pools="hasSomeIpv6Pools"
+              :original-ingress-controller="originalIngressController"
               @update:value="$emit('input', $event)"
               @cilium-values-changed="handleCiliumValuesChanged"
               @enabled-system-services-changed="handleEnabledSystemServicesChanged"
@@ -2486,6 +2528,10 @@ export default {
               @compliance-changed="handleComplianceChanged"
               @psa-default-changed="handlePsaDefaultChanged"
               @show-deprecated-patch-versions-changed="handleShowDeprecatedPatchVersionsChanged"
+              @update-values="updateValues"
+              @yaml-validation-changed="e => addonConfigValidationChanged(e.name, e.val)"
+              @config-validation-changed="(val)=>basicsValid = val"
+              @error="e=>errors.push(e)"
             />
           </Tab>
 
