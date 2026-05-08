@@ -51,7 +51,7 @@
 <script>
 import Banner from '@components/Banner/Banner.vue';
 import Loading from '@shell/components/Loading';
-import { REPO_TYPE, REPO, CHART } from '@shell/config/query-params';
+import { REPO_TYPE, REPO, CHART, VERSION } from '@shell/config/query-params';
 import { COUNT } from '@shell/config/types';
 import { mapGetters } from 'vuex';
 
@@ -70,6 +70,7 @@ export default {
   data() {
     return {
       apps:        [],
+      localApps:   [],
       clusterSets: []
     };
   },
@@ -79,6 +80,11 @@ export default {
 
     promises.push(this.$store.dispatch('management/request', { url: `/k8s/clusters/${ id === '_' ? 'local' : id }/v1/${ CATALOG_APPS }` }).then((resp) => {
       this.apps = resp.data;
+    }));
+    promises.push(this.$store.dispatch('management/request', { url: `/k8s/clusters/local/v1/${ CATALOG_APPS }` }).then((resp) => {
+      this.localApps = resp.data || [];
+    }).catch(() => {
+      this.localApps = [];
     }));
 
     if ( this.$store.getters['management/canList'](CLUSTER_SET) ) {
@@ -104,6 +110,12 @@ export default {
       // return this.apps.find((app) => app.spec?.chart?.metadata?.name === 'mcs-addon');
       return this.apps.find((app) => app.spec?.chart?.metadata?.name === 'mcs-ext-chart');
     },
+    localMcsApp() {
+      return this.localApps.find((app) => app.spec?.chart?.metadata?.name === 'mcs-ext-chart');
+    },
+    localMcsChartVersion() {
+      return this.localMcsApp?.spec?.chart?.metadata?.version || '';
+    },
     mcsRepoName() {
       const chart = this.charts?.find((chart) => TARGET_CHARS.includes(chart.chartName));
 
@@ -126,17 +138,21 @@ export default {
     },
     chartRoute() {
       const cluster = this.currentCluster?.id ?? 'local';
-      // const chart = this.currentProduct.inStore === 'management' ? 'mcs-addon' : 'mcs-addon-controller';
       const chart = 'mcs-ext-chart';
+      const query = {
+        [REPO_TYPE]: 'cluster',
+        [REPO]:      this.mcsRepoName,
+        [CHART]:     chart,
+      };
+
+      if (this.localMcsChartVersion) {
+        query[VERSION] = this.localMcsChartVersion;
+      }
 
       return {
         name:   'c-cluster-apps-charts-install',
         params: { cluster },
-        query:  {
-          [REPO_TYPE]: 'cluster',
-          [REPO]:      this.mcsRepoName,
-          [CHART]:     chart,
-        },
+        query,
       };
     },
     resourceCounts() {
