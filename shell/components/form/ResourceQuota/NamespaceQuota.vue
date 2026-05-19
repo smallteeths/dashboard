@@ -1,6 +1,6 @@
 <script>
 import Row from './NamespaceQuotaRow';
-
+import { QUOTA_COMPUTED } from './shared';
 const TYPES_WITH_STORAGE_CLASS = ['requestsStorageClassStorage', 'requestsStorageClassPVC'];
 
 export default {
@@ -34,65 +34,54 @@ export default {
       }
     },
   },
-
   data() {
     return { rows: {} };
   },
-
   computed: {
-    mappedTypes() {
-      return this.types
-        .map((type) => ({
-          label:       this.t(type.labelKey),
-          baseUnit:    type.baseUnitKey ? this.t(type.baseUnitKey) : undefined,
-          placeholder: this.t(type.placeholderKey),
-          ...type,
-        }));
-    },
+    ...QUOTA_COMPUTED,
     projectResourceQuotaLimits() {
-      return this.project?.spec?.resourceQuota?.limit || {};
+      return this.flatListFromLimits(this.project?.spec?.resourceQuota?.limit || {});
     },
     namespaceResourceQuotaLimits() {
       return this.project.namespaces.map((namespace) => ({
-        ...namespace.resourceQuota.limit,
+        ...this.flatListFromLimits(namespace.resourceQuota.limit),
         id: namespace.id
       }));
     },
     editableLimits() {
-      return Object.entries(this.projectResourceQuotaLimits).reduce((t, [k, v]) => {
-        if (TYPES_WITH_STORAGE_CLASS.includes(k)) {
-          Object.entries(v).forEach(([sc, q]) => {
-            t.push({
-              type:  k,
+      return Object.entries(this.projectResourceQuotaLimits).reduce((limits, [key, value]) => {
+        if (TYPES_WITH_STORAGE_CLASS.includes(key)) {
+          Object.entries(value || {}).forEach(([sc, limit]) => {
+            limits.push({
+              type: key,
               sc,
-              limit: q,
+              limit,
             });
           });
-        } else {
-          t.push({
-            type:  k,
-            limit: v,
-          });
-        }
 
-        return t;
+          return limits;
+        }
+        limits.push({
+          type:  key,
+          limit: value,
+        });
+
+        return limits;
       }, []);
     },
     defaultResourceQuotaLimits() {
-      return this.project.spec.namespaceDefaultResourceQuota.limit;
+      return this.flatListFromLimits(this.project.spec.namespaceDefaultResourceQuota.limit || {});
     }
   },
-
   methods: {
     remainingTypes(currentType) {
       return this.mappedTypes
         .filter((type) => !this.types.includes(type.value) || type.value === currentType);
     },
     update(key, value, sc) {
+      this.value.resourceQuota = this.value.resourceQuota || { limit: {} };
       if (sc) {
-        // console.log(this.value.resourceQuota.limit[key]);
-        // console.log(key, sc, value);
-        const resourceQuota = {
+        this.value.resourceQuota = {
           limit: {
             ...this.value.resourceQuota.limit,
             [key]: {
@@ -102,18 +91,42 @@ export default {
           }
         };
 
-        this.value.resourceQuota = resourceQuota;
-
         return;
       }
-      const resourceQuota = {
-        limit: {
-          ...this.value.resourceQuota.limit,
-          [key]: value
-        }
-      };
+      this.value.resourceQuota = { limit: this.limitsFromFlatList(key, value) };
+    },
+    flatListFromLimits(limit) {
+      const result = {};
 
-      this.value.resourceQuota = resourceQuota;
+      Object.keys(limit || {}).forEach((key) => {
+        if (key === 'extended') {
+          Object.keys(limit.extended || {}).forEach((extKey) => {
+            result[`extended.${ extKey }`] = limit.extended[extKey];
+          });
+
+          return;
+        }
+        result[key] = limit[key];
+      });
+
+      return result;
+    },
+    limitsFromFlatList(key, value) {
+      const limit = { ...(this.value?.resourceQuota?.limit || {}) };
+
+      if (key.startsWith('extended.')) {
+        const resourceIdentifier = key.slice('extended.'.length);
+
+        limit.extended = {
+          ...(limit.extended || {}),
+          [resourceIdentifier]: value
+        };
+
+        return limit;
+      }
+      limit[key] = value;
+
+      return limit;
     }
   },
 };
@@ -127,7 +140,7 @@ export default {
     </div>
     <Row
       v-for="q in editableLimits"
-      :key="project.id + q.type + (q.sc || '') "
+      :key="project.id + q.type + (q.sc || '')"
       :value="value.resourceQuota"
       :namespace="value"
       :mode="mode"
@@ -144,11 +157,11 @@ export default {
 </template>
 <style lang="scss" scoped>
 .headers {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    column-gap: 10px;
-    align-items: center;
-    border-bottom: 1px solid var(--border);
-    height: 30px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  column-gap: 10px;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  height: 30px;
 }
 </style>

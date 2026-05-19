@@ -284,11 +284,10 @@ export default {
 
 <style scoped lang="scss">
 .quota-project-item-cn {
-  height: 280px;
   width: clamp(566px, 100%, 650px);
   margin: 0;
   display: grid;
-  grid-template-columns: 310px minmax(230px, 1fr);
+  grid-template-columns: 280px minmax(230px, 1fr);
   overflow: hidden;
 
   .quota-project-item-cn-container {
@@ -297,6 +296,8 @@ export default {
     border-right: none;
     display: flex;
     justify-content: center;
+    height: 280px;
+    width: 280px;
   }
   .quota-project-item-cn-table {
     min-width: 230px;

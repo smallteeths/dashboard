@@ -3,6 +3,7 @@ import Select from '@shell/components/form/Select';
 import UnitInput from '@shell/components/form/UnitInput';
 import PercentageBar from '@shell/components/PercentageBar';
 import { formatSi, parseSi } from '@shell/utils/units';
+const EXTENDED = 'extended';
 
 export default {
   components: {
@@ -68,18 +69,27 @@ export default {
     // We want to update the value first so that the value will be rounded to the project limit.
     // This is relevant when switching projects. If the value is 1200 and the project that it was
     // switched to only has capacity for 800 more this will force the value to be set to 800.
-    if (this.value?.limit?.[this.type]) {
+    if (this.limit) {
       this.update(this.limit);
     }
 
-    if (!this.value?.limit?.[this.type]) {
+    if (!this.limit) {
       this.update(this.drqLimts);
     }
   },
 
   computed: {
+    isExtended() {
+      return this.type.startsWith(`${ EXTENDED }.`);
+    },
+    resourceIdentifier() {
+      return this.isExtended ? this.type.slice(`${ EXTENDED }.`.length) : '';
+    },
+    typeValue() {
+      return this.isExtended ? EXTENDED : this.type;
+    },
     typeOption() {
-      return this.types.find((type) => type.value === this.type);
+      return this.types.find((type) => type.value === this.typeValue);
     },
     scOption() {
       return this.storageClasses.map((sc) => ({ label: sc.id, value: sc.id }));
@@ -90,19 +100,19 @@ export default {
     prqLimits() {
       const sc = this.storageClass;
 
-      return this.storageClass ? this.projectResourceQuotaLimits[this.type][sc] : this.projectResourceQuotaLimits[this.type];
+      return sc ? this.projectResourceQuotaLimits[this.type]?.[sc] : this.projectResourceQuotaLimits[this.type];
     },
     drqLimts() {
       const sc = this.storageClass;
 
-      return this.storageClass ? this.defaultResourceQuotaLimits[this.type][sc] : this.defaultResourceQuotaLimits[this.type];
+      return sc ? this.defaultResourceQuotaLimits[this.type]?.[sc] : this.defaultResourceQuotaLimits[this.type];
     },
     siOptions() {
       return {
-        maxExponent: this.typeOption.inputExponent,
-        minExponent: this.typeOption.inputExponent,
-        increment:   this.typeOption.increment,
-        suffix:      this.typeOption.increment === 1024 ? 'i' : ''
+        maxExponent: this.typeOption?.inputExponent,
+        minExponent: this.typeOption?.inputExponent,
+        increment:   this.typeOption?.increment || 1,
+        suffix:      this.typeOption?.increment === 1024 ? 'i' : ''
       };
     },
     namespaceLimits() {
@@ -145,7 +155,14 @@ export default {
     limit() {
       const sc = this.storageClass;
 
-      return sc ? this.value.limit[this.type]?.[sc] : this.value.limit[this.type];
+      if (sc) {
+        return this.value.limit?.[this.type]?.[sc];
+      }
+      if (this.isExtended) {
+        return this.value.limit?.extended?.[this.resourceIdentifier];
+      }
+
+      return this.value.limit?.[this.type];
     },
     tooltip() {
       const t = this.$store.getters['i18n/t'];
@@ -167,7 +184,6 @@ export default {
           value: this.prqLimits
         }
       ];
-
       let formattedTooltip = '<div class="quota-percentage-tooltip">';
 
       (out || []).forEach((v) => {
@@ -181,9 +197,7 @@ export default {
 
       return formattedTooltip;
     },
-
   },
-
   methods: {
     update(newValue) {
       const parsedNewValue = parseSi(newValue, this.siOptions) || 0;
@@ -215,12 +229,17 @@ export default {
         :options="types"
       />
       <Select
-
         :mode="mode"
         :value="storageClass"
         :disabled="true"
         :options="scOption"
       />
+    </div>
+    <div
+      v-else-if="isExtended"
+      class="resource-identifier"
+    >
+      {{ resourceIdentifier }}
     </div>
     <Select
       v-else
@@ -251,20 +270,30 @@ export default {
     />
   </div>
 </template>
-
 <style lang='scss' scoped>
-  .ns-quota__row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    align-items: center;
-    column-gap: 10px;
-    & > div:first-child {
-      align-self: stretch;
-    }
+.ns-quota__row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: center;
+  column-gap: 10px;
+  & > div:first-child {
+    align-self: stretch;
   }
-  .type-with-sc {
-    display: grid;
-    grid-template-columns: 1fr;
-    row-gap: 4px;
-  }
+}
+.type-with-sc {
+  display: grid;
+  grid-template-columns: 1fr;
+  row-gap: 4px;
+}
+.resource-identifier {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--border-radius);
+  color: var(--input-text);
+  background: var(--input-disabled-bg);
+  word-break: break-all;
+}
 </style>

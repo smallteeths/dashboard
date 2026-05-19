@@ -7624,6 +7624,7 @@ notifications:
     showCheckboxLabel: 顯示自定義登錄失敗文本
     messageLabel: 要顯示的文本
 resourceQuota:
+  banner: 用於限制項目中標準資源類型（例如 CPU 限制）和自定義資源類型的資源消耗。對於自定義資源類型，您需要手動提供資源識別符。想了解更多資源配額相關信息嗎？請閱讀我們的 <a href="https://ranchermanager.docs.rancher.com/how-to-guides/advanced-user-guides/manage-projects/manage-project-resource-quotas" target="_blank" rel="noopener noreferrer nofollow">文件 <i class="icon icon-external-link"></i></a><span class="sr-only">在新標籤頁中打開</span>
   label: 資源配額
   headers:
     limit: 限制
@@ -7631,6 +7632,7 @@ resourceQuota:
     projectLimit: 項目限制
     projectResourceAvailability: 項目資源可用性
     resourceType: 資源類型
+    resourceIdentifier: 資源識別符
   helpText: 配置整個命名空間可用的資源量。
   helpTextDetail: 整個命名空間可以使用的資源量。
   configMaps: ConfigMaps
