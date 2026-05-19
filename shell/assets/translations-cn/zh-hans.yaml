@@ -7623,6 +7623,7 @@ notifications:
     showCheckboxLabel: 显示自定义登录失败文本
     messageLabel: 要显示的文本
 resourceQuota:
+  banner: 用于限制项目中标准资源类型（例如 CPU 限制）和自定义资源类型的资源消耗。对于自定义资源类型，您需要手动提供资源标识符。想了解更多资源配额相关信息？请阅读我们的 <a href="https://ranchermanager.docs.rancher.com/how-to-guides/advanced-user-guides/manage-projects/manage-project-resource-quotas" target="_blank" rel="noopener noreferrer nofollow">文档 <i class="icon icon-external-link"></i></a><span class="sr-only">在新标签页中打开</span>
   label: 资源配额
   headers:
     limit: 限制
@@ -7630,6 +7631,7 @@ resourceQuota:
     projectLimit: 项目限制
     projectResourceAvailability: 项目资源可用性
     resourceType: 资源类型
+    resourceIdentifier: 资源标识符
   helpText: 配置整个命名空间可用的资源量。
   helpTextDetail: 整个命名空间可以使用的资源量。
   configMaps: ConfigMaps
