@@ -8,7 +8,7 @@ import { Card } from '@components/Card';
 import Loading from '@shell/components/Loading';
 import { Checkbox } from '@components/Form/Checkbox';
 import { DESCRIPTION } from '@shell/config/labels-annotations';
-import { _EDIT, _VIEW, _CREATE } from '@shell/config/query-params';
+import { _CREATE } from '@shell/config/query-params';
 
 const PERMISSION_GROUP_MAP = {
   'cluster-owner':  'owner',
@@ -203,10 +203,6 @@ export default {
         return [...acc, customPermissionsItem];
       }, []);
     },
-
-    principalSelectMode() {
-      return [_EDIT, _VIEW].includes(this.mode) ? _VIEW : this.mode;
-    },
   },
 
   watch: {
@@ -279,7 +275,7 @@ export default {
         <SelectPrincipal
           v-focus
           class="mb-20"
-          :mode="principalSelectMode"
+          :mode="mode"
           :retain-selection="true"
           :init-value="principalId"
           data-testid="cluster-member-select"
