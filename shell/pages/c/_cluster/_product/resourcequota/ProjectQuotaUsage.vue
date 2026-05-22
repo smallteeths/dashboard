@@ -284,7 +284,7 @@ export default {
 
 <style scoped lang="scss">
 .quota-project-item-cn {
-  width: clamp(566px, 100%, 650px);
+  width: clamp(400px, 100%, 650px);
   margin: 0;
   display: grid;
   grid-template-columns: 280px minmax(230px, 1fr);
