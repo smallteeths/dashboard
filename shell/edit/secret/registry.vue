@@ -93,13 +93,13 @@ export default {
     },
     enabledHarborService() {
       const isAdmin = this.$store.getters['auth/isAdmin'];
-      const v3User = this.$store.getters['auth/me'] || {};
+      const v1User = this.$store.getters['auth/me'] || {};
 
       if (this.harborRegistryUrl) {
         if (isAdmin) {
           return true;
         }
-        const a = v3User.annotations || {};
+        const a = v1User.metadata?.annotations || {};
 
         if (a && a['management.harbor.pandaria.io/synccomplete'] === 'true') {
           return true;

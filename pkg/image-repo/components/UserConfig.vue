@@ -350,7 +350,7 @@ export default {
     },
     currentHarborAccountState() {
       const url = this.harborServerSetting?.value;
-      const syncComplete = this.me?.annotations?.['management.harbor.pandaria.io/synccomplete'] === 'true';
+      const syncComplete = this.me?.metadata?.annotations?.['management.harbor.pandaria.io/synccomplete'] === 'true';
 
       if (this.changeHarborPwd) {
         return this.harborAccountState.changePwd;
@@ -396,7 +396,7 @@ export default {
     },
     me: {
       handler(me) {
-        this.userAccount.email = me?.annotations?.['authz.management.cattle.io.cn/harboremail'] ?? '';
+        this.userAccount.email = me?.metadata?.annotations?.['authz.management.cattle.io.cn/harboremail'] ?? '';
       },
       immediate: true,
     },
@@ -532,6 +532,9 @@ export default {
         await this.harborAPIRequest.syncHarborAccount(form);
         this.requiredAuth = false;
         cb(true);
+        this.$nextTick(() => {
+          this.$router.go(0);
+        });
       } catch (err) {
         this.requiredAuth = true;
 
