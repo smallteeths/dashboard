@@ -131,7 +131,7 @@ export default {
     ...mapGetters({ isAdmin: 'auth/isAdmin', me: 'auth/me' }),
 
     harborSyncComplete() {
-      return this.me?.annotations?.['management.harbor.pandaria.io/synccomplete'];
+      return this.me?.metadata?.annotations?.['management.harbor.pandaria.io/synccomplete'];
     },
 
     favoriteTypes: mapPref(FAVORITE_TYPES),
