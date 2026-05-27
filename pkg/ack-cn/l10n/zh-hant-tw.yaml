@@ -88,6 +88,7 @@ ackCn:
       flannel: Flannel 是一種輕量級的 Overlay 網路方案，用於在 Kubernetes 叢集中提供 Pod 的跨節點連通性，讓不同節點上的 Pod 能夠彼此通訊。
   proxyMode:
     label: kube-proxy 代理模式
+    nftablesKernelWarning: 在使用 nftables 服務轉發模式時，叢集內節點的 Linux 內核版本需為 5.13 及以上，否則節點將添加失敗。
   nodeCidrMask:
     label: 節點 IP 數量
   containerCidr:

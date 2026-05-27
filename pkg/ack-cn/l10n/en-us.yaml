@@ -88,6 +88,7 @@ ackCn:
       flannel: Flannel is a lightweight overlay networking solution that provides cross-node connectivity for Pods in a Kubernetes cluster, enabling Pod-to-Pod communication across different nodes.
   proxyMode:
     label: Kube-Proxy Mode
+    nftablesKernelWarning: When using nftables for service proxy mode, the Linux kernel version on cluster nodes must be 5.13 or later; otherwise, nodes will fail to be added.
   nodeCidrMask:
     label: IP Addresses per Node
   containerCidr:
