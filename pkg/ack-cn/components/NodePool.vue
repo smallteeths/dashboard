@@ -159,6 +159,18 @@ const ARM_INSTANCE_FAMILIES = new Set([
   'c6r',
 ]);
 
+const PREFERRED_PLATFORM_IMAGE_TYPE = 'AliyunLinux4ContainerOptimized';
+
+function getDefaultPlatformValue(list) {
+  if (!list?.length) {
+    return '';
+  }
+
+  const preferred = list.find((item) => item.value === PREFERRED_PLATFORM_IMAGE_TYPE);
+
+  return preferred?.value || list[0]?.value || '';
+}
+
 function getInstanceTypeValues(instanceTypes) {
   if (Array.isArray(instanceTypes)) {
     return instanceTypes.map((item) => {
@@ -343,7 +355,6 @@ watch(
       return;
     }
 
-    const firstValue = list?.[0]?.value || '';
     const exists = list.some((item) => item.value === props.platform);
 
     if (!list.length) {
@@ -353,7 +364,7 @@ watch(
     }
 
     if (!exists) {
-      emit('update:platform', firstValue);
+      emit('update:platform', getDefaultPlatformValue(list));
     }
   },
   { immediate: true }

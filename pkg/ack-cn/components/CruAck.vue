@@ -90,6 +90,7 @@ const state = ref({
   versionCustom:                 false,
   importClusterRegion:           false,
   showPrivateRegistryInput:      false,
+  k8sVersionOptionsLoading:      false,
   errors:                        [],
   ackCNI:                        'terway-eniip',
   vswitchIds:                    [],
@@ -369,6 +370,8 @@ async function fetchKubernetesMetadata(regionId) {
   const isCreate = isNewOrUnprovisioned.value;
   const originalVersion = ackConfig.value.kubernetesVersion || state.value.historyK8sVersion || '';
 
+  state.value.k8sVersionOptionsLoading = true;
+
   try {
     const supportedParams = {
       regionId,
@@ -426,6 +429,8 @@ async function fetchKubernetesMetadata(regionId) {
     options.value.k8sAllImages = {};
     state.value.errors = [];
     state.value.errors.push(err);
+  } finally {
+    state.value.k8sVersionOptionsLoading = false;
   }
 }
 
@@ -433,6 +438,31 @@ function inSupportedRange(version) {
   const coerced = semver.coerce(version);
 
   return !SUPPORTED_VERSION_RANGE || (coerced && semver.satisfies(coerced, SUPPORTED_VERSION_RANGE));
+}
+
+const PROXY_MODE_NFTABLES_MIN_VERSION = '1.35.0';
+
+function supportsNftablesProxyMode(version) {
+  const coerced = semver.coerce(version);
+
+  return coerced && semver.gte(coerced, PROXY_MODE_NFTABLES_MIN_VERSION);
+}
+
+function getProxyModeOptionsForVersion(version) {
+  if (supportsNftablesProxyMode(version)) {
+    return CONFIG_ENV.MODES;
+  }
+
+  return CONFIG_ENV.MODES.filter((mode) => mode.value !== 'nftables');
+}
+
+function syncProxyModeForVersion(version) {
+  const modeOptions = getProxyModeOptionsForVersion(version);
+  const validValues = modeOptions.map((mode) => mode.value);
+
+  if (!validValues.includes(ackConfig.value.proxyMode)) {
+    ackConfig.value.proxyMode = 'iptables';
+  }
 }
 
 function processK8sVersions({
@@ -712,6 +742,8 @@ function setClusterName(name) {
 }
 
 function changeContainerdVersion(version) {
+  syncProxyModeForVersion(version);
+
   if (props.mode !== _CREATE) {
     return;
   }
@@ -1045,6 +1077,12 @@ const kubernetesSupport = computed(() => {
   };
 });
 
+const proxyModeOptions = computed(() => {
+  return getProxyModeOptionsForVersion(ackConfig.value.kubernetesVersion);
+});
+
+const isNftablesProxyMode = computed(() => ackConfig.value.proxyMode === 'nftables');
+
 const allImagesForVersion = computed(() => {
   const imagesForVersion = options.value.k8sAllImages?.[ackConfig.value?.kubernetesVersion] || [];
   const result = {};
@@ -1376,6 +1414,7 @@ watch(() => normanCluster.value.name, (name) => {
                 :mode="mode"
                 :options="options.k8sVersionOptions"
                 label-key="ackCn.version.label"
+                :loading="state.k8sVersionOptionsLoading"
                 :disabled="ackConfig.imported"
                 @update:value="changeContainerdVersion($event)"
               />
@@ -1392,12 +1431,12 @@ watch(() => normanCluster.value.name, (name) => {
           v-if="!kubernetesSupport.rancherEnabled || !kubernetesSupport.aliyunEnabled || changedHistoryK8sVersion"
         >
           <Banner
-            v-if="!kubernetesSupport.rancherEnabled && !ackConfig.imported"
+            v-if="!kubernetesSupport.rancherEnabled && !ackConfig.imported && !state.k8sVersionOptionsLoading"
             color="warning"
             label-key="ackCn.version.warningRacher"
           />
           <Banner
-            v-if="!kubernetesSupport.aliyunEnabled && !ackConfig.imported"
+            v-if="!kubernetesSupport.aliyunEnabled && !ackConfig.imported && !state.k8sVersionOptionsLoading"
             color="warning"
             :label="intl('ackCn.version.warningAliyun', { version: ackConfig.kubernetesVersion })"
           />
@@ -1459,12 +1498,21 @@ watch(() => normanCluster.value.name, (name) => {
                 v-model:value="ackConfig.proxyMode"
                 data-testid="cruack-proxy-mode"
                 :mode="mode"
-                :options="CONFIG_ENV.MODES"
+                :options="proxyModeOptions"
                 option-label="label"
                 option-key="value"
                 label-key="ackCn.proxyMode.label"
                 :disabled="!isNewOrUnprovisioned"
               />
+              <div
+                v-if="isNftablesProxyMode"
+                class="proxy-mode-hint"
+              >
+                <Banner
+                  color="warning"
+                  label-key="ackCn.proxyMode.nftablesKernelWarning"
+                />
+              </div>
             </div>
             <div
               class="col span-6"
@@ -1786,6 +1834,9 @@ watch(() => normanCluster.value.name, (name) => {
  }
  .type-description {
   color: var(--input-label);
+ }
+ .proxy-mode-hint {
+  margin-top: 10px;
  }
  .title {
     margin: 0;

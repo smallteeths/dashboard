@@ -7,7 +7,7 @@ const DEFAULTACKCONFIG = {
   clusterSpec:          ACK_CLUSTER_SPEC_STANDARD,
   containerCidr:        '',
   kubernetesVersion:    '',
-  proxyMode:            'ipvs',
+  proxyMode:            'iptables',
   name:                 null,
   displayName:          null,
   regionId:             'cn-beijing',
@@ -130,6 +130,10 @@ const MODES = [
   {
     value: 'ipvs',
     label: 'IPVS',
+  },
+  {
+    value: 'nftables',
+    label: 'nftables',
   }
 ];
 
