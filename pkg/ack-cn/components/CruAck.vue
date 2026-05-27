@@ -1421,6 +1421,7 @@ watch(() => normanCluster.value.name, (name) => {
             </div>
           </div>
           <ClusterPlanSelector
+            v-if="!ackConfig.imported"
             v-model="ackConfig.clusterSpec"
             :disabled="!isNewOrUnprovisioned"
             :options="CONFIG_ENV.ACK_CLUSTER_SPEC_OPTIONS"
@@ -1447,6 +1448,7 @@ watch(() => normanCluster.value.name, (name) => {
           />
         </div>
         <div
+          v-if="!ackConfig.imported"
           class="m-0 mb-10 card-container"
         >
           <div>
