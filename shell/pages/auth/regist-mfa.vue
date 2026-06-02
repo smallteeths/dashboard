@@ -30,7 +30,7 @@ export default {
         opt:  { url: `/v1/${ MANAGEMENT.SETTING }`, redirectUnauthorized: false },
       });
 
-      const v3User = this.$store.getters['auth/v3User'];
+      const v3User = this.$store.getters['auth/user'];
 
       if (!v3User) {
         user = await this.$store.dispatch('rancher/findAll', {

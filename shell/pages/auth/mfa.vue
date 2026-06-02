@@ -14,7 +14,7 @@ export default {
     // For newer versions this will return all settings if you are somehow logged in,
     // and just the public ones if you aren't.
     try {
-      const v3User = this.$store.getters['auth/v3User'];
+      const v3User = this.$store.getters['auth/user'];
 
       if (!v3User) {
         user = await this.$store.dispatch('rancher/findAll', {

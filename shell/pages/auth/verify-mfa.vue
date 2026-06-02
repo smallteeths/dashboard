@@ -29,7 +29,7 @@ export default {
     let uiLoginLandscape, plSetting, brand, user;
 
     try {
-      const v3User = this.$store.getters['auth/v3User'];
+      const v3User = this.$store.getters['auth/user'];
 
       if (!v3User) {
         user = await this.$store.dispatch('rancher/findAll', {
