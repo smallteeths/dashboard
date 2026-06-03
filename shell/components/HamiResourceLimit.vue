@@ -2,7 +2,7 @@
   <div class="row mt-20">
     <div class="col span-12">
       <div class="mb-10">
-        <p class="helper-text">
+        <p class="h3-legend">
           <t k="hamiResourceReservation.title" />
         </p>
       </div>
