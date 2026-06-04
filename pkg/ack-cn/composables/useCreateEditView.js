@@ -72,8 +72,10 @@ export function useCreateEditView(props, context) {
 
       return await normanCluster.value.waitForCondition('InitialRolesPopulated');
     }
-    // 保存时如果自动创建VPC，则删除VPC ID。如果手动选择VPC，则清空Zone ID列表。
-    if (state.value.autoCreateVpc === 'auto') {
+    // 保存时如果自动创建VPC，则删除VPC ID 以及 nodepool 就不需要传入 v_switch_ids 了。如果手动选择VPC，则清空Zone ID列表。
+    const autoCreateVpc = state.value.autoCreateVpc === 'auto';
+
+    if (autoCreateVpc) {
       delete ackConfig.value.vpcId;
     } else {
       ackConfig.value.zoneIds = [];
@@ -86,13 +88,13 @@ export function useCreateEditView(props, context) {
     }
     ackConfig.value.node_pool_list = nodePools.value;
     ackConfig.value.name = normanCluster.value.name;
-    normanCluster.value.ackConfig = formatNodePoolList(ackConfig);
+    normanCluster.value.ackConfig = formatNodePoolList(ackConfig, autoCreateVpc);
     await normanCluster.value.save();
 
     return await normanCluster.value.waitForCondition('InitialRolesPopulated');
   }
 
-  function formatNodePoolList(ackConfig) {
+  function formatNodePoolList(ackConfig, autoCreateVpc) {
     const nodePools = ackConfig.value.node_pool_list;
 
     ackConfig.value.node_pool_list = nodePools.map((item) => {
@@ -110,7 +112,7 @@ export function useCreateEditView(props, context) {
         runtime_version:      item.runtime_version,
         data_disk:            (item.data_disk || []).filter((disk) => Number(disk.size) !== 0),
         // All nodepools use the same v_switch_ids
-        v_switch_ids:         state.value.vswitchIds
+        v_switch_ids:         autoCreateVpc ? [] : state.value.vswitchIds
       };
 
       delete node.isNew;
