@@ -687,14 +687,27 @@ function removePool(index) {
   if (changedHistoryK8sVersion.value || ackConfig.value.imported) {
     return;
   }
-  if (!nodePools.value ||
+
+  const pools = nodePools.value;
+
+  if (
+    !pools?.length ||
     !Number.isInteger(index) ||
-    index < 0 || index >= nodePools.value.length ||
-    nodePools.value[index]?.name === 'default-nodepool') {
+    index < 0 ||
+    index >= pools.length ||
+    pools.length === 1
+  ) {
     return;
   }
 
-  pullAt(nodePools.value, index);
+  // 如果剩下都是新增的也不让删除原来的节点池
+  const remaining = pools.filter((_, i) => i !== index);
+
+  if (remaining?.every((pool) => pool.isNew)) {
+    return;
+  }
+
+  pullAt(pools, index);
 }
 
 function poolIsValid(pool) {
