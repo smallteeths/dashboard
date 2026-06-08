@@ -161,6 +161,7 @@ generic:
   externalIps: External IPs
   internalIps: Internal IPs
   primeOnly: Prime Only
+  installedMultiple: Installed (multiple)
 locale:
   en-us: English
   zh-hans: 简体中文
@@ -1178,6 +1179,9 @@ catalog:
         edit: Edit the current version
         install: Install this version
         upgrade: Upgrade to this version
+        installNew: Install as new instance
+    installedAppsSelector:
+      ariaLabel: Select an installed instance to edit or upgrade
   charts:
     all: All
     categories:
