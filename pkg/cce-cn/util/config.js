@@ -40,17 +40,23 @@ const CLUSTER_TYPES = [
 
 const KUBERNETESVERSIONS = [
   {
-    label:          'v1.32',
-    value:          'v1.32',
-    rancherEnabled: true,
-    cceEnabled:     true,
-  },
-  {
     label:          'v1.33',
     value:          'v1.33',
     rancherEnabled: true,
     cceEnabled:     true,
-  }
+  },
+  {
+    label:          'v1.34',
+    value:          'v1.34',
+    rancherEnabled: true,
+    cceEnabled:     true,
+  },
+  {
+    label:          'v1.35',
+    value:          'v1.35',
+    rancherEnabled: true,
+    cceEnabled:     true,
+  },
 ];
 
 const MANAGEMENT_SCALE_VIRTUAL = [{
