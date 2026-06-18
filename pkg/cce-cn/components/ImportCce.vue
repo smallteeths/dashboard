@@ -25,6 +25,14 @@ defineProps({
     type:    Array,
     default: () => [],
   },
+  disabled: {
+    type:    Boolean,
+    default: false,
+  },
+  mode: {
+    type:     String,
+    required: true,
+  },
   rules: {
     type:    Object,
     default: () => ({}),
