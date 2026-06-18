@@ -1,12 +1,9 @@
 <script setup>
-import {
-  ref, onMounted, computed, watch, watchEffect,
-} from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 import CruResource from '@shell/components/CruResource.vue';
 import { useCreateEditView } from '../composables/useCreateEditView.js';
-import { useFormValidation } from '../composables/useFormValidation.js';
 import LabeledMultiSelect from './LabeledMultiSelect';
 import CCEValidators from '../util/validators';
 import { NORMAN } from '@shell/config/types';
@@ -23,14 +20,23 @@ import KeyValue from '@shell/components/form/KeyValue';
 import UnitInput from '@shell/components/form/UnitInput';
 import FileSelector from '@shell/components/form/FileSelector.vue';
 import { RadioGroup } from '@components/Form/Radio';
+import Checkbox from '@components/Form/Checkbox/Checkbox.vue';
 import { queryHuawei } from '../util/request';
 import CONFIG_ENV from '../util/config';
-import { find, pullAt, uniqBy, cloneDeep } from 'lodash';
+import { getDefaultFlavorValue } from '../util/flavors';
+import { getDefaultOperatingSystemValue } from '../util/operatingSystems';
+import {
+  compact, find, flatten, pullAt, uniq, uniqBy, cloneDeep
+} from 'lodash';
 import { stringify } from '@shell/utils/error';
 import { base64Decode } from '@shell/utils/crypto';
 import Accordion from '@components/Accordion/Accordion.vue';
 import Labels from '@shell/components/form/Labels.vue';
 import ImportCce from './ImportCce';
+import FloatingHelpPanel from './FloatingHelpPanel.vue';
+
+const RANCHER_SUPPORTED_MIN_VERSION = 'v1.33';
+const RANCHER_SUPPORTED_MAX_VERSION = 'v1.35';
 
 const props = defineProps({
   mode: {
@@ -62,6 +68,7 @@ const options = ref({
   availableZoneOptions:               [],
   sshKeyOptions:                      [],
   clusterOptions:                     [],
+  kubernetesVersionOptions:           CONFIG_ENV.KUBERNETESVERSIONS,
   validityPeriodOptions:              [],
   flavorOptionsByZones:               {},
   eipOptions:                         [
@@ -87,15 +94,16 @@ const state = ref({
   volumeTypesLoading:       false,
   osKeypairsLoading:        false,
   flavorLoading:            false,
+  versionLoading:           false,
   regionName:               '',
   managementScale:          'small',
   eipSelection:             'none',
   highAvailabilityEnabled:  's2',
   highAvailabilityDisabled: false,
   clusterLoading:           false,
+  showPrivateRegistryInput: false,
   eniNetworks:              [],
   errors:                   [],
-  isFirstRun:               true,
 });
 const emit = defineEmits(['done']);
 const {
@@ -113,72 +121,12 @@ const isNewOrUnprovisioned = computed(() => {
   return props.mode === _CREATE || !normanCluster.value?.cceStatus?.upstreamSpec;
 });
 
-const fvExtraRules = computed(() => {
-  let out = {};
-
-  if (hasCredential.value) {
-    const commonRules = {
-      nameRequired:     CCEValidators.nameRequired(normanCluster, intl),
-      regionIdRequired: CCEValidators.regionIdRequired(cceConfig, intl),
-    };
-    const isImportMode = isImport.value || cceConfig.value.imported;
-    const nonImportRules = !isImportMode ? {
-      categoryRequired:             CCEValidators.categoryRequired(cceConfig, intl),
-      versionRequired:              CCEValidators.versionRequired(cceConfig, intl),
-      managementScaleRequired:      CCEValidators.managementScaleRequired(state, intl),
-      containerNetworkModeRequired: CCEValidators.containerNetworkModeRequired(cceConfig, intl),
-      vpcIdRequired:                CCEValidators.vpcIdRequired(cceConfig, intl),
-      subnetIdRequired:             CCEValidators.subnetIdRequired(cceConfig, intl),
-      kubernetesSvcIPRangeRequired: CCEValidators.kubernetesSvcIPRangeRequired(cceConfig, intl),
-      validateKubernetesSvcIPRange: CCEValidators.validateKubernetesSvcIPRange(cceConfig, intl),
-      securityGroupRequired:        CCEValidators.securityGroupRequired(cceConfig, intl),
-      nodePoolNameRequired:         CCEValidators.nodePoolNameRequired(nodePools, intl),
-      nodePoolNamesUnique:          CCEValidators.nodePoolNamesUnique(nodePools, intl),
-      availableZoneRequired:        CCEValidators.availableZoneRequired(nodePools, intl),
-      rootVolumeTypeRequired:       CCEValidators.rootVolumeTypeRequired(nodePools, intl),
-      dataVolumeTypeRequired:       CCEValidators.dataVolumeTypeRequired(nodePools, intl),
-      rootVolumeSizeRequired:       CCEValidators.rootVolumeSizeRequired(nodePools, intl),
-      dataVolumeSizeRequired:       CCEValidators.dataVolumeSizeRequired(nodePools, intl),
-      flavorRequired:               CCEValidators.flavorRequired(nodePools, intl),
-      operatingSystemRequired:      CCEValidators.operatingSystemRequired(nodePools, intl),
-      sshKeyRequired:               CCEValidators.sshKeyRequired(nodePools, intl),
-    } : {};
-
-    if (!isImportMode) {
-      if (!isTurbo.value) {
-        nonImportRules.containerNetworkCidrRequired = CCEValidators.containerNetworkCidrRequired(cceConfig, intl);
-        nonImportRules.validateContainerNetworkCidr = CCEValidators.validateContainerNetworkCidr(cceConfig, intl);
-      } else {
-        nonImportRules.eniNetworksRequired = CCEValidators.eniNetworksRequired(state, intl);
-      }
-      if (state.value.eipSelection === 'exist') {
-        nonImportRules.eipSelectionRequired = CCEValidators.eipSelectionRequired(cceConfig, intl);
-      } else if (state.value.eipSelection === 'new') {
-        nonImportRules.eipTypeRequired = CCEValidators.eipTypeRequired(cceConfig, intl);
-        nonImportRules.eipChargeModeRequired = CCEValidators.eipChargeModeRequired(cceConfig, intl);
-        nonImportRules.eipBandwidthSizeRequired = CCEValidators.eipBandwidthSizeRequired(cceConfig, intl);
-      }
-      if (cceConfig.value.authentiactionMode === 'authenticating_proxy' && isNewOrUnprovisioned.value) {
-        nonImportRules.authenticatingProxyCaRequired = CCEValidators.authenticatingProxyCaRequired(cceConfig, intl);
-        nonImportRules.authenticatingProxyCertRequired = CCEValidators.authenticatingProxyCertRequired(cceConfig, intl);
-        nonImportRules.authenticatingProxyPrivateKeyRequired = CCEValidators.authenticatingProxyPrivateKeyRequired(cceConfig, intl);
-      }
-    }
-
-    const importRules = isImportMode ? { clusterIDRequired: CCEValidators.clusterIDRequired(cceConfig, intl) } : {};
-
-    out = {
-      ...commonRules,
-      ...nonImportRules,
-      ...importRules,
-    };
-  }
-
-  return out;
-});
-
 const isTurbo = computed(() => {
   return cceConfig.value.category === 'Turbo';
+});
+
+const containerNetworkModeOptions = computed(() => {
+  return CONFIG_ENV.CONTAINER_NETWORK_MODES.filter((item) => item.value !== 'eni');
 });
 
 const clusterActive = computed(() => {
@@ -191,7 +139,7 @@ const clusterActive = computed(() => {
 
 const kubernetesSupport = computed(() => {
   const version = cceConfig.value.version;
-  const matched = find(CONFIG_ENV.KUBERNETESVERSIONS, { value: version }) || {};
+  const matched = find(options.value.kubernetesVersionOptions, { value: version }) || {};
 
   return {
     rancherEnabled: matched.rancherEnabled,
@@ -199,18 +147,13 @@ const kubernetesSupport = computed(() => {
   };
 });
 
-const operatingSystemOptions = computed(() => {
-  const types = ['EulerOS 2.9', 'CentOS 7.6'];
-  const containerNetworkMode = cceConfig.value.containerNetworkMode;
-
-  if (containerNetworkMode !== 'overlay_l2') {
-    types.push('Huawei Cloud EulerOS 2.0', 'Ubuntu 22.04');
+// 创建/未 provision 且 version 尚未填充时不展示版本告警
+const showVersionWarnings = computed(() => {
+  if (isNewOrUnprovisioned.value && !cceConfig.value.version) {
+    return false;
   }
 
-  return types.map((item) => ({
-    label: item,
-    value: item
-  }));
+  return !kubernetesSupport.value.rancherEnabled || !kubernetesSupport.value.cceEnabled;
 });
 
 const CREATE = computed(() => {
@@ -221,9 +164,145 @@ const VIEW = computed(() => {
   return _VIEW;
 });
 
+const ruleSets = computed(() => {
+  if (!hasCredential.value) {
+    return {};
+  }
+
+  const isImportMode = isImport.value || cceConfig.value.imported;
+  const commonRules = {
+    name: [
+      CCEValidators.nameRequired(normanCluster, intl),
+    ],
+  };
+  const nonImportRules = !isImportMode ? {
+    category: [
+      CCEValidators.categoryRequired(cceConfig, intl),
+    ],
+    version: [
+      CCEValidators.versionRequired(cceConfig, intl),
+    ],
+    managementScale: [
+      CCEValidators.managementScaleRequired(state, intl),
+    ],
+    containerNetworkMode: !isTurbo.value ? [
+      CCEValidators.containerNetworkModeRequired(cceConfig, intl),
+    ] : [],
+    vpcId: [
+      CCEValidators.vpcIdRequired(cceConfig, intl),
+    ],
+    subnetId: [
+      CCEValidators.subnetIdRequired(cceConfig, intl),
+    ],
+    containerNetworkCidr: !isTurbo.value ? [
+      CCEValidators.containerNetworkCidrRequired(cceConfig, intl),
+      CCEValidators.validateContainerNetworkCidr(cceConfig, intl),
+    ] : [],
+    eniNetworks: isTurbo.value ? [
+      CCEValidators.eniNetworksRequired(state, intl),
+    ] : [],
+    kubernetesSvcIPRange: [
+      CCEValidators.kubernetesSvcIPRangeRequired(cceConfig, intl),
+      CCEValidators.validateKubernetesSvcIPRange(cceConfig, intl),
+    ],
+    securityGroup: [
+      CCEValidators.securityGroupRequired(cceConfig, intl),
+    ],
+    eipSelection: state.value.eipSelection === 'exist' ? [
+      CCEValidators.eipSelectionRequired(cceConfig, intl),
+    ] : [],
+    eipType: state.value.eipSelection === 'new' ? [
+      CCEValidators.eipTypeRequired(cceConfig, intl),
+    ] : [],
+    eipChargeMode: state.value.eipSelection === 'new' ? [
+      CCEValidators.eipChargeModeRequired(cceConfig, intl),
+    ] : [],
+    eipBandwidthSize: state.value.eipSelection === 'new' ? [
+      CCEValidators.eipBandwidthSizeRequired(cceConfig, intl),
+    ] : [],
+    authenticatingProxyCa: cceConfig.value.authentiactionMode === 'authenticating_proxy' && isNewOrUnprovisioned.value ? [
+      CCEValidators.authenticatingProxyCaRequired(cceConfig, intl),
+    ] : [],
+    authenticatingProxyCert: cceConfig.value.authentiactionMode === 'authenticating_proxy' && isNewOrUnprovisioned.value ? [
+      CCEValidators.authenticatingProxyCertRequired(cceConfig, intl),
+    ] : [],
+    authenticatingProxyPrivateKey: cceConfig.value.authentiactionMode === 'authenticating_proxy' && isNewOrUnprovisioned.value ? [
+      CCEValidators.authenticatingProxyPrivateKeyRequired(cceConfig, intl),
+    ] : [],
+    nodePoolName: [
+      CCEValidators.nodePoolNameRequired(nodePools, intl),
+      CCEValidators.nodePoolNamesUnique(nodePools, intl),
+    ],
+    availableZone: [
+      CCEValidators.availableZoneRequired(nodePools, intl),
+    ],
+    rootVolumeType: [
+      CCEValidators.rootVolumeTypeRequired(nodePools, intl),
+    ],
+    dataVolumeType: [
+      CCEValidators.dataVolumeTypeRequired(nodePools, intl),
+    ],
+    rootVolumeSize: [
+      CCEValidators.rootVolumeSizeRequired(nodePools, intl),
+    ],
+    dataVolumeSize: [
+      CCEValidators.dataVolumeSizeRequired(nodePools, intl),
+    ],
+    flavor: [
+      CCEValidators.flavorRequired(nodePools, intl),
+    ],
+    operatingSystem: [
+      CCEValidators.operatingSystemRequired(nodePools, intl),
+    ],
+    sshKey: [
+      CCEValidators.sshKeyRequired(nodePools, intl),
+    ],
+  } : {};
+  const importRules = isImportMode ? {
+    clusterID: [
+      CCEValidators.clusterIDRequired(cceConfig, intl),
+    ],
+  } : {};
+
+  return {
+    ...commonRules,
+    ...nonImportRules,
+    ...importRules,
+  };
+});
+
+const fvFormIsValid = computed(() => {
+  const rules = ruleSets.value || {};
+
+  for (const key in rules) {
+    const validators = rules[key] || [];
+
+    for (const validate of validators) {
+      if (validate()) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+});
+
+const validationMessages = computed(() => {
+  const rules = ruleSets.value || {};
+  const messages = Object.keys(rules).map((key) => {
+    const validators = rules[key] || [];
+
+    return validators.map((validate) => {
+      const result = validate();
+
+      return typeof result === 'string' ? result.trim() : result;
+    });
+  });
+
+  return uniq(compact(flatten(messages)));
+});
+
 function registerWatch() {
-  // watch
-  // Because SelectCredential inside the component will trigger a change by default, this watch gets triggered when the component loads.
   watch(() => cceConfig.value.huaweiCredentialSecret, async(credential) => {
     state.value.errors = [];
     if (!credential) {
@@ -233,10 +312,14 @@ function registerWatch() {
 
     promises.push(fetchRegion(credential));
     if (!isImport.value) {
+      if (isNewOrUnprovisioned.value) {
+        applyStaticClusterDefaultsIfEmpty();
+        applyAllNodePoolDefaults();
+      }
       promises.push(
+        fetchKubernetesVersions(credential),
         fetchVpc(credential),
         fetchListPublicIPs(credential),
-        fetchListSubnets(credential),
         fetchVolumeTypes(credential),
         fetchOsAvailabilityZone(credential),
         fetchSecurityGroups(credential),
@@ -255,60 +338,6 @@ function registerWatch() {
       }
     }
   }, { immediate: true });
-
-  watch(() => cceConfig.value.category, async() => {
-    if (cceConfig.value.huaweiCredentialSecret) {
-      await fetchVpc(cceConfig.value.huaweiCredentialSecret);
-      await fetchListSubnets(cceConfig.value.huaweiCredentialSecret);
-    }
-    if (isNewOrUnprovisioned.value) {
-      if (cceConfig.value.category === 'Turbo') {
-        cceConfig.value.containerNetworkMode = 'eni';
-        cceConfig.value.containerNetworkCidr = '';
-        cceConfig.value.vpcId = '';
-        cceConfig.value.subnetId = '';
-      } else {
-        cceConfig.value.containerNetworkMode = 'vpc-router';
-        cceConfig.value.containerNetworkCidr = '10.0.0.0/16';
-        cceConfig.value.vpcId = 'default';
-        cceConfig.value.subnetId = 'default';
-      }
-    }
-  });
-
-  watchEffect(() => {
-    if (isNewOrUnprovisioned.value) {
-      const managementScale = state.value.managementScale;
-      const highAvailabilityEnabled = state.value.highAvailabilityEnabled;
-
-      // when edit first time not run this watch
-      if (state.value.isFirstRun) {
-        state.value.isFirstRun = false;
-
-        return;
-      }
-      const matched = find(CONFIG_ENV.MANAGEMENT_SCALE_VIRTUAL, { value: managementScale });
-
-      state.value.highAvailabilityDisabled = false;
-      if (matched && parseInt(matched.label, 10) > 200) {
-        state.value.highAvailabilityDisabled = true;
-        state.value.highAvailabilityEnabled = 's2';
-      }
-
-      cceConfig.value.clusterFlavor = `cce.${ highAvailabilityEnabled }.${ managementScale }`;
-    }
-  });
-
-  watch(() => cceConfig.value.vpcId, async() => {
-    if (cceConfig.value.huaweiCredentialSecret && isNewOrUnprovisioned.value) {
-      if (cceConfig.value.category === 'Turbo') {
-        cceConfig.value.subnetId = '';
-      } else {
-        cceConfig.value.subnetId = 'default';
-      }
-      await fetchListSubnets(cceConfig.value.huaweiCredentialSecret);
-    }
-  });
 }
 
 function setValidityPeriodOption() {
@@ -326,129 +355,458 @@ function setValidityPeriodOption() {
   options.value.validityPeriodOptions = validityPeriodOptions;
 }
 
-const {
-  fvFormRuleSets,
-  fvUnreportedValidationErrors,
-  fvFormIsValid,
-  fvGetAndReportPathRules,
-} = useFormValidation({ value: props.value }, store, fvExtraRules);
+function getFirstOptionValue(list) {
+  return Array.isArray(list) && list.length > 0 ? list[0]?.value : '';
+}
 
-fvFormRuleSets.value = [
-  {
-    path:  'name',
-    rules: ['nameRequired'],
-  },
-  {
-    path:  'category',
-    rules: ['categoryRequired'],
-  },
-  {
-    path:  'version',
-    rules: ['versionRequired'],
-  },
-  {
-    path:  'managementScale',
-    rules: ['managementScaleRequired'],
-  },
-  {
-    path:  'containerNetworkMode',
-    rules: ['containerNetworkModeRequired'],
-  },
-  {
-    path:  'vpcId',
-    rules: ['vpcIdRequired'],
-  },
-  {
-    path:  'subnetId',
-    rules: ['subnetIdRequired'],
-  },
-  {
-    path:  'containerNetworkCidr',
-    rules: ['containerNetworkCidrRequired', 'validateContainerNetworkCidr'],
-  },
-  {
-    path:  'eniNetworks',
-    rules: ['eniNetworksRequired'],
-  },
-  {
-    path:  'kubernetesSvcIPRange',
-    rules: ['kubernetesSvcIPRangeRequired', 'validateKubernetesSvcIPRange'],
-  },
-  {
-    path:  'securityGroup',
-    rules: ['securityGroupRequired'],
-  },
-  {
-    path:  'eipSelection',
-    rules: ['eipSelectionRequired'],
-  },
-  {
-    path:  'eipType',
-    rules: ['eipTypeRequired'],
-  },
-  {
-    path:  'eipChargeMode',
-    rules: ['eipChargeModeRequired'],
-  },
-  {
-    path:  'eipBandwidthSize',
-    rules: ['eipBandwidthSizeRequired'],
-  },
-  {
-    path:  'authenticatingProxyCa',
-    rules: ['authenticatingProxyCaRequired'],
-  },
-  {
-    path:  'authenticatingProxyCert',
-    rules: ['authenticatingProxyCertRequired'],
-  },
-  {
-    path:  'authenticatingProxyPrivateKey',
-    rules: ['authenticatingProxyPrivateKeyRequired'],
-  },
-  {
-    path:  'nodePoolName',
-    rules: ['nodePoolNameRequired', 'nodePoolNamesUnique']
-  },
-  {
-    path:  'availableZone',
-    rules: ['availableZoneRequired']
-  },
-  {
-    path:  'rootVolumeType',
-    rules: ['rootVolumeTypeRequired']
-  },
-  {
-    path:  'dataVolumeType',
-    rules: ['dataVolumeTypeRequired']
-  },
-  {
-    path:  'rootVolumeSize',
-    rules: ['rootVolumeSizeRequired']
-  },
-  {
-    path:  'dataVolumeSize',
-    rules: ['dataVolumeSizeRequired']
-  },
-  {
-    path:  'flavor',
-    rules: ['flavorRequired']
-  },
-  {
-    path:  'operatingSystem',
-    rules: ['operatingSystemRequired']
-  },
-  {
-    path:  'sshKey',
-    rules: ['sshKeyRequired']
-  },
-  {
-    path:  'clusterID',
-    rules: ['clusterIDRequired']
-  },
-];
+function parseKubernetesMinorVersion(version) {
+  const matched = String(version || '').match(/v?(\d+)\.(\d+)(?:\.(\d+))?/);
+
+  if (!matched) {
+    return null;
+  }
+
+  return [
+    Number(matched[1]),
+    Number(matched[2]),
+    Number(matched[3] || 0),
+  ];
+}
+
+function compareKubernetesVersion(a, b) {
+  const parsedA = parseKubernetesMinorVersion(a);
+  const parsedB = parseKubernetesMinorVersion(b);
+
+  if (!parsedA || !parsedB) {
+    return 0;
+  }
+
+  for (let i = 0; i < parsedA.length; i++) {
+    if (parsedA[i] !== parsedB[i]) {
+      return parsedA[i] - parsedB[i];
+    }
+  }
+
+  return 0;
+}
+
+function isRancherSupportedVersion(version) {
+  return compareKubernetesVersion(version, RANCHER_SUPPORTED_MIN_VERSION) >= 0 &&
+    compareKubernetesVersion(version, RANCHER_SUPPORTED_MAX_VERSION) <= 0;
+}
+
+function normalizeVersionOption(version) {
+  const value = version?.value || version?.version || version?.name || version?.label || version;
+
+  if (!value) {
+    return null;
+  }
+
+  return {
+    label:          version?.label || value,
+    value,
+    rancherEnabled: isRancherSupportedVersion(value),
+    cceEnabled:     true,
+  };
+}
+
+function normalizeVersionOptions(res) {
+  const list = Array.isArray(res) ? res : (res?.versions || res?.items || res?.data || []);
+
+  return list
+    .map(normalizeVersionOption)
+    .filter((item) => item?.rancherEnabled);
+}
+
+function withCurrentVersionOption(list) {
+  const currentVersion = cceConfig.value.version;
+
+  if (!currentVersion || list.some((item) => item.value === currentVersion)) {
+    return list;
+  }
+
+  const currentOption = normalizeVersionOption(currentVersion);
+
+  return currentOption?.value ? [...list, currentOption] : list;
+}
+
+// 初始化 Kubernetes 版本：取 API 返回列表第一项，仅新建/未创建成功且 version 为空时填充
+function syncCreateVersionDefault() {
+  if (!isNewOrUnprovisioned.value) {
+    return;
+  }
+
+  const versionOptions = options.value.kubernetesVersionOptions || [];
+
+  applyLinkedDefaultIfEmpty(cceConfig.value, 'version', getFirstOptionValue(versionOptions));
+}
+
+function getFirstNonDefaultOptionValue(list) {
+  if (!Array.isArray(list)) {
+    return '';
+  }
+
+  return list.find((item) => item?.value && item.value !== 'default')?.value || '';
+}
+
+function normalizeNumber(value) {
+  const num = Number(value);
+
+  return Number.isNaN(num) ? undefined : num;
+}
+
+function isEmptyValue(value) {
+  return value === undefined || value === null || value === '';
+}
+
+function canApplyLinkedDefaults(target) {
+  return isNewOrUnprovisioned.value || target?.isNew === true;
+}
+
+// 强制覆盖联动字段（用户主动切换类型/VPC/新增节点池时使用，overwrite: true）
+function applyLinkedValue(target, key, value) {
+  if (!canApplyLinkedDefaults(target) || isEmptyValue(value)) {
+    return;
+  }
+
+  target[key] = value;
+}
+
+// 仅当字段为空时填充（API 请求返回后补默认值，不覆盖用户已选值）
+function applyLinkedDefaultIfEmpty(target, key, value) {
+  if (!canApplyLinkedDefaults(target) || isEmptyValue(value) || !isEmptyValue(target?.[key])) {
+    return;
+  }
+
+  target[key] = value;
+}
+
+function getPoolFlavorOption(pool) {
+  if (!pool?.availableZone) {
+    return undefined;
+  }
+
+  const flavorOptions = options.value.flavorOptionsByZones?.[pool.availableZone] || [];
+
+  return flavorOptions.find((item) => item.value === pool.flavor);
+}
+
+// 联动节点池操作系统：根据集群版本、节点规格、集群类型（Standard/Turbo）选取默认 OS
+function syncNodePoolOperatingSystem(pool) {
+  if (!pool || !canApplyLinkedDefaults(pool)) {
+    return;
+  }
+
+  if (pool.flavor && pool.availableZone && !getPoolFlavorOption(pool)) {
+    const zoneOptions = options.value.flavorOptionsByZones?.[pool.availableZone];
+
+    if (!zoneOptions?.length) {
+      return;
+    }
+  }
+
+  const nextOs = getDefaultOperatingSystemValue({
+    clusterVersion: cceConfig.value.version,
+    flavorOption:   getPoolFlavorOption(pool),
+    cceConfig:      cceConfig.value,
+  });
+
+  if (nextOs) {
+    pool.operatingSystem = nextOs;
+  }
+}
+
+function syncAllNodePoolOperatingSystems() {
+  if (!Array.isArray(nodePools.value)) {
+    return;
+  }
+
+  nodePools.value.forEach((pool) => syncNodePoolOperatingSystem(pool));
+}
+
+// 初始化/联动节点池默认值
+// overwrite=false：请求返回后只填空；overwrite=true：用户切换类型或新增节点池时强制覆盖
+// 编辑模式下新增节点池（pool.isNew）同样适用
+// 字段：可用区、根盘/数据盘类型、节点规格、SSH 密钥、根盘 50G、数据盘 100G、节点数 3、按需计费、containerd 运行时、操作系统
+function applyNodePoolDefaults(pool, { overwrite = false } = {}) {
+  if (!pool || (!isNewOrUnprovisioned.value && !(overwrite && pool.isNew))) {
+    return;
+  }
+
+  const setValue = overwrite ? applyLinkedValue : applyLinkedDefaultIfEmpty;
+
+  setValue(pool, 'availableZone', getFirstOptionValue(options.value.availableZoneOptions));
+
+  const zone = pool.availableZone;
+  const volumeTypeOptions = zone ? (options.value.volumeTypeChoicesByZones?.[zone] || []) : [];
+  const flavorOptions = zone ? (options.value.flavorOptionsByZones?.[zone] || []) : [];
+
+  setValue(pool, 'rootVolumeType', getFirstOptionValue(volumeTypeOptions));
+  setValue(pool, 'dataVolumeType', getFirstOptionValue(volumeTypeOptions));
+  setValue(pool, 'flavor', getDefaultFlavorValue(flavorOptions));
+  setValue(pool, 'sshKey', getFirstOptionValue(options.value.sshKeyOptions));
+  setValue(pool, 'rootVolumeSize', CONFIG_ENV.DEFAULT_NODE_GROUP_CONFIG.rootVolumeSize);
+  setValue(pool, 'dataVolumeSize', CONFIG_ENV.DEFAULT_NODE_GROUP_CONFIG.dataVolumeSize);
+  setValue(pool, 'initialNodeCount', CONFIG_ENV.DEFAULT_NODE_GROUP_CONFIG.initialNodeCount);
+  setValue(pool, 'billingMode', CONFIG_ENV.DEFAULT_NODE_GROUP_CONFIG.billingMode);
+  setValue(pool, 'runtime', CONFIG_ENV.DEFAULT_NODE_GROUP_CONFIG.runtime);
+  syncNodePoolOperatingSystem(pool);
+}
+
+// 对所有节点池执行 applyNodePoolDefaults
+function applyAllNodePoolDefaults({ overwrite = false } = {}) {
+  if (!Array.isArray(nodePools.value)) {
+    return;
+  }
+
+  nodePools.value.forEach((pool) => applyNodePoolDefaults(pool, { overwrite }));
+}
+
+// 防止快速连续切换集群类型时，旧的 async 请求覆盖最新选择
+let categoryUpdateId = 0;
+
+// 切换集群类型时立即重置网络相关字段（不等待 API）
+// Turbo：容器网络 eni、清空容器网段、VPC 取第一个非 default、清空子网
+// Standard：容器网络 vpc-router、容器网段 10.0.0.0/16、VPC/子网 default
+function applyCategoryDefaults() {
+  if (!isNewOrUnprovisioned.value) {
+    return;
+  }
+
+  state.value.eniNetworks = [];
+
+  if (isTurbo.value) {
+    cceConfig.value.containerNetworkMode = 'eni';
+    cceConfig.value.containerNetworkCidr = '';
+    cceConfig.value.vpcId = getFirstNonDefaultOptionValue(options.value.vpcOptions);
+    cceConfig.value.subnetId = '';
+
+    return;
+  }
+
+  cceConfig.value.containerNetworkMode = 'vpc-router';
+  cceConfig.value.containerNetworkCidr = CONFIG_ENV.DEFAULTCCECONFIG.containerNetworkCidr;
+  cceConfig.value.vpcId = 'default';
+  cceConfig.value.subnetId = 'default';
+}
+
+// 根据集群类型初始化/联动网络字段（fetchVpc/fetchListSubnets 完成后或用户切换类型后）
+// Turbo：VPC、子网、ENI 子网（取 API 列表第一项）
+// Standard：VPC default、子网 default、容器网段 10.0.0.0/16
+function applyCategoryNetworkDefaults({ overwrite = false } = {}) {
+  if (!isNewOrUnprovisioned.value) {
+    return;
+  }
+
+  const setValue = overwrite ? applyLinkedValue : applyLinkedDefaultIfEmpty;
+
+  if (isTurbo.value) {
+    setValue(cceConfig.value, 'vpcId', getFirstNonDefaultOptionValue(options.value.vpcOptions));
+    setValue(cceConfig.value, 'subnetId', getFirstNonDefaultOptionValue(options.value.subnetOptions));
+
+    const eniSubnet = getFirstOptionValue(options.value.eniNetworkCidrMutipleSelectOptions);
+
+    if (eniSubnet && (overwrite || !state.value.eniNetworks?.length)) {
+      state.value.eniNetworks = [eniSubnet];
+    }
+  } else {
+    setValue(cceConfig.value, 'vpcId', getFirstOptionValue(options.value.vpcOptions) || 'default');
+    setValue(cceConfig.value, 'subnetId', getFirstOptionValue(options.value.subnetOptions) || 'default');
+    setValue(cceConfig.value, 'containerNetworkCidr', CONFIG_ENV.DEFAULTCCECONFIG.containerNetworkCidr);
+  }
+}
+
+// 用户切换 VPC 后联动子网/ENI 默认值
+// Turbo：子网取第一个非 default、ENI 子网取第一项
+// Standard：子网 default
+function applySubnetDefaults({ overwrite = false } = {}) {
+  if (!isNewOrUnprovisioned.value) {
+    return;
+  }
+
+  const setValue = overwrite ? applyLinkedValue : applyLinkedDefaultIfEmpty;
+
+  if (isTurbo.value) {
+    setValue(cceConfig.value, 'subnetId', getFirstNonDefaultOptionValue(options.value.subnetOptions));
+
+    const eniSubnet = getFirstOptionValue(options.value.eniNetworkCidrMutipleSelectOptions);
+
+    if (eniSubnet && (overwrite || !state.value.eniNetworks?.length)) {
+      state.value.eniNetworks = [eniSubnet];
+    }
+  } else {
+    setValue(cceConfig.value, 'subnetId', getFirstOptionValue(options.value.subnetOptions) || 'default');
+  }
+}
+
+// fetchVpc 完成后初始化 VPC：Turbo 取第一个真实 VPC，Standard 取 default
+function applyVpcDefaultIfEmpty() {
+  if (!isNewOrUnprovisioned.value) {
+    return;
+  }
+
+  if (isTurbo.value) {
+    applyLinkedDefaultIfEmpty(cceConfig.value, 'vpcId', getFirstNonDefaultOptionValue(options.value.vpcOptions));
+  } else {
+    applyLinkedDefaultIfEmpty(cceConfig.value, 'vpcId', getFirstOptionValue(options.value.vpcOptions) || 'default');
+  }
+}
+
+// fetchSecurityGroups 完成后初始化安全组：取 API 返回列表第一项
+function applySecurityGroupDefaultIfEmpty() {
+  if (!isNewOrUnprovisioned.value) {
+    return;
+  }
+
+  applyLinkedDefaultIfEmpty(cceConfig.value, 'securityGroup', getFirstOptionValue(options.value.securityGroupOptions));
+}
+
+// 选择云凭证后同步初始化集群静态字段（不依赖 API）
+// 集群类型 CCE、容器网络模式、Service 网段 10.247.0.0/16、kube-proxy iptables、
+// 认证模式 rbac、EIP 按流量计费/5_bgp、Standard 容器网段 10.0.0.0/16
+function applyStaticClusterDefaultsIfEmpty() {
+  if (!isNewOrUnprovisioned.value) {
+    return;
+  }
+
+  applyLinkedDefaultIfEmpty(cceConfig.value, 'category', CONFIG_ENV.DEFAULTCCECONFIG.category);
+
+  if (isEmptyValue(cceConfig.value.containerNetworkMode)) {
+    cceConfig.value.containerNetworkMode = isTurbo.value ? 'eni' : CONFIG_ENV.DEFAULTCCECONFIG.containerNetworkMode;
+  }
+
+  applyLinkedDefaultIfEmpty(cceConfig.value, 'kubernetesSvcIPRange', CONFIG_ENV.DEFAULTCCECONFIG.kubernetesSvcIPRange);
+  applyLinkedDefaultIfEmpty(cceConfig.value, 'kubeProxyMode', CONFIG_ENV.DEFAULTCCECONFIG.kubeProxyMode);
+  applyLinkedDefaultIfEmpty(cceConfig.value, 'authentiactionMode', CONFIG_ENV.DEFAULTCCECONFIG.authentiactionMode);
+  applyLinkedDefaultIfEmpty(cceConfig.value, 'eipChargeMode', CONFIG_ENV.DEFAULTCCECONFIG.eipChargeMode);
+  applyLinkedDefaultIfEmpty(cceConfig.value, 'eipType', CONFIG_ENV.DEFAULTCCECONFIG.eipType);
+
+  if (!isTurbo.value) {
+    applyLinkedDefaultIfEmpty(cceConfig.value, 'containerNetworkCidr', CONFIG_ENV.DEFAULTCCECONFIG.containerNetworkCidr);
+  }
+}
+
+// 联动集群规格 clusterFlavor（格式 cce.{高可用}.{规模}，如 cce.s2.small）
+// 管理规模 >200 节点时强制开启高可用（s2）并禁用高可用选项
+function syncClusterFlavor() {
+  if (!isNewOrUnprovisioned.value) {
+    return;
+  }
+
+  const matched = find(CONFIG_ENV.MANAGEMENT_SCALE_VIRTUAL, { value: state.value.managementScale });
+
+  state.value.highAvailabilityDisabled = false;
+  if (matched && parseInt(matched.label, 10) > 200) {
+    state.value.highAvailabilityDisabled = true;
+    state.value.highAvailabilityEnabled = 's2';
+  }
+
+  cceConfig.value.clusterFlavor = `cce.${ state.value.highAvailabilityEnabled }.${ state.value.managementScale }`;
+}
+
+async function updateCategory(value) {
+  cceConfig.value.category = value;
+
+  if (!isNewOrUnprovisioned.value) {
+    return;
+  }
+
+  const updateId = ++categoryUpdateId;
+
+  applyCategoryDefaults();
+
+  if (cceConfig.value.huaweiCredentialSecret) {
+    await fetchVpc(cceConfig.value.huaweiCredentialSecret);
+    if (updateId !== categoryUpdateId) {
+      return;
+    }
+    await fetchListSubnets(cceConfig.value.huaweiCredentialSecret);
+    if (updateId !== categoryUpdateId) {
+      return;
+    }
+  }
+
+  applyCategoryNetworkDefaults({ overwrite: true });
+  applyAllNodePoolDefaults({ overwrite: true });
+}
+
+function updateVersion(value) {
+  cceConfig.value.version = value;
+
+  if (!isNewOrUnprovisioned.value) {
+    return;
+  }
+
+  syncAllNodePoolOperatingSystems();
+}
+
+async function updateVpcId(value) {
+  cceConfig.value.vpcId = value;
+
+  if (!isNewOrUnprovisioned.value) {
+    return;
+  }
+
+  if (isTurbo.value) {
+    cceConfig.value.subnetId = '';
+    state.value.eniNetworks = [];
+  } else {
+    cceConfig.value.subnetId = 'default';
+  }
+
+  if (cceConfig.value.huaweiCredentialSecret) {
+    await fetchListSubnets(cceConfig.value.huaweiCredentialSecret);
+  }
+
+  applySubnetDefaults({ overwrite: true });
+}
+
+function updateContainerNetworkMode(value) {
+  cceConfig.value.containerNetworkMode = value;
+
+  if (!isNewOrUnprovisioned.value) {
+    return;
+  }
+
+  syncAllNodePoolOperatingSystems();
+}
+
+function updateManagementScale(value) {
+  state.value.managementScale = value;
+  syncClusterFlavor();
+}
+
+function updateHighAvailabilityEnabled(value) {
+  state.value.highAvailabilityEnabled = value;
+  syncClusterFlavor();
+}
 
 // method
+async function fetchKubernetesVersions(cloudCredentialId) {
+  state.value.versionLoading = true;
+  try {
+    const res = await queryHuawei({
+      resource:       'versions',
+      cloudCredentialId,
+      store,
+      externalParams: {},
+    });
+    const versionOptions = normalizeVersionOptions(res);
+
+    options.value.kubernetesVersionOptions = withCurrentVersionOption(versionOptions.length > 0 ? versionOptions : CONFIG_ENV.KUBERNETESVERSIONS);
+    syncCreateVersionDefault();
+    if (isNewOrUnprovisioned.value) {
+      syncAllNodePoolOperatingSystems();
+    }
+  } catch (err) {
+    options.value.kubernetesVersionOptions = withCurrentVersionOption(CONFIG_ENV.KUBERNETESVERSIONS);
+    syncCreateVersionDefault();
+    state.value.errors = [];
+    state.value.errors.push(err);
+  }
+  state.value.versionLoading = false;
+}
+
 async function fetchFlavors(cloudCredentialId) {
   const flavorOptionsByZones = {};
 
@@ -476,15 +834,19 @@ async function fetchFlavors(cloudCredentialId) {
 
           flavorOptionsByZones[zone] = flavorOptionsByZones[zone] || [];
           flavorOptionsByZones[zone].push({
-            label: `${ flavor.name } ( vCPUs: ${ flavor.vcpus }, memory: ${ flavor.ram / 1024 } GB )`,
-            value: flavor.name,
-            group: flavor.name.split('.')[0]
+            label:  `${ flavor.name } ( vCPUs: ${ flavor.vcpus }, memory: ${ flavor.ram / 1024 } GB )`,
+            value:  flavor.name,
+            group:  flavor.name.split('.')[0],
+            vcpus:  normalizeNumber(flavor.vcpus),
+            memory: normalizeNumber(flavor.ram / 1024),
+            raw:    flavor,
           });
         }
       });
     });
 
     options.value.flavorOptionsByZones = flavorOptionsByZones;
+    applyAllNodePoolDefaults();
   } catch (err) {
     options.value.flavorOptionsByZones = {};
     state.value.errors = [];
@@ -526,6 +888,11 @@ async function fetchVpc(cloudCredentialId) {
     }
 
     options.value.vpcOptions = vpcOptions;
+
+    if (isNewOrUnprovisioned.value) {
+      applyVpcDefaultIfEmpty();
+    }
+    await fetchListSubnets(cloudCredentialId);
   } catch (err) {
     options.value.vpcOptions = [];
     state.value.errors = [];
@@ -577,7 +944,11 @@ async function fetchListSubnets(cloudCredentialId) {
         label: intl.value('cceCn.subnetId.default'),
         value: 'default',
       }];
+    } else {
+      options.value.subnetOptions = [];
+      options.value.eniNetworkCidrMutipleSelectOptions = [];
     }
+    applySubnetDefaults({ overwrite: false });
     state.value.subnetsLoading = false;
 
     return;
@@ -620,6 +991,7 @@ async function fetchListSubnets(cloudCredentialId) {
       };
     });
     options.value.subnetOptions = subnetOptions;
+    applySubnetDefaults({ overwrite: false });
   } catch (err) {
     options.value.eniNetworkCidrMutipleSelectOptions = [];
     options.value.subnetOptions = [];
@@ -690,6 +1062,7 @@ async function fetchVolumeTypes(cloudCredentialId) {
 
       options.value.volumeTypeChoicesByZones = volumeTypeChoicesByZones;
     });
+    applyAllNodePoolDefaults();
   } catch (err) {
     options.value.volumeTypeChoicesByZones = {};
     state.value.errors = [];
@@ -739,6 +1112,7 @@ async function fetchOsAvailabilityZone(cloudCredentialId) {
     }, []);
 
     options.value.availableZoneOptions = availableZoneOptions;
+    applyAllNodePoolDefaults();
   } catch (err) {
     options.value.availableZoneOptions = [];
     state.value.errors = [];
@@ -772,6 +1146,7 @@ async function fetchSecurityGroups(cloudCredentialId) {
     });
 
     options.value.securityGroupOptions = securityGroupChoices;
+    applySecurityGroupDefaultIfEmpty();
   } catch (err) {
     options.value.securityGroupOptions = [];
     state.value.errors = [];
@@ -805,6 +1180,7 @@ async function fetchOsKeypairs(cloudCredentialId) {
     });
 
     options.value.sshKeyOptions = sshKeyOptions;
+    applyAllNodePoolDefaults();
   } catch (err) {
     options.value.sshKeyOptions = [];
     state.value.errors = [];
@@ -852,6 +1228,28 @@ function cancelCredential() {
   }
 }
 
+function initPrivateRegistryConfig() {
+  if (!normanCluster.value?.importedConfig) {
+    normanCluster.value.importedConfig = { privateRegistryURL: null };
+  } else if (!normanCluster.value.importedConfig.privateRegistryURL) {
+    normanCluster.value.importedConfig.privateRegistryURL = null;
+  }
+
+  state.value.showPrivateRegistryInput = !!normanCluster.value.importedConfig.privateRegistryURL;
+}
+
+function updatePrivateRegistryInput(val) {
+  state.value.showPrivateRegistryInput = val;
+
+  if (!normanCluster.value.importedConfig) {
+    normanCluster.value.importedConfig = {};
+  }
+
+  if (!val) {
+    normanCluster.value.importedConfig.privateRegistryURL = null;
+  }
+}
+
 function setClusterName(name) {
   normanCluster.value['name'] = name;
   cceConfig.value['name'] = name;
@@ -874,12 +1272,14 @@ async function initCustomConfig() {
     const liveNormanCluster = await props.value.findNormanCluster();
 
     normanCluster.value = await store.dispatch(`rancher/clone`, { resource: liveNormanCluster });
+    initPrivateRegistryConfig();
 
     if (normanCluster.value.cceConfig) {
       fixConfig(normanCluster);
     }
   } else {
     normanCluster.value = await store.dispatch('rancher/create', { type: NORMAN.CLUSTER }, { root: true });
+    initPrivateRegistryConfig();
 
     const principalId = store.getters['auth/principalId'];
 
@@ -897,6 +1297,7 @@ async function initImportConfig() {
   state.value.loading = true;
   state.value.errors = [];
   normanCluster.value = await store.dispatch('rancher/create', { type: NORMAN.CLUSTER }, { root: true });
+  initPrivateRegistryConfig();
 
   const principalId = store.getters['auth/principalId'];
 
@@ -1061,6 +1462,7 @@ function addPool() {
   };
 
   nodePools.value.push(ngConfig);
+  applyNodePoolDefaults(ngConfig, { overwrite: true });
 }
 
 function removePool(index) {
@@ -1110,6 +1512,7 @@ onMounted(async() => {
   } else {
     await initCustomConfig();
   }
+  syncClusterFlavor();
   registerWatch();
   setValidityPeriodOption();
 });
@@ -1125,7 +1528,6 @@ onMounted(async() => {
     :mode="mode"
     :can-yaml="false"
     :done-route="doneRoute"
-    :errors="fvUnreportedValidationErrors"
     :validation-passed="fvFormIsValid"
     @error="e=>errors=e"
     @finish="save"
@@ -1171,9 +1573,10 @@ onMounted(async() => {
             v-model:clusterID="cceConfig.clusterID"
             :clusterOptions="options.clusterOptions"
             :clusterLoading="state.clusterLoading"
+            :mode="mode"
             :rules="{
-              name: fvGetAndReportPathRules('name'),
-              clusterID: fvGetAndReportPathRules('clusterID'),
+              name: ruleSets.name,
+              clusterID: ruleSets.clusterID,
             }"
             @update:setClusterName="setClusterName"
             @errors="e =>state.errors=e"
@@ -1200,298 +1603,342 @@ onMounted(async() => {
           color="error"
           :label="stringify(err)"
         />
-        <div class="row mb-10">
-          <div class="col span-6">
-            <LabeledInput
-              :value="normanCluster.name"
-              :mode="mode"
-              label-key="generic.name"
-              required
-              :rules="fvGetAndReportPathRules('name')"
-              @update:value="setClusterName"
-            />
-          </div>
-          <div class="col span-6">
-            <LabeledInput
-              v-model:value="normanCluster.description"
-              :mode="mode"
-              label-key="nameNsDescription.description.label"
-              :placeholder="intl('nameNsDescription.description.placeholder')"
-            />
-          </div>
-        </div>
-        <div class="row mb-10">
-          <div class="col span-6">
-            <LabeledSelect
-              v-model:value="cceConfig.category"
-              data-testid="crucce-clusterType"
-              :mode="mode"
-              :options="CONFIG_ENV.CLUSTER_TYPES"
-              option-label="label"
-              option-key="value"
-              label-key="cceCn.clusterType.label"
-              :rules="fvGetAndReportPathRules('category')"
-              required
-              :disabled="!isNewOrUnprovisioned"
-            />
-          </div>
-          <div class="col span-6">
-            <LabeledSelect
-              v-model:value="cceConfig.version"
-              data-testid="crucce-version"
-              :mode="mode"
-              :options="CONFIG_ENV.KUBERNETESVERSIONS"
-              option-label="label"
-              option-key="value"
-              label-key="cceCn.version.label"
-              :rules="fvGetAndReportPathRules('version')"
-              required
-              :disabled="!isNewOrUnprovisioned"
-            />
-          </div>
-        </div>
-        <div
-          v-if="!kubernetesSupport.rancherEnabled || !kubernetesSupport.cceEnabled"
-        >
-          <Banner
-            v-if="!kubernetesSupport.rancherEnabled"
-            color="warning"
-            label-key="cceCn.version.warningRacher"
-          />
-          <Banner
-            v-if="!kubernetesSupport.cceEnabled"
-            color="warning"
-            :label="intl('cceCn.version.warningNotRecommend', { version: cceConfig.version })"
-          />
-        </div>
-        <div class="row mb-10">
-          <div class="col span-6">
-            <LabeledSelect
-              v-model:value="state.managementScale"
-              data-testid="crucce-management-scale"
-              :mode="mode"
-              :options="CONFIG_ENV.MANAGEMENT_SCALE_VIRTUAL"
-              option-label="label"
-              option-key="value"
-              label-key="cceCn.managementScale.label"
-              :rules="fvGetAndReportPathRules('managementScale')"
-              required
-              :disabled="!isNewOrUnprovisioned"
-            />
-          </div>
-          <div class="col span-6">
-            <LabeledSelect
-              v-model:value="cceConfig.containerNetworkMode"
-              data-testid="crucce-container-network-mode"
-              :mode="mode"
-              :options="CONFIG_ENV.CONTAINER_NETWORK_MODES"
-              option-label="label"
-              option-key="value"
-              label-key="cceCn.containerNetworkMode.label"
-              :rules="fvGetAndReportPathRules('containerNetworkMode')"
-              required
-              :localizedLabel="true"
-              :disabled="!isNewOrUnprovisioned || isTurbo"
-            />
-          </div>
-        </div>
-        <div class="row mb-10">
-          <div class="col span-6">
-            <LabeledSelect
-              v-model:value="cceConfig.vpcId"
-              data-testid="crucce-vpc-id"
-              :mode="mode"
-              :options="options.vpcOptions"
-              option-label="label"
-              option-key="value"
-              label-key="cceCn.vpcId.label"
-              :rules="fvGetAndReportPathRules('vpcId')"
-              required
-              :disabled="!isNewOrUnprovisioned"
-              :loading="state.vpcLoading"
-            />
-          </div>
-          <div class="col span-6">
-            <LabeledSelect
-              v-model:value="cceConfig.subnetId"
-              data-testid="crucce-subnet-id"
-              :mode="mode"
-              :options="options.subnetOptions"
-              option-label="label"
-              option-key="value"
-              label-key="cceCn.subnetId.label"
-              :rules="fvGetAndReportPathRules('subnetId')"
-              required
-              :disabled="!isNewOrUnprovisioned"
-              :loading="state.subnetsLoading"
-            />
-          </div>
-        </div>
-        <div class="row mb-10">
-          <div class="col span-6">
-            <LabeledInput
-              v-if="!isTurbo"
-              v-model:value="cceConfig.containerNetworkCidr"
-              data-testid="crucce-container-network-cidr"
-              :mode="mode"
-              :disabled="!isNewOrUnprovisioned"
-              label-key="cceCn.containerNetworkCidr.label"
-              :rules="fvGetAndReportPathRules('containerNetworkCidr')"
-              :placeholder="intl('cceCn.containerNetworkCidr.placeholder')"
-              required
-            />
-            <LabeledMultiSelect
-              v-else
-              v-model:value="state.eniNetworks"
-              required
-              :mode="mode"
-              :options="options.eniNetworkCidrMutipleSelectOptions"
-              :disabled="!isNewOrUnprovisioned"
-              label-key="cceCn.eniNetworkCidr.label"
-              :loading="state.subnetsLoading"
-              :rules="fvGetAndReportPathRules('eniNetworks')"
-            />
-          </div>
-          <div class="col span-6">
-            <LabeledInput
-              v-model:value="cceConfig.kubernetesSvcIPRange"
-              data-testid="crucce-kubernetes-svc-ip-range"
-              :mode="mode"
-              :disabled="!isNewOrUnprovisioned"
-              label-key="cceCn.kubernetesSvcIPRange.label"
-              :rules="fvGetAndReportPathRules('kubernetesSvcIPRange')"
-              :placeholder="intl('cceCn.kubernetesSvcIPRange.placeholder')"
-              required
-            />
-          </div>
-        </div>
-        <div class="row mb-10">
-          <div class="col span-6">
-            <LabeledSelect
-              v-model:value="cceConfig.securityGroup"
-              data-testid="crucce-security-group"
-              :mode="mode"
-              :options="options.securityGroupOptions"
-              option-label="label"
-              option-key="value"
-              :disabled="cceConfig.imported"
-              label-key="cceCn.securityGroup.label"
-              :rules="fvGetAndReportPathRules('securityGroup')"
-              required
-              :loading="securityGroupsLoading"
-            />
-          </div>
-        </div>
-        <div class="row mb-10">
-          <div class="col span-6">
-            <h3 class="clearfix">
-              {{ intl('cceCn.highAvailability.label') }}
+        <div class="cluster-basic-card mb-10">
+          <div class="cluster-basic-card__header">
+            <h3 class="cluster-basic-card__title">
+              {{ intl('cceCn.basicConfig.title') }}
             </h3>
-            <RadioGroup
-              v-model:value="state.highAvailabilityEnabled"
-              :disabled="!isNewOrUnprovisioned || state.highAvailabilityDisabled"
-              name="highAvailabilityEnabled"
-              :options="['s2', 's1']"
-              :labels="options.highAvailabilityOptions"
-              :mode="mode"
+            <div class="cluster-basic-card__desc">
+              {{ intl('cceCn.basicConfig.description') }}
+            </div>
+          </div>
+          <div class="row mb-10">
+            <div class="col span-6">
+              <LabeledInput
+                :value="normanCluster.name"
+                :mode="mode"
+                label-key="generic.name"
+                required
+                :rules="ruleSets.name"
+                @update:value="setClusterName"
+              />
+            </div>
+            <div class="col span-6">
+              <LabeledInput
+                v-model:value="normanCluster.description"
+                :mode="mode"
+                label-key="nameNsDescription.description.label"
+                :placeholder="intl('nameNsDescription.description.placeholder')"
+              />
+            </div>
+          </div>
+          <div class="row mb-10">
+            <div class="col span-6">
+              <LabeledSelect
+                :value="cceConfig.category"
+                data-testid="crucce-clusterType"
+                :mode="mode"
+                :options="CONFIG_ENV.CLUSTER_TYPES"
+                option-label="label"
+                option-key="value"
+                label-key="cceCn.clusterType.label"
+                :rules="ruleSets.category"
+                required
+                :localizedLabel="true"
+                :disabled="!isNewOrUnprovisioned"
+                @update:value="updateCategory"
+              />
+            </div>
+            <div class="col span-6">
+              <LabeledSelect
+                :value="cceConfig.version"
+                data-testid="crucce-version"
+                :mode="mode"
+                :options="options.kubernetesVersionOptions"
+                option-label="label"
+                option-key="value"
+                label-key="cceCn.version.label"
+                :rules="ruleSets.version"
+                :disabled="cceConfig.imported"
+                required
+                :loading="state.versionLoading"
+                @update:value="updateVersion"
+              />
+            </div>
+          </div>
+          <div
+            v-if="showVersionWarnings"
+          >
+            <Banner
+              v-if="!kubernetesSupport.rancherEnabled"
+              color="warning"
+              label-key="cceCn.version.warningRacher"
+            />
+            <Banner
+              v-if="!kubernetesSupport.cceEnabled"
+              color="warning"
+              :label="intl('cceCn.version.warningNotRecommend', { version: cceConfig.version })"
             />
           </div>
-        </div>
-        <div class="row mb-10">
-          <div class="col span-6">
-            <h3 class="clearfix">
-              {{ intl('cceCn.kubeProxyMode.label') }}
-            </h3>
-            <RadioGroup
-              v-model:value="cceConfig.kubeProxyMode"
-              :disabled="!isNewOrUnprovisioned"
-              name="selectKubeProxyMode"
-              :options="['iptables', 'ipvs']"
-              :labels="[
-                'iptables',
-                'IPVS',
-              ]"
-              :mode="mode"
-            />
-          </div>
-        </div>
-        <div class="row mb-10">
-          <div class="col span-6">
-            <h3 class="clearfix">
-              {{ intl('cceCn.publicAccess.label') }}
-            </h3>
-            <RadioGroup
-              v-model:value="state.eipSelection"
-              name="eipSelection"
-              :disabled="!isNewOrUnprovisioned"
-              :options="['none', 'exist', 'new']"
-              :labels="options.eipOptions"
-              :mode="mode"
-            />
-          </div>
-          <div class="col span-6">
-            <LabeledSelect
-              v-if="state.eipSelection === 'exist'"
-              v-model:value="cceConfig.clusterExternalIP"
-              data-testid="crucce-external-ip"
-              :mode="mode"
-              :options="options.externalIPOptions"
-              option-label="label"
-              option-key="value"
-              label-key="cceCn.eipIds.label"
-              required
-              :rules="fvGetAndReportPathRules('eipSelection')"
-              :disabled="!isNewOrUnprovisioned"
-            />
+          <div class="row mb-10">
+            <div class="col span-6">
+              <LabeledSelect
+                :value="state.managementScale"
+                data-testid="crucce-management-scale"
+                :mode="mode"
+                :options="CONFIG_ENV.MANAGEMENT_SCALE_VIRTUAL"
+                option-label="label"
+                option-key="value"
+                label-key="cceCn.managementScale.label"
+                :rules="ruleSets.managementScale"
+                required
+                :disabled="!isNewOrUnprovisioned"
+                @update:value="updateManagementScale"
+              />
+            </div>
             <div
-              v-if="state.eipSelection === 'new'"
+              class="col span-6"
             >
               <LabeledSelect
-                v-model:value="cceConfig.eipType"
-                data-testid="crucce-eip-type"
+                :value="cceConfig.containerNetworkMode"
+                data-testid="crucce-container-network-mode"
                 :mode="mode"
-                :options="CONFIG_ENV.EIPTYPEOTPTIONS"
+                :options="containerNetworkModeOptions"
                 option-label="label"
                 option-key="value"
-                label-key="cceCn.eipType.label"
+                label-key="cceCn.containerNetworkMode.label"
+                :rules="ruleSets.containerNetworkMode"
+                required
                 :localizedLabel="true"
-                :rules="fvGetAndReportPathRules('eipType')"
-                required
-                :disabled="!isNewOrUnprovisioned"
+                :disabled="!isNewOrUnprovisioned || isTurbo"
+                @update:value="updateContainerNetworkMode"
               />
-              <LabeledSelect
-                v-model:value="cceConfig.eipChargeMode"
-                class="mt-10"
-                data-testid="crucce-external-ip"
+            </div>
+          </div>
+          <div class="network-option-card mt-10">
+            <div class="network-option-card__title">
+              {{ intl('cceCn.highAvailability.label') }}
+            </div>
+            <div class="network-option-card__desc">
+              {{ intl('cceCn.highAvailability.description') }}
+            </div>
+            <div class="mt-10">
+              <RadioGroup
+                :value="state.highAvailabilityEnabled"
+                :disabled="!isNewOrUnprovisioned || state.highAvailabilityDisabled"
+                name="highAvailabilityEnabled"
+                :options="['s2', 's1']"
+                :labels="options.highAvailabilityOptions"
                 :mode="mode"
-                :options="CONFIG_ENV.EIPCHARGEMODEOPTIONS"
-                option-label="label"
-                option-key="value"
-                :localizedLabel="true"
-                :rules="fvGetAndReportPathRules('eipChargeMode')"
-                required
-                label-key="cceCn.eipChargeMode.label"
-                :disabled="!isNewOrUnprovisioned"
-              />
-              <UnitInput
-                v-model:value="cceConfig.eipBandwidthSize"
-                class="mt-10"
-                :disabled="!isNewOrUnprovisioned"
-                :label="intl('cceCn.eipBandwidthSize.label')"
-                :rules="fvGetAndReportPathRules('eipBandwidthSize')"
-                required
-                min="0"
-                :mode="mode"
-                suffix="Mbit/s"
+                @update:value="updateHighAvailabilityEnabled"
               />
             </div>
           </div>
         </div>
-        <div class="mb-10">
-          <div>
-            <h3 class="clearfix">
-              {{ intl('cceCn.authentiactionMode.label') }}
+        <div class="cluster-basic-card mb-10">
+          <div class="cluster-basic-card__header">
+            <h3 class="cluster-basic-card__title">
+              {{ intl('cceCn.networkConfig.title') }}
             </h3>
+            <div class="cluster-basic-card__desc">
+              {{ intl('cceCn.networkConfig.description') }}
+            </div>
+          </div>
+          <div class="row mb-10">
+            <div class="col span-6">
+              <LabeledSelect
+                :value="cceConfig.vpcId"
+                data-testid="crucce-vpc-id"
+                :mode="mode"
+                :options="options.vpcOptions"
+                option-label="label"
+                option-key="value"
+                label-key="cceCn.vpcId.label"
+                :rules="ruleSets.vpcId"
+                required
+                :disabled="!isNewOrUnprovisioned"
+                :loading="state.vpcLoading"
+                @update:value="updateVpcId"
+              />
+            </div>
+            <div class="col span-6">
+              <LabeledSelect
+                v-model:value="cceConfig.subnetId"
+                data-testid="crucce-subnet-id"
+                :mode="mode"
+                :options="options.subnetOptions"
+                option-label="label"
+                option-key="value"
+                label-key="cceCn.subnetId.label"
+                :rules="ruleSets.subnetId"
+                required
+                :disabled="!isNewOrUnprovisioned"
+                :loading="state.subnetsLoading"
+              />
+            </div>
+          </div>
+          <div class="row mb-10">
+            <div class="col span-6">
+              <LabeledInput
+                v-if="!isTurbo"
+                v-model:value="cceConfig.containerNetworkCidr"
+                data-testid="crucce-container-network-cidr"
+                :mode="mode"
+                :disabled="!isNewOrUnprovisioned"
+                label-key="cceCn.containerNetworkCidr.label"
+                :rules="ruleSets.containerNetworkCidr"
+                :placeholder="intl('cceCn.containerNetworkCidr.placeholder')"
+                required
+              />
+              <LabeledMultiSelect
+                v-else
+                v-model:value="state.eniNetworks"
+                required
+                :mode="mode"
+                :options="options.eniNetworkCidrMutipleSelectOptions"
+                :disabled="!isNewOrUnprovisioned"
+                label-key="cceCn.eniNetworkCidr.label"
+                :loading="state.subnetsLoading"
+                :rules="ruleSets.eniNetworks"
+              />
+            </div>
+            <div class="col span-6">
+              <LabeledInput
+                v-model:value="cceConfig.kubernetesSvcIPRange"
+                data-testid="crucce-kubernetes-svc-ip-range"
+                :mode="mode"
+                :disabled="!isNewOrUnprovisioned"
+                label-key="cceCn.kubernetesSvcIPRange.label"
+                :rules="ruleSets.kubernetesSvcIPRange"
+                :placeholder="intl('cceCn.kubernetesSvcIPRange.placeholder')"
+                required
+              />
+            </div>
+          </div>
+          <div class="row mb-10">
+            <div class="col span-6">
+              <LabeledSelect
+                v-model:value="cceConfig.securityGroup"
+                data-testid="crucce-security-group"
+                :mode="mode"
+                :options="options.securityGroupOptions"
+                option-label="label"
+                option-key="value"
+                :disabled="cceConfig.imported"
+                label-key="cceCn.securityGroup.label"
+                :rules="ruleSets.securityGroup"
+                required
+                :loading="state.securityGroupsLoading"
+              />
+            </div>
+          </div>
+          <div class="network-option-card mt-10">
+            <div class="network-option-card__title">
+              {{ intl('cceCn.kubeProxyMode.label') }}
+            </div>
+            <div class="network-option-card__desc">
+              {{ intl('cceCn.kubeProxyMode.description') }}
+            </div>
+            <div class="mt-10">
+              <RadioGroup
+                v-model:value="cceConfig.kubeProxyMode"
+                :disabled="!isNewOrUnprovisioned"
+                name="selectKubeProxyMode"
+                :options="['iptables', 'ipvs']"
+                :labels="[
+                  'iptables',
+                  'IPVS',
+                ]"
+                :mode="mode"
+              />
+            </div>
+          </div>
+        </div>
+        <div class="network-option-card mb-10">
+          <div class="network-option-card__title">
+            {{ intl('cceCn.publicAccess.label') }}
+          </div>
+          <div class="network-option-card__desc">
+            {{ intl('cceCn.publicAccess.description') }}
+          </div>
+          <div class="row mt-10">
+            <div class="col span-6">
+              <RadioGroup
+                v-model:value="state.eipSelection"
+                name="eipSelection"
+                :disabled="!isNewOrUnprovisioned"
+                :options="['none', 'exist', 'new']"
+                :labels="options.eipOptions"
+                :mode="mode"
+              />
+            </div>
+            <div class="col span-6">
+              <LabeledSelect
+                v-if="state.eipSelection === 'exist'"
+                v-model:value="cceConfig.clusterExternalIP"
+                data-testid="crucce-external-ip"
+                :mode="mode"
+                :options="options.externalIPOptions"
+                option-label="label"
+                option-key="value"
+                label-key="cceCn.eipIds.label"
+                required
+                :rules="ruleSets.eipSelection"
+                :disabled="!isNewOrUnprovisioned"
+              />
+              <div
+                v-if="state.eipSelection === 'new'"
+              >
+                <LabeledSelect
+                  v-model:value="cceConfig.eipType"
+                  data-testid="crucce-eip-type"
+                  :mode="mode"
+                  :options="CONFIG_ENV.EIPTYPEOTPTIONS"
+                  option-label="label"
+                  option-key="value"
+                  label-key="cceCn.eipType.label"
+                  :localizedLabel="true"
+                  :rules="ruleSets.eipType"
+                  required
+                  :disabled="!isNewOrUnprovisioned"
+                />
+                <LabeledSelect
+                  v-model:value="cceConfig.eipChargeMode"
+                  class="mt-10"
+                  data-testid="crucce-external-ip"
+                  :mode="mode"
+                  :options="CONFIG_ENV.EIPCHARGEMODEOPTIONS"
+                  option-label="label"
+                  option-key="value"
+                  :localizedLabel="true"
+                  :rules="ruleSets.eipChargeMode"
+                  required
+                  label-key="cceCn.eipChargeMode.label"
+                  :disabled="!isNewOrUnprovisioned"
+                />
+                <UnitInput
+                  v-model:value="cceConfig.eipBandwidthSize"
+                  class="mt-10"
+                  :disabled="!isNewOrUnprovisioned"
+                  :label="intl('cceCn.eipBandwidthSize.label')"
+                  :rules="ruleSets.eipBandwidthSize"
+                  required
+                  min="0"
+                  :mode="mode"
+                  suffix="Mbit/s"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="network-option-card mb-10">
+          <div class="network-option-card__title">
+            {{ intl('cceCn.authentiactionMode.label') }}
+          </div>
+          <div class="network-option-card__desc">
+            {{ intl('cceCn.authentiactionMode.description') }}
+          </div>
+          <div class="mt-10">
             <RadioGroup
               v-model:value="cceConfig.authentiactionMode"
               name="authentiactionOptions"
@@ -1509,7 +1956,7 @@ onMounted(async() => {
                   class="cce-authenticating-textarea-multiline"
                   :disabled="!isNewOrUnprovisioned"
                   :mode="mode"
-                  :rules="fvGetAndReportPathRules('authenticatingProxyCa')"
+                  :rules="ruleSets.authenticatingProxyCa"
                   required
                   label-key="cceCn.authenticatingProxyCa.label"
                   type="multiline"
@@ -1529,7 +1976,7 @@ onMounted(async() => {
                   class="cce-authenticating-textarea-multiline"
                   :disabled="!isNewOrUnprovisioned"
                   :mode="mode"
-                  :rules="fvGetAndReportPathRules('authenticatingProxyCert')"
+                  :rules="ruleSets.authenticatingProxyCert"
                   required
                   label-key="cceCn.authenticatingProxyCert.label"
                   type="multiline"
@@ -1551,7 +1998,7 @@ onMounted(async() => {
                   class="cce-authenticating-textarea-multiline"
                   :disabled="!isNewOrUnprovisioned"
                   :mode="mode"
-                  :rules="fvGetAndReportPathRules('authenticatingProxyPrivateKey')"
+                  :rules="ruleSets.authenticatingProxyPrivateKey"
                   required
                   label-key="cceCn.authenticatingProxyPrivateKey.label"
                   type="multiline"
@@ -1568,19 +2015,27 @@ onMounted(async() => {
             </div>
           </div>
         </div>
-        <div class="mb-10">
-          <KeyValue
-            key="labels"
-            :disabled="!isNewOrUnprovisioned"
-            :value="cceConfig.tags"
-            :protected-keys="[]"
-            :add-label="t('labels.addTag')"
-            :add-icon="addIcon"
-            :mode="mode"
-            :read-allowed="false"
-            :value-can-be-empty="false"
-            @update:value="updateCceConfigTags($event)"
-          />
+        <div class="network-option-card mb-10">
+          <div class="network-option-card__title">
+            {{ intl('cceCn.tagsConfig.title') }}
+          </div>
+          <div class="network-option-card__desc">
+            {{ intl('cceCn.tagsConfig.description') }}
+          </div>
+          <div class="mt-10">
+            <KeyValue
+              key="labels"
+              :disabled="!isNewOrUnprovisioned"
+              :value="cceConfig.tags"
+              :protected-keys="[]"
+              :add-label="t('labels.addTag')"
+              :add-icon="addIcon"
+              :mode="mode"
+              :read-allowed="false"
+              :value-can-be-empty="false"
+              @update:value="updateCceConfigTags($event)"
+            />
+          </div>
         </div>
         <Tabbed
           ref="pools"
@@ -1619,22 +2074,23 @@ onMounted(async() => {
               :osKeypairsLoading="state.osKeypairsLoading"
               :flavorLoading="state.flavorLoading"
               :availableZoneOptions="options.availableZoneOptions"
-              :operatingSystemOptions="operatingSystemOptions"
+              :cluster-version="cceConfig.version"
               :validityPeriodOptions="options.validityPeriodOptions"
               :sshKeyOptions="options.sshKeyOptions"
               :volumeTypeChoicesByZones="options.volumeTypeChoicesByZones"
               :flavorOptionsByZones="options.flavorOptionsByZones"
               :isNewOrUnprovisioned="isNewOrUnprovisioned || pool.isNew"
+              :mode="mode"
               :rules="{
-                name: fvGetAndReportPathRules('nodePoolName'),
-                availableZone: fvGetAndReportPathRules('availableZone'),
-                rootVolumeType: fvGetAndReportPathRules('rootVolumeType'),
-                dataVolumeType: fvGetAndReportPathRules('dataVolumeType'),
-                rootVolumeSize: fvGetAndReportPathRules('rootVolumeSize'),
-                dataVolumeSize: fvGetAndReportPathRules('dataVolumeSize'),
-                flavor: fvGetAndReportPathRules('flavor'),
-                operatingSystem: fvGetAndReportPathRules('operatingSystem'),
-                sshKey: fvGetAndReportPathRules('sshKey'),
+                name: ruleSets.nodePoolName,
+                availableZone: ruleSets.availableZone,
+                rootVolumeType: ruleSets.rootVolumeType,
+                dataVolumeType: ruleSets.dataVolumeType,
+                rootVolumeSize: ruleSets.rootVolumeSize,
+                dataVolumeSize: ruleSets.dataVolumeSize,
+                flavor: ruleSets.flavor,
+                operatingSystem: ruleSets.operatingSystem,
+                sshKey: ruleSets.sshKey,
               }"
               @errors="e=>state.errors=e"
             />
@@ -1651,6 +2107,40 @@ onMounted(async() => {
           />
         </Accordion>
       </div>
+      <Accordion
+        class="mb-20"
+        title-key="imported.accordions.registries"
+        data-testid="registries-accordion"
+        :open-initially="false"
+      >
+        <Banner
+          color="info"
+          class="mt-0"
+        >
+          {{ intl('cluster.privateRegistry.importedDescription') }}
+        </Banner>
+        <Checkbox
+          :value="state.showPrivateRegistryInput"
+          class="mb-20"
+          :mode="mode"
+          :label="t('cluster.privateRegistry.label')"
+          data-testid="private-registry-enable-checkbox"
+          @update:value="updatePrivateRegistryInput($event)"
+        />
+        <LabeledInput
+          v-if="state.showPrivateRegistryInput && normanCluster.importedConfig"
+          v-model:value="normanCluster.importedConfig.privateRegistryURL"
+          :mode="mode"
+          label-key="catalog.chart.registry.custom.inputLabel"
+          data-testid="private-registry-url"
+          :placeholder="t('catalog.chart.registry.custom.placeholder')"
+        />
+      </Accordion>
+      <FloatingHelpPanel
+        :title="intl('cceCn.validationHelp.title')"
+        :items="validationMessages"
+        :close-label="intl('generic.close')"
+      />
     </div>
     <template
       v-if="!hasCredential"
@@ -1664,5 +2154,34 @@ onMounted(async() => {
   .cce-authenticating-textarea-multiline {
     height: 120px !important;
     overflow: auto !important;
+  }
+  .cluster-basic-card,
+  .network-option-card {
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+  }
+  .cluster-basic-card {
+    padding: 20px;
+  }
+  .cluster-basic-card__header {
+    margin-bottom: 20px;
+  }
+  .cluster-basic-card__title,
+  .network-option-card__title {
+    margin: 0;
+    color: var(--body-text);
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+  .cluster-basic-card__desc,
+  .network-option-card__desc {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .network-option-card {
+    padding: 16px;
   }
 </style>

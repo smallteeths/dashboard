@@ -1,14 +1,7 @@
 // useCreateEditView.js
-import { ref, computed } from 'vue';
-import { useStore } from 'vuex';
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { _CREATE, _EDIT, _VIEW } from '@shell/config/query-params';
-import { LAST_NAMESPACE } from '@shell/store/prefs';
 import { exceptionToErrorsArray } from '@shell/utils/error';
-import { clear } from '@shell/utils/array';
-import { DEFAULT_WORKSPACE } from '@shell/config/types';
-import { handleConflict } from '@shell/plugins/dashboard-store/normalize';
-import { useChildHook, BEFORE_SAVE_HOOKS, AFTER_SAVE_HOOKS } from './useChildHook';
 import { base64Encode } from '@shell/utils/crypto';
 
 export function useCreateEditView(props, context) {
@@ -16,34 +9,7 @@ export function useCreateEditView(props, context) {
     normanCluster, cceConfig, nodePools, state
   } = context;
 
-  const errors = ref([]);
   const $router = useRouter();
-  const $store = useStore();
-
-  const { applyHooks } = useChildHook();
-
-  const isCreate = computed(() => props.mode === _CREATE);
-  const isEdit = computed(() => props.mode === _EDIT);
-  const isView = computed(() => props.mode === _VIEW);
-
-  const schema = computed(() => {
-    const inStore = props.storeOverride || $store.getters['currentStore'](props.value.type);
-
-    return $store.getters[`${ inStore }/schemaFor`](props.value.type);
-  });
-
-  const isNamespaced = computed(() => schema.value?.attributes?.namespaced || false);
-
-  const labels = computed({
-    get: () => props.value?.labels,
-    set: (neu) => props.value.setLabels(neu),
-  });
-
-  const annotations = computed({
-    get: () => props.value?.annotations,
-    set: (neu) => props.value.setAnnotations(neu),
-  });
-
   const doneRoute = computed(() => {
     return props.value?.listLocation?.name;
   });
@@ -55,61 +21,13 @@ export function useCreateEditView(props, context) {
     $router.replace({ name: doneRoute.value });
   }
 
-  async function conflict() {
-    return await handleConflict(
-      props.initialValue?.toJSON(),
-      props.value,
-      props.liveValue,
-      $store.getters,
-      $store,
-      props.storeOverride || $store.getters['currentStore'](props.value.type)
-    );
-  }
-
-  async function save(buttonDone, url, depth = 0) {
-    if (errors.value) {
-      clear(errors.value);
-    }
-
+  async function save(buttonDone, url) {
     try {
-      await applyHooks(BEFORE_SAVE_HOOKS, props.value);
-
-      if (props.value?.metadata?.labels && Object.keys(props.value.metadata.labels || {}).length === 0) {
-        delete props.value.metadata.labels;
-      }
-      if (props.value?.metadata?.annotations && Object.keys(props.value.metadata.annotations || {}).length === 0) {
-        delete props.value.metadata.annotations;
-      }
-
-      if (isCreate.value) {
-        const ns = props.value?.metadata?.namespace;
-
-        if (ns && ns !== DEFAULT_WORKSPACE) {
-          $store.dispatch('prefs/set', { key: LAST_NAMESPACE, value: ns }, { root: true });
-        }
-      }
-
       await actuallySave(url);
-
-      if ($store.getters['type-map/isSpoofed'](props.value.type)) {
-        await $store.dispatch('cluster/findAll', { type: props.value.type, opt: { force: true } }, { root: true });
-      }
-
-      await applyHooks(AFTER_SAVE_HOOKS, props.value);
       buttonDone && buttonDone(true);
       done();
     } catch (err) {
-      if (err.status === 409 && depth === 0 && isEdit.value) {
-        const conflictErrors = await conflict();
-
-        if (conflictErrors === false) {
-          return save(buttonDone, url, depth + 1);
-        } else {
-          errors.value = conflictErrors;
-        }
-      } else {
-        errors.value = exceptionToErrorsArray(err);
-      }
+      state.value.errors = exceptionToErrorsArray(err);
       buttonDone && buttonDone(false);
     }
   }
@@ -258,23 +176,8 @@ export function useCreateEditView(props, context) {
     return config;
   }
 
-  function setErrors(newErrors) {
-    errors.value = newErrors;
-  }
-
   return {
-    errors,
-    isCreate,
-    isEdit,
-    isView,
-    schema,
-    isNamespaced,
-    labels,
-    annotations,
     doneRoute,
-    done,
     save,
-    actuallySave,
-    setErrors,
   };
 }

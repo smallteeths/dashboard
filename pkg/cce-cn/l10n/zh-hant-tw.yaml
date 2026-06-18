@@ -2,6 +2,17 @@ cceCn:
   label: 华为 CCE
   description: 建立新的华为 CCE (华为 Kubernetes 版）叢集或註冊現有叢集。
   updateWarn: 集群正在升級，編輯可能導致未知錯誤
+  basicConfig:
+    title: 基礎配置
+    description: 配置叢集名稱、類型、Kubernetes 版本、管理規模和高可用。
+  networkConfig:
+    title: 網路配置
+    description: 配置 VPC、子網、容器網路、服務網段、安全組和服務轉發模式。
+  tagsConfig:
+    title: 標籤
+    description: 為 CCE 叢集添加雲廠商標籤。
+  validationHelp:
+    title: 必填配置
   region:
     label: 區域
     helpText: 獲取區域參考<a href="https://developer.huaweicloud.com/endpoint" target="_blank">這裡</a>。
@@ -36,12 +47,10 @@ cceCn:
     cn_east_4: 华東二
   clusterType:
     label: 叢集類型
-    VirtualMachine:
-      label: 混合叢集
-    BareMetal:
-      label: 裸金屬集群
-    ARM64:
-      label: 鯤鵬叢集
+    standard:
+      label: CCE Standard
+    turbo:
+      label: CCE Turbo
   version:
     label: 版本
     warningNotRecommend: “{version}”，此版本華為 CCE 不推薦使用。具體請查閱華為官方文檔。
@@ -88,8 +97,10 @@ cceCn:
     default: 默认安全組
   publicAccess:
     label: 使用公網訪問
+    description: 配置叢集 API Server 是否通過彈性 IP 暴露。
   kubeProxyMode:
     label: 服務轉發模式
+    description: 選擇叢集內 Service 使用的 kube-proxy 轉發模式。
   eipSelection:
     none: 暫不使用
     new: 創建新的
@@ -110,6 +121,7 @@ cceCn:
     label: 帶寬
   authentiactionMode:
     label: 證書認證
+    description: 選擇叢集認證模式，使用自定義認證時需上傳相關證書。
     rbac: 系统默认
     authenticating_proxy: 自定義
   authenticatingProxyCa:
@@ -120,6 +132,7 @@ cceCn:
     label: 客戶端證書私鑰
   highAvailability:
     label: 高可用
+    description: 配置 CCE 控制面的高可用策略。
   availableZone:
     label: 當前區域
     value: 可用區{num}
@@ -157,10 +170,28 @@ cceCn:
     label: 節點個數
   flavor:
     label: 節點規格
+    table:
+      title: 節點規格
+      subtitle: 為當前節點池選擇節點規格。
+      filters:
+        cpu: CPU
+        memory: 記憶體
+      columns:
+        name: 規格
+        family: 規格族
+        vcpus: CPU
+        memory: 記憶體
+    selected:
+      title: 已選規格
   sshKey:
     label: 密鑰對
   operatingSystem:
     label: 操作系統
+    warning:
+      cgroupV1SuggestCgroupV2: 當前選中操作系統採用 cgroup v1 實現容器資源隔離。建議優先選擇 cgroup v2 操作系統（Ubuntu 22.04），未來集群版本將不再兼容 cgroup v1 操作系統。
+      cgroupV2Compatibility: 當前選中操作系統採用 cgroup v2 實現容器資源隔離。對於部分直接採集 cgroup 文件系統的軟件，可能存在兼容性問題。
+      eulerOs29Eol: EulerOS 2.9 系統已於 2025 年 12 月 31 日停止維護服務。集群 1.35 及以上版本不再支持該操作系統。
+      centOs76Eol: CentOS 7 系統已於 2024年06月30日停止維護服務。集群 1.35 及以上版本不再支持該操作系統。
   clusterSelect:
     importCluster: 集群
     required: 必須設置需要導入的集群

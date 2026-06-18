@@ -3,9 +3,19 @@ import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
 import { RadioGroup } from '@components/Form/Radio';
 import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
 import UnitInput from '@shell/components/form/UnitInput';
-import { computed, watch } from 'vue';
+import { computed } from 'vue';
 import CONFIG_ENV from '../util/config';
+import { getDefaultFlavorValue } from '../util/flavors';
+import {
+  filterOperatingSystemOptions,
+  getCceClusterType,
+  getDefaultOperatingSystemValue,
+  getFlavorArchitecture,
+  getOperatingSystemWarningKey,
+} from '../util/operatingSystems';
 import { useStore } from 'vuex';
+import NodeFlavor from './NodeFlavor.vue';
+import Banner from '@components/Banner/Banner.vue';
 
 const props = defineProps({
   name: {
@@ -64,13 +74,17 @@ const props = defineProps({
     type:    Boolean,
     default: false,
   },
+  mode: {
+    type:     String,
+    required: true,
+  },
   bmsIsAutoRenew: {
     type:    String,
     default: ''
   },
-  operatingSystemOptions: {
-    type:    Array,
-    default: () => ([]),
+  clusterVersion: {
+    type:    String,
+    default: '',
   },
   validityPeriodOptions: {
     type:    Array,
@@ -166,14 +180,96 @@ const isMonthlyYearly = computed(() => {
   return false;
 });
 
-watch(() => props.billingMode, async(billingMode) => {
-  if (billingMode === 1 && !props.validityPeriod) {
-    emit('update:validityPeriod', '1 month');
-  }
-  if (billingMode === 1 && !props.bmsIsAutoRenew) {
-    emit('update:bmsIsAutoRenew', 'false');
-  }
+const selectedFlavorOption = computed(() => {
+  return flavorOptions.value.find((item) => item.value === props.flavor);
 });
+
+const operatingSystemOptions = computed(() => {
+  return filterOperatingSystemOptions({
+    clusterVersion: props.clusterVersion,
+    architecture:   getFlavorArchitecture(selectedFlavorOption.value),
+    clusterType:    getCceClusterType(props.cceConfig),
+    currentOs:      props.operatingSystem || null,
+  });
+});
+
+const operatingSystemWarningKey = computed(() => {
+  return getOperatingSystemWarningKey(props.clusterVersion, props.operatingSystem);
+});
+
+function getFirstOptionValue(list) {
+  if (!Array.isArray(list) || !list.length) {
+    return '';
+  }
+
+  return list[0]?.value || '';
+}
+
+function getFlavorOptionsForZone(zone) {
+  if (!zone) {
+    return [];
+  }
+
+  return props.flavorOptionsByZones?.[zone] || [];
+}
+
+function getVolumeTypeOptionsForZone(zone) {
+  if (!zone) {
+    return [];
+  }
+
+  return props.volumeTypeChoicesByZones?.[zone] || [];
+}
+
+function syncOperatingSystem(flavorOption) {
+  if (!props.isNewOrUnprovisioned) {
+    return;
+  }
+
+  const nextOs = getDefaultOperatingSystemValue({
+    clusterVersion: props.clusterVersion,
+    flavorOption:   flavorOption || selectedFlavorOption.value,
+    cceConfig:      props.cceConfig,
+  });
+
+  emit('update:operatingSystem', nextOs);
+}
+
+function syncPoolDefaultsForZone(zone) {
+  if (!props.isNewOrUnprovisioned || !zone) {
+    return;
+  }
+
+  const flavorOpts = getFlavorOptionsForZone(zone);
+  const volumeOpts = getVolumeTypeOptionsForZone(zone);
+  const nextFlavor = getDefaultFlavorValue(flavorOpts);
+
+  emit('update:flavor', nextFlavor);
+  emit('update:rootVolumeType', getFirstOptionValue(volumeOpts));
+  emit('update:dataVolumeType', getFirstOptionValue(volumeOpts));
+  syncOperatingSystem(flavorOpts.find((item) => item.value === nextFlavor));
+}
+
+function updateAvailableZone(value) {
+  emit('update:availableZone', value);
+  syncPoolDefaultsForZone(value);
+}
+
+function updateFlavor(value) {
+  emit('update:flavor', value);
+  syncOperatingSystem(flavorOptions.value.find((item) => item.value === value));
+}
+
+function updateBillingMode(value) {
+  emit('update:billingMode', value);
+
+  if (!props.isNewOrUnprovisioned || value !== 1) {
+    return;
+  }
+
+  emit('update:validityPeriod', '1 month');
+  emit('update:bmsIsAutoRenew', 'false');
+}
 
 function blurInitialNodeCount(num) {
   if (num === '') {
@@ -199,20 +295,17 @@ function blurInitialNodeCount(num) {
         />
       </div>
       <div class="col span-6">
-        <div>
-          <h3 class="clearfix">
-            Containerd
-          </h3>
-          <RadioGroup
-            :value="runtime"
-            name="runtime"
-            :options="['containerd']"
-            :disabled="true"
-            :labels="['Containerd']"
-            :mode="mode"
-            @update:value="emit('update:runtime', $event)"
-          />
-        </div>
+        <LabeledInput
+          :value="initialNodeCount"
+          label-key="cceCn.initialNodeCount.label"
+          :mode="mode"
+          data-testid="cce-node-initial-node-count"
+          required
+          :disabled="cceConfig.imported"
+          type="number"
+          @blur="blurInitialNodeCount(initialNodeCount)"
+          @update:value="emit('update:initialNodeCount', $event)"
+        />
       </div>
     </div>
     <div class="row mb-10">
@@ -229,7 +322,7 @@ function blurInitialNodeCount(num) {
           label-key="cceCn.availableZone.label"
           :rules="rules.availableZone"
           required
-          @update:value="emit('update:availableZone', $event)"
+          @update:value="updateAvailableZone"
         />
       </div>
       <div class="col span-6">
@@ -245,7 +338,7 @@ function blurInitialNodeCount(num) {
           :rules="rules.billingMode"
           required
           :localizedLabel="true"
-          @update:value="emit('update:billingMode', $event)"
+          @update:value="updateBillingMode"
         />
       </div>
     </div>
@@ -270,9 +363,9 @@ function blurInitialNodeCount(num) {
       </div>
       <div class="col span-6">
         <div>
-          <h3 class="clearfix">
+          <label class="clearfix input-label m-0 mb-5">
             {{ intl('cceCn.bmsIsAutoRenew.label') }}
-          </h3>
+          </label>
           <RadioGroup
             :value="bmsIsAutoRenew"
             name="bmsIsAutoRenew"
@@ -285,6 +378,57 @@ function blurInitialNodeCount(num) {
         </div>
       </div>
     </div>
+    <div class="mb-10">
+      <NodeFlavor
+        :loading="flavorLoading"
+        :value="flavor"
+        data-testid="crucce-flavor"
+        :disabled="!isNewOrUnprovisioned"
+        :mode="mode"
+        :options="flavorOptions"
+        :rules="rules.flavor"
+        @update:value="updateFlavor"
+      />
+    </div>
+    <div class="row mb-10">
+      <div class="col span-6">
+        <LabeledSelect
+          :value="operatingSystem"
+          data-testid="crucce-operating-system-zone"
+          :mode="mode"
+          :options="operatingSystemOptions"
+          :disabled="!isNewOrUnprovisioned"
+          option-label="label"
+          option-key="value"
+          label-key="cceCn.operatingSystem.label"
+          :rules="rules.operatingSystem"
+          required
+          @update:value="emit('update:operatingSystem', $event)"
+        />
+      </div>
+      <div class="col span-6">
+        <LabeledSelect
+          :loading="osKeypairsLoading"
+          :value="sshKey"
+          data-testid="crucce-sshKey"
+          :mode="mode"
+          :options="sshKeyOptions"
+          :disabled="!isNewOrUnprovisioned"
+          option-label="label"
+          option-key="value"
+          label-key="cceCn.sshKey.label"
+          :rules="rules.sshKey"
+          required
+          @update:value="emit('update:sshKey', $event)"
+        />
+      </div>
+    </div>
+    <Banner
+      v-if="operatingSystemWarningKey"
+      class="mb-10"
+      color="warning"
+      :label="intl(operatingSystemWarningKey)"
+    />
     <div class="row mb-10">
       <div class="col span-6">
         <LabeledSelect
@@ -346,70 +490,6 @@ function blurInitialNodeCount(num) {
           required
           suffix="GB"
           @update:value="$emit('update:dataVolumeSize', $event)"
-        />
-      </div>
-    </div>
-    <div class="row mb-10">
-      <div class="col span-6">
-        <LabeledSelect
-          :loading="flavorLoading"
-          :value="flavor"
-          data-testid="crucce-flavor"
-          :disabled="!isNewOrUnprovisioned"
-          :mode="mode"
-          :options="flavorOptions"
-          option-label="label"
-          option-key="value"
-          label-key="cceCn.flavor.label"
-          :rules="rules.flavor"
-          required
-          @update:value="emit('update:flavor', $event)"
-        />
-      </div>
-      <div class="col span-6">
-        <LabeledInput
-          :value="initialNodeCount"
-          label-key="cceCn.initialNodeCount.label"
-          :mode="mode"
-          data-testid="cce-node-initial-node-count"
-          required
-          :disabled="cceConfig.imported"
-          type="number"
-          @blur="blurInitialNodeCount(initialNodeCount)"
-          @update:value="emit('update:initialNodeCount', $event)"
-        />
-      </div>
-    </div>
-    <div class="row mb-10">
-      <div class="col span-6">
-        <LabeledSelect
-          :value="operatingSystem"
-          data-testid="crucce-operating-system-zone"
-          :mode="mode"
-          :options="operatingSystemOptions"
-          :disabled="!isNewOrUnprovisioned"
-          option-label="label"
-          option-key="value"
-          label-key="cceCn.operatingSystem.label"
-          :rules="rules.operatingSystem"
-          required
-          @update:value="emit('update:operatingSystem', $event)"
-        />
-      </div>
-      <div class="col span-6">
-        <LabeledSelect
-          :loading="osKeypairsLoading"
-          :value="sshKey"
-          data-testid="crucce-sshKey"
-          :mode="mode"
-          :options="sshKeyOptions"
-          :disabled="!isNewOrUnprovisioned"
-          option-label="label"
-          option-key="value"
-          label-key="cceCn.sshKey.label"
-          :rules="rules.sshKey"
-          required
-          @update:value="emit('update:sshKey', $event)"
         />
       </div>
     </div>

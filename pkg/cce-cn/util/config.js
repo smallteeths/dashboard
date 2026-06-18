@@ -6,7 +6,7 @@ const DEFAULTCCECONFIG = {
   regionID:               '',
   dataVolumeSize:         100,
   vpcId:                  null,
-  version:                'v1.33',
+  version:                '',
   billingMode:            0,
   containerNetworkMode:   'vpc-router',
   clusterFlavor:          'cce.s2.small',
@@ -19,8 +19,9 @@ const DEFAULTCCECONFIG = {
   bmsIsAutoRenew:         'false',
   userName:               'root',
   authentiactionMode:     'rbac',
-  eipChargeMode:          'bandwidth',
+  eipChargeMode:          'traffic',
   eipType:                '5_bgp',
+  eipBandwidthSize:       50,
   securityGroup:          '',
   kubeProxyMode:          'iptables',
   eniNetwork:             { subnets: [] },
@@ -29,28 +30,34 @@ const DEFAULTCCECONFIG = {
 
 const CLUSTER_TYPES = [
   {
-    label: 'CCE',
+    label: 'cceCn.clusterType.standard.label',
     value: 'CCE',
   },
   {
-    label: 'Turbo',
+    label: 'cceCn.clusterType.turbo.label',
     value: 'Turbo',
   },
 ];
 
 const KUBERNETESVERSIONS = [
   {
-    label:          'v1.32',
-    value:          'v1.32',
-    rancherEnabled: true,
-    cceEnabled:     true,
-  },
-  {
     label:          'v1.33',
     value:          'v1.33',
     rancherEnabled: true,
     cceEnabled:     true,
-  }
+  },
+  {
+    label:          'v1.34',
+    value:          'v1.34',
+    rancherEnabled: true,
+    cceEnabled:     true,
+  },
+  {
+    label:          'v1.35',
+    value:          'v1.35',
+    rancherEnabled: true,
+    cceEnabled:     true,
+  },
 ];
 
 const MANAGEMENT_SCALE_VIRTUAL = [{
@@ -75,11 +82,6 @@ const CONTAINER_NETWORK_MODES = [{
   label: 'cceCn.containerNetworkMode.vpcRouter.label',
   value: 'vpc-router',
   bare:  false
-}, {
-  label:    'cceCn.containerNetworkMode.eni.label',
-  value:    'eni',
-  disabled: true,
-  bare:     false
 }];
 
 const EIPCHARGEMODEOPTIONS = [
@@ -118,7 +120,7 @@ const DEFAULT_NODE_GROUP_CONFIG = {
   bmsIsAutoRenew:   false,
   rootVolumeType:   '',
   dataVolumeType:   '',
-  initialNodeCount: 1,
+  initialNodeCount: 3,
   validityPeriod:   '1 month',
 };
 

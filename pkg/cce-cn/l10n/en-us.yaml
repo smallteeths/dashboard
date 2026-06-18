@@ -2,6 +2,17 @@ cceCn:
   label: Huawei CCE
   description: Provision new Huawei CCE (Huawei Kubernetes Service) clusters or register existing ones.
   updateWarn: The cluster is currently being upgraded, and editing may result in unknown errors.
+  basicConfig:
+    title: Basic Configuration
+    description: Configure the cluster name, type, Kubernetes version, scale, and availability.
+  networkConfig:
+    title: Network Configuration
+    description: Configure VPC, subnet, container network, service CIDR, security group, and forwarding mode.
+  tagsConfig:
+    title: Tags
+    description: Add cloud provider tags to the CCE cluster.
+  validationHelp:
+    title: Required Configuration
   region:
     label: Region
     helpText: You can find instructions on how to obtain Region <a href="https://developer.huaweicloud.com/endpoint" target="_blank">here</a>.
@@ -36,12 +47,10 @@ cceCn:
     cn_east_4: CN East2
   clusterType:
     label: Cluster Type
-    VirtualMachine:
-      label: VirtualMachine
-    BareMetal:
-      label: BareMetal
-    ARM64:
-      label: ARM64
+    standard:
+      label: CCE Standard
+    turbo:
+      label: CCE Turbo
   version:
     label: Master Version
     warningNotRecommend: “{version}”，This version of Huawei CCE is not recommended. For details, see huawei official documents.
@@ -88,8 +97,10 @@ cceCn:
     default: Default Security Group
   kubeProxyMode:
     label: Request Forwarding
+    description: Select the kube-proxy forwarding mode used by services in the cluster.
   publicAccess:
     label: Use Public Network Access
+    description: Configure whether the cluster API server is exposed through an elastic IP.
   eipSelection:
     none: Disabled
     new: Create Eip
@@ -110,6 +121,7 @@ cceCn:
     label: Eip Bandwidth Size
   authentiactionMode:
     label: Certificate Authentication
+    description: Select the cluster authentication mode and upload certificates when custom authentication is used.
     rbac: Default
     authenticating_proxy: Custom
   authenticatingProxyCa:
@@ -120,6 +132,7 @@ cceCn:
     label: Client Certificate Private Key
   highAvailability:
     label: High Availability
+    description: Configure the high availability policy for the CCE control plane.
   availableZone:
     label: Zone
     value: Availability Zone {num}
@@ -157,10 +170,28 @@ cceCn:
     label: Node Count
   flavor:
     label: Node Flavor
+    table:
+      title: Node Flavor
+      subtitle: Select the node flavor for this node pool.
+      filters:
+        cpu: CPU
+        memory: Memory
+      columns:
+        name: Flavor
+        family: Family
+        vcpus: CPU
+        memory: Memory
+    selected:
+      title: Selected Flavor
   sshKey:
     label: SSH Key Name
   operatingSystem:
     label: Node Operation System
+    warning:
+      cgroupV1SuggestCgroupV2: The selected operating system uses cgroup v1 for container resource isolation. We recommend choosing a cgroup v2 operating system (Ubuntu 22.04). Future cluster versions will no longer support cgroup v1 operating systems.
+      cgroupV2Compatibility: The selected operating system uses cgroup v2 for container resource isolation. Software that directly reads the cgroup filesystem may have compatibility issues.
+      eulerOs29Eol: EulerOS 2.9 reached end of maintenance on December 31, 2025. Cluster versions 1.35 and above no longer support this operating system.
+      centOs76Eol: CentOS 7 reached end of maintenance on June 30, 2024. Cluster versions 1.35 and above no longer support this operating system.
   clusterSelect:
     importCluster: Cluster
     required: The cluster to be imported must be set
