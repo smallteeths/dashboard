@@ -430,6 +430,25 @@ function withCurrentVersionOption(list) {
   return currentOption?.value ? [...list, currentOption] : list;
 }
 
+function filterVersionOptionsMinCurrent(versionOptions, currentVersion) {
+  if (!currentVersion) {
+    return versionOptions;
+  }
+
+  return versionOptions.filter((item) => compareKubernetesVersion(item.value, currentVersion) >= 0);
+}
+
+function applyKubernetesVersionOptions(versionOptions) {
+  let list = versionOptions.length > 0 ? versionOptions : CONFIG_ENV.KUBERNETESVERSIONS;
+
+  // 只有在集群创建出来之后才过滤版本
+  if (!isNewOrUnprovisioned.value) {
+    list = filterVersionOptionsMinCurrent(list, cceConfig.value.version);
+  }
+
+  options.value.kubernetesVersionOptions = withCurrentVersionOption(list);
+}
+
 // 初始化 Kubernetes 版本：取 API 返回列表第一项，仅新建/未创建成功且 version 为空时填充
 function syncCreateVersionDefault() {
   if (!isNewOrUnprovisioned.value) {
@@ -793,13 +812,13 @@ async function fetchKubernetesVersions(cloudCredentialId) {
     });
     const versionOptions = normalizeVersionOptions(res);
 
-    options.value.kubernetesVersionOptions = withCurrentVersionOption(versionOptions.length > 0 ? versionOptions : CONFIG_ENV.KUBERNETESVERSIONS);
+    applyKubernetesVersionOptions(versionOptions);
     syncCreateVersionDefault();
     if (isNewOrUnprovisioned.value) {
       syncAllNodePoolOperatingSystems();
     }
   } catch (err) {
-    options.value.kubernetesVersionOptions = withCurrentVersionOption(CONFIG_ENV.KUBERNETESVERSIONS);
+    applyKubernetesVersionOptions(CONFIG_ENV.KUBERNETESVERSIONS);
     syncCreateVersionDefault();
     state.value.errors = [];
     state.value.errors.push(err);
