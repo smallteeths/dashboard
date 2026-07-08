@@ -1936,6 +1936,18 @@ cluster:
     machines: 主机
     rkeTemplate: RKE 模板
   machinePool:
+    automation:
+      label: 自动化
+    autoscaler:
+      heading: Autoscaler
+      enable: 启用 Autoscaler 并覆盖「主机数量」的值
+      machineCountValueOverride: 由 Autoscaler 控制
+      baseUnit: 主机
+      min: 最小
+      max: 最大
+      validation:
+        isAutoscalerMaxGreaterThanMin: 最大主机数必须大于或等于最小主机数。
+      etcdControlPlaneWarning: 不建议在具有 etcd 或 Control Plane 角色的主机池上使用 Autoscaler。如需覆盖当前值，可以修改 YAML。
     name:
       label: 池名称
       placeholder: 默认会随机生成一个名称
@@ -2447,6 +2459,98 @@ etcdInfoBanner:
   leaderChanges: "Leader 变化的次数："
   failedProposals: "失败的 proposal 数量："
 fleet:
+  settings:
+    label: 持续交付
+    title: 持续交付设置
+    info: 更改设置后，Rancher 将重启 Fleet agent 和 controller。
+    apply: 应用更改
+    noPermissions: 您没有修改 Fleet 设置的权限
+    parseError: '无法从 "{ id }" ConfigMap 中的 "{ path }" 解析值'
+    fields:
+      ariaLabel: Fleet {name} 设置
+    agentTLSMode:
+      label: TLS 模式
+      description: "决定 agent 连接 management cluster 时是否信任操作系统信任存储中的 CA 证书包。"
+      options:
+        system-store:
+          label: system-store
+        strict:
+          label: strict
+    agentCheckinInterval:
+      label: Checkin Interval
+      description: Agent 上报心跳的时间间隔（duration 字符串）。
+    garbageCollectionInterval:
+      label: Garbage Collection Interval
+      description: Agent 清理旧 Helm release 前等待的时间。值为空或 0 时，默认为 15 分钟。
+    clusterEnqueueDelay:
+      label: Cluster Enqueue Delay
+      description: "同步仓库与 bundle deployment 状态的间隔。"
+    proxy:
+      label: 代理
+      description: Fleet http[s] 代理服务器。
+      placeholder: http://<username>@<password>:<url>:<port>
+    noProxy:
+      label: No Proxy
+      description: 不使用代理的域名或 IP 地址列表，以逗号分隔。
+    gitClientTimeout:
+      label: Git Client Timeout
+      description: "等待服务器响应的最长时间，超时后取消请求。用于获取已配置 Git 仓库的最新 commit。值为空或 0 时，默认为 30 秒。"
+    nodeSelector:
+      label: 节点选择器
+      description: "用于 Pod 调度的节点标签。"
+      add: 添加选择器
+    tolerations:
+      label: 容忍度
+      description: "Pod 可容忍的节点污点列表（需要 Kubernetes >= 1.6）"
+      add: 添加容忍度
+    priorityClassName:
+      label: Priority Class Name
+      description: "分配给 deployment 的 PriorityClassName。"
+    metrics:
+      label: Metrics
+      description: '启用 metrics'
+    debug:
+      label: Debug
+      description: '启用 debug 模式'
+    controllerAnnotations:
+      label: Controller
+      description: ""
+      add: 添加 Annotation
+    gitjobAnnotations:
+      label: Gitjob
+      description: ""
+      add: 添加 Annotation
+    helmopsAnnotations:
+      label: Helmops
+      description: ""
+      add: 添加 Annotation
+    controllerReplicas:
+      label: Controller
+      description: ""
+    gitjobReplicas:
+      label: Gitjob
+      description: ""
+    helmopsReplicas:
+      label: Helmops
+      description: ""
+    agentReplicas:
+      label: Agent
+      description: ""
+    general:
+      label: 常规
+      description: '常规设置。'
+    agent:
+      label: Agent
+      description: 'Agent 部署设置。'
+    replicas:
+      label: 副本
+      description: 'Fleet Pod 的副本数量。'
+    annotations:
+      label: 额外 Annotation
+      description: '传递给 Fleet Pod 的额外 annotation。'
+    developer:
+      label: 开发者
+      description: '启用 Fleet 的 debug 信息。'
   dashboard:
     pageTitle: 持续交付仪表板
     menuLabel: 仪表板
