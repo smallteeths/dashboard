@@ -1,0 +1,65 @@
+registration:
+  navigation:
+    label: 訂閱
+
+  notification:
+    title: Rancher Prime 訂閱
+    message: 訂閱您的 SUSE Rancher Manager Prime Suite，以取得最新更新與支援。
+    button:
+      primary:
+        label: 立即訂閱
+
+  title: 訂閱
+  banner:
+    status:
+      success: 系統訂閱已成功啟用。
+      error: 此系統沒有有效的訂閱。
+
+  online:
+    title: 線上訂閱
+    description: 在下方輸入有效的 Rancher Manager 註冊碼，然後按一下訂閱按鈕。
+    input:
+      label: '註冊碼：'
+      placeholder: e.g. sdfs-a987435-kjhsf-8u44p0-dmw0o44p0dmasd9
+    button-cta:
+      label: 訂閱
+      progress: 訂閱中
+
+  offline:
+    title: 離線訂閱
+    stepone: '<b>步驟 1：</b>若要離線訂閱 Rancher Manager，您必須先下載下方的訂閱請求檔案'
+    steptwo: '<b>步驟 2：</b>前往 SUSE Customer Center (SCC) 離線訂閱工具。'
+    stepthree: '<b>步驟 3：</b>登入 SCC 後，依照說明取得 SCC 提供的訂閱憑證。取得後，在下方上傳該檔案以訂閱您的產品。'
+    button:
+      download:
+        label: 下載訂閱請求
+        progress: 下載中
+      visit:
+        label: 前往 SCC
+      register:
+        label: 上傳憑證並訂閱
+        progress: 訂閱中
+  list:
+    title: 訂閱
+    table:
+      header:
+        status: 狀態
+        product: 產品名稱
+        expiration: 到期時間
+        mode: 訂閱模式
+      button:
+        label: 取消訂閱
+        progress: 取消訂閱中
+      badge:
+        none: 未訂閱
+        invalid: 無效
+        expired: 已到期
+        valid: 有效
+  errors:
+    missing-code: 缺少作為 Secret 的註冊碼
+    mismatch-code: 訂閱已啟用，但與 Secret 中的註冊碼不相符。請驗證 <a href="${ url }">訂閱</a>
+    generic-registration: 現有註冊碼 (Secret) 未找到訂閱資訊。
+    timeout-registration: 等待資源時逾時。
+
+prime:
+  installed: 這是 SUSE Rancher Prime 安裝
