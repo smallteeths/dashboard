@@ -2010,6 +2010,19 @@ cluster:
         placeholder: Instance Description
       instanceType:
         label: Instance Type
+        selected:
+          title: Selected Instance Type
+        table:
+          title: Instance Type
+          columns:
+            instanceType: Specification
+            instanceFamily: Family
+            vcpus: CPU
+            memory: Memory
+        cpu:
+          label: Filter by CPU
+        memory:
+          label: Filter by Memory
       imageId:
         label: System image
         placeholder: System image

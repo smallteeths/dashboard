@@ -1558,6 +1558,19 @@ cluster:
         placeholder: 該實例的描述
       instanceType:
         label: 實例類型
+        selected:
+          title: 已選擇實例類型
+        table:
+          title: 實例類型
+          columns:
+            instanceType: 實例規格
+            instanceFamily: 規格族
+            vcpus: CPU
+            memory: 內存
+        cpu:
+          label: 根據 CPU 篩選
+        memory:
+          label: 根據內存篩選
       imageId:
         label: 系統鏡像
         placeholder: 系統鏡像
