@@ -9,6 +9,8 @@ import UnitInput from '@shell/components/form/UnitInput';
 import RadioGroup from '@components/Form/Radio/RadioGroup.vue';
 import Checkbox from '@components/Form/Checkbox/Checkbox.vue';
 import ArrayList from '@shell/components/form/ArrayList';
+
+import AliyunInstanceType from '@shell/machine-config/AliyunInstanceType.vue';
 import { NORMAN } from '@shell/config/types';
 import { allHash } from '@shell/utils/promise';
 import { sortBy } from '@shell/utils/sort';
@@ -57,10 +59,13 @@ const DISKS = [
 
 const periodWeek = ['1'];
 const periodMonth = ['1', '2', '3', '6', '12', '24', '36', '48', '60'];
+// 新建时默认实例规格：优先 2 核 8 GiB
+const DEFAULT_INSTANCE_CPU = 2;
+const DEFAULT_INSTANCE_MEMORY = 8;
 
 export default {
   components: {
-    Banner, Loading, LabeledInput, LabeledSelect, Checkbox, RadioGroup, UnitInput, KeyValue, ArrayList
+    Banner, Loading, LabeledInput, LabeledSelect, Checkbox, RadioGroup, UnitInput, KeyValue, ArrayList, AliyunInstanceType
   },
   mixins: [CreateEditView],
   props:  {
@@ -87,6 +92,11 @@ export default {
         }
       },
       type: Function
+    },
+    // 编辑集群时新增 Machine Pool 也为 true，用于区分「新建」与「编辑已有配置」
+    poolCreateMode: {
+      type:    Boolean,
+      default: false,
     },
   },
   async fetch() {
@@ -116,8 +126,8 @@ export default {
       const region = this.value?.region || this.$store.getters['aliyun/defaultRegion'];
       const hash = {};
 
-      this.setIfUnset('region', region);
-      this.setIfUnset('resourceGroupId', '');
+      this.setDefaultIfUnset('region', region);
+      this.setDefaultIfUnset('resourceGroupId', '');
       if (!this.resourceGroups) {
         hash.resourceGroups = this.$store.dispatch('aliyun/resourceGroups', { cloudCredentialId });
       }
@@ -134,20 +144,20 @@ export default {
       for (const k in res) {
         this[k] = res[k];
       }
-      this.setIfUnset('zone', this.defaultValue?.zone);
-      this.setIfUnset('vpcId', this.defaultValue?.vpcId);
-      if (this.isUnset(this.value?.instanceType)) {
-        const defaultInstanceType = this.instanceOptions?.[0]?.value || '';
-
-        if (defaultInstanceType) {
-          this.value.instanceType = defaultInstanceType;
-        }
+      // 新建时按顺序填充网络默认值：可用区 → VPC → 交换机
+      this.applyDefaultZoneIfNeeded();
+      this.applyDefaultVpcIfNeeded();
+      if (this.value?.vpcId) {
+        await this.vpcChangeFetch();
+        this.applyDefaultVswitchIfNeeded();
       }
-      this.setIfUnset('upgradeKernel', false);
-      this.setIfUnset('ioOptimized', 'optimized');
-      this.setIfUnset('diskFs', 'ext4');
-      this.setIfUnset('internetChargeType', 'PayByTraffic');
-      this.setIfUnset('instanceChargeType', this.defaultValue?.instanceChargeType);
+      // 以下字段仅在新建/poolCreateMode 时写入，避免编辑已有配置被静默修改
+      this.setDefaultIfUnset('upgradeKernel', false);
+      this.setDefaultIfUnset('ioOptimized', 'optimized');
+      this.setDefaultIfUnset('diskFs', 'ext4');
+      this.setDefaultIfUnset('internetChargeType', 'PayByTraffic');
+      this.setDefaultIfUnset('internetMaxBandwidth', '50');
+      this.setDefaultIfUnset('instanceChargeType', this.defaultValue?.instanceChargeType);
 
       const openPort = this.value?.openPort;
 
@@ -157,13 +167,13 @@ export default {
       // this behavior. Changing how `openPort` is sent when an existing Security Group is chosen could
       // unintentionally affect instances created previously (or automation relying on the old behavior).
       // Therefore, we preserve the original/default logic here.
-      if (this.isUnset(openPort) || (Array.isArray(openPort) && openPort.length === 0)) {
+      if (this.shouldApplyDefaults && (this.isUnset(openPort) || (Array.isArray(openPort) && openPort.length === 0))) {
         this.value.openPort = this.defaultValue?.openPort || [];
       }
       this.initTags();
       this.loadedRegionalFor = region;
-      // Don not await instanceTypes, it will be fetched in instanceChangeFetch
-      this.fetchInstanceTypes({ cloudCredentialId, regionId: region });
+      // 拉取可用实例类型，并在新建时自动选中默认规格及联动镜像/磁盘
+      await this.fetchInstanceTypes({ cloudCredentialId, regionId: region });
     } catch (e) {
       this.errors = exceptionToErrorsArray(e);
     }
@@ -200,6 +210,7 @@ export default {
     };
   },
   mounted() {
+    // 编辑模式仅加载选项数据，不写入默认值
     this.value?.vpcId && this.vpcChangeFetch();
     this.value?.instanceType && this.instanceChangeFetch();
 
@@ -241,13 +252,8 @@ export default {
 
         this.availableInstanceTypes = sortBy(filtered, ['isDefault:desc', 'InstanceTypeFamily']);
         this.instanceTypes = all || this.instanceTypes || [];
-        if (this.isUnset(this.value?.instanceType)) {
-          const defaultInstanceType = this.instanceOptions?.[0]?.value || '';
-
-          if (defaultInstanceType) {
-            this.value.instanceType = defaultInstanceType;
-          }
-        }
+        // 实例类型列表就绪后，尝试设置默认规格并触发镜像/磁盘联动
+        await this.applyDefaultInstanceTypeAndCascade();
       } catch (e) {
         this.instanceTypeErrors = exceptionToErrorsArray(e);
       } finally {
@@ -291,7 +297,9 @@ export default {
         this.vswitchIdLoading = false;
       }
     },
-    async instanceChangeFetch() {
+    // 实例类型变更后拉取镜像、系统盘/数据盘可用类型
+    // applyDefaults=true 时才会写入镜像/磁盘默认值（新建或用户手动切换实例类型）
+    async instanceChangeFetch({ applyDefaults = false } = {}) {
       const cloudCredentialId = this.credentialId;
       const {
         region,
@@ -349,6 +357,12 @@ export default {
 
         this.imageType = imageType;
         this.imageVersionChoose = imageVersionChoose;
+
+        if (applyDefaults) {
+          await this.$nextTick();
+          // 联动填充：系统镜像、镜像版本、系统盘类型与大小
+          this.applyInstanceLinkedDefaults();
+        }
       } catch (e) {
         this.errors = exceptionToErrorsArray(e);
       } finally {
@@ -503,25 +517,31 @@ export default {
       hash.availableInstanceTypes = this.$store.dispatch('aliyun/availableInstanceTypes', {
         cloudCredentialId, regionId, destinationResource: 'InstanceType', zoneId: this.value?.zone, instanceChargeType: this.value?.instanceChargeType
       });
-      allHash(hash).then((h) => {
+      allHash(hash).then(async(h) => {
         const out = (this.instanceTypes || []).filter((obj) => h.availableInstanceTypes.includes(obj.InstanceTypeId));
 
         this.availableInstanceTypes = sortBy(out, ['isDefault:desc', 'InstanceTypeFamily']);
-        if (!h.availableInstanceTypes.includes(this.value.instanceType)) {
+        // 新建时：当前规格在新计费方式下不可用时清空，再尝试重新选默认规格
+        if (
+          this.shouldApplyDefaults &&
+          this.value.instanceType &&
+          !h.availableInstanceTypes.includes(this.value.instanceType)
+        ) {
           this.value.instanceType = '';
         }
 
-        return h;
+        await this.applyDefaultInstanceTypeAndCascade();
       });
     },
+    // 切换系统镜像类型时，自动选中该类型下第一个镜像版本
     imageTypeChanged(val) {
       let imageVersionChoose = [];
 
       if (val && this.groupImages) {
-        imageVersionChoose = this.groupImages[val];
+        imageVersionChoose = this.groupImages[val] || [];
       }
       this.imageVersionChoose = imageVersionChoose;
-      this.value.imageId = '';
+      this.value.imageId = imageVersionChoose?.[0]?.value || '';
     },
     capitalizeFirst(str) {
       if (typeof str !== 'string' || str.length === 0) return str;
@@ -541,7 +561,131 @@ export default {
       }
     },
     isUnset(val) {
-      return val === undefined || val === null;
+      // 空字符串也视为未设置，用于默认值判断
+      return val === undefined || val === null || val === '';
+    },
+    applyDefaultZoneIfNeeded() {
+      // 新建时默认选中第一个可用区
+      if (!this.shouldApplyDefaults || !this.isUnset(this.value?.zone)) {
+        return false;
+      }
+
+      const zone = this.defaultValue?.zone || this.zones?.[0]?.ZoneId;
+
+      if (zone) {
+        this.value.zone = zone;
+
+        return true;
+      }
+
+      return false;
+    },
+    applyDefaultVpcIfNeeded() {
+      // 新建时默认选中标记为 IsDefault 的 VPC，否则取第一个
+      if (!this.shouldApplyDefaults || !this.isUnset(this.value?.vpcId)) {
+        return false;
+      }
+
+      const vpc = this.vpcs?.find((obj) => obj.IsDefault) || this.vpcs?.[0];
+
+      if (vpc?.VpcId) {
+        this.value.vpcId = vpc.VpcId;
+
+        return true;
+      }
+
+      return false;
+    },
+    applyDefaultVswitchIfNeeded() {
+      if (!this.shouldApplyDefaults || !this.isUnset(this.value?.vswitchId)) {
+        return false;
+      }
+
+      const vswitches = (this.vSwitches || []).filter((obj) => obj.ZoneId === this.value?.zone);
+      const vswitch = vswitches.find((obj) => obj.IsDefault) || vswitches[0];
+
+      if (vswitch?.VSwitchId) {
+        this.value.vswitchId = vswitch.VSwitchId;
+
+        return true;
+      }
+
+      return false;
+    },
+    resetInstanceLinkedFields() {
+      // 实例类型变更时清空镜像/磁盘相关字段，避免残留旧联动数据
+      this.imageType = '';
+      this.imageVersionChoose = [];
+      this.value.imageId = '';
+      this.value.systemDiskCategory = '';
+      this.value.diskCategory = '';
+      this.value.systemDiskSize = '';
+      this.images = null;
+      this.systemDiskCategories = null;
+      this.dataDiskCategories = null;
+    },
+    applyInstanceLinkedDefaults() {
+      // 填充实例类型关联字段：镜像类型/版本、系统盘类型与最小容量
+      if (this.isUnset(this.value?.imageId)) {
+        const imageType = this.imageType || this.imageTypeChoose?.[0]?.value;
+
+        if (imageType) {
+          this.imageType = imageType;
+          this.imageVersionChoose = this.groupImages?.[imageType] || [];
+          const firstImage = this.imageVersionChoose?.[0]?.value;
+
+          if (firstImage) {
+            this.value.imageId = firstImage;
+          }
+        }
+      }
+
+      if (this.isUnset(this.value?.systemDiskCategory) && this.systemDiskCategoryOptions?.length) {
+        this.value.systemDiskCategory = this.systemDiskCategoryOptions[0].value;
+      }
+
+      if (this.isUnset(this.value?.systemDiskSize)) {
+        this.value.systemDiskSize = String(this.systemDiskCategorySize.Min);
+      }
+    },
+    async applyDefaultInstanceTypeAndCascade() {
+      // 设置默认实例类型后，继续拉取并填充镜像/磁盘联动字段
+      if (!this.applyDefaultInstanceTypeIfNeeded()) {
+        return false;
+      }
+
+      await this.instanceChangeFetch({ applyDefaults: true });
+
+      return true;
+    },
+    applyDefaultInstanceTypeIfNeeded() {
+      // 仅新建且 instanceType 为空时写入默认规格
+      if (!this.shouldApplyDefaults || !this.isUnset(this.value?.instanceType)) {
+        return false;
+      }
+
+      const defaultInstanceType = this.resolveDefaultInstanceTypeId(this.availableInstanceTypes);
+
+      if (defaultInstanceType) {
+        this.value.instanceType = defaultInstanceType;
+
+        return true;
+      }
+
+      return false;
+    },
+    resolveDefaultInstanceTypeId(types = []) {
+      if (!types?.length) {
+        return '';
+      }
+
+      // 优先 2 核 8 GiB，没有则取列表第一项
+      const exact = types.find(
+        (obj) => Number(obj.CpuCoreCount) === DEFAULT_INSTANCE_CPU &&
+          Number(obj.MemorySize) === DEFAULT_INSTANCE_MEMORY
+      );
+
+      return exact?.InstanceTypeId || types[0]?.InstanceTypeId || '';
     },
     setIfUnset(key, fallback) {
       if (!this.value) {
@@ -550,6 +694,14 @@ export default {
       if (this.isUnset(this.value[key])) {
         this.value[key] = fallback;
       }
+    },
+    setDefaultIfUnset(key, fallback) {
+      // 仅新建/poolCreateMode 时填充默认值，编辑已有配置不修改
+      if (!this.shouldApplyDefaults) {
+        return;
+      }
+
+      this.setIfUnset(key, fallback);
     },
     updateRegion() {
       this.resetValue();
@@ -561,24 +713,36 @@ export default {
     },
     updateZone(val) {
       if (val) {
+        // 切换可用区会清空 VPC/交换机/实例类型等下游字段，再重新走默认值流程
         this.resetValue();
         this.$fetch();
-        this.instanceChangeFetch();
       }
     },
     updateVpcId(val) {
       if (val) {
-        this.vswitchId = '';
-        this.vpcChangeFetch();
+        this.value.vswitchId = '';
+        // 切换 VPC 只刷新交换机/安全组，不重新请求实例类型（实例类型与可用区相关）
+        this.vpcChangeFetch().then(() => {
+          this.applyDefaultVswitchIfNeeded();
+        });
       }
     },
     updateInstanceType(val) {
-      if (val) {
-        this.imageType = '';
-        this.value.imageId = '';
-        this.value.systemDiskCategory = '';
-        this.value.diskCategory = '';
-        this.instanceChangeFetch();
+      const previous = this.value?.instanceType;
+
+      // AliyunInstanceType 使用 :value 单向绑定，需在此写入 instanceType
+      this.value.instanceType = val;
+
+      if (!val) {
+        this.resetInstanceLinkedFields();
+
+        return;
+      }
+
+      if (val !== previous) {
+        this.resetInstanceLinkedFields();
+        // 用户手动切换实例类型时，重新初始化镜像/磁盘联动值
+        this.instanceChangeFetch({ applyDefaults: true });
       }
     },
     updateInstanceChargeType(val) {
@@ -745,39 +909,27 @@ export default {
         label: this.t(item.label),
       }));
     },
-    instanceOptions() {
-      if ( !this.availableInstanceTypes ) {
+    instanceTypeTableOptions() {
+      // 供 AliyunInstanceType 表格展示的扁平化选项
+      if (!this.availableInstanceTypes) {
         return [];
       }
-      let lastGroup;
-      const out = [];
-      const children = [];
 
-      this.availableInstanceTypes.forEach((obj) => {
-        if (obj.InstanceTypeFamily !== lastGroup) {
-          if (children.length) {
-            out.push(...sortBy(children, 'cpuCoreCount'));
-          }
-          children.length = 0;
-          out.push({
-            kind:     'group',
-            disabled: true,
-            label:    obj.InstanceTypeFamily
-          });
-
-          lastGroup = obj.InstanceTypeFamily;
-        }
-        children.push({
-          label:        `${ obj.InstanceTypeId } ( ${ obj.CpuCoreCount } ${ obj.CpuCoreCount > 1 ? 'Cores' : 'Core' } ${ obj.MemorySize }GB RAM )`,
-          value:        obj.InstanceTypeId,
-          cpuCoreCount: obj.CpuCoreCount
-        });
-      });
-      if (children.length) {
-        out.push(...sortBy(children, 'cpuCoreCount'));
-      }
-
-      return out;
+      return this.availableInstanceTypes.map((obj) => ({
+        label:  `${ obj.InstanceTypeId } ( ${ obj.CpuCoreCount } ${ obj.CpuCoreCount > 1 ? 'Cores' : 'Core' } ${ obj.MemorySize }GB RAM )`,
+        value:  obj.InstanceTypeId,
+        group:  obj.InstanceTypeFamily,
+        vcpus:  obj.CpuCoreCount,
+        memory: obj.MemorySize,
+        raw:    obj,
+      }));
+    },
+    defaultInstanceTypeId() {
+      return this.resolveDefaultInstanceTypeId(this.availableInstanceTypes);
+    },
+    shouldApplyDefaults() {
+      // 新建集群或编辑时新增 Machine Pool 才自动填默认值
+      return this.isCreate || this.poolCreateMode;
     },
     groupImages() {
       if ( !this.images ) {
@@ -988,28 +1140,17 @@ export default {
             :placeholder="t('cluster.machineConfig.aliyunecs.vswitchId.prompt')"
           />
         </div>
-        <div class="col span-6">
-          <LabeledSelect
-            v-model:value="value.instanceType"
+      </div>
+      <div class="row mb-20">
+        <div class="col span-12">
+          <AliyunInstanceType
+            :value="value.instanceType"
             :mode="mode"
-            :options="instanceOptions"
-            :required="true"
-            :selectable="option => !option.disabled"
-            :searchable="true"
+            :options="instanceTypeTableOptions"
             :disabled="disabled"
-            :label="t('cluster.machineConfig.aliyunecs.instanceType.label')"
             :loading="instanceTypeLoading"
             @update:value="updateInstanceType"
-          >
-            <template v-slot:option="opt">
-              <template v-if="opt.kind === 'group'">
-                <b>{{ opt.label }}</b>
-              </template>
-              <template v-else>
-                <span class="pl-10">{{ opt.label }}</span>
-              </template>
-            </template>
-          </LabeledSelect>
+          />
         </div>
       </div>
       <div class="row mb-20">
