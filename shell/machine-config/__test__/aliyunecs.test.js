@@ -21,7 +21,7 @@ describe('component: aliyunecs', () => {
         return { systemDiskSize: '', defaultValue: getters.defaultValue() };
       },
       global: {
-        stubs:      { portal: true },
+        stubs:      { portal: true, AliyunInstanceType: true },
         directives: { cleanTooltip, cleanHtml },
         mocks:      {
           $fetchState: {
@@ -43,7 +43,7 @@ describe('component: aliyunecs', () => {
     const selectWraps = wrapper.findAllComponents(LabeledSelect);
     const inputWraps = wrapper.findAllComponents(UnitInput);
 
-    expect(selectWraps).toHaveLength(11);
+    expect(selectWraps).toHaveLength(10);
     expect(inputWraps).toHaveLength(2);
   });
 });
