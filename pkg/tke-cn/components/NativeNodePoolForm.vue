@@ -340,12 +340,27 @@ const filteredSubnetOptions = computed(() => {
 
   if (isVpcCni && eniSubnetIds.length > 0) {
     const eniSubnetIdSet = new Set(eniSubnetIds);
+    // 根据 ENI 子网推断可用区，展示这些可用区下的全部子网（不限于 ENI 子网 ID 本身）
+    const eniZones = new Set(
+      options
+        .filter((item) => {
+          const subnetId = item.SubnetId || item.subnetId || item.value || '';
 
-    filtered = filtered.filter((item) => {
-      const subnetId = item.SubnetId || item.subnetId || item.value || '';
+          return eniSubnetIdSet.has(subnetId);
+        })
+        .map((item) => item.Zone || item.zone || '')
+        .filter(Boolean)
+    );
 
-      return eniSubnetIdSet.has(subnetId);
-    });
+    if (eniZones.size > 0) {
+      filtered = filtered.filter((item) => eniZones.has(item.Zone || item.zone || ''));
+    } else {
+      filtered = filtered.filter((item) => {
+        const subnetId = item.SubnetId || item.subnetId || item.value || '';
+
+        return eniSubnetIdSet.has(subnetId);
+      });
+    }
   }
 
   if (!props.instanceType) {
