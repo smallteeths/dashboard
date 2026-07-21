@@ -163,9 +163,41 @@ export default class Namespace extends SteveModel {
   }
 
   removeFinalizers() {
-    delete this.metadata.finalizers;
+    this.spec = this.spec || {};
+    this.spec.finalizers = [];
 
-    return this;
+    const baseUrl = this.linkFor('view') || this.linkFor('update') || this.linkFor('self');
+
+    if (!baseUrl) {
+      return { save: () => Promise.reject(new Error('Namespace finalize URL not available')) };
+    }
+
+    const url = baseUrl.endsWith('/finalize') ? baseUrl : `${ baseUrl }/finalize`;
+
+    return {
+      save: () => this.$dispatch('request', {
+        opt: {
+          url,
+          method:  'put',
+          headers: {
+            accept:         'application/json',
+            'content-type': 'application/json',
+          },
+          data: {
+            apiVersion: this.apiVersion || 'v1',
+            kind:       this.kind || 'Namespace',
+            metadata:   {
+              name:            this.metadata.name,
+              resourceVersion: `${ this.metadata.resourceVersion }`,
+              ...(this.metadata.deletionTimestamp ? { deletionTimestamp: this.metadata.deletionTimestamp } : {}),
+              ...(this.metadata.uid ? { uid: this.metadata.uid } : {}),
+            },
+            spec: { finalizers: [] },
+          },
+        },
+        type: this.type,
+      }),
+    };
   }
 
   enableAutoInjection(namespaces = this, enable = true) {
