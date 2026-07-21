@@ -53,6 +53,11 @@ export default {
     hasTerminatingState() {
       return !!this.toRemove.find((item) => item.state === 'terminating');
     },
+    canRemoveFinalizers() {
+      return this.toRemove.some((item) => {
+        return item.state === 'terminating' && typeof item.removeFinalizers === 'function';
+      });
+    },
     names() {
       return this.toRemove.map((obj) => obj.nameDisplay);
     },
@@ -234,7 +239,9 @@ export default {
 
     async remove(btnCB) {
       if (this.removeFinalizers) {
-        await Promise.all(this.toRemove.map((resource) => resource.removeFinalizers().save()));
+        const finalizerTargets = this.toRemove.filter((resource) => typeof resource.removeFinalizers === 'function');
+
+        await Promise.all(finalizerTargets.map((resource) => resource.removeFinalizers().save()));
         pullAllBy(this.toRemove, [{ state: 'terminating' }], 'state');
         this.removeFinalizers = false;
 
@@ -472,9 +479,9 @@ export default {
           @update:value="chartAddCrdToRemove"
         />
         <Checkbox
-          v-if="hasTerminatingState"
+          v-if="canRemoveFinalizers"
           v-model:value="removeFinalizers"
-          label-key="promptForceRemove.forceDelete"
+          label-key="promptForceRemove.removeFinalizers"
           class="mt-10 type"
           @update:value="finalizersToRemove"
         />
