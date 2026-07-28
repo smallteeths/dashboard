@@ -258,23 +258,48 @@ export default {
         throw new Error(this.t('changePassword.errors.cannotChange'));
       }
 
-      const spec = {
-        newPassword: this.isRandomGenerated ? this.encryptPassword(this.form.genP) : this.encryptPassword(this.form.newP),
-        userID:      this.userId
-      };
+      const newPassword = this.isRandomGenerated ? this.encryptPassword(this.form.genP) : this.encryptPassword(this.form.newP);
 
-      if (mode === 'change') {
-        spec.currentPassword = this.encryptPassword(this.form.currentP);
-      }
-
+      // PANDARIA: Once the backend supports this, remove the temporary v3 call and restore the commented code below.
       try {
-        this.passwordChangeRequest.spec = spec;
-
-        await this.passwordChangeRequest.save();
+        if (mode === 'change') {
+          await this.$store.dispatch('rancher/request', {
+            url:    '/v3/users?action=changepassword',
+            method: 'post',
+            data:   {
+              currentPassword: this.encryptPassword(this.form.currentP),
+              newPassword,
+            },
+          }, { root: true });
+        } else {
+          await this.$store.dispatch('rancher/request', {
+            url:    `/v3/users/${ this.userId }?action=setpassword`,
+            method: 'post',
+            data:   { newPassword },
+          }, { root: true });
+        }
       } catch (err) {
         this.errorMessages = [err.message || this.t('changePassword.errors.failedToChange')];
         throw err;
       }
+
+      // const spec = {
+      //   newPassword: this.isRandomGenerated ? this.encryptPassword(this.form.genP) : this.encryptPassword(this.form.newP),
+      //   userID:      this.userId
+      // };
+      //
+      // if (mode === 'change') {
+      //   spec.currentPassword = this.encryptPassword(this.form.currentP);
+      // }
+      //
+      // try {
+      //   this.passwordChangeRequest.spec = spec;
+      //
+      //   await this.passwordChangeRequest.save();
+      // } catch (err) {
+      //   this.errorMessages = [err.message || this.t('changePassword.errors.failedToChange')];
+      //   throw err;
+      // }
     },
 
     async deleteKeys() {

@@ -236,13 +236,24 @@ export default {
             throw new Error(this.t('changePassword.errors.cannotChange'));
           }
 
-          passwordChangeRequest.spec = {
-            currentPassword: this.encryptPassword(this.current),
-            newPassword:     this.encryptPassword(this.password),
-            userID:          this.user?.id
-          };
+          // PANDARIA: TODO: revert to passwordChangeRequest.save() when ext.cattle.io.passwordchangerequests supports encryptPassword
+          await this.$store.dispatch('rancher/request', {
+            url:    '/v3/users?action=changepassword',
+            method: 'post',
+            data:   {
+              currentPassword: this.encryptPassword(this.current),
+              newPassword:     this.encryptPassword(this.password),
+            },
+          }, { root: true });
 
-          await passwordChangeRequest.save();
+          // PANDARIA: Once the backend supports this, remove the temporary v3 call and restore the commented code below.
+          // passwordChangeRequest.spec = {
+          //   currentPassword: this.encryptPassword(this.current),
+          //   newPassword:     this.encryptPassword(this.password),
+          //   userID:          this.user?.id
+          // };
+          //
+          // await passwordChangeRequest.save();
         } else {
           promises.push(setSetting(this.$store, SETTING.FIRST_LOGIN, 'false'));
         }
