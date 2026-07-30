@@ -489,6 +489,7 @@ export default {
             :value="get(value, q.variable)"
             :disabled="disabled"
             :chart-name="chartName"
+            :mode="mode"
             @update:value="update(q.variable, $event, q)"
           />
         </div>

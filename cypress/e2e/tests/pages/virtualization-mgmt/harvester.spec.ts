@@ -130,6 +130,7 @@ describe('Harvester', { tags: ['@virtualizationMgmt', '@adminUser'] }, () => {
   });
 
   it('missing repo message should display when repo does NOT exist', () => {
+    cy.viewport(1280, 800); // Extra height so we see all versions in the drop-down list
     cy.intercept('POST', `${ CLUSTER_REPOS_BASE_URL }/${ harvesterGitRepoName }?action=install`).as('installHarvesterExtension');
     cy.intercept('PUT', `${ CLUSTER_REPOS_BASE_URL }/${ harvesterGitRepoName }`).as('updateHarvesterChart');
 
@@ -200,6 +201,7 @@ describe('Harvester', { tags: ['@virtualizationMgmt', '@adminUser'] }, () => {
   });
 
   it('able to update harvester extension version', () => {
+    cy.viewport(1280, 800);
     cy.intercept('POST', `${ CLUSTER_REPOS_BASE_URL }/${ harvesterGitRepoName }?action=install`).as('installHarvesterExtension');
     cy.intercept('POST', `${ CLUSTER_REPOS_BASE_URL }/${ harvesterGitRepoName }?action=upgrade`).as('upgradeHarvesterExtension');
     cy.intercept('PUT', `${ CLUSTER_REPOS_BASE_URL }/${ harvesterGitRepoName }`).as('updateHarvesterChart');
