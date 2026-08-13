@@ -77,7 +77,6 @@ export const getters = {
       systemDiskCategory: null,
       diskCategory:       null,
       internetChargeType: 'PayByTraffic',
-      diskFs:             'ext4',
       securityGroup:      DEFAULT_GROUP,
       instanceChargeType: 'PostPaid',
       spotStrategy:       'NoSpot',

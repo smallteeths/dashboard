@@ -1998,6 +1998,9 @@ cluster:
         label: Allocate Public Static IP
       networkInterface:
         label: Public IP Mode
+        privateAddressOnly: Private IP
+        publicStaticIp: Public Static IP
+        eip: EIP
         desc: (Defaults to EIP if unset)
       internetChargeType:
         label: Bandwidth Billing
@@ -2017,8 +2020,14 @@ cluster:
           columns:
             instanceType: Specification
             instanceFamily: Family
+            architecture: Architecture
             vcpus: CPU
             memory: Memory
+        architecture:
+          label: Architecture
+          all: All architectures
+          x86: x86
+          arm: ARM
         cpu:
           label: Filter by CPU
         memory:
@@ -2042,6 +2051,8 @@ cluster:
         label: System Disk Size
         placeholder: "Disk Capacity: {min} ~ {max}"
         suffix: GB
+      dataDisk:
+        title: Data Disk
       diskCategory:
         label: Data Disk Category
       diskSize:
@@ -2059,8 +2070,6 @@ cluster:
         ssd: SSD Disk
         essd: ESSD Disk
         auto: ESSD AutoPL Disk
-      diskFs:
-        label: diskFs
       securityGroup:
         mode:
           custom: 'Choose one existing security groups:'

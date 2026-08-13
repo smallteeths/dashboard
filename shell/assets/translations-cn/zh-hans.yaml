@@ -1546,6 +1546,9 @@ cluster:
         label: 分配公网静态IP
       networkInterface:
         label: 公网 IP 类型
+        privateAddressOnly: 内网 IP
+        publicStaticIp: 公网静态 IP
+        eip: EIP
         desc: （未设置时默认分配 EIP）
       internetChargeType:
         label: 带宽计费模式
@@ -1565,8 +1568,14 @@ cluster:
           columns:
             instanceType: 实例规格
             instanceFamily: 规格族
+            architecture: 架构
             vcpus: CPU
             memory: 内存
+        architecture:
+          label: 架构
+          all: 全部架构
+          x86: x86
+          arm: ARM
         cpu:
           label: 根据 CPU 筛选
         memory:
@@ -1590,6 +1599,8 @@ cluster:
         label: 系统磁盘大小
         placeholder: "容量范围: {min} ~ {max}"
         suffix: GB
+      dataDisk:
+        title: 数据盘
       diskCategory:
         label: 数据盘种类
       diskSize:
@@ -1607,8 +1618,6 @@ cluster:
         ssd: SSD 云盘
         essd: ESSD 云盘
         auto: ESSD AutoPL 云盘
-      diskFs:
-        label: diskFs
       securityGroup:
         mode:
           custom: 选择一个现有的安全组：
