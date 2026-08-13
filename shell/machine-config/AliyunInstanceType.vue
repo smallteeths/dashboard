@@ -1,8 +1,13 @@
 <script>
 import Checkbox from '@components/Form/Checkbox/Checkbox.vue';
 import UnitInput from '@shell/components/form/UnitInput.vue';
+import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
 import SortableTable from '@shell/components/SortableTable/index.vue';
 import { _CREATE } from '@shell/config/query-params';
+
+const ARCH_ALL = '';
+const ARCH_X86 = 'X86';
+const ARCH_ARM = 'ARM';
 
 export default {
   name: 'AliyunInstanceType',
@@ -10,6 +15,7 @@ export default {
   components: {
     Checkbox,
     UnitInput,
+    LabeledSelect,
     SortableTable,
   },
 
@@ -40,13 +46,31 @@ export default {
 
   data() {
     return {
-      cpu:       undefined,
-      memory:    undefined,
-      tableRows: [],
+      cpu:          undefined,
+      memory:       undefined,
+      architecture: ARCH_ALL,
+      tableRows:    [],
     };
   },
 
   computed: {
+    architectureOptions() {
+      return [
+        {
+          value: ARCH_ALL,
+          label: this.t('cluster.machineConfig.aliyunecs.instanceType.architecture.all'),
+        },
+        {
+          value: ARCH_X86,
+          label: this.t('cluster.machineConfig.aliyunecs.instanceType.architecture.x86'),
+        },
+        {
+          value: ARCH_ARM,
+          label: this.t('cluster.machineConfig.aliyunecs.instanceType.architecture.arm'),
+        },
+      ];
+    },
+
     headers() {
       return [
         {
@@ -66,6 +90,12 @@ export default {
           label: this.t('cluster.machineConfig.aliyunecs.instanceType.table.columns.instanceFamily'),
           value: 'instanceFamily',
           sort:  'instanceFamily',
+        },
+        {
+          name:  'architecture',
+          label: this.t('cluster.machineConfig.aliyunecs.instanceType.table.columns.architecture'),
+          value: 'architectureLabel',
+          sort:  'architecture',
         },
         {
           name:  'vcpus',
@@ -110,18 +140,20 @@ export default {
       }
 
       return {
-        instanceType:   selected.instanceType || this.value || '-',
-        instanceFamily: selected.instanceFamily || '-',
-        vcpus:          selected.vcpus ?? '-',
-        memory:         selected.memory ?? '-',
+        instanceType:      selected.instanceType || this.value || '-',
+        instanceFamily:    selected.instanceFamily || '-',
+        architectureLabel: selected.architectureLabel || '-',
+        vcpus:             selected.vcpus ?? '-',
+        memory:            selected.memory ?? '-',
       };
     },
   },
 
   watch: {
-    cpu:     'formatTableRows',
-    memory:  'formatTableRows',
-    options: {
+    cpu:          'formatTableRows',
+    memory:       'formatTableRows',
+    architecture: 'formatTableRows',
+    options:      {
       handler:   'formatTableRows',
       deep:      true,
       immediate: true,
@@ -129,14 +161,43 @@ export default {
   },
 
   methods: {
+    resolveArchitecture(item) {
+      const raw = (item?.architecture || item?.raw?.CpuArchitecture || '').toString().toUpperCase();
+
+      if (raw.includes('ARM')) {
+        return ARCH_ARM;
+      }
+
+      if (raw.includes('X86')) {
+        return ARCH_X86;
+      }
+
+      return '';
+    },
+
+    architectureLabel(architecture) {
+      if (architecture === ARCH_ARM) {
+        return this.t('cluster.machineConfig.aliyunecs.instanceType.architecture.arm');
+      }
+
+      if (architecture === ARCH_X86) {
+        return this.t('cluster.machineConfig.aliyunecs.instanceType.architecture.x86');
+      }
+
+      return '-';
+    },
+
     normalizeOptionToRow(item) {
+      const architecture = this.resolveArchitecture(item);
       const row = {
-        instanceType:   item.value,
-        instanceFamily: item.group || item.raw?.InstanceTypeFamily || '-',
-        vcpus:          item.vcpus ?? item.raw?.CpuCoreCount ?? '-',
-        memory:         item.memory ?? item.raw?.MemorySize ?? '-',
-        label:          item.label,
-        raw:            item.raw,
+        instanceType:      item.value,
+        instanceFamily:    item.group || item.raw?.InstanceTypeFamily || '-',
+        architecture,
+        architectureLabel: this.architectureLabel(architecture),
+        vcpus:             item.vcpus ?? item.raw?.CpuCoreCount ?? '-',
+        memory:            item.memory ?? item.raw?.MemorySize ?? '-',
+        label:             item.label,
+        raw:               item.raw,
       };
 
       return {
@@ -148,15 +209,21 @@ export default {
     normalizePersistedInstance(instanceType) {
       return {
         instanceType,
-        instanceFamily: '-',
-        vcpus:          '-',
-        memory:         '-',
-        rowKey:         instanceType,
+        instanceFamily:    '-',
+        architecture:      '',
+        architectureLabel: '-',
+        vcpus:             '-',
+        memory:            '-',
+        rowKey:            instanceType,
       };
     },
 
     formatTableRows() {
       let list = this.options || [];
+
+      if (this.architecture) {
+        list = list.filter((item) => this.resolveArchitecture(item) === this.architecture);
+      }
 
       if (this.cpu) {
         list = list.filter((item) => Number(item.vcpus ?? item.raw?.CpuCoreCount) === Number(this.cpu));
@@ -205,6 +272,16 @@ export default {
     >
       <template #header-left>
         <div class="row">
+          <div class="col span-3">
+            <LabeledSelect
+              v-model:value="architecture"
+              :mode="mode"
+              :options="architectureOptions"
+              :disabled="disabled"
+              :clearable="false"
+              :placeholder="t('cluster.machineConfig.aliyunecs.instanceType.architecture.label')"
+            />
+          </div>
           <div class="col span-3">
             <UnitInput
               v-model:value="cpu"
@@ -260,6 +337,14 @@ export default {
           </div>
           <div class="info-item__value">
             {{ selectedInstanceInfo.instanceFamily }}
+          </div>
+        </div>
+        <div class="info-item">
+          <div class="info-item__label">
+            {{ t('cluster.machineConfig.aliyunecs.instanceType.table.columns.architecture') }}
+          </div>
+          <div class="info-item__value">
+            {{ selectedInstanceInfo.architectureLabel }}
           </div>
         </div>
         <div class="info-item">
@@ -320,7 +405,7 @@ export default {
 
   &__grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 16px;
   }
 }
