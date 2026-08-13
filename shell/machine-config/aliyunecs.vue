@@ -7,7 +7,6 @@ import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
 import KeyValue from '@shell/components/form/KeyValue.vue';
 import UnitInput from '@shell/components/form/UnitInput';
 import RadioGroup from '@components/Form/Radio/RadioGroup.vue';
-import Checkbox from '@components/Form/Checkbox/Checkbox.vue';
 import ArrayList from '@shell/components/form/ArrayList';
 
 import AliyunInstanceType from '@shell/machine-config/AliyunInstanceType.vue';
@@ -19,6 +18,11 @@ import { findBy } from '@shell/utils/array';
 import { upperFirst } from 'lodash';
 
 const DEFAULT_GROUP = 'docker-machine';
+const PUBLIC_IP_MODE_PRIVATE = 'privateAddressOnly';
+const PUBLIC_IP_MODE_STATIC = 'publicStaticIp';
+const PUBLIC_IP_MODE_EIP = 'eip';
+// Temporarily hide; keep current selection visible when editing
+const BLOCKED_IMAGE_PLATFORMS = ['Anolis', 'AlmaLinux', 'Aliyun', 'FreeBSD', 'Fedora CoreOS'];
 const OPTION_CHARGETYPES = [
   {
     label: 'cluster.machineConfig.aliyunecs.internetChargeTypes.payByTraffic',
@@ -65,7 +69,7 @@ const DEFAULT_INSTANCE_MEMORY = 8;
 
 export default {
   components: {
-    Banner, Loading, LabeledInput, LabeledSelect, Checkbox, RadioGroup, UnitInput, KeyValue, ArrayList, AliyunInstanceType
+    Banner, Loading, LabeledInput, LabeledSelect, RadioGroup, UnitInput, KeyValue, ArrayList, AliyunInstanceType
   },
   mixins: [CreateEditView],
   props:  {
@@ -154,10 +158,11 @@ export default {
       // 以下字段仅在新建/poolCreateMode 时写入，避免编辑已有配置被静默修改
       this.setDefaultIfUnset('upgradeKernel', false);
       this.setDefaultIfUnset('ioOptimized', 'optimized');
-      this.setDefaultIfUnset('diskFs', 'ext4');
       this.setDefaultIfUnset('internetChargeType', 'PayByTraffic');
       this.setDefaultIfUnset('internetMaxBandwidth', '50');
       this.setDefaultIfUnset('instanceChargeType', this.defaultValue?.instanceChargeType);
+      // 新建默认公网静态 IP；编辑时若未设置则保持 EIP（不写字段）
+      this.applyDefaultPublicIpModeIfNeeded();
 
       const openPort = this.value?.openPort;
 
@@ -380,19 +385,20 @@ export default {
         return { imageType, imageVersionChoose };
       }
 
+      // 已有配置：只用于展示，不改写 value.imageId
       const found = findBy(images, 'ImageId', imageId);
+      const { systemName, label } = this.parseImageIdFallback(imageId);
 
-      if (found) {
-        imageType = found?.Platform;
-        imageVersionChoose = this.groupImages?.[imageType] || [];
-
-        return { imageType, imageVersionChoose };
-      }
-
-      const { systemName } = this.parseImageIdFallback(imageId);
-
-      imageType = systemName;
+      imageType = (typeof found?.Platform === 'string' ? found.Platform : null) || systemName;
       imageVersionChoose = (this.groupImages?.[imageType] || []).slice();
+
+      if (!imageVersionChoose.find((opt) => opt.value === imageId)) {
+        imageVersionChoose.unshift({
+          label: found ? (found.ImageOwnerAlias === 'system' ? found.OSName : found.ImageName) : label,
+          value: imageId,
+          raw:   found || null,
+        });
+      }
 
       return { imageType, imageVersionChoose };
     },
@@ -447,7 +453,6 @@ export default {
         'vpcId',
         'vswitchId',
         'instanceType',
-        'diskFs',
         'internetChargeType',
         'imageId',
         'systemDiskCategory',
@@ -456,6 +461,11 @@ export default {
       ];
 
       requiredList.forEach((item) => {
+        // 仅内网 IP 时不需要带宽计费相关字段
+        if (item === 'internetChargeType' && this.resolvePublicIpMode() === PUBLIC_IP_MODE_PRIVATE) {
+          return;
+        }
+
         if (!this.value?.[item]) {
           const key = this.t(`cluster.machineConfig.aliyunecs.${ item }.label`);
 
@@ -508,6 +518,10 @@ export default {
         instanceChargeType = 'SpotStrategy';
       }
       this.instanceChargeType = instanceChargeType;
+      // 已保存的 spotDuration 为 '1'/'0'（或 boolean）；未设置时保持新建默认 true
+      if (!this.isUnset(this.value?.spotDuration)) {
+        this.spotDuration = this.value.spotDuration !== '0' && this.value.spotDuration !== false;
+      }
     },
     getAvailableInstanceTypes() {
       const hash = {};
@@ -548,17 +562,55 @@ export default {
 
       return str.charAt(0).toUpperCase() + str.slice(1);
     },
-    onPrivateAddressOnlyChange(next) {
-      this.value.privateAddressOnly = next;
-      if (next) {
-        this.value.allocatePublicStaticIp = false;
-      }
+    isTruthyFlag(val) {
+      return val === true || val === 'true';
     },
-    onAllocatePublicStaticIpChange(next) {
-      this.value.allocatePublicStaticIp = next;
-      if (next) {
-        this.value.privateAddressOnly = false;
+    resolvePublicIpMode() {
+      if (this.isTruthyFlag(this.value?.privateAddressOnly)) {
+        return PUBLIC_IP_MODE_PRIVATE;
       }
+
+      // 仅显式开启公网静态 IP 时为 static；其余（含未设置）视为 EIP
+      if (this.isTruthyFlag(this.value?.allocatePublicStaticIp)) {
+        return PUBLIC_IP_MODE_STATIC;
+      }
+
+      return PUBLIC_IP_MODE_EIP;
+    },
+    applyPublicIpMode(mode) {
+      if (!this.value) {
+        return;
+      }
+
+      if (mode === PUBLIC_IP_MODE_PRIVATE) {
+        this.value.privateAddressOnly = true;
+        this.value.allocatePublicStaticIp = false;
+
+        return;
+      }
+
+      if (mode === PUBLIC_IP_MODE_STATIC) {
+        this.value.allocatePublicStaticIp = true;
+        this.value.privateAddressOnly = false;
+
+        return;
+      }
+
+      // EIP：清除静态 IP / 仅内网标记，与「未设置即 EIP」一致
+      delete this.value.allocatePublicStaticIp;
+      delete this.value.privateAddressOnly;
+    },
+    applyDefaultPublicIpModeIfNeeded() {
+      if (!this.shouldApplyDefaults || !this.value) {
+        return;
+      }
+
+      // 已有任一项公网相关设置时不覆盖（兼容旧配置）
+      if (!this.isUnset(this.value.allocatePublicStaticIp) || !this.isUnset(this.value.privateAddressOnly)) {
+        return;
+      }
+
+      this.applyPublicIpMode(PUBLIC_IP_MODE_STATIC);
     },
     isUnset(val) {
       // 空字符串也视为未设置，用于默认值判断
@@ -903,6 +955,33 @@ export default {
         };
       }).sort();
     },
+    publicIpMode: {
+      get() {
+        return this.resolvePublicIpMode();
+      },
+      set(mode) {
+        this.applyPublicIpMode(mode);
+      },
+    },
+    showBandwidthFields() {
+      return this.publicIpMode !== PUBLIC_IP_MODE_PRIVATE;
+    },
+    publicIpModeOptions() {
+      return [
+        {
+          label: this.t('cluster.machineConfig.aliyunecs.networkInterface.privateAddressOnly'),
+          value: PUBLIC_IP_MODE_PRIVATE,
+        },
+        {
+          label: this.t('cluster.machineConfig.aliyunecs.networkInterface.publicStaticIp'),
+          value: PUBLIC_IP_MODE_STATIC,
+        },
+        {
+          label: this.t('cluster.machineConfig.aliyunecs.networkInterface.eip'),
+          value: PUBLIC_IP_MODE_EIP,
+        },
+      ];
+    },
     internetChargeTypeOptions() {
       return OPTION_CHARGETYPES.map((item) => ({
         value: item.value,
@@ -936,18 +1015,49 @@ export default {
         return [];
       }
       const out = {};
+      const currentImageId = this.value?.imageId;
+      const currentFromApi = currentImageId ? this.images.find((img) => img.ImageId === currentImageId) : null;
+      // API 仍返回该镜像用 Platform；已下架则用 imageId 前缀推断，保证旧配置仍能展示
+      const keepPlatform = (typeof currentFromApi?.Platform === 'string' ? currentFromApi.Platform : null) ||
+        (currentImageId ? this.parseImageIdFallback(currentImageId).systemName : null);
 
       this.images.forEach((obj) => {
-        if (!out[obj.Platform]) {
-          out[obj.Platform] = [];
+        const platform = obj.Platform;
+
+        if (typeof platform !== 'string') {
+          return;
         }
 
-        out[obj.Platform].push({
+        if (BLOCKED_IMAGE_PLATFORMS.includes(platform) && platform !== keepPlatform) {
+          return;
+        }
+
+        if (!out[platform]) {
+          out[platform] = [];
+        }
+
+        out[platform].push({
           label: obj.ImageOwnerAlias === 'system' ? obj.OSName : obj.ImageName,
           value: obj.ImageId,
           raw:   obj,
         });
       });
+
+      if (currentImageId && keepPlatform) {
+        if (!out[keepPlatform]) {
+          out[keepPlatform] = [];
+        }
+
+        if (!out[keepPlatform].some((opt) => opt.value === currentImageId)) {
+          const { label } = this.parseImageIdFallback(currentImageId);
+
+          out[keepPlatform].unshift({
+            label: currentFromApi ? (currentFromApi.ImageOwnerAlias === 'system' ? currentFromApi.OSName : currentFromApi.ImageName) : label,
+            value: currentImageId,
+            raw:   currentFromApi || null,
+          });
+        }
+      }
 
       return out;
     },
@@ -958,6 +1068,18 @@ export default {
           value: key
         };
       });
+    },
+    upgradeKernelOptions() {
+      return [
+        {
+          label: this.t('generic.yes'),
+          value: true,
+        },
+        {
+          label: this.t('generic.no'),
+          value: false,
+        },
+      ];
     },
     systemDiskCategoryOptions() {
       if ( !this.systemDiskCategories ) {
@@ -1075,7 +1197,7 @@ export default {
         </div>
       </div>
       <div class="row mb-20">
-        <div class="col span-6">
+        <div class="col span-4">
           <LabeledSelect
             v-model:value="value.resourceGroupId"
             :mode="mode"
@@ -1086,7 +1208,7 @@ export default {
             @update:value="updateResourceGroupId"
           />
         </div>
-        <div class="col span-6">
+        <div class="col span-4">
           <LabeledSelect
             v-model:value="value.region"
             :mode="mode"
@@ -1096,6 +1218,19 @@ export default {
             :disabled="disabled"
             :label="t('cluster.machineConfig.aliyunecs.region.label')"
             @update:value="updateRegion"
+          />
+        </div>
+        <div class="col span-4">
+          <LabeledSelect
+            v-model:value="value.vpcId"
+            :mode="mode"
+            :options="vpcOptions"
+            :required="true"
+            :searchable="true"
+            :disabled="disabled"
+            :label="t('cluster.machineConfig.aliyunecs.vpcId.label')"
+            :placeholder="t('cluster.machineConfig.aliyunecs.vpcId.prompt')"
+            @update:value="updateVpcId"
           />
         </div>
       </div>
@@ -1112,21 +1247,6 @@ export default {
             @update:value="updateZone"
           />
         </div>
-        <div class="col span-6">
-          <LabeledSelect
-            v-model:value="value.vpcId"
-            :mode="mode"
-            :options="vpcOptions"
-            :required="true"
-            :searchable="true"
-            :disabled="disabled"
-            :label="t('cluster.machineConfig.aliyunecs.vpcId.label')"
-            :placeholder="t('cluster.machineConfig.aliyunecs.vpcId.prompt')"
-            @update:value="updateVpcId"
-          />
-        </div>
-      </div>
-      <div class="row mb-20">
         <div class="col span-6">
           <LabeledSelect
             v-model:value="value.vswitchId"
@@ -1154,7 +1274,20 @@ export default {
         </div>
       </div>
       <div class="row mb-20">
-        <div class="col span-6">
+        <div class="col span-4">
+          <LabeledSelect
+            v-model:value="publicIpMode"
+            :mode="mode"
+            :options="publicIpModeOptions"
+            :disabled="disabled"
+            :clearable="false"
+            :label="t('cluster.machineConfig.aliyunecs.networkInterface.label')"
+          />
+        </div>
+        <div
+          v-if="showBandwidthFields"
+          class="col span-4"
+        >
           <LabeledSelect
             v-model:value="value.internetChargeType"
             :mode="mode"
@@ -1166,7 +1299,10 @@ export default {
             :placeholder="t('cluster.machineConfig.aliyunecs.internetChargeType.prompt')"
           />
         </div>
-        <div class="col span-6">
+        <div
+          v-if="showBandwidthFields"
+          class="col span-4"
+        >
           <UnitInput
             v-model:value="value.internetMaxBandwidth"
             output-as="string"
@@ -1182,7 +1318,7 @@ export default {
         </div>
       </div>
       <div class="row mb-20">
-        <div class="col span-6">
+        <div class="col span-4">
           <LabeledSelect
             v-model:value="imageType"
             :mode="mode"
@@ -1196,7 +1332,7 @@ export default {
             @update:value="imageTypeChanged"
           />
         </div>
-        <div class="col span-6">
+        <div class="col span-4">
           <LabeledSelect
             v-model:value="value.imageId"
             :mode="mode"
@@ -1207,6 +1343,16 @@ export default {
             :loading="instanceTypeChangeLoading"
             :label="t('cluster.machineConfig.aliyunecs.systemImageVersion.label')"
             :placeholder="t('cluster.machineConfig.aliyunecs.systemImageVersion.placeholder')"
+          />
+        </div>
+        <div class="col span-4">
+          <LabeledSelect
+            v-model:value="value.upgradeKernel"
+            :mode="mode"
+            :options="upgradeKernelOptions"
+            :disabled="disabled"
+            :clearable="false"
+            :label="t('cluster.machineConfig.aliyunecs.upgradeKernel.label')"
           />
         </div>
       </div>
@@ -1239,84 +1385,76 @@ export default {
           />
         </div>
       </div>
-      <div class="row mb-20">
-        <div class="col span-6">
-          <LabeledSelect
-            v-model:value="value.diskFs"
-            :mode="mode"
-            :options="['ext4','xfs']"
-            :required="true"
-            :disabled="disabled"
-            :label="t('cluster.machineConfig.aliyunecs.diskFs.label')"
-          />
-        </div>
-      </div>
       <portal :to="'advanced-'+uuid">
         <div class="row mb-20">
-          <div class="col span-6">
-            <LabeledInput
-              v-model:value="value.slbId"
-              :mode="mode"
-              :disabled="disabled"
-              :placeholder="t('cluster.machineConfig.aliyunecs.aliyunSLB.placeholder')"
-              :label="t('cluster.machineConfig.aliyunecs.aliyunSLB.label')"
-            />
+          <div class="col span-12">
+            <h3>
+              {{ t('cluster.machineConfig.aliyunecs.dataDisk.title') }}
+            </h3>
+            <div class="row">
+              <div class="col span-6">
+                <LabeledSelect
+                  v-model:value="value.diskCategory"
+                  :mode="mode"
+                  :options="diskCategoryOptions"
+                  :loading="instanceTypeChangeLoading"
+                  :searchable="true"
+                  :disabled="disabled"
+                  :label="t('cluster.machineConfig.aliyunecs.diskCategory.label')"
+                />
+              </div>
+              <div class="col span-6">
+                <UnitInput
+                  v-model:value="value.diskSize"
+                  output-as="string"
+                  :mode="mode"
+                  :min="20"
+                  :max="32768"
+                  :disabled="disabled"
+                  :label="t('cluster.machineConfig.aliyunecs.diskSize.label')"
+                  :placeholder="t('cluster.machineConfig.aliyunecs.diskSize.placeholder', {min: diskCategorySize.Min, max: diskCategorySize.Max})"
+                  :suffix="t('cluster.machineConfig.aliyunecs.diskSize.suffix')"
+                />
+              </div>
+            </div>
           </div>
         </div>
         <div class="row mb-20">
-          <div class="col span-6">
-            <LabeledSelect
-              v-model:value="value.diskCategory"
-              :mode="mode"
-              :options="diskCategoryOptions"
-              :loading="instanceTypeChangeLoading"
-              :searchable="true"
-              :disabled="disabled"
-              :label="t('cluster.machineConfig.aliyunecs.diskCategory.label')"
-            />
-          </div>
-          <div class="col span-6">
-            <UnitInput
-              v-model:value="value.diskSize"
-              output-as="string"
-              :mode="mode"
-              :min="20"
-              :max="32768"
-              :disabled="disabled"
-              :label="t('cluster.machineConfig.aliyunecs.diskSize.label')"
-              :placeholder="t('cluster.machineConfig.aliyunecs.diskSize.placeholder', {min: diskCategorySize.Min, max: diskCategorySize.Max})"
-              :suffix="t('cluster.machineConfig.aliyunecs.diskSize.suffix')"
-            />
-          </div>
-        </div>
-        <div class="row mb-20">
-          <div class="col span-6">
-            <LabeledSelect
-              v-model:value="instanceChargeType"
-              :mode="mode"
-              :options="instanceChargeTypeOptions"
-              :required="true"
-              :searchable="true"
-              :disabled="disabled"
-              :label="t('cluster.machineConfig.aliyunecs.instanceChargeType.label')"
-              @update:value="updateInstanceChargeType"
-            />
-          </div>
-          <div
-            v-if="instanceChargeType === 'PrePaid'"
-            class="col span-6"
-          >
-            <LabeledSelect
-              v-model:value="periodUnit"
-              :mode="mode"
-              :options="periodUnitOptions"
-              :required="true"
-              :searchable="true"
-              :disabled="disabled"
-              :placeholder="t('cluster.machineConfig.aliyunecs.periodUnit.placeholder')"
-              :label="t('cluster.machineConfig.aliyunecs.periodUnit.label')"
-              @update:value="updatePeriodUnit"
-            />
+          <div class="col span-12">
+            <h3>
+              {{ t('cluster.machineConfig.aliyunecs.instanceChargeType.label') }}
+            </h3>
+            <div class="row">
+              <div class="col span-6">
+                <LabeledSelect
+                  v-model:value="instanceChargeType"
+                  :mode="mode"
+                  :options="instanceChargeTypeOptions"
+                  :required="true"
+                  :searchable="true"
+                  :disabled="disabled"
+                  :clearable="false"
+                  :label="t('cluster.machineConfig.aliyunecs.instanceChargeType.label')"
+                  @update:value="updateInstanceChargeType"
+                />
+              </div>
+              <div
+                v-if="instanceChargeType === 'PrePaid'"
+                class="col span-6"
+              >
+                <LabeledSelect
+                  v-model:value="periodUnit"
+                  :mode="mode"
+                  :options="periodUnitOptions"
+                  :required="true"
+                  :searchable="true"
+                  :disabled="disabled"
+                  :placeholder="t('cluster.machineConfig.aliyunecs.periodUnit.placeholder')"
+                  :label="t('cluster.machineConfig.aliyunecs.periodUnit.label')"
+                  @update:value="updatePeriodUnit"
+                />
+              </div>
+            </div>
           </div>
         </div>
         <div
@@ -1364,39 +1502,11 @@ export default {
             />
           </div>
         </div>
-        <div class="row mb-20">
-          <div class="col span-6">
-            <div class="title">
-              <h3>{{ t('cluster.machineConfig.aliyunecs.ioOptimized.label') }}</h3>
-            </div>
-            <RadioGroup
-              v-model:value="value.ioOptimized"
-              name="ioOptimized"
-              :mode="mode"
-              :disabled="disabled"
-              :labels="[t('generic.yes'), t('generic.no')]"
-              :options="['optimized','none']"
-            />
-          </div>
-          <div class="col span-6">
-            <div class="title">
-              <h3>{{ t('cluster.machineConfig.aliyunecs.upgradeKernel.label') }}</h3>
-            </div>
-            <RadioGroup
-              v-model:value="value.upgradeKernel"
-              name="upgradeKernel"
-              :mode="mode"
-              :disabled="disabled"
-              :labels="[t('generic.yes'), t('generic.no')]"
-              :options="[true,false]"
-            />
-          </div>
-        </div>
         <div class="row mt-20">
-          <div class="col span-6">
+          <div class="col span-12">
             <ArrayList
               v-model:value="value.openPort"
-              table-class="fixed"
+              class="open-port-list"
               :mode="mode"
               :title="t('cluster.machineConfig.azure.openPort.label')"
               :add-label="t('cluster.machineConfig.azure.openPort.add')"
@@ -1438,36 +1548,18 @@ export default {
             />
           </div>
         </div>
-        <div class="row mt-20">
+        <div class="row mt-20 mb-20">
           <div class="col span-12">
             <h3>
-              {{ t('cluster.machineConfig.aliyunecs.networkInterface.label') }}
-              <span
-                class="text-muted text-small"
-              >
-                {{ t('cluster.machineConfig.aliyunecs.networkInterface.desc') }}
-              </span>
+              {{ t('cluster.machineConfig.aliyunecs.aliyunSLB.label') }}
             </h3>
-            <div>
-              <div>
-                <Checkbox
-                  v-model:value="value.privateAddressOnly"
-                  :mode="mode"
-                  :disabled="disabled"
-                  :label="t('cluster.machineConfig.aliyunecs.privateAddressOnly.label')"
-                  @update:value="onPrivateAddressOnlyChange"
-                />
-              </div>
-              <div>
-                <Checkbox
-                  v-model:value="value.allocatePublicStaticIp"
-                  :mode="mode"
-                  :disabled="disabled"
-                  :label="t('cluster.machineConfig.aliyunecs.allocatePublicStaticIp.label')"
-                  @update:value="onAllocatePublicStaticIpChange"
-                />
-              </div>
-            </div>
+            <LabeledInput
+              v-model:value="value.slbId"
+              :mode="mode"
+              :disabled="disabled"
+              :placeholder="t('cluster.machineConfig.aliyunecs.aliyunSLB.placeholder')"
+              :label="t('cluster.machineConfig.aliyunecs.aliyunSLB.label')"
+            />
           </div>
         </div>
         <div class="row mt-20">
@@ -1476,7 +1568,7 @@ export default {
               :value="tag"
               :mode="mode"
               :read-allowed="false"
-              :label="t('cluster.machineConfig.aliyunecs.tagTitle')"
+              :title="t('cluster.machineConfig.aliyunecs.tagTitle')"
               :add-label="t('labels.addTag')"
               :disabled="disabled"
               @update:value="updateTags"
@@ -1487,3 +1579,24 @@ export default {
     </template>
   </div>
 </template>
+
+<style lang="scss" scoped>
+.open-port-list {
+  :deep(> div:last-child) {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px 12px;
+    align-items: center;
+  }
+
+  :deep(.box) {
+    margin-bottom: 0;
+    min-width: 0;
+  }
+
+  :deep(.footer) {
+    grid-column: 1 / -1;
+    margin-top: 4px;
+  }
+}
+</style>

@@ -43,7 +43,7 @@ describe('component: aliyunecs', () => {
     const selectWraps = wrapper.findAllComponents(LabeledSelect);
     const inputWraps = wrapper.findAllComponents(UnitInput);
 
-    expect(selectWraps).toHaveLength(10);
+    expect(selectWraps).toHaveLength(11);
     expect(inputWraps).toHaveLength(2);
   });
 });

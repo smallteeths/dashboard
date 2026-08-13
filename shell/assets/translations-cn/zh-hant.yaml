@@ -1546,6 +1546,9 @@ cluster:
         label: 分配公網靜態IP
       networkInterface:
         label: 公網 IP 類型
+        privateAddressOnly: 內網 IP
+        publicStaticIp: 公網靜態 IP
+        eip: EIP
         desc: （未設定時預設分配 EIP）
       internetChargeType:
         label: 帶寬計費模式
@@ -1565,8 +1568,14 @@ cluster:
           columns:
             instanceType: 實例規格
             instanceFamily: 規格族
+            architecture: 架構
             vcpus: CPU
             memory: 內存
+        architecture:
+          label: 架構
+          all: 全部架構
+          x86: x86
+          arm: ARM
         cpu:
           label: 根據 CPU 篩選
         memory:
@@ -1590,6 +1599,8 @@ cluster:
         label: 系統磁盤大小
         placeholder: "容量範圍: {min} ~ {max}"
         suffix: GB
+      dataDisk:
+        title: 數據盤
       diskCategory:
         label: 數據盤種類
       diskSize:
@@ -1607,8 +1618,6 @@ cluster:
         ssd: SSD 雲盤
         essd: ESSD 雲盤
         auto: ESSD AutoPL 雲盤
-      diskFs:
-        label: diskFs
       securityGroup:
         mode:
           custom: 選擇一個現有的安全組：
