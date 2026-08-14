@@ -186,6 +186,8 @@ tkeCn:
     label: 帶寬類型
     bandwidth: 按帶寬計費
     traffic: 按使用流量計費
+  publicIpAssigned:
+    label: 分配公網 IP
   keyPair:
     label: 密鑰
     required: 請選擇密鑰

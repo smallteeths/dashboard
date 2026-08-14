@@ -51,6 +51,10 @@ const props = defineProps({
     type:    Number,
     default: 0,
   },
+  publicIpAssigned: {
+    type:    Boolean,
+    default: true,
+  },
   subnetId: {
     type:    Array,
     default: () => ([]),
@@ -153,6 +157,7 @@ const emit = defineEmits([
   'update:dataDisks',
   'update:bandwidthType',
   'update:bandwidth',
+  'update:publicIpAssigned',
   'update:securityGroup',
   'update:subnetId',
   'update:keyPair',
@@ -291,6 +296,7 @@ const nativeMoreLink = computed(() => 'https://cloud.tencent.com/document/produc
         :dataDisks="dataDisks"
         :bandwidthType="bandwidthType"
         :bandwidth="bandwidth"
+        :publicIpAssigned="publicIpAssigned"
         :subnetId="subnetId"
         :keyPair="keyPair"
         :userScript="userScript"
@@ -317,6 +323,7 @@ const nativeMoreLink = computed(() => 'https://cloud.tencent.com/document/produc
         @update:dataDisks="emit('update:dataDisks', $event)"
         @update:bandwidthType="emit('update:bandwidthType', $event)"
         @update:bandwidth="emit('update:bandwidth', $event)"
+        @update:publicIpAssigned="emit('update:publicIpAssigned', $event)"
         @update:securityGroup="emit('update:securityGroup', $event)"
         @update:subnetId="emit('update:subnetId', $event)"
         @update:keyPair="emit('update:keyPair', $event)"
