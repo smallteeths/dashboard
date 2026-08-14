@@ -185,6 +185,8 @@ tkeCn:
     label: Band Width Type
     bandwidth: Pay By Bandwidth
     traffic: Pay By Traffic
+  publicIpAssigned:
+    label: Assign Public IP
   keyPair:
     label: Key Pair
     required: Key Pair is required

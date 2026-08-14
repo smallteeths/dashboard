@@ -62,6 +62,10 @@ const props = defineProps({
     type:    Number,
     default: 0
   },
+  publicIpAssigned: {
+    type:    Boolean,
+    default: true,
+  },
   userScript: {
     type:    String,
     default: ''
@@ -149,6 +153,7 @@ const emit = defineEmits([
   'update:dataDisks',
   'update:bandwidthType',
   'update:bandwidth',
+  'update:publicIpAssigned',
   'update:securityGroup',
   'update:subnetId',
   'update:keyPair',
@@ -181,6 +186,23 @@ const selectedInstanceRow = computed(() => {
 
 const currentInstanceZoneId = computed(() => {
   return selectedInstanceRow.value?.raw?.Zone || selectedInstanceRow.value?.zone || '';
+});
+
+const showBandwidthFields = computed(() => {
+  return props.publicIpAssigned !== false && props.publicIpAssigned !== 'false';
+});
+
+const publicIpAssignedOptions = computed(() => {
+  return [
+    {
+      label: intl.value('generic.enabled'),
+      value: true,
+    },
+    {
+      label: intl.value('generic.disabled'),
+      value: false,
+    },
+  ];
 });
 
 function blurInitialNodeCount(num) {
@@ -665,6 +687,42 @@ watch(() => props.systemDiskType, (systemDiskType) => {
       <div class="row mb-10">
         <div class="col span-6">
           <LabeledSelect
+            :value="publicIpAssigned"
+            data-testid="cru-tke-public-ip-assigned"
+            :mode="mode"
+            :options="publicIpAssignedOptions"
+            :disabled="!isNewOrUnprovisioned"
+            option-label="label"
+            option-key="value"
+            :clearable="false"
+            label-key="tkeCn.publicIpAssigned.label"
+            required
+            @update:value="emit('update:publicIpAssigned', $event)"
+          />
+        </div>
+        <div class="col span-6">
+          <LabeledMultiSelect
+            :value="subnetId"
+            data-testid="cru-tke-subnet-id"
+            :mode="mode"
+            :options="filteredSubnetOptions"
+            :disabled="!isNewOrUnprovisioned"
+            option-label="label"
+            option-key="value"
+            label-key="tkeCn.subnet.label"
+            :rules="rules.subnetId"
+            required
+            :localizedLabel="true"
+            @update:value="emit('update:subnetId', $event)"
+          />
+        </div>
+      </div>
+      <div
+        v-if="showBandwidthFields"
+        class="row mb-10"
+      >
+        <div class="col span-6">
+          <LabeledSelect
             :value="bandwidthType"
             data-testid="cru-tke-band-width-type"
             :mode="mode"
@@ -693,24 +751,6 @@ watch(() => props.systemDiskType, (systemDiskType) => {
               </div>
             </template>
           </LabeledInput>
-        </div>
-      </div>
-      <div class="row mb-10">
-        <div class="col span-6">
-          <LabeledMultiSelect
-            :value="subnetId"
-            data-testid="cru-tke-subnet-id"
-            :mode="mode"
-            :options="filteredSubnetOptions"
-            :disabled="!isNewOrUnprovisioned"
-            option-label="label"
-            option-key="value"
-            label-key="tkeCn.subnet.label"
-            :rules="rules.subnetId"
-            required
-            :localizedLabel="true"
-            @update:value="emit('update:subnetId', $event)"
-          />
         </div>
       </div>
     </div>

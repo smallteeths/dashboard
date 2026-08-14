@@ -146,6 +146,10 @@ function buildImageOptions(imageList = []) {
     if (!item.Status || item.Status !== 'online') {
       return;
     }
+    // TODO: re-enable when tlinux4.0(tkernel5)x86_64_uefi is supported
+    if (item.OsName === 'tlinux4.0(tkernel5)x86_64_uefi') {
+      return;
+    }
     const arch = getImageArch(item);
     const family = getImageFamily(item);
 
