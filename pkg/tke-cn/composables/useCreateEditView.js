@@ -152,6 +152,7 @@ export function useCreateEditView(props, context) {
         vpcId:                config.vpcId,
         subnetIds:            node.subnetId,
       };
+      const publicIpAssigned = node.publicIpAssigned !== false && node.publicIpAssigned !== 'false';
       const launchConfigurePara = {
         launchConfigurationName: '',
         instanceType:            node.instanceType,
@@ -159,14 +160,18 @@ export function useCreateEditView(props, context) {
           diskSize: node.systemDiskSize,
           diskType: node.systemDiskType,
         },
-        internetChargeType:      node.bandwidthType,
-        internetMaxBandwidthOut: node.bandwidth,
-        publicIpAssigned:        true,
-        dataDisks:               dataDisks?.length ? dataDisks : [],
-        keyIds:                  node.keyPair ? [node.keyPair] : [],
-        securityGroupIds:        [node.securityGroup],
-        instanceChargeType:      'POSTPAID_BY_HOUR',
+        publicIpAssigned,
+        dataDisks:          dataDisks?.length ? dataDisks : [],
+        keyIds:             node.keyPair ? [node.keyPair] : [],
+        securityGroupIds:   [node.securityGroup],
+        instanceChargeType: 'POSTPAID_BY_HOUR',
+        internetChargeType: node.bandwidthType,
       };
+
+      // CVM rejects bandwidth settings when no public IP is assigned.
+      if (publicIpAssigned) {
+        launchConfigurePara.internetMaxBandwidthOut = node.bandwidth;
+      }
 
       const out = {
         ...node,

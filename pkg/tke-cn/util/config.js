@@ -69,6 +69,7 @@ const DEFAULT_NODE_GROUP_CONFIG = {
   keyPair:            '',
   instanceType:       '',
   securityGroup:      '',
+  publicIpAssigned:   true,
   type:               'nodePool',
   nodePoolType:       'super',
   userScript:         '',
