@@ -580,11 +580,12 @@ function fixConfig(config) {
           size: disk.diskSize,
           type: disk.diskType,
         })),
-        bandwidthType: launchConfigurePara.internetChargeType,
-        bandwidth:     launchConfigurePara.internetMaxBandwidthOut,
-        keyPair:       launchConfigurePara.keyIds?.[0] || '',
-        securityGroup: launchConfigurePara.securityGroupIds?.[0] || '',
-        isNew:         false,
+        bandwidthType:    launchConfigurePara.internetChargeType,
+        bandwidth:        launchConfigurePara.internetMaxBandwidthOut,
+        publicIpAssigned: launchConfigurePara.publicIpAssigned !== false && launchConfigurePara.publicIpAssigned !== 'false',
+        keyPair:          launchConfigurePara.keyIds?.[0] || '',
+        securityGroup:    launchConfigurePara.securityGroupIds?.[0] || '',
+        isNew:            false,
       };
 
       nodePool.push(obj);
@@ -1661,6 +1662,7 @@ function handleZoneChange() {
               v-model:dataDisks="pool.dataDisks"
               v-model:bandwidthType="pool.bandwidthType"
               v-model:bandwidth="pool.bandwidth"
+              v-model:publicIpAssigned="pool.publicIpAssigned"
               v-model:subnetId="pool.subnetId"
               v-model:keyPair="pool.keyPair"
               v-model:userScript="pool.userScript"
