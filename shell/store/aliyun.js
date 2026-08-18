@@ -91,6 +91,7 @@ export const getters = {
       },
       openPort: [
         '6443/tcp',
+        '9345/tcp',
         '2379/tcp',
         '2380/tcp',
         '8472/udp',
