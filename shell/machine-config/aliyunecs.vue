@@ -765,8 +765,8 @@ export default {
     },
     updateZone(val) {
       if (val) {
-        // 切换可用区会清空 VPC/交换机/实例类型等下游字段，再重新走默认值流程
-        this.resetValue();
+        // 可用区切换不影响 VPC；交换机按可用区重新选择
+        this.resetValue({ resetVpc: false });
         this.$fetch();
       }
     },
@@ -854,9 +854,11 @@ export default {
         this.value.securityGroup = null;
       }
     },
-    resetValue() {
+    resetValue({ resetVpc = true } = {}) {
       if (this.value) {
-        this.value.vpcId = '';
+        if (resetVpc) {
+          this.value.vpcId = '';
+        }
         this.value.vswitchId = '';
         this.value.instanceType = '';
         this.imageType = '';
