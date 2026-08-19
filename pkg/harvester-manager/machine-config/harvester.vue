@@ -19,9 +19,7 @@ import { Banner } from '@components/Banner';
 import { clone, get } from '@shell/utils/object';
 import { uniq, removeObject } from '@shell/utils/array';
 import paginationUtils from '@shell/utils/pagination-utils';
-
 import { _CREATE, _VIEW } from '@shell/config/query-params';
-
 import { mapGetters } from 'vuex';
 import {
   HCI,
@@ -32,7 +30,6 @@ import {
   NODE,
   STORAGE_CLASS
 } from '@shell/config/types';
-
 import { SETTING } from '@shell/config/settings';
 import { base64Decode, base64Encode } from '@shell/utils/crypto';
 import { allHashSettled } from '@shell/utils/promise';
@@ -44,6 +41,7 @@ import { isEqual } from 'lodash';
 import { FilterArgs, PaginationFilterField, PaginationParamFilter } from '@shell/types/store/pagination.types';
 
 const STORAGE_NETWORK = 'storage-network.settings.harvesterhci.io';
+const HARVESTER_CPU_MODEL = 'harvester-system/node-cpu-model-configuration';
 
 // init qemu guest agent
 export const QGA_JSON = {
@@ -83,7 +81,6 @@ const SOURCE_TYPE = {
 };
 
 const VGPU_PREFIX = { NVIDIA: 'nvidia.com/' };
-const HARVESTER_CPU_MODEL = 'harvester-system/node-cpu-model-configuration';
 
 export default {
   name: 'ConfigComponentHarvester',
@@ -163,7 +160,7 @@ export default {
           configMaps:   this.$store.dispatch('cluster/request', { url: configMapsUrl }),
           networks:     this.$store.dispatch('cluster/request', { url: `${ url }/k8s.cni.cncf.io.network-attachment-definitions` }),
           storageClass: this.$store.dispatch('cluster/request', { url: `${ url }/${ STORAGE_CLASS }es` }),
-          settings:     this.$store.dispatch('cluster/request', { url: `${ url }/${ MANAGEMENT.SETTING }s` }),
+          settings:     this.$store.dispatch('cluster/request', { url: `${ url }/${ MANAGEMENT.SETTING }s` })
         });
 
         for (const key of Object.keys(res)) {
@@ -390,29 +387,6 @@ export default {
   computed: {
     ...mapGetters({ t: 'i18n/t' }),
 
-    disabledEdit() {
-      return this.disabled || !!(this.isEdit && this.value.id);
-    },
-
-    imageOptions: {
-      get() {
-        return (this.images || []).filter( (O) => {
-          return !O.spec.url.endsWith('.iso') && isReady.call(O);
-        }).sort((a, b) => a.metadata.creationTimestamp > b.metadata.creationTimestamp ? -1 : 1).map( (O) => {
-          const value = O.id;
-          const label = `${ O.spec.displayName } (${ value })`;
-
-          return {
-            label,
-            value
-          };
-        });
-      },
-      set(neu) {
-        this.images = neu;
-      }
-    },
-
     cpuModelOptions() {
       const defaultOption = { label: this.t('generic.default'), value: '' };
 
@@ -456,6 +430,29 @@ export default {
       });
 
       return options;
+    },
+
+    disabledEdit() {
+      return this.disabled || !!(this.isEdit && this.value.id);
+    },
+
+    imageOptions: {
+      get() {
+        return (this.images || []).filter( (O) => {
+          return !O.spec.url.endsWith('.iso') && isReady.call(O);
+        }).sort((a, b) => a.metadata.creationTimestamp > b.metadata.creationTimestamp ? -1 : 1).map( (O) => {
+          const value = O.id;
+          const label = `${ O.spec.displayName } (${ value })`;
+
+          return {
+            label,
+            value
+          };
+        });
+      },
+      set(neu) {
+        this.images = neu;
+      }
     },
 
     networkOptions: {

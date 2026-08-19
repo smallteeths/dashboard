@@ -3,6 +3,12 @@ import { mapGetters } from 'vuex';
 import ResourceTable from '@shell/components/ResourceTable';
 import { MANAGEMENT } from '@shell/config/types';
 import ResourceFetch from '@shell/mixins/resource-fetch';
+import { STEVE_CACHE } from '@shell/store/features';
+
+const hideFeatureFlags = [
+  'fleet', // Note - this is the id of the ff we want, not sure what FLEET in store/features is
+  STEVE_CACHE
+];
 
 export default {
   components: { ResourceTable },
@@ -34,7 +40,7 @@ export default {
     filteredRows() {
       const hideFeatureIds = ['audit-log-ui-extension', 'flat-networks-ui-extension'];
 
-      return this.rows.filter((x) => x.name !== 'fleet').filter((f) => !hideFeatureIds.includes(f.id));
+      return this.rows.filter((x) => hideFeatureFlags.indexOf(x.metadata.name) === -1).filter((f) => !hideFeatureIds.includes(f.id));
     },
 
     enableRowActions() {
@@ -65,7 +71,7 @@ export default {
         <div class="feature-name">
           <div>{{ scope.row.nameDisplay }}</div>
           <i
-            v-if="scope.row.status.lockedValue !== null"
+            v-if="scope.row.status && scope.row.status.lockedValue !== null"
             class="icon icon-lock"
           />
         </div>

@@ -1,7 +1,10 @@
 <script>
+import { useStore } from 'vuex';
 import { LabeledInput } from '@components/Form/LabeledInput';
 import { RadioGroup } from '@components/Form/Radio';
 import { MANAGEMENT } from '@shell/config/types';
+import { useFormRules } from '@shell/composables/useFormValidation';
+import { useI18n } from '@shell/composables/useI18n';
 
 const HARBOR_AUTH_KEY = 'rancher.cn/registry-harbor-auth';
 const HARBOR_ADMIN_AUTH_KEY = 'rancher.cn/registry-harbor-admin-auth';
@@ -34,6 +37,33 @@ export default {
       console.error('Failed to fetch harborRegistryUrl'); // eslint-disable-line no-console
       this.harborRegistryUrl = '';
     }
+  },
+
+  setup() {
+    const store = useStore();
+    const { t } = useI18n(store);
+    const { getRules } = useFormRules(
+      t,
+      [
+        {
+          path:           'registryUrl',
+          rules:          ['required'],
+          translationKey: 'secret.registry.domainName',
+        },
+        {
+          path:           'username',
+          rules:          ['required'],
+          translationKey: 'secret.registry.username',
+        },
+        {
+          path:           'password',
+          rules:          ['required'],
+          translationKey: 'secret.registry.password',
+        },
+      ]
+    );
+
+    return { getRules };
   },
 
   data() {
@@ -202,27 +232,35 @@ export default {
     >
       <LabeledInput
         v-model:value="registryUrl"
+        name="registryUrl"
         required
         :disabled="isHarbor"
         :label="t('secret.registry.domainName')"
         placeholder="e.g. index.docker.io"
         :mode="mode"
+        :rules="getRules('registryUrl')"
       />
     </div>
     <div class="row mb-20">
       <div class="col span-6">
         <LabeledInput
           v-model:value="username"
+          name="username"
+          required
           :label="t('secret.registry.username')"
           :mode="mode"
+          :rules="getRules('username')"
         />
       </div>
       <div class="col span-6">
         <LabeledInput
           v-model:value="password"
+          name="password"
+          required
           :label="t('secret.registry.password')"
           :mode="mode"
           type="password"
+          :rules="getRules('password')"
         />
       </div>
     </div>

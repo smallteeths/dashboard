@@ -4,7 +4,11 @@ import {
   EVENT_LAST_SEEN_TIME,
   EVENT_TYPE,
   SECRET_ORIGIN,
-  EVENT_FIRST_SEEN_TIME
+  EVENT_FIRST_SEEN_TIME,
+  WORKLOAD_HEALTH_SCALE,
+  MGMT_CLUSTER_PROVIDER,
+  MGMT_CLUSTER_KUBE_VERSION,
+  AUTOSCALER_ENABLED
 } from '@shell/config/table-headers';
 
 // This file contains table headers
@@ -33,7 +37,7 @@ export const STEVE_STATE_COL = {
   // Note, we're show the 'state' as per model, not the 'metadata.state.name' that's available in the model to remotely sort/filter
   // Need to investigate whether we should 'dumb down' the state we show to the native one (tracked via https://github.com/rancher/dashboard/issues/8527)
   // This means we'll show something different to what we sort and filter on.
-  sort:   ['metadata.state.name'],
+  sort:   ['metadata.state.name', 'metadata.name'],
   search: 'metadata.state.name',
 };
 
@@ -94,4 +98,29 @@ export const STEVE_SECRET_ORIGIN = {
   // We can't sort by the 'UI_PROJECT_SECRET' label (management.cattle.io/project-scoped-secret) due to backend limitations.
   // So we sort by the 'UI_PROJECT_SECRET_COPY' annotation (management.cattle.io/project-scoped-secret-copy) which at least groups the copies.
   sort: `metadata.annotations[${ UI_PROJECT_SECRET_COPY }]:desc`,
+};
+
+export const STEVE_WORKLOAD_HEALTH_SCALE = {
+  ...WORKLOAD_HEALTH_SCALE,
+  sort:   false,
+  search: false,
+};
+
+export const STEVE_MGMT_CLUSTER_PROVIDER = { ...MGMT_CLUSTER_PROVIDER };
+
+export const STEVE_MGMT_CLUSTER_KUBE_VERSION = {
+  ...MGMT_CLUSTER_KUBE_VERSION,
+  sort:   'status.info.kubernetesVersion',
+  search: 'status.info.kubernetesVersion',
+};
+
+export const STEVE_AUTOSCALER_ENABLED = {
+  ...AUTOSCALER_ENABLED,
+  sort:   false,
+  search: false,
+};
+
+export const STEVE_MGMT_STATE_COL = {
+  ...STEVE_STATE_COL,
+  sort: ['metadata.state.name', 'spec.displayName']
 };

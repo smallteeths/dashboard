@@ -38,7 +38,7 @@ export default class BurgerMenuPo extends ComponentPo {
    * @returns {Cypress.Chainable}
    */
   static burgerMenuNavClusterKeyComboIconCheckByLabel(label: string): Cypress.Chainable {
-    return this.burgerMenuGetNavClusterbyLabel(label)
+    return this.burgerMenuGetNavClusterByLabel(label)
       .closest('.cluster.selector')
       .find('.cluster-icon-menu i')
       .should('have.class', 'icon-keyboard_tab');
@@ -56,7 +56,7 @@ export default class BurgerMenuPo extends ComponentPo {
    * Get cluster navigation item by label
    * @returns {Cypress.Chainable}
    */
-  static burgerMenuGetNavClusterbyLabel(label: string): Cypress.Chainable {
+  static burgerMenuGetNavClusterByLabel(label: string): Cypress.Chainable {
     return this.sideMenu().find('.option .cluster-name').contains(label);
   }
 
@@ -66,7 +66,7 @@ export default class BurgerMenuPo extends ComponentPo {
   static checkIfClusterMenuLinkIsHighlighted(name: string, isHighlightedAssertion = true) {
     const assertion = isHighlightedAssertion ? 'have.class' : 'not.have.class';
 
-    return this.burgerMenuGetNavClusterbyLabel(name).parent().parent().should(assertion, 'active-menu-link');
+    return this.burgerMenuGetNavClusterByLabel(name).parent().parent().should(assertion, 'active-menu-link');
   }
 
   /**
@@ -176,12 +176,16 @@ export default class BurgerMenuPo extends ComponentPo {
     return this.clusterPinnedList().first().find('.pin').click();
   }
 
-  getClusterDescription(): Cypress.Chainable {
-    return this.clusterNotPinnedList().first().find('.description').invoke('text');
+  getClusterIcon(clusterName = 'local'): Cypress.Chainable {
+    return this.self().find('.cluster-name').contains(clusterName).parent();
   }
 
-  showClusterDescriptionTooltip(): Cypress.Chainable {
-    return this.clusterNotPinnedList().first().find('.description').trigger('mouseenter');
+  getClusterDescription(clusterName = 'local'): Cypress.Chainable {
+    return this.getClusterIcon(clusterName).find('.description').invoke('text');
+  }
+
+  showClusterDescriptionTooltip(clusterName = 'local'): Cypress.Chainable {
+    return this.getClusterIcon(clusterName).find('.description').trigger('mouseenter');
   }
 
   getClusterDescriptionTooltipContent(): Cypress.Chainable {

@@ -18,7 +18,6 @@ import { ucFirst } from '@shell/utils/string';
 import CruResource from '@shell/components/CruResource';
 import { Banner } from '@components/Banner';
 import Labels from '@shell/components/form/Labels';
-import HarvesterServiceAddOnConfig from '@shell/components/HarvesterServiceAddOnConfig';
 import { clone, set } from '@shell/utils/object';
 import { POD, CAPI, HCI } from '@shell/config/types';
 import { matching } from '@shell/utils/selector-typed';
@@ -60,7 +59,6 @@ export default {
     Tab,
     Tabbed,
     UnitInput,
-    HarvesterServiceAddOnConfig,
   },
 
   mixins: [CreateEditView, FormValidation],
@@ -214,9 +212,7 @@ export default {
     },
 
     provisioningCluster() {
-      const out = this.$store.getters['management/all'](CAPI.RANCHER_CLUSTER).find((c) => c?.status?.clusterName === this.currentCluster.metadata.name);
-
-      return out;
+      return this.currentCluster.provCluster;
     },
 
     isExternalIP() {
@@ -310,8 +306,9 @@ export default {
         const hash = {};
 
         if (this.$store.getters[`management/canList`](CAPI.RANCHER_CLUSTER)) {
-          hash.provClusters = this.$store.dispatch('management/findAll', { type: CAPI.RANCHER_CLUSTER });
+          hash.provClusters = this.$store.dispatch('management/find', { type: CAPI.RANCHER_CLUSTER, id: this.currentCluster.provClusterId });
         }
+
         if (this.$store.getters[`management/canList`](HCI.HARVESTER_CONFIG)) {
           hash.harvesterConfigs = this.$store.dispatch(`management/findAll`, { type: HCI.HARVESTER_CONFIG });
         }
@@ -385,8 +382,10 @@ export default {
 
     <Tabbed
       :side-tabs="true"
+      :resource="value"
       :use-hash="useTabbedHash"
       :default-tab="defaultTab"
+      :extension-params="{ showHarvesterAddOnConfig: String(showHarvesterAddOnConfig) }"
     >
       <Tab
         v-if="checkTypeIs('ExternalName')"
@@ -525,18 +524,6 @@ export default {
             />
           </div>
         </div>
-      </Tab>
-      <Tab
-        v-if="showHarvesterAddOnConfig"
-        name="add-on-config"
-        :label="t('servicesPage.harvester.title')"
-        :weight="-1"
-      >
-        <HarvesterServiceAddOnConfig
-          :mode="mode"
-          :value="value"
-          :register-before-hook="registerBeforeHook"
-        />
       </Tab>
       <Tab
         v-if="!checkTypeIs('ExternalName') && !checkTypeIs('Headless')"

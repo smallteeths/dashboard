@@ -91,7 +91,8 @@ export default {
       os:                undefined,
       retries:           0,
       currFocusedElem:   undefined,
-      xtermContainerRef: undefined
+      xtermContainerRef: undefined,
+      isUnmounted:       false
     };
   },
 
@@ -150,6 +151,8 @@ export default {
   },
 
   beforeUnmount() {
+    this.isUnmounted = true;
+
     document.removeEventListener('keyup', this.handleKeyPress);
     this.$refs?.containerShell?.$el?.removeEventListener('focusin', this.focusInHandler);
     this.$refs?.xterm.removeEventListener('focusout', this.focusOutHandler);
@@ -168,7 +171,7 @@ export default {
     try {
       const schema = this.$store.getters[`cluster/schemaFor`](NODE);
 
-      if (schema) {
+      if (schema && nodeId) {
         await this.$store.dispatch('cluster/find', { type: NODE, id: nodeId });
       }
     } catch {}
@@ -215,14 +218,14 @@ export default {
 
     async setupTerminal() {
       const docStyle = getComputedStyle(document.querySelector('body'));
-      const xterm = await import(/* webpackChunkName: "xterm" */ 'xterm');
+      const xterm = await import(/* webpackChunkName: "xterm" */ '@xterm/xterm');
 
       const addons = await allHash({
-        fit:      import(/* webpackChunkName: "xterm" */ 'xterm-addon-fit'),
-        webgl:    import(/* webpackChunkName: "xterm" */ 'xterm-addon-webgl'),
-        weblinks: import(/* webpackChunkName: "xterm" */ 'xterm-addon-web-links'),
-        search:   import(/* webpackChunkName: "xterm" */ 'xterm-addon-search'),
-        canvas:   import(/* webpackChunkName: "xterm" */ 'xterm-addon-canvas')
+        fit:      import(/* webpackChunkName: "xterm" */ '@xterm/addon-fit'),
+        webgl:    import(/* webpackChunkName: "xterm" */ '@xterm/addon-webgl'),
+        weblinks: import(/* webpackChunkName: "xterm" */ '@xterm/addon-web-links'),
+        search:   import(/* webpackChunkName: "xterm" */ '@xterm/addon-search'),
+        canvas:   import(/* webpackChunkName: "xterm" */ '@xterm/addon-canvas'),
       });
 
       const terminal = new xterm.Terminal({
@@ -242,14 +245,38 @@ export default {
       terminal.loadAddon(new addons.weblinks.WebLinksAddon());
       terminal.open(this.$refs.xterm);
 
+      // The webgl renderer can fail without throwing: the context may be lost
+      // mid-session, or it can attach but silently never paint, leaving the
+      // terminal's helper textarea at 0x0. Detect both cases and fall back to the
+      // canvas renderer so the terminal stays interactive.
       try {
         this.webglAddon = new addons.webgl.WebglAddon();
+
+        this.webglAddon.onContextLoss(() => {
+          if (!this.isUnmounted && this.terminal) {
+            this.fallbackToCanvas(terminal, addons);
+          }
+        });
+
         terminal.loadAddon(this.webglAddon);
+
+        // Detect the silent "attaches but never paints" failure after a render frame.
+        requestAnimationFrame(() => {
+          if (this.isUnmounted || !this.terminal) {
+            return;
+          }
+
+          const textarea = this.$refs.xterm?.querySelector('.xterm-helper-textarea');
+          const hasPainted = textarea && textarea.getBoundingClientRect().height > 0;
+
+          if (this.webglAddon && !hasPainted) {
+            this.fallbackToCanvas(terminal, addons);
+            this.fit();
+          }
+        });
       } catch (e) {
-        // Some browsers (Safari) don't support the webgl renderer, so don't use it.
-        this.webglAddon = null;
-        this.canvasAddon = new addons.canvas.CanvasAddon();
-        terminal.loadAddon(this.canvasAddon);
+        // Some browsers (e.g. Safari) don't support the webgl renderer, so don't use it.
+        this.fallbackToCanvas(terminal, addons);
       }
       this.fit();
       this.flush();
@@ -261,6 +288,23 @@ export default {
       });
 
       this.terminal = terminal;
+    },
+
+    // Dispose the webgl renderer (if any) and switch to the canvas renderer.
+    // Used when webgl fails to construct, loses its context, or silently never paints.
+    fallbackToCanvas(terminal, addons) {
+      if (this.isUnmounted) {
+        return;
+      }
+
+      this.webglAddon?.dispose();
+      this.webglAddon = null;
+
+      if (!this.canvasAddon) {
+        this.canvasAddon = new addons.canvas.CanvasAddon();
+        terminal.loadAddon(this.canvasAddon);
+      }
+      this.fit();
     },
 
     write(msg) {
@@ -288,7 +332,7 @@ export default {
       }
 
       const url = addParams(
-        `${ this.pod.links.view.replace(/^http/, 'ws') }/exec`,
+        `${ this.pod.links?.view.replace(/^http/, 'ws') }/exec`,
         {
           container: this.container,
           stdout:    1,
@@ -435,6 +479,13 @@ export default {
         this.socket.disconnect();
         this.socket = null;
       }
+
+      // Dispose the renderer addons before the terminal. This is needed to avoid xterm throwing an error
+      this.webglAddon?.dispose();
+      this.webglAddon = null;
+
+      this.canvasAddon?.dispose();
+      this.canvasAddon = null;
 
       if (this.terminal) {
         this.terminal.dispose();

@@ -18,11 +18,10 @@ import BrandImage from '@shell/components/BrandImage';
 import { waitFor } from '@shell/utils/async';
 import { Banner } from '@components/Banner';
 import FormValidation from '@shell/mixins/form-validation';
-import isUrl from 'is-url';
-import { isLocalhost } from '@shell/utils/validators/setting';
+import { isLocalhost, isValidUrl } from '@shell/utils/validators/setting';
 import Loading from '@shell/components/Loading';
-import { encryptPassword } from '@shell/utils/auth';
 import { getBrandMeta } from '@shell/utils/brand';
+import { findMe, encryptPassword } from '@shell/utils/auth';
 
 const calcIsFirstLogin = (store) => {
   const firstLoginSetting = store.getters['management/byId'](MANAGEMENT.SETTING, SETTING.FIRST_LOGIN);
@@ -80,6 +79,16 @@ export default {
       // Always show setup if this is the first log in
       return;
     } else if (mustChangePassword) {
+      // Skip password change for non-local sessions
+      try {
+        const me = await findMe(this.$store);
+
+        if (me && me.provider !== 'local') {
+          return this.$router.replace('/');
+        }
+      } catch (e) {
+      }
+
       // If the password needs changing and this isn't the first log in ensure we have the password
       if (!!this.$store.getters['auth/initialPass']) {
         // Got it... show setup
@@ -174,7 +183,7 @@ export default {
         }
       }
 
-      if (!isUrl(this.serverUrl) || this.fvGetPathErrors(['serverUrl']).length > 0) {
+      if (!isValidUrl(this.serverUrl) || this.fvGetPathErrors(['serverUrl']).length > 0) {
         return false;
       }
 

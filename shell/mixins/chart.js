@@ -13,7 +13,7 @@ import { CAPI, CATALOG } from '@shell/config/types';
 import { isPrerelease } from '@shell/utils/version';
 import { compareChartVersions } from '@shell/utils/chart';
 import difference from 'lodash/difference';
-import { LINUX, APP_UPGRADE_STATUS } from '@shell/store/catalog';
+import { APP_UPGRADE_STATUS, isRancherRepo, getPermittedOSs } from '@shell/store/catalog';
 import { clone } from '@shell/utils/object';
 import { merge } from 'lodash';
 
@@ -71,6 +71,8 @@ export default {
 
       const selectedVersion = this.targetVersion;
       const OSs = this.currentCluster?.workerOSs;
+      const isRancher = isRancherRepo(this.repo, this.chart);
+      const permittedSystemsByVersion = new Map();
       const out = [];
 
       versions.forEach((version) => {
@@ -84,7 +86,9 @@ export default {
           keywords:        version.keywords
         };
 
-        const permittedSystems = (version?.annotations?.[CATALOG_ANNOTATIONS.PERMITTED_OS] || LINUX).split(',');
+        const permittedSystems = getPermittedOSs(version?.annotations, isRancher);
+
+        permittedSystemsByVersion.set(version.version, permittedSystems);
 
         if (permittedSystems.length > 0 && difference(OSs, permittedSystems).length > 0) {
           nue.disabled = true;
@@ -117,7 +121,13 @@ export default {
       const currentVersion = out.find((v) => v.originalVersion === this.currentVersion);
 
       if (currentVersion) {
-        currentVersion.label = this.t('catalog.install.versions.current', { ver: this.currentVersion });
+        const permittedSystems = permittedSystemsByVersion.get(currentVersion.originalVersion) || [];
+
+        if (permittedSystems.length === 1) {
+          currentVersion.label = this.t(`catalog.install.versions.current_${ permittedSystems[0] }`, { ver: this.currentVersion });
+        } else {
+          currentVersion.label = this.t('catalog.install.versions.current', { ver: this.currentVersion });
+        }
       }
 
       return out;
@@ -271,7 +281,7 @@ export default {
     },
 
     isChartTargeted() {
-      return this.chart?.targetNamespace && this.chart?.targetName;
+      return this.version?.annotations?.[CATALOG_ANNOTATIONS.NAMESPACE] && this.version?.annotations?.[CATALOG_ANNOTATIONS.RELEASE_NAME];
     },
 
     hasQuestions() {
@@ -410,7 +420,6 @@ export default {
         if ( targetNamespace && targetName ) {
           // If the app name and namespace values are not provided in the
           // query, fall back on target values defined in the Helm chart itself.
-
           // Ask to install a special chart with fixed namespace/name
           // or edit it if there's an existing install.
 
@@ -424,8 +433,12 @@ export default {
             });
             this.mode = _EDIT;
           } catch (e) {
-            this.mode = _CREATE;
-            this.existing = null;
+            // Version targets a different namespace than where the app is installed.
+            // Fall back to matching installed apps (e.g. chart detail page).
+            const matching = this.chart?.matchingInstalledApps || [];
+
+            this.existing = matching[0] || null;
+            this.mode = this.existing ? _EDIT : _CREATE;
           }
         } else {
           // Regular chart (not targeted) - check if there are installed instances.

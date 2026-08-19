@@ -155,6 +155,12 @@ export const state = function() {
   return {};
 };
 
+export const actions = {
+  mapDriver(ctx, { name, to }) {
+    mapDriver(name, to);
+  },
+};
+
 export const getters = {
   credentialOptions() {
     return (name) => {
@@ -185,16 +191,6 @@ export const getters = {
     return [];
   },
 
-  deprecatedKontainerDrivers() {
-    // Pandaria deprecated kontainerdriver
-    return [
-      'aliyun',
-      'huaweicce',
-      'tencenttke',
-      'tencent',
-    ];
-  },
-
   schemaForDriver(state, getters, rootState, rootGetters) {
     return (name) => {
       const id = `rke-machine-config.cattle.io.${ name }config`;
@@ -208,14 +204,14 @@ export const getters = {
     return async(name) => {
       const schema = getters.schemaForDriver(name);
 
-      await schema.fetchResourceFields();
-
       if ( !schema ) {
         // eslint-disable-next-line no-console
         console.error(`Machine Driver Config schema not found for ${ name }`);
 
         return [];
       }
+      await schema.fetchResourceFields();
+
       // This is used in places where `createPopulated` has been called, which has called fetchResourceFields to populate resourceFields
       const out = Object.keys(schema?.resourceFields || {});
 
@@ -227,12 +223,15 @@ export const getters = {
 
   fieldsForDriver(state, getters) {
     return async(name) => {
+      const out = {};
       const schema = getters.schemaForDriver(name);
+
+      if ( !schema ) {
+        return out;
+      }
 
       await schema.fetchResourceFields();
       const names = await getters.fieldNamesForDriver(name);
-
-      const out = {};
 
       for ( const n of names ) {
         out[n] = schema.resourceFields[n];

@@ -70,6 +70,10 @@ export class FleetClusterDetailsPo extends BaseDetailPagePo {
   addAppButton() {
     return this.self().get('.btn').contains('Create App Bundle');
   }
+
+  clusterLabels(): Cypress.Chainable {
+    return this.self().find('.tag-data');
+  }
 }
 
 export class FleetClusterEditPo extends BaseDetailPagePo {

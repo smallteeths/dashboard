@@ -88,26 +88,6 @@ describe('Feature Flags', { testIsolation: 'off' }, () => {
     featureFlagsPage.list().details('istio-virtual-service-ui', 0).should('include.text', 'Active');
   });
 
-  it('can toggle rke1-custom-node-cleanup feature flag', { tags: ['@globalSettings', '@adminUser'] }, () => {
-    // Check Current State: should be active by default
-    FeatureFlagsPagePo.navTo();
-    featureFlagsPage.list().details('rke1-custom-node-cleanup', 0).should('include.text', 'Active');
-
-    // Deactivate
-    featureFlagsPage.list().clickRowActionMenuItem('rke1-custom-node-cleanup', 'Deactivate');
-    featureFlagsPage.clickCardActionButtonAndWait('Deactivate', 'rke1-custom-node-cleanup', false);
-
-    // Check Updated State: should be disabled
-    featureFlagsPage.list().details('rke1-custom-node-cleanup', 0).should('include.text', 'Disabled');
-
-    // Activate
-    featureFlagsPage.list().clickRowActionMenuItem('rke1-custom-node-cleanup', 'Activate');
-    featureFlagsPage.clickCardActionButtonAndWait('Activate', 'rke1-custom-node-cleanup', true);
-
-    // Check Updated State: should be active
-    featureFlagsPage.list().details('rke1-custom-node-cleanup', 0).should('include.text', 'Active');
-  });
-
   it('can toggle token-hashing feature flag', { tags: ['@globalSettings', '@adminUser'] }, () => {
     // Check Current State: should be disabled by default
     FeatureFlagsPagePo.navTo();
@@ -122,7 +102,7 @@ describe('Feature Flags', { testIsolation: 'off' }, () => {
 
     // Check - No actions available
     cy.reload();
-    featureFlagsPage.list().getRowActionMenuItem('token-hashing', 'No actions available');
+    featureFlagsPage.list().getRowNoActionMenu('token-hashing');
     featureFlagsPage.list().details('token-hashing', 1).find('i.icon-lock').should('be.visible');
   });
 
@@ -140,8 +120,6 @@ describe('Feature Flags', { testIsolation: 'off' }, () => {
     featureFlagsPage.list().details('unsupported-storage-drivers', 0).should('include.text', 'Active');
 
     // Deactivate
-    FeatureFlagsPagePo.navTo();
-
     featureFlagsPage.list().elementWithName('unsupported-storage-drivers').scrollIntoView().should('be.visible');
     featureFlagsPage.list().clickRowActionMenuItem('unsupported-storage-drivers', 'Deactivate');
     featureFlagsPage.clickCardActionButtonAndWait('Deactivate', 'unsupported-storage-drivers', false);
@@ -196,13 +174,11 @@ describe('Feature Flags', { testIsolation: 'off' }, () => {
 
     const featureFlags = [
       'continuous-delivery',
-      'Install Fleet when starting Rancher',
       'harvester',
       'harvester-baremetal-container-workload',
       'istio-virtual-service-ui',
       'legacy',
       'multi-cluster-management',
-      'rke1-custom-node-cleanup',
       'rke2',
       'token-hashing',
       'unsupported-storage-drivers'
@@ -231,7 +207,8 @@ describe('Feature Flags', { testIsolation: 'off' }, () => {
       featureFlagsPage.list().resourceTable().sortableTable().checkLoadingIndicatorNotVisible();
       featureFlagsPage.list().resourceTable().sortableTable().noRowsShouldNotExist();
       cy.getRancherResource('v1', 'management.cattle.io.features').then((resp: Cypress.Response<any>) => {
-        const featureCount = resp.body.count;
+        // We filter out fleet and ui-sql-cache feature flags
+        const featureCount = resp.body.count - 2;
 
         featureFlagsPage.list().resourceTable().sortableTable().checkRowCount(false, featureCount);
       });

@@ -7,6 +7,7 @@ import ClusterDashboardPagePo from '@/cypress/e2e/po/pages/explorer/cluster-dash
 import ProductNavPo from '@/cypress/e2e/po/side-bars/product-side-nav.po';
 import { HeaderPo } from '@/cypress/e2e/po/components/header.po';
 import ResourceYamlEditorPagePo from '@/cypress/e2e/po/pages/explorer/yaml-editor.po';
+import { FeatureFlagsPagePo } from '@/cypress/e2e/po/pages/global-settings/feature-flags.po';
 import { CLUSTER_REPOS_BASE_URL } from '@/cypress/support/utils/api-endpoints';
 // import ClusterManagerListPagePo from '@/cypress/e2e/po/pages/cluster-manager/cluster-manager-list.po';
 // import TooltipPo from '@/cypress/e2e/po/components/tooltip.po'; // Used in the below commented test
@@ -241,7 +242,14 @@ describe('User can update their preferences', () => {
 
     repoListPage.waitForGoTo(`${ CLUSTER_REPOS_BASE_URL }?*`);
 
-    repoList.actionMenu('Partners').getMenuItem('View in API').should('exist');
+    // Wait for repository list to load completely
+    repoList.checkVisible();
+    repoList.resourceTable().sortableTable().checkLoadingIndicatorNotVisible();
+
+    // Open action menu and wait for it to be populated
+    repoList.actionMenu('Partners');
+    repoList.resourceTable().sortableTable().rowActionMenu().getMenuItem('View in API')
+      .should('exist');
 
     prefPage.goTo();
     prefPage.viewInApiCheckbox().checkVisible();
@@ -256,7 +264,14 @@ describe('User can update their preferences', () => {
 
     repoListPage.waitForGoTo(`${ CLUSTER_REPOS_BASE_URL }?*`);
 
-    repoList.actionMenu('Partners').getMenuItem('View in API').should('not.exist');
+    // Wait for repository list to load completely
+    repoList.checkVisible();
+    repoList.resourceTable().sortableTable().checkLoadingIndicatorNotVisible();
+
+    // Open action menu and wait for it to be populated
+    repoList.actionMenu('Partners');
+    repoList.resourceTable().sortableTable().rowActionMenu().getMenuItem('View in API')
+      .should('not.exist');
   });
 
   it('Can select Show system Namespaces managed by Rancher (not intended for editing or deletion)', { tags: ['@userMenu', '@adminUser', '@standardUser'] }, () => {
@@ -315,6 +330,7 @@ describe('User can update their preferences', () => {
     Deselect the checkbox and verify description banner displays
     */
     const banners = new BannersPo('header > .banner');
+    const featureFlagsPage = new FeatureFlagsPagePo('_');
 
     prefPage.goTo();
     prefPage.hideDescriptionsCheckbox().checkVisible();
@@ -324,7 +340,8 @@ describe('User can update their preferences', () => {
     cy.wait('@prefUpdate').its('response.statusCode').should('eq', 200);
     prefPage.hideDescriptionsCheckbox().isChecked();
 
-    repoListPage.waitForGoTo(`${ CLUSTER_REPOS_BASE_URL }?*`);
+    featureFlagsPage.goTo();
+    featureFlagsPage.waitForPage();
     banners.self().should('not.exist');
 
     prefPage.goTo();
@@ -334,7 +351,8 @@ describe('User can update their preferences', () => {
     cy.wait('@prefUpdate2').its('response.statusCode').should('eq', 200);
     prefPage.hideDescriptionsCheckbox().isUnchecked();
 
-    repoListPage.waitForGoTo(`${ CLUSTER_REPOS_BASE_URL }?*`);
+    featureFlagsPage.goTo();
+    featureFlagsPage.waitForPage();
     banners.self().should('exist');
   });
 
@@ -426,7 +444,7 @@ describe('User can update their preferences', () => {
 
   // You want this to be last, there's some issues with logging in and logging out without sessions
 
-  function testLandingPageOption(key: { index: string, value: string, page: string, checkCluster?: string}) {
+  function testLandingPageOption(key: { index: string, value: string, page: string}) {
     /*
     Select each radio button and verify its highlighted
     Validate http request's payload & response contain correct values per selection
@@ -436,13 +454,6 @@ describe('User can update their preferences', () => {
 
     prefPage.goTo();
     prefPage.landingPageRadioBtn().checkVisible();
-
-    // Check if the dropdown exists before doing anything for the 'specific cluster' option
-    if (key.checkCluster) {
-      // Ensure the clusters fetch has completed and the Select component has populated
-      // with 'local' before we try to select the radio button.
-      prefPage.expectClusterOptionExists(key.checkCluster);
-    }
 
     cy.intercept('PUT', 'v1/userpreferences/*', (req) => {
       let body = req.body;
@@ -502,7 +513,7 @@ describe('User can update their preferences', () => {
 
   it('Can select login landing page - specific cluster', { tags: ['@userMenu', '@adminUser'] }, () => {
     testLandingPageOption({ // This option only works when there is an existing local cluster
-      index: '2', value: '{\"name\":\"c-cluster\",\"params\":{\"cluster\":\"local\"}}', page: '/explore', checkCluster: 'local'
+      index: '2', value: '{\"name\":\"c-cluster\",\"params\":{\"cluster\":\"local\"}}', page: '/explore'
     });
   });
 });

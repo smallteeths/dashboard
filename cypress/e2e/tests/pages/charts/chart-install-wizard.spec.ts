@@ -50,9 +50,16 @@ describe('Charts Wizard', { testIsolation: 'off', tags: ['@charts', '@adminUser'
     });
 
     it('Resource dropdown picker has ConfigMaps listed', () => {
-      ChartPage.navTo(null, 'rancher-demo');
+      ChartPage.navTo(undefined, 'rancher-demo');
       chartPage.waitForChartHeader('rancher-demo', MEDIUM_TIMEOUT_OPT);
       chartPage.goToInstall();
+
+      installChartPage.chartNameLink()
+        .should('exist')
+        .and('contain.text', 'rancher-demo')
+        .and('have.attr', 'href')
+        .and('include', '/apps/charts/chart?');
+
       installChartPage.chartName().type('rancher-demo');
       installChartPage.nextPage();
       tabbedPo.allTabs().should('have.length', 4);
@@ -78,26 +85,45 @@ describe('Charts Wizard', { testIsolation: 'off', tags: ['@charts', '@adminUser'
     const chartPage = new ChartPage();
     const chartName = 'Rancher Backups';
     const customRegistry = 'my.custom.registry:5000';
+    const chartNamespace = 'cattle-resources-system';
+    const chartApp = 'rancher-backup';
+    const chartCrd = 'rancher-backup-crd';
+
+    beforeEach(() => {
+      cy.viewport(1280, 720);
+    });
 
     it('should persist custom registry when changing chart version', function() {
       runTestWhenChartAvailable('rancher-charts', 'rancher-backup', this, () => {
         const installedAppsPage = new ChartInstalledAppsListPagePo('local', 'apps');
 
+        // Trigger uninstall for both charts (these requests will return before uninstall completes)
+        cy.createRancherResource('v1', `catalog.cattle.io.apps/${ chartNamespace }/${ chartApp }?action=uninstall`, '{}', false);
+        cy.createRancherResource('v1', `catalog.cattle.io.apps/${ chartNamespace }/${ chartCrd }?action=uninstall`, '{}', false);
+        cy.updateNamespaceFilter('local', 'none', '{"local":["all://user"]}');
+
         // We need to install the chart first to have the versions selector show up later when we come back to the install page
-        ChartPage.navTo(null, chartName);
+        ChartPage.navTo(undefined, chartName);
         chartPage.waitForChartHeader(chartName, MEDIUM_TIMEOUT_OPT);
         chartPage.goToInstall();
         installChartPage.nextPage();
 
-        cy.intercept('POST', '/v1/catalog.cattle.io.clusterrepos/rancher-charts?action=install').as('installApp');
-        installChartPage.installChart();
+        // Set up namespace selection before installing
         namespacePicker.toggle();
         namespacePicker.clickOptionByLabel('All Namespaces');
         namespacePicker.isChecked('All Namespaces');
         namespacePicker.closeDropdown();
-        installedAppsPage.waitForInstallCloseTerminal('installApp', ['rancher-backup', 'rancher-backup-crd']);
 
-        ChartPage.navTo(null, chartName);
+        // Set up API intercept right before the install action - use a single pattern that matches both
+        cy.intercept('POST', /\/v1\/catalog\.cattle\.io\.(clusterrepos|apps)\/.*\?action=(install|upgrade)/).as('installOrUpgradeApp');
+
+        // Now install the chart
+        installChartPage.installChart();
+
+        // Wait for install or upgrade to complete
+        installedAppsPage.waitForInstallCloseTerminal('installOrUpgradeApp', ['rancher-backup', 'rancher-backup-crd']);
+
+        ChartPage.navTo(undefined, chartName);
         chartPage.waitForChartHeader(chartName, MEDIUM_TIMEOUT_OPT);
         chartPage.goToInstall();
 
@@ -121,10 +147,6 @@ describe('Charts Wizard', { testIsolation: 'off', tags: ['@charts', '@adminUser'
     });
 
     after('clean up', () => {
-      const chartNamespace = 'cattle-resources-system';
-      const chartApp = 'rancher-backup';
-      const chartCrd = 'rancher-backup-crd';
-
       cy.createRancherResource('v1', `catalog.cattle.io.apps/${ chartNamespace }/${ chartApp }?action=uninstall`, '{}', false);
       cy.createRancherResource('v1', `catalog.cattle.io.apps/${ chartNamespace }/${ chartCrd }?action=uninstall`, '{}', false);
       cy.updateNamespaceFilter('local', 'none', '{"local":["all://user"]}');

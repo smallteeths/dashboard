@@ -3,7 +3,9 @@ import OidcClientCreateEditPo from '~/cypress/e2e/po/edit/management.cattle.io.o
 import PromptRemove from '@/cypress/e2e/po/prompts/promptRemove.po';
 import { promptModal } from '@/cypress/e2e/po/prompts/shared/modalInstances.po';
 import OIDCClientDetailPo from '@/cypress/e2e/po/detail/management.cattle.io.oidcclient.po';
+import { MEDIUM_TIMEOUT_OPT } from '@/cypress/support/utils/timeouts';
 import HomePagePo from '@/cypress/e2e/po/pages/home.po';
+import { qase } from '@/cypress/support/qase';
 
 describe('Rancher as an OIDC Provider', { tags: ['@globalSettings', '@adminUser'] }, () => {
   const OIDC_CREATE_DATA = {
@@ -39,7 +41,7 @@ describe('Rancher as an OIDC Provider', { tags: ['@globalSettings', '@adminUser'
     cy.login();
   });
 
-  it('should be able to create an OIDC client application', () => {
+  qase(9761, it('should be able to create an OIDC client application', () => {
     cy.intercept('POST', `/v1/management.cattle.io.oidcclients`).as('createRequest');
 
     HomePagePo.goTo();
@@ -87,9 +89,9 @@ describe('Rancher as an OIDC Provider', { tags: ['@globalSettings', '@adminUser'
 
     oidcClientDetailPage.clientID().copyToClipboard();
     oidcClientDetailPage.clientFullSecretCopy(0).copyToClipboard();
-  });
+  }));
 
-  it('should be able to edit an OIDC client application', () => {
+  qase(9762, it('should be able to edit an OIDC client application', () => {
     cy.intercept('PUT', `/v1/management.cattle.io.oidcclients/${ OIDC_CREATE_DATA.APP_NAME }`).as('editRequest');
 
     OidcClientsPagePo.goTo();
@@ -117,9 +119,9 @@ describe('Rancher as an OIDC Provider', { tags: ['@globalSettings', '@adminUser'
       expect(response?.body.spec.refreshTokenExpirationSeconds).to.equal(OIDC_EDIT_DATA.REF_TOKEN_EXP);
       expect(response?.body.spec.tokenExpirationSeconds).to.equal(OIDC_EDIT_DATA.TOKEN_EXP);
     });
-  });
+  }));
 
-  it('should be able to add a new secret for an OIDC provider', () => {
+  qase(9763, it('should be able to add a new secret for an OIDC provider', () => {
     cy.intercept('PUT', `/v1/management.cattle.io.oidcclients/${ OIDC_CREATE_DATA.APP_NAME }`).as('addNewSecret');
 
     HomePagePo.goTo();
@@ -132,16 +134,22 @@ describe('Rancher as an OIDC Provider', { tags: ['@globalSettings', '@adminUser'
     oidcClientDetailPage.addNewSecretBtnClick();
 
     // check data from network request
-    cy.wait('@addNewSecret').then(({ request, response }) => {
+    cy.wait('@addNewSecret', MEDIUM_TIMEOUT_OPT).then(({ request, response }) => {
       expect(response?.statusCode).to.eq(200);
       expect(request.body.metadata.annotations['cattle.io/oidc-client-secret-create']).to.equal('true');
     });
 
+    // Wait for the page to refresh and show the new secret with proper timeout
+    oidcClientDetailPage.waitForUrlPathWithoutContext();
+
+    // Wait for the secret element to appear before trying to interact with it
+    oidcClientDetailPage.clientFullSecretCopy(1).checkVisible();
+
     oidcClientDetailPage.clientFullSecretCopy(1).exists();
     oidcClientDetailPage.clientFullSecretCopy(1).copyToClipboard();
-  });
+  }));
 
-  it('should be able to regenerate a secret for an OIDC provider', () => {
+  qase(9764, it('should be able to regenerate a secret for an OIDC provider', () => {
     cy.intercept('PUT', `/v1/management.cattle.io.oidcclients/${ OIDC_CREATE_DATA.APP_NAME }`).as('regenSecret');
 
     HomePagePo.goTo();
@@ -167,9 +175,9 @@ describe('Rancher as an OIDC Provider', { tags: ['@globalSettings', '@adminUser'
 
     oidcClientDetailPage.clientFullSecretCopy(1).exists();
     oidcClientDetailPage.clientFullSecretCopy(1).copyToClipboard();
-  });
+  }));
 
-  it('should be able to delete a secret for an OIDC provider', () => {
+  qase(9765, it('should be able to delete a secret for an OIDC provider', () => {
     cy.intercept('PUT', `/v1/management.cattle.io.oidcclients/${ OIDC_CREATE_DATA.APP_NAME }`).as('deleteSecret');
 
     oidcClientDetailPage.goTo();
@@ -190,9 +198,9 @@ describe('Rancher as an OIDC Provider', { tags: ['@globalSettings', '@adminUser'
 
     // check that the card doesn't exist anymore
     cy.get('[data-testid="item-card-client-secret-2"]').should('not.exist');
-  });
+  }));
 
-  it('should be able to delete an OIDC client application', () => {
+  qase(9766, it('should be able to delete an OIDC client application', () => {
     cy.intercept('DELETE', `/v1/management.cattle.io.oidcclients/${ OIDC_CREATE_DATA.APP_NAME }`).as('deleteRequest');
 
     OidcClientsPagePo.goTo();
@@ -208,5 +216,5 @@ describe('Rancher as an OIDC Provider', { tags: ['@globalSettings', '@adminUser'
 
     oidcClientsPage.waitForPage();
     cy.contains(OIDC_CREATE_DATA.APP_NAME).should('not.exist');
-  });
+  }));
 });

@@ -10,16 +10,17 @@ import {
   CHART, REPO, REPO_TYPE, VERSION, SEARCH_QUERY, CATEGORY, TAG, DEPRECATED, NAMESPACE, NAME, NEW_APP_INSTANCE, _FLAGGED
 } from '@shell/config/query-params';
 import { DATE_FORMAT } from '@shell/store/prefs';
-import { ZERO_TIME } from '@shell/config/types';
+import { isMissingDate } from '@shell/utils/time';
 import { escapeHtml } from '@shell/utils/string';
 import { mapGetters } from 'vuex';
 import { APP_UPGRADE_STATUS, compatibleVersionsFor } from '@shell/store/catalog';
-import { compareChartVersions } from '@shell/utils/chart';
+import { compareChartVersions, getStandaloneReadmeUrl } from '@shell/utils/chart';
 import AppChartCardSubHeader from '@shell/pages/c/_cluster/apps/charts/AppChartCardSubHeader';
 import AppChartCardFooter from '@shell/pages/c/_cluster/apps/charts/AppChartCardFooter';
 import day from 'dayjs';
 import { RcButton } from '@components/RcButton';
-import ActionMenu from '@shell/components/ActionMenuShell.vue';
+import { RcButtonSplit } from '@components/RcButtonSplit';
+import { RcDropdownItem } from '@components/RcDropdown';
 
 export default {
   components: {
@@ -31,7 +32,8 @@ export default {
     AppChartCardSubHeader,
     AppChartCardFooter,
     RcButton,
-    ActionMenu,
+    RcButtonSplit,
+    RcDropdownItem
   },
 
   mixins: [
@@ -45,7 +47,6 @@ export default {
   data() {
     return {
       SEARCH_QUERY,
-      ZERO_TIME,
       showLastVersions:       7,
       showMoreVersions:       false,
       selectedInstalledAppId: null,
@@ -153,38 +154,26 @@ export default {
     },
 
     /**
-     * Returns the currently selected installed app.
-     * Falls back to this.existing (set by the mixin for targeted charts or URL query params).
-     */
-    selectedInstalledApp() {
-      if (this.selectedInstalledAppId) {
-        return this.installedInstances?.find((app) => app.id === this.selectedInstalledAppId) || null;
-      }
-
-      return this.existing || null;
-    },
-
-    /**
      * Returns the action for the current state based on the selected app and target version.
      */
     currentAction() {
       const app = this.selectedInstalledApp;
 
       if (!app) {
-        return { tKey: 'install', icon: 'icon-plus' };
+        return { tKey: 'install', icon: 'plus' };
       }
 
       const installedVersion = app.spec?.chart?.metadata?.version;
 
       if (installedVersion === this.targetVersion) {
-        return { tKey: 'edit', icon: 'icon-edit' };
+        return { tKey: 'edit', icon: 'edit' };
       }
 
       if (compareChartVersions(installedVersion, this.targetVersion) < 0) {
-        return { tKey: 'upgrade', icon: 'icon-upgrade-alt' };
+        return { tKey: 'upgrade', icon: 'upgrade-alt' };
       }
 
-      return { tKey: 'downgrade', icon: 'icon-downgrade-alt' };
+      return { tKey: 'downgrade', icon: 'downgrade-alt' };
     },
 
     /**
@@ -202,6 +191,18 @@ export default {
         };
       });
     },
+
+    /**
+     * Returns the currently selected installed app.
+     * Falls back to this.existing (set by the mixin for targeted charts or URL query params).
+     */
+    selectedInstalledApp() {
+      if (this.selectedInstalledAppId) {
+        return this.installedInstances?.find((app) => app.id === this.selectedInstalledAppId) || null;
+      }
+
+      return this.existing || null;
+    },
   },
 
   watch: {
@@ -215,6 +216,7 @@ export default {
   },
 
   methods: {
+    isMissingDate,
     /**
      * Computes statuses for the chart detail page based on the selected installed app.
      * When an app is selected, shows instance-specific installed/upgradeable status.
@@ -311,9 +313,9 @@ export default {
     },
 
     /**
-      * Handle installed app selection from the dropdown.
-      * Updates selectedInstalledAppId and this.existing so the page reflects the current installed app and displays the correct information for the selected instance.
-      */
+     * Handle installed app selection from the dropdown.
+     * Updates selectedInstalledAppId and this.existing so the page reflects the current installed app and displays the correct information for the selected instance.
+     */
     handleInstalledAppSelect(id) {
       this.selectedInstalledAppId = id;
       this.existing = this.installedInstances?.find((app) => app.id === id) ?? null;
@@ -344,17 +346,9 @@ export default {
       }
     },
     formatVersionDate(date) {
-      if (date === ZERO_TIME) {
-        return this.t('generic.na');
-      }
-
       return day(date).format('MMM D, YYYY');
     },
     getVersionDateTooltip(date) {
-      if (date === ZERO_TIME) {
-        return this.t('catalog.chart.info.chartVersions.missingVersionDate');
-      }
-
       const dateFormat = escapeHtml(this.$store.getters['prefs/get'](DATE_FORMAT));
 
       return day(date).format(dateFormat);
@@ -370,6 +364,20 @@ export default {
           [VERSION]: version,
         }
       };
+    },
+    openReadme() {
+      const url = getStandaloneReadmeUrl(this.$router, {
+        cluster:              this.$route.params.cluster,
+        repoType:             this.query.repoType,
+        repoName:             this.query.repoName,
+        chartName:            this.query.chartName,
+        versionName:          this.query.versionName || this.targetVersion,
+        deprecated:           this.query.deprecated,
+        showAppReadme:        false,
+        hideReadmeFirstTitle: false,
+      });
+
+      window.open(url, '_blank');
     }
   },
 };
@@ -461,41 +469,32 @@ export default {
           data-testid="installed-apps-selector"
           @update:value="handleInstalledAppSelect"
         />
-        <!-- Simple button and ActionMenu button: shown when chart is installed AND can be re-installed -->
-        <div
+        <!-- Split button: shown when chart is installed AND can be re-installed -->
+        <RcButtonSplit
           v-if="selectedInstalledApp && canInstallNew"
-          class="action-button-group"
+          data-testid="btn-chart-install"
+          size="large"
+          :left-icon="currentAction.icon"
+          @click="executeAction"
         >
-          <RcButton
-            data-testid="btn-chart-install"
-            size="large"
-            class="btn role-primary"
-            @click.prevent="executeAction"
-          >
-            <i
-              :class="['icon', currentAction.icon, 'mmr-2']"
-            />
-            {{ t(`catalog.chart.chartButton.action.${currentAction.tKey}` ) }}
-          </RcButton>
-          <ActionMenu
-            data-testid="btn-chart-install"
-            button-size="large"
-            button-variant="secondary"
-            :custom-actions="[{ label: t('catalog.chart.chartButton.action.installNew'), icon: 'icon-plus', action: 'installNew' }]"
-            @action-invoked="installNewInstance"
-          />
-        </div>
+          {{ t(`catalog.chart.chartButton.action.${currentAction.tKey}` ) }}
+          <template #dropdownCollection>
+            <RcDropdownItem @click="installNewInstance">
+              <template #before>
+                <i class="icon icon-plus" />
+              </template>
+              {{ t('catalog.chart.chartButton.action.installNew') }}
+            </RcDropdownItem>
+          </template>
+        </RcButtonSplit>
         <!-- Simple button: shown when chart is not installed OR cannot be re-installed -->
         <RcButton
           v-else
           data-testid="btn-chart-install"
           size="large"
-          class="btn role-primary"
+          :left-icon="currentAction.icon"
           @click.prevent="executeAction"
         >
-          <i
-            :class="['icon', currentAction.icon, 'mmr-2']"
-          />
           {{ t(`catalog.chart.chartButton.action.${currentAction.tKey}` ) }}
         </RcButton>
       </div>
@@ -550,13 +549,27 @@ export default {
     </div>
 
     <div class="chart-body">
-      <ChartReadme
+      <div
         v-if="hasReadme"
-        :version-info="versionInfo"
-        :show-app-readme="false"
-        :hide-readme-first-title="false"
-        class="chart-body__readme"
-      />
+        class="readme-wrapper"
+      >
+        <RcButton
+          v-clean-tooltip="t('catalog.chart.viewReadmeSeparately.tooltip')"
+          class="open-readme-button"
+          secondary
+          rightIcon="external-link"
+          @click="openReadme()"
+        >
+          {{ t('catalog.chart.viewReadmeSeparately.label') }}
+          <span class="sr-only">{{ t('generic.opensInNewTab') }}</span>
+        </RcButton>
+        <ChartReadme
+          :version-info="versionInfo"
+          :show-app-readme="false"
+          :hide-readme-first-title="false"
+          class="chart-body__readme"
+        />
+      </div>
       <div
         v-else
         class="chart-body__readme"
@@ -609,6 +622,7 @@ export default {
               />
             </div>
             <p
+              v-if="!isMissingDate(vers.created)"
               v-clean-tooltip="{ content: getVersionDateTooltip(vers.created), placement: 'left'}"
               class="version-date"
             >
@@ -825,16 +839,6 @@ export default {
       .installed-apps-selector {
         width: 340px;
       }
-
-      .action-button-group {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-
-        :deep(.btn.variant-secondary) {
-          padding: 0px 8px;
-        }
-      }
     }
 
     .description {
@@ -851,9 +855,33 @@ export default {
 
   .chart-body {
     display: flex;
+    .readme-wrapper {
+      position: relative;
+      flex: 1;
+      min-width: 0;
+
+      .open-readme-button {
+        display: flex;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 100ms ease-in;
+        position: absolute;
+        top: 12px;
+        right: 24px;
+      }
+
+      &:hover,
+      &:focus-within {
+        .open-readme-button {
+          opacity: 1;
+          pointer-events: auto;
+        }
+      }
+    }
+
     &__readme {
       flex: 1;
-      min-width: 400px;
+      min-width: 0;
       padding: 12px 24px;
     }
     &__info {

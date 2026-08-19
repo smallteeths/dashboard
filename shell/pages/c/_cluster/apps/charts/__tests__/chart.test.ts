@@ -1,5 +1,8 @@
 import Chart from '@shell/pages/c/_cluster/apps/charts/chart.vue';
 import { APP_UPGRADE_STATUS } from '@shell/store/catalog';
+import {
+  CHART, REPO, REPO_TYPE, VERSION, DEPRECATED
+} from '@shell/config/query-params';
 
 jest.mock('clipboard-polyfill', () => ({ writeText: () => {} }));
 
@@ -148,7 +151,11 @@ describe('page: Chart Detail', () => {
     ];
 
     it('returns only deprecated status when no app is selected', () => {
-      const thisContext = { selectedInstalledApp: null, t: (key: string) => key };
+      const thisContext = {
+        selectedInstalledApp: null,
+        t:                    (key: string) => key
+      };
+
       const result = (Chart.methods!.computeSelectedAppStatuses as (statuses: any[]) => any[]).call(thisContext, defaultStatuses);
 
       expect(result).toHaveLength(1);
@@ -156,7 +163,11 @@ describe('page: Chart Detail', () => {
     });
 
     it('returns empty array when no app is selected and chart is not deprecated', () => {
-      const thisContext = { selectedInstalledApp: null, t: (key: string) => key };
+      const thisContext = {
+        selectedInstalledApp: null,
+        t:                    (key: string) => key
+      };
+
       const statusesWithoutDeprecated = [
         {
           icon: 'icon-upgrade-alt', color: 'info', tooltip: { key: 'generic.upgradeable' }
@@ -165,6 +176,7 @@ describe('page: Chart Detail', () => {
           icon: 'icon-confirmation-alt', color: 'success', tooltip: { text: 'generic.installed (1.0.0)' }
         }
       ];
+
       const result = (Chart.methods!.computeSelectedAppStatuses as (statuses: any[]) => any[]).call(thisContext, statusesWithoutDeprecated);
 
       expect(result).toHaveLength(0);
@@ -178,7 +190,9 @@ describe('page: Chart Detail', () => {
         },
         t: (key: string) => key
       };
+
       const result = (Chart.methods!.computeSelectedAppStatuses as (statuses: any[]) => any[]).call(thisContext, defaultStatuses);
+
       const installedStatus = result.find((s: any) => s.icon === 'icon-confirmation-alt');
 
       expect(installedStatus).toBeDefined();
@@ -193,7 +207,9 @@ describe('page: Chart Detail', () => {
         },
         t: (key: string) => key
       };
+
       const result = (Chart.methods!.computeSelectedAppStatuses as (statuses: any[]) => any[]).call(thisContext, defaultStatuses);
+
       const upgradeableStatus = result.find((s: any) => s.icon === 'icon-upgrade-alt');
 
       expect(upgradeableStatus).toBeDefined();
@@ -207,7 +223,9 @@ describe('page: Chart Detail', () => {
         },
         t: (key: string) => key
       };
+
       const result = (Chart.methods!.computeSelectedAppStatuses as (statuses: any[]) => any[]).call(thisContext, defaultStatuses);
+
       const upgradeableStatus = result.find((s: any) => s.icon === 'icon-upgrade-alt');
 
       expect(upgradeableStatus).toBeUndefined();
@@ -221,12 +239,18 @@ describe('page: Chart Detail', () => {
         },
         t: (key: string) => key
       };
+
       const result = (Chart.methods!.computeSelectedAppStatuses as (statuses: any[]) => any[]).call(thisContext, defaultStatuses);
 
       expect(result).toHaveLength(3);
-      expect(result.some((s: any) => s.icon === 'icon-alert-alt')).toBe(true);
-      expect(result.some((s: any) => s.icon === 'icon-upgrade-alt')).toBe(true);
-      expect(result.some((s: any) => s.icon === 'icon-confirmation-alt')).toBe(true);
+
+      const hasDeprecated = result.some((s: any) => s.icon === 'icon-alert-alt');
+      const hasUpgradeable = result.some((s: any) => s.icon === 'icon-upgrade-alt');
+      const hasInstalled = result.some((s: any) => s.icon === 'icon-confirmation-alt');
+
+      expect(hasDeprecated).toBe(true);
+      expect(hasUpgradeable).toBe(true);
+      expect(hasInstalled).toBe(true);
     });
   });
 
@@ -238,7 +262,11 @@ describe('page: Chart Detail', () => {
     });
 
     it('returns empty array when no installed instances', () => {
-      const thisContext = { installedInstances: [], t: (key: string) => key };
+      const thisContext = {
+        installedInstances: [],
+        t:                  (key: string) => key
+      };
+
       const result = (Chart.computed!.installedAppOptions as () => any[]).call(thisContext);
 
       expect(result).toStrictEqual([]);
@@ -246,20 +274,29 @@ describe('page: Chart Detail', () => {
 
     it('returns options without upgradeable suffix for non-upgradeable apps', () => {
       const thisContext = {
-        installedInstances: [makeApp('default', 'my-app', APP_UPGRADE_STATUS.NO_UPGRADE)],
-        t:                  (key: string) => key
+        installedInstances: [
+          makeApp('default', 'my-app', APP_UPGRADE_STATUS.NO_UPGRADE)
+        ],
+        t: (key: string) => key
       };
+
       const result = (Chart.computed!.installedAppOptions as () => any[]).call(thisContext);
 
       expect(result).toHaveLength(1);
-      expect(result[0]).toStrictEqual({ value: 'default/my-app', label: 'default/my-app' });
+      expect(result[0]).toStrictEqual({
+        value: 'default/my-app',
+        label: 'default/my-app'
+      });
     });
 
     it('adds upgradeable suffix for apps with available upgrade', () => {
       const thisContext = {
-        installedInstances: [makeApp('cattle-system', 'rancher-app', APP_UPGRADE_STATUS.SINGLE_UPGRADE)],
-        t:                  (key: string) => key
+        installedInstances: [
+          makeApp('cattle-system', 'rancher-app', APP_UPGRADE_STATUS.SINGLE_UPGRADE)
+        ],
+        t: (key: string) => key
       };
+
       const result = (Chart.computed!.installedAppOptions as () => any[]).call(thisContext);
 
       expect(result).toHaveLength(1);
@@ -278,12 +315,50 @@ describe('page: Chart Detail', () => {
         ],
         t: (key: string) => key
       };
+
       const result = (Chart.computed!.installedAppOptions as () => any[]).call(thisContext);
 
       expect(result).toHaveLength(3);
       expect(result[0].label).toBe('default/app-one');
       expect(result[1].label).toBe('kube-system/app-two (generic.upgradeable)');
       expect(result[2].label).toBe('monitoring/app-three');
+    });
+  });
+
+  describe('methods: openReadme', () => {
+    it('opens standalone readme URL with chart context and without theme query', () => {
+      const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+      const resolve = jest.fn(() => ({ href: '/c/local/readme?x=y' }));
+      const thisContext = {
+        $router: { resolve },
+        $route:  { params: { cluster: 'local' } },
+        query:   {
+          repoType:    'cluster',
+          repoName:    'rancher-charts',
+          chartName:   'test-chart',
+          versionName: '',
+          deprecated:  'false',
+        },
+        targetVersion: '1.2.3'
+      };
+
+      (Chart.methods!.openReadme as () => void).call(thisContext);
+
+      expect(resolve).toHaveBeenCalledWith({
+        name:   'readme',
+        params: { cluster: 'local' },
+        query:  {
+          [REPO_TYPE]:          'cluster',
+          [REPO]:               'rancher-charts',
+          [CHART]:              'test-chart',
+          [VERSION]:            '1.2.3',
+          [DEPRECATED]:         'false',
+          showAppReadme:        'false',
+          hideReadmeFirstTitle: 'false',
+        }
+      });
+      expect(openSpy).toHaveBeenCalledWith('/c/local/readme?x=y', '_blank');
+      openSpy.mockRestore();
     });
   });
 

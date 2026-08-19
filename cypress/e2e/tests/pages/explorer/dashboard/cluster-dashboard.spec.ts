@@ -10,7 +10,6 @@ import { EventsPageListPo } from '@/cypress/e2e/po/pages/explorer/events.po';
 import * as path from 'path';
 import { eventsNoDataset } from '@/cypress/e2e/blueprints/explorer/cluster/events';
 import HomePagePo from '@/cypress/e2e/po/pages/home.po';
-import { qase } from '@/cypress/support/qase';
 
 const configMapYaml = `apiVersion: v1
 kind: ConfigMap
@@ -37,7 +36,7 @@ describe('Cluster Dashboard', { testIsolation: 'off', tags: ['@explorer', '@admi
     cy.login();
   });
 
-  qase(2039, it('can navigate to cluster dashboard', () => {
+  it('can navigate to cluster dashboard', () => {
     const clusterList = new ClusterManagerListPagePo('local');
 
     clusterList.goTo();
@@ -52,9 +51,9 @@ describe('Cluster Dashboard', { testIsolation: 'off', tags: ['@explorer', '@admi
 
     // check if burger menu nav is highlighted correctly for local cluster
     BurgerMenuPo.checkIfClusterMenuLinkIsHighlighted('local');
-  }));
+  });
 
-  qase(2361, it('has the correct title', () => {
+  it('has the correct title', () => {
     ClusterDashboardPagePo.navTo();
 
     cy.getRancherVersion().then((version) => {
@@ -62,15 +61,15 @@ describe('Cluster Dashboard', { testIsolation: 'off', tags: ['@explorer', '@admi
 
       cy.title().should('eq', expectedTitle);
     });
-  }));
+  });
 
-  qase(5703, it('shows fleet controller status', () => {
+  it('shows fleet controller status', () => {
     ClusterDashboardPagePo.navTo();
     clusterDashboard.waitForPage();
     clusterDashboard.fleetStatus().should('exist');
-  }));
+  });
 
-  qase(3046, it('can import a YAML successfully, using the header action "Import YAML"', () => {
+  it('can import a YAML successfully, using the header action "Import YAML"', () => {
     ClusterDashboardPagePo.navTo();
 
     header.importYamlHeaderAction().click();
@@ -85,16 +84,16 @@ describe('Cluster Dashboard', { testIsolation: 'off', tags: ['@explorer', '@admi
     header.importYaml().importYamlSortableTable().subRows().should('not.exist');
 
     header.importYaml().importYamlCloseClick();
-  }));
+  });
 
-  qase(3537, it('can open the kubectl shell from header', () => {
+  it('can open the kubectl shell from header', () => {
     ClusterDashboardPagePo.navTo();
 
     header.kubectlShell().openAndExecuteCommand('get no');
     header.kubectlShell().closeTerminal();
-  }));
+  });
 
-  qase(3539, it('can download kubeconfig from header', () => {
+  it('can download kubeconfig from header', () => {
     const downloadsFolder = Cypress.config('downloadsFolder');
     const downloadedFilename = path.join(downloadsFolder, 'local.yaml');
 
@@ -102,15 +101,15 @@ describe('Cluster Dashboard', { testIsolation: 'off', tags: ['@explorer', '@admi
 
     header.downloadKubeconfig().click();
     cy.readFile(downloadedFilename).should('contain', 'kind: Config');
-  }));
+  });
 
-  qase(3538, it('can copy the kubeconfig to clipboard', () => {
+  it('can copy the kubeconfig to clipboard', () => {
     ClusterDashboardPagePo.navTo();
     cy.intercept('POST', '/v1/ext.cattle.io.kubeconfigs').as('copyKubeConfig');
     header.copyKubeconfig().click();
     header.copyKubeConfigCheckmark().should('be.visible');
     cy.wait('@copyKubeConfig');
-  }));
+  });
 
   // Skipping until issue resolved: https://github.com/rancher/dashboard/issues/15697
   // it('can add cluster badge', () => {
@@ -178,7 +177,7 @@ describe('Cluster Dashboard', { testIsolation: 'off', tags: ['@explorer', '@admi
   //   burgerMenu.clusterNotPinnedList().first().find('svg').should('have.class', 'cluster-local-logo');
   // });
 
-  qase(2040, it('can view deployments', () => {
+  it('can view deployments', () => {
     clusterDashboard.goTo();
     clusterDashboard.waitForPage();
     cy.getRancherResource('v1', 'apps.deployments', '?exclude=metadata.managedFields').then((resp: Cypress.Response<any>) => {
@@ -192,9 +191,9 @@ describe('Cluster Dashboard', { testIsolation: 'off', tags: ['@explorer', '@admi
 
       workloadDeployments.waitForPage();
     });
-  }));
+  });
 
-  qase(2037, it('can view nodes', () => {
+  it('can view nodes', () => {
     clusterDashboard.goTo();
     clusterDashboard.waitForPage();
 
@@ -215,35 +214,41 @@ describe('Cluster Dashboard', { testIsolation: 'off', tags: ['@explorer', '@admi
 
       nodesPage.waitForPage();
     });
-  }));
+  });
 
-  let removePods = false;
-  const podNames = ['e2e-test1', 'e2e-test2', 'e2e-test3', 'e2e-test4', 'e2e-test5', 'e2e-test6'];
-  const projName = `project${ +new Date() }`;
-  const nsName = `namespace${ +new Date() }`;
+  const projIds: string[] = [];
+  const nsIds: string[] = [];
 
-  qase(15329, it('can view events and change events list count in cluster dashboard', () => {
+  it('can view events and change events list count in cluster dashboard', () => {
+    const podNames = ['e2e-test1', 'e2e-test2', 'e2e-test3', 'e2e-test4', 'e2e-test5', 'e2e-test6'];
+
+    // Create unique for this run values (helps with retries)
+    cy.createE2EResourceName(`cd-proj-${ new Date().getTime() }`).as('projName');
+    cy.createE2EResourceName(`cd-ns-${ new Date().getTime() }`).as('nsName');
+
     // Create a pod to trigger events
 
     // get user id
     cy.getRancherResource('v1', 'ext.cattle.io.selfuser').then((resp: Cypress.Response<any>) => {
       const userId = resp.body.status.userID;
 
-      // create project
-      cy.createProject(projName, 'local', userId).then((resp: Cypress.Response<any>) => {
-        cy.wrap(resp.body.id.trim()).as('projId');
+      cy.get<string>('@projName').then((projName) => {
+        cy.get<string>('@nsName').then((nsName) => {
+          // create project
+          cy.createProject(projName, 'local', userId).then((resp: Cypress.Response<any>) => {
+            const projId = resp.body.id;
 
-        // create ns
-        cy.get<string>('@projId').then((projId) => {
-          cy.createNamespaceInProject(nsName, projId);
-        });
+            projIds.push(projId);
 
-        // create various pods to generate 12 events in total
-        // eslint-disable-next-line no-return-assign
-        podNames.forEach((podName, i) => {
-          cy.createPod(nsName, podName, 'nginx:latest').then((resp) => {
-            podNames[i] = resp.body.metadata.name;
-            removePods = true;
+            // create ns
+            cy.createNamespaceInProject(nsName, projId).then((resp: Cypress.Response<any>) => {
+              const nsId = resp.body.id;
+
+              nsIds.push(nsId);
+
+              // create various pods to generate 12 events in total
+              podNames.forEach((podName) => cy.createPod(nsName, podName, 'nginx:latest')); // eslint-disable-current-line no-return-assign
+            });
           });
         });
       });
@@ -270,9 +275,9 @@ describe('Cluster Dashboard', { testIsolation: 'off', tags: ['@explorer', '@admi
     events.waitForPage();
     events.list().resourceTable().sortableTable().rowElements()
       .should('have.length.gte', 12);
-  }));
+  });
 
-  qase(3857, it('can view events table empty if no events', { tags: ['@noVai', '@adminUser'] }, () => {
+  it('can view events table empty if no events', { tags: ['@noVai', '@adminUser'] }, () => {
     eventsNoDataset();
     clusterDashboard.goTo();
 
@@ -314,12 +319,12 @@ describe('Cluster Dashboard', { testIsolation: 'off', tags: ['@explorer', '@admi
           expect(el.text().trim()).to.eq(expectedFullHeaders[i]);
         });
     });
-  }));
+  });
 
   describe('Cluster dashboard with limited permissions', { testIsolation: 'on' }, () => {
-    let stdProjectName;
-    let stdNsName;
-    let stdUsername;
+    let stdProjectName: string;
+    let stdNsName: string;
+    let stdUsername: string;
 
     beforeEach(() => {
       stdProjectName = `standard-user-project${ +new Date() }`;
@@ -367,17 +372,17 @@ describe('Cluster Dashboard', { testIsolation: 'off', tags: ['@explorer', '@admi
     });
 
     // note - this would be 'fleet agent' on downstream clusters
-    qase(5704, it('does not show fleet controller status if the user does not have permission to view the fleet controller deployment', () => {
+    it('does not show fleet controller status if the user does not have permission to view the fleet controller deployment', () => {
       clusterDashboard.fleetStatus().should('not.exist');
 
       clusterDashboard.etcdStatus().should('exist');
       clusterDashboard.schedulerStatus().should('exist');
       clusterDashboard.controllerManagerStatus().should('exist');
-    }));
+    });
 
     // log back in as admin and delete the project, ns, and user from previous test
     afterEach(() => {
-      cy.login();
+      cy.login(); // bypass cy.session
       cy.deleteRancherResource('v1', 'namespaces', stdNsName);
 
       cy.get<string>('@standardUserProject').then((projectId) => {
@@ -392,26 +397,28 @@ describe('Cluster Dashboard', { testIsolation: 'off', tags: ['@explorer', '@admi
     });
   });
 
-  function reply(statusCode: number, body: any) {
-    return (req) => {
-      req.reply({ statusCode, body });
-    };
-  }
-
-  const forbiddenResponse = {
-    type:    'error',
-    links:   {},
-    code:    'Forbidden',
-    message: 'deployments.apps is forbidden',
-    status:  403,
-  };
-
   describe('Cluster dashboard - Fleet agent', { testIsolation: 'on' }, () => {
+    function reply(statusCode: number, body: any) {
+      return (req) => {
+        req.reply({ statusCode, body });
+      };
+    }
+
+    const forbiddenResponse = {
+      type:    'error',
+      links:   {},
+      code:    'Forbidden',
+      message: 'deployments.apps is forbidden',
+      status:  403,
+    };
+
+    // Re-login as admin to ensure auth is restored after the 'limited permissions' tests
+    // which log in as a standard user and may leave session cookies in an inconsistent state
     beforeEach(() => {
       cy.login();
     });
 
-    qase(8677, it('does not show fleet controller status if a 403 is returned by the API', () => {
+    it('does not show fleet controller status if a 403 is returned by the API', () => {
       cy.intercept('GET', '/v1/apps.deployments/cattle-fleet-system/fleet-controller?*', reply(403, forbiddenResponse));
       cy.intercept('GET', '/v1/apps.deployments/cattle-fleet-local-system/fleet-agent?*', reply(403, forbiddenResponse));
 
@@ -424,9 +431,9 @@ describe('Cluster Dashboard', { testIsolation: 'off', tags: ['@explorer', '@admi
       clusterDashboard.etcdStatus().should('exist');
       clusterDashboard.schedulerStatus().should('exist');
       clusterDashboard.controllerManagerStatus().should('exist');
-    }));
+    });
 
-    qase(8678, it('does not show fleet controller status if a 404 is returned by the API', () => {
+    it('does not show fleet controller status if a 404 is returned by the API', () => {
       cy.intercept('GET', '/v1/apps.deployments/cattle-fleet-system/fleet-controller?*', reply(404, {}));
       cy.intercept('GET', '/v1/apps.deployments/cattle-fleet-local-system/fleet-agent?*', reply(404, {}));
 
@@ -439,17 +446,22 @@ describe('Cluster Dashboard', { testIsolation: 'off', tags: ['@explorer', '@admi
       clusterDashboard.etcdStatus().should('exist');
       clusterDashboard.schedulerStatus().should('exist');
       clusterDashboard.controllerManagerStatus().should('exist');
-    }));
+    });
   });
 
-  after(function() {
-    if (removePods) {
-      podNames.forEach((podName) => {
-        cy.deleteRancherResource('v1', `pods/${ nsName }`, `${ podName }`);
-      });
-      cy.deleteRancherResource('v1', 'namespaces', `${ nsName }`);
-      cy.deleteRancherResource('v3', 'projects', this.projId);
-    }
+  after(() => {
+    // Ensure admin auth is restored before cleanup, as previous tests may have
+    // logged in as a different user or left the session in an inconsistent state
+    cy.login();
+
+    nsIds.forEach((nsId) => {
+      cy.deleteRancherResource('v1', 'namespaces', nsId);
+    });
+
+    projIds.forEach((projId) => {
+      cy.deleteRancherResource('v3', 'projects', projId);
+    });
+
     cy.updateNamespaceFilter('local', 'none', '{"local":["all://user"]}');
   });
 });

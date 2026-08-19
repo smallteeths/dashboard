@@ -25,6 +25,8 @@ import BrowserTabVisibility from '@shell/mixins/browser-tab-visibility';
 import { getClusterFromRoute, getProductFromRoute } from '@shell/utils/router';
 import SideNav from '@shell/components/SideNav';
 import { Layout } from '@shell/types/window-manager';
+import { RcButton } from '@components/RcButton';
+import { CLUSTER_SHELL } from '@shell/store/features';
 
 const SET_LOGIN_ACTION = 'set-as-login';
 
@@ -43,7 +45,8 @@ export default {
     AwsComplianceBanner,
     Inactivity,
     SideNav,
-    FixedTips
+    FixedTips,
+    RcButton,
   },
 
   mixins: [PageHeaderActions, Brand, BrowserTabVisibility],
@@ -140,10 +143,16 @@ export default {
       debugger;
     },
 
+    // Open the shell for the current cluster if the user has permissions and the feature is enabled (invoked via keyboard shortcut)
     async toggleShell() {
       const clusterId = this.$route.params.cluster;
 
       if ( !clusterId ) {
+        return;
+      }
+
+      // Cluster shell is disabled via feature flag
+      if (!this.$store.getters['features/get'](CLUSTER_SHELL)) {
         return;
       }
 
@@ -164,6 +173,13 @@ export default {
 
 <template>
   <div class="dashboard-root">
+    <rc-button
+      size="large"
+      class="skip-to-content"
+      :to="{ hash: '#main-content' }"
+    >
+      {{ t('nav.skipToContent') }}
+    </rc-button>
     <FixedBanner :header="true" />
     <FixedTips />
     <AwsComplianceBanner v-if="managementReady" />
@@ -179,8 +195,10 @@ export default {
       />
       <main
         v-if="clusterAndRouteReady"
+        id="main-content"
         class="main-layout"
         :aria-label="t('layouts.default')"
+        tabindex="-1"
       >
         <router-view
           :key="$route.path"
@@ -217,8 +235,10 @@ export default {
       <!-- Ensure there's an outlet to show the error (404) page -->
       <main
         v-else-if="unmatchedRoute"
+        id="main-content"
         class="main-layout"
         :aria-label="t('layouts.default')"
+        tabindex="-1"
       >
         <router-view
           :key="$route.path"
@@ -238,3 +258,17 @@ export default {
     <Inactivity />
   </div>
 </template>
+
+<style lang="scss" scoped>
+.skip-to-content {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  transform: translateY(-100%);
+
+  &:focus {
+    transform: translate(1rem, 1rem);
+  }
+}
+</style>

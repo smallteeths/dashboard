@@ -9,16 +9,7 @@ export default {
   data() {
     const auditLogServerUrl = this.$store.getters['management/byId'](MANAGEMENT.SETTING, SETTING.AUDIT_LOG_SERVER_URL)?.value;
 
-    return {
-      PAGES: {
-        'rke-drivers':       '/n/drivers/cluster',
-        'rke-templates':     '/g/rke-templates/index',
-        'cloud-credentials': '/g/security/cloud-credentials',
-        'node-templates':    '/n/node-templates',
-
-        'k8s-cluster-audit-log': `/meta/auditui/${ auditLogServerUrl?.replace('//', '/') }#/k8s-audit-log/${ this.$route.query.cluster }`
-      }
-    };
+    return { PAGES: { 'k8s-cluster-audit-log': `/meta/auditui/${ auditLogServerUrl?.replace('//', '/') }#/k8s-audit-log/${ this.$route.query.cluster }` } };
   }
 };
 </script>

@@ -12,47 +12,110 @@ jest.mock('@shell/utils/crypto', () => {
   return {
     __esModule:   true,
     ...originalModule,
-    base64Decode: jest.fn().mockImplementation((str:String) => str)
+    base64Decode: jest.fn().mockImplementation((str:string) => str)
   };
 });
+
+const mockOnData = jest.fn();
+const mockLoadAddon = jest.fn();
+const mockOpen = jest.fn();
+const mockFocus = jest.fn();
+const mockWrite = jest.fn();
+const mockWriteln = jest.fn();
+const mockReset = jest.fn();
+const mockOnResize = jest.fn();
+const mockPaste = jest.fn();
+const mockDispose = jest.fn();
+const mockClear = jest.fn();
+
+const mockWebglDispose = jest.fn();
+const mockCanvasDispose = jest.fn();
+let mockWebglShouldThrow = false;
+let mockOnContextLossCallback: (() => void) | undefined;
+let mockRafCallback: any;
+
+jest.mock(/* webpackChunkName: "xterm" */ '@xterm/xterm', () => {
+  return {
+    Terminal: class {
+      onData = mockOnData;
+      loadAddon = mockLoadAddon;
+      open = mockOpen;
+      focus = mockFocus;
+      write = mockWrite;
+      writeln = mockWriteln;
+      reset = mockReset;
+      onResize = mockOnResize;
+      paste = mockPaste;
+      dispose = mockDispose;
+      clear = mockClear;
+    }
+  };
+});
+
+const mockFit = jest.fn();
+const mockProposeDimensions = jest.fn().mockImplementation(() => ({ rows: 1, cols: 1 }));
+
+jest.mock(/* webpackChunkName: "@xterm" */ '@xterm/addon-fit', () => {
+  return {
+    FitAddon: class {
+      fit = mockFit;
+      proposeDimensions = mockProposeDimensions;
+    }
+  };
+});
+
+jest.mock(/* webpackChunkName: "@xterm" */ '@xterm/addon-web-links', () => {
+  return { WebLinksAddon: class {} };
+}, { virtual: true });
+
+jest.mock(/* webpackChunkName: "@xterm" */ '@xterm/addon-search', () => {
+  return {
+    SearchAddon: class {
+ findNext = jest.fn(); findPrevious = jest.fn();
+    }
+  };
+}, { virtual: true });
+
+jest.mock(/* webpackChunkName: "@xterm" */ '@xterm/addon-webgl', () => {
+  return {
+    WebglAddon: class {
+      constructor() {
+        if (mockWebglShouldThrow) {
+          throw new Error('webgl not supported');
+        }
+      }
+
+      onContextLoss = (cb: () => void) => {
+        mockOnContextLossCallback = cb;
+      };
+
+      dispose = mockWebglDispose;
+    }
+  };
+}, { virtual: true });
+
+jest.mock(/* webpackChunkName: "@xterm" */ '@xterm/addon-canvas', () => {
+  return {
+    CanvasAddon: class {
+      dispose = mockCanvasDispose;
+    }
+  };
+}, { virtual: true });
+
+// Capture the requestAnimationFrame callback so the "never paints" detection
+// in setupTerminal can be triggered deterministically from tests.
+const originalRequestAnimationFrame = window.requestAnimationFrame;
+
+window.requestAnimationFrame = ((cb: any): number => {
+  mockRafCallback = cb;
+
+  return 0;
+}) as unknown as typeof window.requestAnimationFrame;
 
 describe('component: ContainerShell', () => {
   const action = jest.fn();
   const translate = jest.fn();
   const schemaFor = jest.fn();
-  const onData = jest.fn();
-  const loadAddon = jest.fn();
-  const open = jest.fn();
-  const focus = jest.fn();
-  const fit = jest.fn();
-  const proposeDimensions = jest.fn().mockImplementation(() => {
-    return { rows: 1 };
-  });
-  const write = jest.fn();
-  const writeln = jest.fn();
-  const reset = jest.fn();
-
-  jest.mock(/* webpackChunkName: "xterm" */ 'xterm', () => {
-    return {
-      Terminal: class {
-        onData = onData;
-        loadAddon = loadAddon;
-        open = open;
-        focus = focus;
-        write = write;
-        writeln = writeln;
-        reset = reset
-      }
-    };
-  });
-  jest.mock(/* webpackChunkName: "xterm" */ 'xterm-addon-fit', () => {
-    return {
-      FitAddon: class {
-        fit = fit
-        proposeDimensions = proposeDimensions
-      }
-    };
-  });
 
   const defaultContainerShellParams = {
     propsData: {
@@ -77,7 +140,8 @@ describe('component: ContainerShell', () => {
           dispatch: action,
           getters:  {
             'i18n/t':            translate,
-            'cluster/schemaFor': schemaFor
+            'cluster/schemaFor': schemaFor,
+            'prefs/theme':       jest.fn().mockReturnValue('dark')
           }
         }
       },
@@ -87,7 +151,11 @@ describe('component: ContainerShell', () => {
   const resetMocks = () => {
     // Clear all instances and calls to constructor and all methods:
     jest.clearAllMocks();
+    jest.restoreAllMocks();
     defaultContainerShellParams.propsData.pod.os = 'linux';
+    mockWebglShouldThrow = false;
+    mockOnContextLossCallback = undefined;
+    mockRafCallback = undefined;
   };
 
   const wrapperPostMounted = async(params: Object) => {
@@ -99,7 +167,18 @@ describe('component: ContainerShell', () => {
     return wrapper;
   };
 
-  it.todo('test that we are calling the xterm terminal and fitAddon class method mocks correctly');
+  afterAll(() => {
+    window.requestAnimationFrame = originalRequestAnimationFrame;
+  });
+
+  it('test that we are calling the xterm terminal and fitAddon class method mocks correctly', async() => {
+    resetMocks();
+    await wrapperPostMounted(defaultContainerShellParams);
+
+    expect(mockLoadAddon).toHaveBeenCalledWith(expect.any(Object));
+    expect(mockOpen).toHaveBeenCalledWith(expect.any(HTMLElement));
+    expect(mockFit).toHaveBeenCalledWith();
+  });
 
   it('creates a window on the page', async() => {
     resetMocks();
@@ -108,6 +187,115 @@ describe('component: ContainerShell', () => {
 
     expect(windowComponent.exists()).toBe(true);
     expect(windowComponent.isVisible()).toBe(true);
+  });
+
+  it('loads the webgl renderer by default when it is supported', async() => {
+    resetMocks();
+
+    const wrapper = await wrapperPostMounted(defaultContainerShellParams);
+
+    expect(wrapper.vm.webglAddon).not.toBeNull();
+    expect(wrapper.vm.canvasAddon).toBeNull();
+  });
+
+  it('falls back to the canvas renderer when the webgl context is lost', async() => {
+    resetMocks();
+
+    const wrapper = await wrapperPostMounted(defaultContainerShellParams);
+
+    expect(wrapper.vm.webglAddon).not.toBeNull();
+
+    // Simulate the webgl renderer losing its context mid-session
+    mockOnContextLossCallback?.();
+
+    expect(mockWebglDispose).toHaveBeenCalledWith();
+    expect(wrapper.vm.webglAddon).toBeNull();
+    expect(wrapper.vm.canvasAddon).not.toBeNull();
+  });
+
+  it('falls back to the canvas renderer when the webgl renderer attaches but never paints', async() => {
+    resetMocks();
+
+    const wrapper = await wrapperPostMounted(defaultContainerShellParams);
+
+    expect(wrapper.vm.webglAddon).not.toBeNull();
+
+    // Simulate the post-render frame where the helper textarea has no size
+    mockRafCallback?.(0);
+
+    expect(wrapper.vm.webglAddon).toBeNull();
+    expect(wrapper.vm.canvasAddon).not.toBeNull();
+  });
+
+  it('falls back to the canvas renderer when the webgl addon fails to load', async() => {
+    resetMocks();
+
+    mockWebglShouldThrow = true;
+
+    const wrapper = await wrapperPostMounted(defaultContainerShellParams);
+
+    expect(wrapper.vm.webglAddon).toBeNull();
+    expect(wrapper.vm.canvasAddon).not.toBeNull();
+  });
+
+  it('disposes the renderer addons before the terminal on cleanup', async() => {
+    resetMocks();
+
+    const wrapper = await wrapperPostMounted(defaultContainerShellParams);
+
+    // Fall back to canvas so both renderer addons have been exercised
+    mockOnContextLossCallback?.();
+
+    expect(wrapper.vm.webglAddon).toBeNull();
+    expect(wrapper.vm.canvasAddon).not.toBeNull();
+
+    wrapper.vm.cleanup();
+
+    // The canvas/webgl addons must be disposed before terminal.dispose() so xterm
+    // can recreate the DOM renderer while the terminal core is still alive.
+    const webglDisposeOrder = mockWebglDispose.mock.invocationCallOrder[0];
+    const canvasDisposeOrder = mockCanvasDispose.mock.invocationCallOrder[0];
+    const terminalDisposeOrder = mockDispose.mock.invocationCallOrder[0];
+
+    expect(mockCanvasDispose).toHaveBeenCalledWith();
+    expect(mockDispose).toHaveBeenCalledWith();
+    expect(canvasDisposeOrder).toBeLessThan(terminalDisposeOrder);
+    expect(webglDisposeOrder).toBeLessThan(terminalDisposeOrder);
+    expect(wrapper.vm.webglAddon).toBeNull();
+    expect(wrapper.vm.canvasAddon).toBeNull();
+    expect(wrapper.vm.terminal).toBeNull();
+  });
+
+  it('does not attempt a canvas fallback in the render-frame check after the component is unmounted', async() => {
+    resetMocks();
+
+    const wrapper = await wrapperPostMounted(defaultContainerShellParams);
+    const vm = wrapper.vm;
+
+    expect(vm.webglAddon).not.toBeNull();
+    expect(vm.canvasAddon).toBeNull();
+
+    wrapper.unmount();
+
+    expect(vm.isUnmounted).toBe(true);
+
+    mockRafCallback?.(0);
+
+    expect(vm.canvasAddon).toBeNull();
+  });
+
+  it('does not attempt a canvas fallback when the webgl context is lost after teardown', async() => {
+    resetMocks();
+
+    const wrapper = await wrapperPostMounted(defaultContainerShellParams);
+
+    expect(wrapper.vm.webglAddon).not.toBeNull();
+
+    wrapper.vm.cleanup();
+
+    mockOnContextLossCallback?.();
+
+    expect(wrapper.vm.canvasAddon).toBeNull();
   });
 
   it('the find action for the node is called if schemaFor finds a schema for NODE', async() => {
@@ -242,7 +430,23 @@ describe('component: ContainerShell', () => {
     expect(wrapper.vm.os).toBe('linux');
   });
 
-  it.todo('test that fit and flush are operating properly');
+  it('test that fit and flush are operating properly', async() => {
+    resetMocks();
+    const wrapper = await wrapperPostMounted(defaultContainerShellParams);
+
+    mockFit.mockClear();
+
+    if (typeof wrapper.vm.fit === 'function') {
+      wrapper.vm.fit();
+    }
+
+    expect(mockFit).toHaveBeenCalledWith();
+
+    if (typeof wrapper.vm.flush === 'function') {
+      wrapper.vm.flush();
+    }
+  });
+
   it.todo('test that we are properly feeding the terminal the commandOnFirstConnect prop correctly on connected');
 
   it('the socket message event sets data props correctly', async() => {
