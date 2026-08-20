@@ -55,6 +55,11 @@ export default {
       default: false
     },
 
+    readAsArrayBuffer: {
+      type:    Boolean,
+      default: false
+    },
+
     directory: {
       type:    Boolean,
       default: false
@@ -161,6 +166,8 @@ export default {
         };
         if (this.readAsDataUrl) {
           reader.readAsDataURL(file);
+        } else if (this.readAsArrayBuffer) {
+          reader.readAsArrayBuffer(file);
         } else {
           reader.readAsText(file);
         }
