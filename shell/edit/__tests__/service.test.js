@@ -44,7 +44,8 @@ describe('edit: service', () => {
               'management/all':    jest.fn(() => []),
               'i18n/t':            jest.fn(),
               currentStore:        jest.fn(() => 'cluster'),
-              'cluster/schemaFor': jest.fn()
+              'cluster/schemaFor': jest.fn(),
+              currentCluster:      {}
             },
 
           }

@@ -37,6 +37,8 @@ describe('view: node detail', () => {
     isMemoryPressureOk: true,
     isKubeletOk:        true,
     internalIp:         '10.0.0.1',
+    podRequests:        {},
+    podLimits:          {}
   };
 
   function createWrapper(nodeOverrides = {}) {

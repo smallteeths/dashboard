@@ -7,7 +7,7 @@ import {
   actions,
 } from '@shell/store/i18n';
 
-jest.mock('@shell/assets/translations/en-us.yaml', () => ({}));
+jest.mock('@shell/assets/translations-cn/en-us.yaml', () => ({}));
 
 // The NONE constant is not exported; mirror its value used in the source
 const NONE = 'none';
