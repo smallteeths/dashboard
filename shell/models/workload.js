@@ -603,13 +603,47 @@ export default class Workload extends WorkloadService {
     return this.podSelector ? parse(this.podSelector) : null;
   }
 
+  /**
+   * SSP lists request includeAssociatedData. When the API omits the field (common for 0 pods),
+   * use an empty list instead of falling back to the global pod store.
+   */
+  get usesSspHealthAssociatedData() {
+    const typesWithEmbeddedHealth = [
+      WORKLOAD_TYPES.DEPLOYMENT,
+      WORKLOAD_TYPES.DAEMON_SET,
+      WORKLOAD_TYPES.STATEFUL_SET,
+      WORKLOAD_TYPES.JOB,
+    ];
+
+    if (!typesWithEmbeddedHealth.includes(this.type)) {
+      return false;
+    }
+
+    return !!this.$getters['paginationEnabled']?.({ id: this.type });
+  }
+
+  get healthAssociatedData() {
+    const associatedData = this.metadata?.associatedData;
+
+    if (associatedData !== undefined) {
+      return associatedData;
+    }
+
+    if (this.usesSspHealthAssociatedData) {
+      return [];
+    }
+
+    return undefined;
+  }
+
   calcPodGauges(pods) {
     const out = { };
     let refPods = pods;
+    const associatedData = this.healthAssociatedData;
 
-    if (this.metadata.associatedData) {
+    if (associatedData !== undefined) {
       refPods = [];
-      this.metadata.associatedData.forEach((w) => {
+      associatedData.forEach((w) => {
         if (w.gvk.kind.toLowerCase() !== POD) {
           return;
         }
@@ -644,6 +678,10 @@ export default class Workload extends WorkloadService {
   }
 
   get podGauges() {
+    if (this.healthAssociatedData !== undefined) {
+      return this.calcPodGauges(null);
+    }
+
     return this.calcPodGauges(this.pods);
   }
 
