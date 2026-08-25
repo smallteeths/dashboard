@@ -71,11 +71,11 @@ export default {
     };
   },
 
-  created() {
-    if (this.src) {
-      this.setColor();
-    }
-  },
+  // created() {
+  //   if (this.src) {
+  //     this.setColor();
+  //   }
+  // },
 
   computed: {
     ...mapGetters({
@@ -152,13 +152,18 @@ export default {
 </script>
 
 <template>
-  <img
+  <!-- <img
     v-if="src"
     :src="src"
     class="svg-icon"
     :class="className"
     :alt="imgAlt"
-  >
+  > -->
+  <div
+    v-if="src"
+    class="svg-icon icon-mask"
+    :style="{'mask-image': `url(${src})`}"
+  />
   <i
     v-else-if="icon"
     class="icon group-icon"
@@ -196,5 +201,17 @@ export default {
     &:hover {
       filter: v-bind(activeFilter);
     }
+  }
+  .svg-icon {
+    height: 1em;
+    width: 1em;
+  }
+  .icon-mask {
+    mask-repeat: no-repeat;
+    mask-size: cover;
+    mask-position: center;
+    background-color: currentColor;
+    display: inline-block;
+    vertical-align: middle;
   }
 </style>
