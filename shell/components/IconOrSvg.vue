@@ -66,12 +66,11 @@ export default {
     return { className: '' };
   },
 
-  created() {
-    if (this.src) {
-      this.setColor();
-    }
-  },
-
+  // created() {
+  //   if (this.src) {
+  //     this.setColor();
+  //   }
+  // },
   methods: {
     getComputedStyleFor(cssVar, fallback) {
       const value = window.getComputedStyle(document.body).getPropertyValue(cssVar).trim();
@@ -153,13 +152,18 @@ export default {
 </script>
 
 <template>
-  <img
+  <!-- <img
     v-if="src"
     :src="src"
     class="svg-icon"
     :class="className"
     :alt="imgAlt"
-  >
+  > -->
+  <div
+    v-if="src"
+    class="svg-icon icon-mask"
+    :style="{'mask-image': `url(${src})`}"
+  />
   <i
     v-else-if="icon"
     class="icon group-icon"
@@ -173,7 +177,15 @@ export default {
 
 <style lang="scss" scoped>
   .svg-icon {
-    height: 24px;
-    width: 24px;
+    height: 1em;
+    width: 1em;
+  }
+  .icon-mask {
+    mask-repeat: no-repeat;
+    mask-size: cover;
+    mask-position: center;
+    background-color: currentColor;
+    display: inline-block;
+    vertical-align: middle;
   }
 </style>
