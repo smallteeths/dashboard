@@ -152,14 +152,7 @@ export default {
 </script>
 
 <template>
-  <!-- <img
-    v-if="src"
-    :src="src"
-    class="svg-icon"
-    :class="className"
-    :alt="imgAlt"
-  > -->
-  <div
+  <span
     v-if="src"
     class="svg-icon icon-mask"
     :style="{'mask-image': `url(${src})`}"
