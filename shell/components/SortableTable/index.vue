@@ -1903,6 +1903,8 @@ export default {
     outline: 1px solid var(--border);
     background: var(--sortable-table-bg);
     border-radius: 4px;
+    // Extensions may inject an older copy of this component's CSS (with overflow: hidden)
+    overflow: visible !important;
 
     &.overflow-x {
       overflow-x: visible;
