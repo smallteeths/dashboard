@@ -10367,6 +10367,9 @@ dynamicContent:
   upcomingEom:
     message: This version of Rancher ({version}) will reach End of Maintainence in {days} day(s). Consider upgrading to a supported version soon.
     title: End of Maintainence in {days, plural, =1 {1 day} other {{days} days}}
+  eoc:
+    message: This version of Rancher ({version}) will no longer receive updates. Consider upgrading to a newer version or to Rancher Prime.
+    title: Updates have ended
 providers:
   hosted:
     prime: Prime only
