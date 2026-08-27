@@ -177,8 +177,8 @@ export default {
 
 <style lang="scss" scoped>
   .svg-icon {
-    height: 1em;
-    width: 1em;
+    height: 1.2em;
+    width: 1.2em;
   }
   .icon-mask {
     mask-repeat: no-repeat;
