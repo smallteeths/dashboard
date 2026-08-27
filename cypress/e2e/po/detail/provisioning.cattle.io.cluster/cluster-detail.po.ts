@@ -7,6 +7,7 @@ import ClusterSnapshotsListPo from '~/cypress/e2e/po/lists/cluster-snapshots-lis
 import TabbedPo from '~/cypress/e2e/po/components/tabbed.po';
 import ClusterRecentEventsListPo from '~/cypress/e2e/po/lists/cluster-recent-events-list.po';
 import DetailDrawer from '@/cypress/e2e/po/side-bars/detail-drawer.po';
+import { GetOptions } from '@/cypress/e2e/po/components/component.po';
 
 /**
  * Covers core functionality that's common to the dashboard's cluster detail pages
@@ -38,12 +39,22 @@ export default abstract class ClusterManagerDetailPagePo extends BaseDetailPageP
     return new DetailDrawer();
   }
 
-  logsContainer() {
-    return new ClusterProvisioningLogPo(this.self()).logsContainer();
+  logsContainer(options?: any) {
+    return new ClusterProvisioningLogPo(this.self()).logsContainer(options);
   }
 
-  kubectlCommandForImported() {
-    return this.self().get('code');
+  /**
+   * Tab button for the registration tab.
+   *
+   * Only rendered once the cluster registration token has resolved, so callers
+   * generally need to pass a timeout.
+   */
+  registrationTab(options?: GetOptions) {
+    return this.self().get('[data-testid="btn-registration"]', options);
+  }
+
+  kubectlCommandForImported(options?: GetOptions) {
+    return this.self().get('code', options);
   }
 
   poolsList(tabId: 'machine' | 'node') {

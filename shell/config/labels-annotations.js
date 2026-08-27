@@ -2,6 +2,7 @@ export const NORMAN_NAME = 'field.cattle.io/name';
 export const DESCRIPTION = 'field.cattle.io/description';
 export const HOSTNAME = 'kubernetes.io/hostname';
 export const TIMESTAMP = 'cattle.io/timestamp';
+export const KUBECTL_RESTARTED_AT = 'kubectl.kubernetes.io/restartedAt';
 export const SYSTEM_NAMESPACE = 'management.cattle.io/system-namespace';
 export const PROJECT = 'field.cattle.io/projectId';
 export const DEFAULT_PROJECT = 'authz.management.cattle.io/default-project';
@@ -19,6 +20,7 @@ export const NODE_ARCHITECTURE = 'kubernetes.io/arch';
 export const IMPORTED_CLUSTER_VERSION_MANAGEMENT = 'rancher.io/imported-cluster-version-management';
 export const UI_PROJECT_SECRET = 'management.cattle.io/project-scoped-secret';
 export const UI_PROJECT_SECRET_COPY = 'management.cattle.io/project-scoped-secret-copy';
+export const UI_PROJECT_SECRET_CLUSTER = 'management.cattle.io/project-scoped-secret-cluster';
 
 export const KUBERNETES = {
   SERVICE_ACCOUNT_UID:  'kubernetes.io/service-account.uid',
