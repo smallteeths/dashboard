@@ -4,8 +4,6 @@ import { useRouter } from 'vue-router';
 import { exceptionToErrorsArray } from '@shell/utils/error';
 import { base64Encode } from '@shell/utils/crypto';
 import { sortBy } from '@shell/utils/sort';
-import { cleanupNormanClusterAgentConfiguration } from '../util/agentConfigurationCleanup.js';
-
 const BEFORE_SAVE_HOOKS = '_beforeSaveHooks';
 const AFTER_SAVE_HOOKS = '_afterSaveHooks';
 
@@ -81,8 +79,6 @@ export function useCreateEditView(props, context) {
   }
 
   async function actuallySave() {
-    cleanupNormanClusterAgentConfiguration(normanCluster.value);
-
     if (cceConfig.value.imported && cceConfig.value.clusterID) {
       normanCluster.value.cceConfig = cceConfig.value;
       await normanCluster.value.save();

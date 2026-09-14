@@ -12,7 +12,6 @@ import { CREATOR_PRINCIPAL_ID } from '@shell/config/labels-annotations';
 import Tab from '@shell/components/Tabbed/Tab.vue';
 import Tabbed from '@shell/components/Tabbed/index.vue';
 import { _CREATE, _IMPORT, _VIEW, _EDIT } from '@shell/config/query-params';
-import AgentConfiguration from '@shell/edit/provisioning.cattle.io.cluster/tabs/AgentConfiguration.vue';
 import ClusterMembershipEditor, { canViewClusterMembershipEditor } from '@shell/components/form/Members/ClusterMembershipEditor.vue';
 import Banner from '@components/Banner/Banner.vue';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
@@ -123,15 +122,6 @@ const membershipUpdate = ref({});
 function ensureImportedConfig() {
   if (!normanCluster.value.importedConfig) {
     normanCluster.value.importedConfig = {};
-  }
-}
-
-function ensureAgentDeploymentCustomization() {
-  if (!normanCluster.value.fleetAgentDeploymentCustomization) {
-    normanCluster.value.fleetAgentDeploymentCustomization = {};
-  }
-  if (!normanCluster.value.clusterAgentDeploymentCustomization) {
-    normanCluster.value.clusterAgentDeploymentCustomization = {};
   }
 }
 
@@ -1302,7 +1292,6 @@ function cancelCredential() {
 
 function initPrivateRegistryConfig() {
   ensureImportedConfig();
-  ensureAgentDeploymentCustomization();
   state.value.privateRegistryEnabled = !!normanCluster.value.importedConfig?.privateRegistryURL;
 }
 
@@ -2155,26 +2144,6 @@ onMounted(async() => {
         </Tabbed>
       </div>
       <div>
-        <Accordion
-          class="mb-20"
-          title-key="cluster.agentConfig.tabs.cluster"
-        >
-          <AgentConfiguration
-            v-model:value="normanCluster.clusterAgentDeploymentCustomization"
-            :mode="mode"
-            type="cluster"
-          />
-        </Accordion>
-        <Accordion
-          class="mb-20"
-          title-key="cluster.agentConfig.tabs.fleet"
-        >
-          <AgentConfiguration
-            v-model:value="normanCluster.fleetAgentDeploymentCustomization"
-            :mode="mode"
-            type="fleet"
-          />
-        </Accordion>
         <Accordion
           class="mb-20"
           title-key="members.memberRoles"

@@ -25,7 +25,6 @@ import { fetchResources, fetchResourcesNoPagination } from '../util/request';
 import Tab from '@shell/components/Tabbed/Tab.vue';
 import Tabbed from '@shell/components/Tabbed/index.vue';
 import { _CREATE, _VIEW, _IMPORT, _EDIT } from '@shell/config/query-params';
-import AgentConfiguration from '@shell/edit/provisioning.cattle.io.cluster/tabs/AgentConfiguration.vue';
 import ClusterMembershipEditor, { canViewClusterMembershipEditor } from '@shell/components/form/Members/ClusterMembershipEditor.vue';
 import { stringify } from '@shell/utils/error';
 import { syncUpstreamConfig } from '@shell/utils/kontainer';
@@ -120,15 +119,6 @@ function ensureImportedConfig() {
   }
 }
 
-function ensureAgentDeploymentCustomization() {
-  if (!normanCluster.value.fleetAgentDeploymentCustomization) {
-    normanCluster.value.fleetAgentDeploymentCustomization = {};
-  }
-  if (!normanCluster.value.clusterAgentDeploymentCustomization) {
-    normanCluster.value.clusterAgentDeploymentCustomization = {};
-  }
-}
-
 function onMembershipUpdate(update) {
   membershipUpdate.value = update;
 }
@@ -175,7 +165,6 @@ async function initCustomConfig() {
 
     formatAckConfig(normanCluster);
     ensureImportedConfig();
-    ensureAgentDeploymentCustomization();
     state.value.privateRegistryEnabled = !!normanCluster.value.importedConfig?.privateRegistryURL;
     state.value.historyK8sVersion = normanCluster.value?.ackConfig?.kubernetesVersion;
   } else {
@@ -187,7 +176,6 @@ async function initCustomConfig() {
       normanCluster.value.annotations = { ...normanCluster.value.annotations, [CREATOR_PRINCIPAL_ID]: principalId };
     }
     ensureImportedConfig();
-    ensureAgentDeploymentCustomization();
   }
 
   if (!normanCluster?.value?.ackConfig) {
@@ -219,7 +207,6 @@ async function initImportConfig() {
     nodePools.value = cloneDeep(normanCluster.value.ackConfig['node_pool_list']);
   }
   ensureImportedConfig();
-  ensureAgentDeploymentCustomization();
   state.value.privateRegistryEnabled = !!normanCluster.value.importedConfig?.privateRegistryURL;
 
   ackConfig.value = cloneDeep({ ...normanCluster.value.ackConfig });
@@ -1828,26 +1815,6 @@ watch(() => normanCluster.value.name, (name) => {
         />
       </div>
       <div>
-        <Accordion
-          class="mb-20"
-          title-key="cluster.agentConfig.tabs.cluster"
-        >
-          <AgentConfiguration
-            v-model:value="normanCluster.clusterAgentDeploymentCustomization"
-            :mode="mode"
-            type="cluster"
-          />
-        </Accordion>
-        <Accordion
-          class="mb-20"
-          title-key="cluster.agentConfig.tabs.fleet"
-        >
-          <AgentConfiguration
-            v-model:value="normanCluster.fleetAgentDeploymentCustomization"
-            :mode="mode"
-            type="fleet"
-          />
-        </Accordion>
         <Accordion
           class="mb-20"
           title-key="members.memberRoles"
