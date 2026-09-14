@@ -7,7 +7,6 @@ import { useStore } from 'vuex';
 import { clear } from '@shell/utils/array';
 import { handleConflict } from '@shell/plugins/dashboard-store/normalize';
 import { sortBy } from '@shell/utils/sort';
-import { cleanupNormanClusterAgentConfiguration } from '../util/agentConfigurationCleanup.js';
 
 const BEFORE_SAVE_HOOKS = '_beforeSaveHooks';
 const AFTER_SAVE_HOOKS = '_afterSaveHooks';
@@ -114,8 +113,6 @@ export function useCreateEditView(props, context) {
   }
 
   async function actuallySave() {
-    cleanupNormanClusterAgentConfiguration(normanCluster.value);
-
     if (ackConfig.value.imported && ackConfig.value.cluster_id) {
       normanCluster.value.ackConfig = ackConfig.value;
       await normanCluster.value.save();

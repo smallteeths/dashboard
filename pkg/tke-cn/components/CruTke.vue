@@ -14,7 +14,6 @@ import SelectCredential from '@shell/edit/provisioning.cattle.io.cluster/SelectC
 import { useCreateEditView } from '../composables/useCreateEditView.js';
 import { CREATOR_PRINCIPAL_ID } from '@shell/config/labels-annotations';
 import { _CREATE, _IMPORT, _VIEW, _EDIT } from '@shell/config/query-params';
-import AgentConfiguration from '@shell/edit/provisioning.cattle.io.cluster/tabs/AgentConfiguration.vue';
 import ClusterMembershipEditor, { canViewClusterMembershipEditor } from '@shell/components/form/Members/ClusterMembershipEditor.vue';
 import { RadioGroup } from '@components/Form/Radio';
 import Tab from '@shell/components/Tabbed/Tab.vue';
@@ -388,15 +387,6 @@ function ensureImportedConfig() {
   }
 }
 
-function ensureAgentDeploymentCustomization() {
-  if (!normanCluster.value.fleetAgentDeploymentCustomization) {
-    normanCluster.value.fleetAgentDeploymentCustomization = {};
-  }
-  if (!normanCluster.value.clusterAgentDeploymentCustomization) {
-    normanCluster.value.clusterAgentDeploymentCustomization = {};
-  }
-}
-
 function onMembershipUpdate(update) {
   membershipUpdate.value = update;
 }
@@ -535,11 +525,9 @@ async function initImportConfig() {
       region:              '',
     };
     ensureImportedConfig();
-    ensureAgentDeploymentCustomization();
   } else {
     fixConfig(normanCluster.value.tkeConfig);
     ensureImportedConfig();
-    ensureAgentDeploymentCustomization();
     state.value.privateRegistryEnabled = !!normanCluster.value.importedConfig?.privateRegistryURL;
   }
 
@@ -557,12 +545,10 @@ async function initCustomConfig() {
       fixConfig(normanCluster.value.tkeConfig);
     }
     ensureImportedConfig();
-    ensureAgentDeploymentCustomization();
     state.value.privateRegistryEnabled = !!normanCluster.value.importedConfig?.privateRegistryURL;
   } else {
     normanCluster.value = await store.dispatch('rancher/create', { type: NORMAN.CLUSTER }, { root: true });
     ensureImportedConfig();
-    ensureAgentDeploymentCustomization();
     const principalId = store.getters['auth/principalId'];
 
     if (principalId.includes('local://')) {
@@ -1738,26 +1724,6 @@ function handleZoneChange() {
         />
       </div>
       <div>
-        <Accordion
-          class="mb-20"
-          title-key="cluster.agentConfig.tabs.cluster"
-        >
-          <AgentConfiguration
-            v-model:value="normanCluster.clusterAgentDeploymentCustomization"
-            :mode="mode"
-            type="cluster"
-          />
-        </Accordion>
-        <Accordion
-          class="mb-20"
-          title-key="cluster.agentConfig.tabs.fleet"
-        >
-          <AgentConfiguration
-            v-model:value="normanCluster.fleetAgentDeploymentCustomization"
-            :mode="mode"
-            type="fleet"
-          />
-        </Accordion>
         <Accordion
           class="mb-20"
           title-key="members.memberRoles"
